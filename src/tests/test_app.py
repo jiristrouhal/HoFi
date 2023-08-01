@@ -110,5 +110,20 @@ class Test_Creating_Tree(unittest.TestCase):
         self.assertListEqual(self.tree.branches("Branch 1"),["Small branch"])
         self.assertListEqual(self.tree.branches("Branch 1","Small branch"),["Smaller branch"])
 
+    def test_creating_branch_with_existing_name_yields_branch_with_adjusted_name(self):
+        self.tree.add_branch(app.Branch(name="Branch 1", weight=50, length=120))
+        self.assertListEqual(self.tree.branches(),["Branch 1", "Branch 1 (1)"])
+        self.tree.add_branch(app.Branch(name="Branch 1 (1)", weight=50, length=120))
+        self.assertListEqual(self.tree.branches(),["Branch 1", "Branch 1 (1)", "Branch 1 (2)"])
+
+    def test_moving_branch_where_its_name_already_exists_will_make_it_rename(self):
+        self.tree.add_branch(app.Branch(name="Branch 1", weight=25, length=70), "Branch 1")
+        self.assertListEqual(self.tree.branches("Branch 1"),["Branch 1"])
+        self.tree.move_branch(("Branch 1","Branch 1"),())
+        self.assertListEqual(self.tree.branches("Branch 1"),[])
+        # The moved branch 'Branch 1' found itself to be moved into location, where 'Branch 1' already existed,
+        # thus, it changed its name to 'Branch 1 (1)'
+        self.assertListEqual(self.tree.branches(), ["Branch 1", "Branch 1 (1)"])
+
 
 if __name__=="__main__": unittest.main()

@@ -4,6 +4,7 @@ from tkinter.ttk import Treeview
 import xml.etree.ElementTree as et
 from typing import List, Tuple
 import abc
+import re
 
 
 
@@ -77,7 +78,7 @@ class Tree(Thing_With_Branches):
 class Branch(Thing_With_Branches):
 
     def __init__(self,name:str,weight:int,length:int)->None:
-        self.__name = name
+        self.__name = name.strip()
         self.__weight = weight
         self.__length = length
         self.__parent:Thing_With_Branches|None = None
@@ -95,8 +96,28 @@ class Branch(Thing_With_Branches):
     def _set_parent(self,new_parent:Thing_With_Branches)->None:
         if self.__parent is not None: 
             self.__parent._branches.remove(self)
+        # if the name already exists under the new parent, change the current name
+        while new_parent._find_branch(self.name) is not None: 
+            self._rename_if_name_already_taken()
         self.__parent = new_parent
         self.__parent._branches.append(self)
+
+    def _rename_if_name_already_taken(self)->None:
+        PATTERN = "[\s\S]*\(\d+\)"
+        if re.fullmatch(PATTERN,self.__name):
+            s = self.__name[:-1].strip() # get rid of closing parenthesis and spaces before that
+            # extract the number inside the parentheses
+            number_str = ""
+            while re.fullmatch("[\d]",s[-1]):
+                number_str += s[-1]
+                s = s[:-1]
+            number_str = str(int(number_str)+1)
+            self.__name = s.strip() + number_str+')'
+        else:
+            self.__name += " (1)"
+
+    def rename(self,name:str)->None:
+        self.__name = name.strip()
 
 
 def read_tree_data(path:str)->et.ElementTree:
