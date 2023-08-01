@@ -43,8 +43,9 @@ class Thing_With_Branches(abc.ABC):
         parent_name = branch_names[0]
         for b in self._branches:
             if parent_name==b.name:
-                if len(branch_names)>1: return b._find_branch(*branch_names[1:])
-                elif len(branch_names)==1: return b
+                if len(branch_names)>1: 
+                    return b._find_branch(*branch_names[1:])
+                return b
         return None
     
     
