@@ -60,7 +60,7 @@ class Test_Creating_Tree(unittest.TestCase):
     def test_adding_branch_to_a_child_branch(self):
         self.tree.add_branch(app.Branch(name="Small branch", weight=25, length=70), "Branch 1")
         self.tree.add_branch(app.Branch(name="Smaller branch", weight=12, length=40), "Branch 1", "Small branch")
-        self.assertListEqual(self.tree.branches("Branch 1"),["Small branch"])
+        self.assertListEqual(self.tree.branches("Branch 1",),["Small branch"])
         self.assertListEqual(self.tree.branches("Branch 1","Small branch"),["Smaller branch"])
 
     def test_searching_for_empty_branch_name_returns_none_object(self):
@@ -68,11 +68,40 @@ class Test_Creating_Tree(unittest.TestCase):
 
     def test_moving_branch_to_other_place(self):
         self.tree.add_branch(app.Branch(name="Small branch", weight=25, length=70), "Branch 1")
+        self.tree.move_branch(("Branch 1", "Small branch"), ())
+        self.assertListEqual(self.tree.branches(),["Branch 1", "Small branch"])
+        self.assertListEqual(self.tree.branches("Branch 1"), [])
+    
+    def test_moving_branch_onto_itself_does_not_have_any_effect(self):
+        self.tree.move_branch(("Branch 1",), ("Branch 1",))
+        self.assertListEqual(self.tree.branches(),["Branch 1"])
+        self.assertListEqual(self.tree.branches("Branch 1"),[])
 
-    def __test_adding_branch_with_already_taken_name_will_yield_adding_branch_with_adjusted_name(self):
-        self.tree.add_branch(app.Branch("Branch 1",weight=45,length=150))
-        self.assertListEqual(self.tree.branches(),["Branch 1","Branch 1(1)"])
+    def test_moving_branch_under_its_children_does_not_have_any_effect(self):
+        self.tree.add_branch(app.Branch(name="Small branch", weight=25, length=70), "Branch 1")
+        self.tree.move_branch(("Branch 1",), ("Branch 1", "Small branch"))
+        self.assertListEqual(self.tree.branches(),["Branch 1"])
+        self.assertListEqual(self.tree.branches("Branch 1","Small branch"), [])
 
+    def test_moving_child_branch_next_to_its_former_parent_can_be_done(self):
+        self.tree.add_branch(app.Branch(name="Small branch", weight=25, length=70), "Branch 1")
+        self.tree.move_branch(("Branch 1","Small branch"), ())
+        self.assertListEqual(self.tree.branches(),["Branch 1", "Small branch"]) 
+        self.assertListEqual(self.tree.branches("Branch 1",), [])
+
+    def test_moving_branch_onto_child_of_its_child_does_not_have_effect(self):
+        self.tree.add_branch(app.Branch(name="Small branch", weight=25, length=70), "Branch 1")
+        self.tree.add_branch(app.Branch(name="Smaller branch", weight=12, length=40), "Branch 1", "Small branch")
+        self.tree.move_branch(("Branch 1",), ("Branch 1","Small branch","Smaller branch"))
+        self.assertListEqual(self.tree.branches(),["Branch 1"]) 
+        self.assertListEqual(self.tree.branches("Branch 1",),["Small branch"])
+    
+    def test_moving_child_branch_onto_its_child_branch_does_not_have_effect(self):
+        self.tree.add_branch(app.Branch(name="Small branch", weight=25, length=70), "Branch 1")
+        self.tree.add_branch(app.Branch(name="Smaller branch", weight=12, length=40), "Branch 1", "Small branch")
+        self.tree.move_branch(("Branch 1","Small branch"), ("Branch 1","Small branch","Smaller branch"))
+        self.assertListEqual(self.tree.branches("Branch 1"),["Small branch"])
+        self.assertListEqual(self.tree.branches("Branch 1","Small branch"),["Smaller branch"])
 
 
 if __name__=="__main__": unittest.main()

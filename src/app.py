@@ -28,6 +28,27 @@ class Thing_With_Branches(abc.ABC):
             if smallest_parent_branch is not None: branch._set_parent(smallest_parent_branch)
         # add the branch directly to the current object
         else: branch._set_parent(self)
+        
+    def move_branch(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...])->None:
+        if self._does_path_point_to_child_of_branch_or_to_branch_itself(branch_path,new_branch_parent_path):
+            return
+        branch = self._find_branch(*branch_path)
+        if branch is not None:
+            if len(new_branch_parent_path)==0: branch._set_parent(self)
+            else:
+                parent = self._find_branch(*new_branch_parent_path)
+                if parent is not None: branch._set_parent(parent)
+
+    def _does_path_point_to_child_of_branch_or_to_branch_itself(
+        self,
+        branch_path:Tuple[str,...],
+        path:Tuple[str,...]
+        )->bool:
+
+        if len(branch_path)>len(path): return False
+        for x,y in zip(branch_path, path): 
+            if x!=y: return False
+        return True
 
     def remove_branch(self,branch_name:str)->Branch|None:
         branch = self._find_branch(branch_name)
