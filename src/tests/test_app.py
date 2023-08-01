@@ -71,6 +71,13 @@ class Test_Creating_Tree(unittest.TestCase):
         self.tree.move_branch(("Branch 1", "Small branch"), ())
         self.assertListEqual(self.tree.branches(),["Branch 1", "Small branch"])
         self.assertListEqual(self.tree.branches("Branch 1"), [])
+
+    def test_moving_child_of_child_branch_one_level_higher(self):
+        self.tree.add_branch(app.Branch(name="Small branch", weight=25, length=70), "Branch 1")
+        self.tree.add_branch(app.Branch(name="Smaller branch", weight=12, length=40), "Branch 1", "Small branch")
+        self.tree.move_branch(("Branch 1","Small branch","Smaller branch"), ("Branch 1",))
+        self.assertListEqual(self.tree.branches("Branch 1"),["Small branch","Smaller branch"])
+        self.assertListEqual(self.tree.branches("Branch 1","Small branch"),[])
     
     def test_moving_branch_onto_itself_does_not_have_any_effect(self):
         self.tree.move_branch(("Branch 1",), ("Branch 1",))
