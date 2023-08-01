@@ -3,7 +3,7 @@
     skinparam style strictuml
 
 
-    class " **Tree** " as T <<type>> {
+    class " **TreeData** " as TD <<type>> {
 
     }
 
@@ -16,7 +16,7 @@
         + CloseTree()
     }
 
-    T " * " --right-- TR: reads < 
+    TD " * " --right-- TR: reads < 
     TR -right- TV: updates >
 
 
