@@ -6,12 +6,6 @@ import unittest
 import xml.etree.ElementTree as et
 
 
-class Test_Nothing(unittest.TestCase):
-
-    def test_nothing(self):
-        self.assertTrue(True)
-
-
 class Test_Reading_XML_File(unittest.TestCase):
 
     def setUp(self) -> None:
