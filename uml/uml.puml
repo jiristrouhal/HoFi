@@ -7,17 +7,28 @@
 
     }
 
-    class "**TreeView**" as TV <<type>>{
+    class " **Reader** " as R <<type>> {
 
     }
 
-    class "**TreeReader**" as TR <<type>> {
-        + LoadTree()
-        + CloseTree()
+    class "**Displayer**" as D <<type>> {
+
+    }
+ 
+    class "**Tree**" as T <<type>>{
+        + LoadData()
+        + CloseData()
     }
 
-    TD " * " --right-- TR: reads < 
-    TR -right- TV: updates >
+    class "**TreeView**" as TV <<type>> {
+
+    }
+
+    TD " * " --right-- R: reads < 
+    R --right-- T: passes content >
+    R --right-- T: instructs <
+    T --right-- D: updates >
+    D -right- TV: updates >
 
 
 @enduml

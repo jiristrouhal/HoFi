@@ -8,6 +8,3 @@ The user opens the app and reads the file. The tree is displayed immediatelly.
 
 ![Domain model](./out/uml/uml/domain_model.svg)
 
-The **Tree** is the xml file.
-The **Reader** is the app itself.
-**TreeView** is provided by the *tkinter* package.
