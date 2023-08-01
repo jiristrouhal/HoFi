@@ -1,4 +1,3 @@
 import tkinter
 
 
-print("hello")
