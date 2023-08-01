@@ -125,5 +125,15 @@ class Test_Creating_Tree(unittest.TestCase):
         # thus, it changed its name to 'Branch 1 (1)'
         self.assertListEqual(self.tree.branches(), ["Branch 1", "Branch 1 (1)"])
 
+    def test_renaming_branch_to_name_that_is_not_already_taken_can_be_done(self):
+        self.tree.add_branch(app.Branch(name="Branch 2", weight=25, length=70))
+        self.tree.rename_branch(("Branch 2",),"Branch X")
+        self.assertListEqual(self.tree.branches(),["Branch 1","Branch X"])     
+
+    def test_renaming_branch_to_name_already_taken_will_make_it_adjust_its_new_name(self):
+        self.tree.add_branch(app.Branch(name="Branch 2", weight=25, length=70))
+        self.tree.rename_branch(("Branch 2",),"Branch 1")
+        self.assertListEqual(self.tree.branches(),["Branch 1","Branch 1 (1)"])
+
 
 if __name__=="__main__": unittest.main()

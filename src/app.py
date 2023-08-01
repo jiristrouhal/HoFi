@@ -47,6 +47,10 @@ class Thing_With_Branches(abc.ABC):
             if len(branch._branches)==0: self._branches.remove(branch)
         return branch
     
+    def rename_branch(self,branch_path:Tuple[str,...],new_name:str)->None:
+        branch = self._find_branch(*branch_path)
+        if branch is not None: branch.rename(new_name)
+    
     def _does_path_point_to_child_of_branch_or_to_branch_itself(
         self,
         branch_path:Tuple[str,...],
@@ -98,26 +102,31 @@ class Branch(Thing_With_Branches):
             self.__parent._branches.remove(self)
         # if the name already exists under the new parent, change the current name
         while new_parent._find_branch(self.name) is not None: 
-            self._rename_if_name_already_taken()
+            self.__name = self._change_name_if_already_taken(self.name)
         self.__parent = new_parent
         self.__parent._branches.append(self)
 
-    def _rename_if_name_already_taken(self)->None:
+    def _change_name_if_already_taken(self,name:str)->str:
         PATTERN = "[\s\S]*\(\d+\)"
-        if re.fullmatch(PATTERN,self.__name):
-            s = self.__name[:-1].strip() # get rid of closing parenthesis and spaces before that
+        if re.fullmatch(PATTERN,name):
+            s = name[:-1].strip() # get rid of closing parenthesis and spaces before that
             # extract the number inside the parentheses
             number_str = ""
             while re.fullmatch("[\d]",s[-1]):
                 number_str += s[-1]
                 s = s[:-1]
             number_str = str(int(number_str)+1)
-            self.__name = s.strip() + number_str+')'
+            name = s.strip() + number_str+')'
         else:
-            self.__name += " (1)"
+            name += " (1)"
+        return name
 
     def rename(self,name:str)->None:
+        if self.__parent is not None:
+            if self.__parent._find_branch(name) is not None:
+                name = self._change_name_if_already_taken(name)
         self.__name = name.strip()
+
 
 
 def read_tree_data(path:str)->et.ElementTree:
