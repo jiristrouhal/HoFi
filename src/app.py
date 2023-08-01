@@ -57,10 +57,17 @@ class Tree(Thing_With_Branches):
 class Branch(Thing_With_Branches):
 
     def __init__(self,name:str,weight:int,length:int)->None:
-        self.name = name
-        self.weight = weight
-        self.length = length
+        self.__name = name
+        self.__weight = weight
+        self.__length = length
         super().__init__()
+
+    @property
+    def name(self)->str: return self.__name
+    @property
+    def weight(self)->int: return self.__weight
+    @property
+    def length(self)->int: return self.__length
 
 
 def read_tree_data(path:str)->et.ElementTree:
