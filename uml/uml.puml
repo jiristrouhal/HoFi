@@ -1,0 +1,23 @@
+@startuml domain_model
+    skinparam classAttributeIconSize 0
+    skinparam style strictuml
+
+
+    class " **Tree** " as T <<type>> {
+
+    }
+
+    class "**TreeView**" as TV <<type>>{
+
+    }
+
+    class "**TreeReader**" as TR <<type>> {
+        + LoadTree()
+        + CloseTree()
+    }
+
+    T " * " --right-- TR: reads < 
+    TR -right- TV: updates >
+
+
+@enduml
