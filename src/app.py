@@ -15,9 +15,9 @@ class Thing_With_Branches(abc.ABC):
     def branches(self,*branches_along_the_path:str)->List[str]: 
         if branches_along_the_path:
             # list branches growing out of some child element of the current object
-            smallest_parent_branch = self._find_branch(*branches_along_the_path)
-            if smallest_parent_branch is not None:
-                return smallest_parent_branch.branches()
+            lowest_level_branch = self._find_branch(*branches_along_the_path)
+            if lowest_level_branch is not None:
+                return lowest_level_branch.branches()
         # display branches growint out of the current object (branch, tree, ...)
         return [b.name for b in self._branches]
     
@@ -61,7 +61,6 @@ class Branch(Thing_With_Branches):
         self.weight = weight
         self.length = length
         super().__init__()
-
 
 
 def read_tree_data(path:str)->et.ElementTree:
