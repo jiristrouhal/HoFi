@@ -8,3 +8,6 @@ dist
 *.pyc
 *.xml
 !data_template.xml
+
+.coverage
+coverage_reports
