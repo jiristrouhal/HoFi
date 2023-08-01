@@ -2,7 +2,7 @@ from __future__ import annotations
 import tkinter
 from tkinter.ttk import Treeview
 import xml.etree.ElementTree as et
-from typing import List
+from typing import List, Tuple
 import abc
 
 
@@ -25,11 +25,9 @@ class Thing_With_Branches(abc.ABC):
         if branches_along_the_path:
             # add the new branch to some sub-branch
             smallest_parent_branch = self._find_branch(*branches_along_the_path)
-            if smallest_parent_branch is not None:
-                smallest_parent_branch._branches.append(branch)
+            if smallest_parent_branch is not None: branch._set_parent(smallest_parent_branch)
         # add the branch directly to the current object
-        else:
-            self._branches.append(branch)
+        else: branch._set_parent(self)
 
     def remove_branch(self,branch_name:str)->Branch|None:
         branch = self._find_branch(branch_name)
@@ -49,6 +47,7 @@ class Thing_With_Branches(abc.ABC):
         return None
     
     
+    
 class Tree(Thing_With_Branches):
     
     pass
@@ -60,6 +59,7 @@ class Branch(Thing_With_Branches):
         self.__name = name
         self.__weight = weight
         self.__length = length
+        self.__parent:Thing_With_Branches|None = None
         super().__init__()
 
     @property
@@ -68,6 +68,14 @@ class Branch(Thing_With_Branches):
     def weight(self)->int: return self.__weight
     @property
     def length(self)->int: return self.__length
+    @property 
+    def parent(self)->Thing_With_Branches|None: return self.__parent
+
+    def _set_parent(self,new_parent:Thing_With_Branches)->None:
+        if self.__parent is not None: 
+            self.__parent._branches.remove(self)
+        self.__parent = new_parent
+        self.__parent._branches.append(self)
 
 
 def read_tree_data(path:str)->et.ElementTree:
