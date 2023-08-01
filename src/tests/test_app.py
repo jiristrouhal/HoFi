@@ -25,10 +25,17 @@ class Test_Reading_XML_File(unittest.TestCase):
 
 class Test_Creating_Tree(unittest.TestCase):
 
-    def test_empty_root_element(self):
-        tree = app.Tree()
-        tree.add_branch(app.Branch(name="Branch 1", weight=50, length=120))
-        self.assertListEqual(tree.branches, ["Branch 1"])
+    def setUp(self) -> None:
+        self.tree = app.Tree()
+
+    def test_add_branch_to_a_tree(self):
+        self.tree.add_branch(app.Branch(name="Branch 1", weight=50, length=120))
+        self.assertListEqual(self.tree.branches, ["Branch 1"])
+
+    def test_remove_branch_from_a_tree(self):
+        self.tree.add_branch(app.Branch(name="Branch 1", weight=50, length=120))
+        self.tree.remove_branch("Branch 1")
+        self.assertListEqual(self.tree.branches, [])
 
 
 if __name__=="__main__": unittest.main()
