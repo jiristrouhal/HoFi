@@ -27,8 +27,8 @@
     <xs:sequence>
         <xs:element name="Roots" type="Roots"/>
     </xs:sequence>
-    <xs:attribute name="Lenght" type="xs:int"/>
-    <xs:attribute name="Depth" type="xs:int"/>
+    <xs:attribute name="Lenght" type="xs:int" use="required"/>
+    <xs:attribute name="Depth" type="xs:int" use="required"/>
 </xs:complexType>
 
 <xs:complexType name="Branches">
@@ -42,8 +42,8 @@
         <xs:element name="Branches" type="Branches"/>
         <xs:element name="Leaves" type="Leaves"/>
     </xs:sequence>
-    <xs:attribute name="Lenght" type="xs:int"/>
-    <xs:attribute name="Weight" type="xs:int"/>
+    <xs:attribute name="Lenght" type="xs:int" use="required"/>
+    <xs:attribute name="Weight" type="xs:int" use="required"/>
 </xs:complexType>
 
 <xs:complexType name="Leaves">
