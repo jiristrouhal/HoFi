@@ -39,15 +39,12 @@ class Thing_With_Branches(abc.ABC):
         return branch
     
     def _find_branch(self,*branch_names:str)->Branch|None:
+        if not branch_names: return None
         parent_name = branch_names[0]
         for b in self._branches:
             if parent_name==b.name:
-                if len(branch_names)>1:
-                    return b._find_branch(*branch_names[1:])
-                elif len(branch_names)==1:
-                    return b
-                else: # This case happend if no branch name is provided originally
-                    return None
+                if len(branch_names)>1: return b._find_branch(*branch_names[1:])
+                elif len(branch_names)==1: return b
         return None
     
     

@@ -63,5 +63,8 @@ class Test_Creating_Tree(unittest.TestCase):
         self.assertListEqual(self.tree.branches("Branch 1"),["Small branch"])
         self.assertListEqual(self.tree.branches("Branch 1","Small branch"),["Smaller branch"])
 
+    def test_searching_for_empty_branch_name_returns_none_object(self):
+        self.assertTrue(self.tree._find_branch() is None)
+
 
 if __name__=="__main__": unittest.main()
