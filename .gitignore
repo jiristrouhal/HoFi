@@ -1,0 +1,10 @@
+.vscode
+.venv
+**/__mypycache__
+bin
+build
+dist
+
+*.pyc
+*.xml
+!data_template.xml
