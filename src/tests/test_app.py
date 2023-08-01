@@ -45,5 +45,19 @@ class Test_Creating_Tree(unittest.TestCase):
         self.assertListEqual(self.tree.branches(), ["Branch 1", "Branch 2"])
         self.assertTrue(removed_branch is None)
 
+    def test_adding_branch_to_an_existing_branch(self):
+        self.tree.add_branch(app.Branch(name="Small branch", weight=25, length=80), "Branch 1")
+        # The smaller branch is not visible via the tree directly
+        self.assertListEqual(self.tree.branches(),["Branch 1"])
+        # The smaller branch is visible under the Branch 1
+        self.assertListEqual(self.tree.branches("Branch 1"), ["Small branch"])
+
+    def test_branch_with_child_branches_cannot_be_removed(self):
+        self.tree.add_branch(app.Branch(name="Small branch", weight=25, length=80), "Branch 1")
+        self.tree.remove_branch("Branch 1")
+        self.assertListEqual(self.tree.branches(),["Branch 1"])
+
+    
+
 
 if __name__=="__main__": unittest.main()
