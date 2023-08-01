@@ -39,6 +39,13 @@ class Thing_With_Branches(abc.ABC):
                 parent = self._find_branch(*new_branch_parent_path)
                 if parent is not None: branch._set_parent(parent)
 
+    def remove_branch(self,branch_name:str)->Branch|None:
+        branch = self._find_branch(branch_name)
+        if branch is not None:
+            # delete the branch only, when no other grows out of it 
+            if len(branch._branches)==0: self._branches.remove(branch)
+        return branch
+    
     def _does_path_point_to_child_of_branch_or_to_branch_itself(
         self,
         branch_path:Tuple[str,...],
@@ -49,13 +56,6 @@ class Thing_With_Branches(abc.ABC):
         for x,y in zip(branch_path, path): 
             if x!=y: return False
         return True
-
-    def remove_branch(self,branch_name:str)->Branch|None:
-        branch = self._find_branch(branch_name)
-        if branch is not None:
-            # delete the branch only, when no other grows out of it 
-            if len(branch._branches)==0: self._branches.remove(branch)
-        return branch
     
     def _find_branch(self,*branch_names:str)->Branch|None:
         if not branch_names: return None
