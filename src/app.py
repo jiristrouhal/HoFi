@@ -51,11 +51,9 @@ class Thing_With_Branches(abc.ABC):
         return None
     
     
-
 class Tree(Thing_With_Branches):
     
     pass
-
 
 
 class Branch(Thing_With_Branches):

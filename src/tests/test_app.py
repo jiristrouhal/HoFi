@@ -57,7 +57,11 @@ class Test_Creating_Tree(unittest.TestCase):
         self.tree.remove_branch("Branch 1")
         self.assertListEqual(self.tree.branches(),["Branch 1"])
 
-    
+    def test_adding_branch_to_a_child_branch(self):
+        self.tree.add_branch(app.Branch(name="Small branch", weight=25, length=70), "Branch 1")
+        self.tree.add_branch(app.Branch(name="Smaller branch", weight=12, length=40), "Branch 1", "Small branch")
+        self.assertListEqual(self.tree.branches("Branch 1"),["Small branch"])
+        self.assertListEqual(self.tree.branches("Branch 1","Small branch"),["Smaller branch"])
 
 
 if __name__=="__main__": unittest.main()
