@@ -5,9 +5,9 @@
 <xs:element name="Tree">
     <xs:complexType>
         <xs:sequence>
-            <xs:element name="Branches" type="Branches"/>
+            <xs:element name="Branches" type="Branches" minOccurs="0" maxOccurs="1"/>
             <xs:element name="Trunk" type="Trunk"/>
-            <xs:element name="Roots" type="Roots"/>
+            <xs:element name="Roots" type="Roots" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
 </xs:element>
@@ -25,7 +25,7 @@
 
 <xs:complexType name="Root">
     <xs:sequence>
-        <xs:element name="Roots" type="Roots"/>
+        <xs:element name="Roots" type="Roots" minOccurs="0" maxOccurs="1"/>
     </xs:sequence>
     <xs:attribute name="Lenght" type="xs:int" use="required"/>
     <xs:attribute name="Depth" type="xs:int" use="required"/>
@@ -39,8 +39,8 @@
 
 <xs:complexType name="Branch">
     <xs:sequence>
-        <xs:element name="Branches" type="Branches"/>
-        <xs:element name="Leaves" type="Leaves"/>
+        <xs:element name="Branches" type="Branches" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="Leaves" type="Leaves" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
     <xs:attribute name="Lenght" type="xs:int" use="required"/>
     <xs:attribute name="Weight" type="xs:int" use="required"/>
