@@ -7,8 +7,7 @@ import abc
 import re
 
 
-
-class Thing_With_Branches(abc.ABC):
+class ThingWithBranches(abc.ABC):
 
     def __init__(self)->None:
         self._branches:List[Branch] = list()
@@ -74,17 +73,17 @@ class Thing_With_Branches(abc.ABC):
     
     
     
-class Tree(Thing_With_Branches):
+class Tree(ThingWithBranches):
     pass
 
 
-class Branch(Thing_With_Branches):
+class Branch(ThingWithBranches):
 
     def __init__(self,name:str,weight:int,length:int)->None:
         self.__name = name.strip()
         self.__weight = weight
         self.__length = length
-        self.__parent:Thing_With_Branches|None = None
+        self.__parent:ThingWithBranches|None = None
         super().__init__()
 
     @property
@@ -94,9 +93,9 @@ class Branch(Thing_With_Branches):
     @property
     def length(self)->int: return self.__length
     @property 
-    def parent(self)->Thing_With_Branches|None: return self.__parent
+    def parent(self)->ThingWithBranches|None: return self.__parent
 
-    def _set_parent(self,new_parent:Thing_With_Branches)->None:
+    def _set_parent(self,new_parent:ThingWithBranches)->None:
         if self.__parent is not None: 
             self.__parent._branches.remove(self)
         # if the name already exists under the new parent, change the current name
@@ -125,4 +124,5 @@ class Branch(Thing_With_Branches):
             if self.__parent._find_branch(name) is not None:
                 name = self._change_name_if_already_taken(name)
         self.__name = name.strip()
+
 

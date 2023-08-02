@@ -8,3 +8,7 @@ The user opens the app and reads the file. The tree is displayed immediatelly.
 
 ![Domain model](./out/uml/uml/domain_model.svg)
 
+
+The structure for holding the displayed data loaded from xml looks like this
+
+![Domain model](./out/uml/uml/class_diagram.svg)

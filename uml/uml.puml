@@ -2,33 +2,46 @@
     skinparam classAttributeIconSize 0
     skinparam style strictuml
 
-
-    class " **TreeData** " as TD <<type>> {
-
-    }
-
-    class " **Reader** " as R <<type>> {
-
-    }
-
-    class "**Displayer**" as D <<type>> {
-
-    }
- 
-    class "**Tree**" as T <<type>>{
+    class "TreeData" as TD <<type>> {}
+    class "Reader" as R <<type>> {}
+    class "Displayer" as D <<type>> {}
+    class "**Tree**" as T <<type>> {
         + LoadData()
         + CloseData()
     }
-
-    class "**TreeView**" as TV <<type>> {
-
-    }
+    class "**TreeView**" as TV <<type>> {}
 
     TD " * " --right-- R: reads < 
     R --right-- T: passes content >
     R --right-- T: instructs <
     T --right-- D: updates >
     D -right- TV: updates >
+@enduml
 
+@startuml class_diagram
+    skinparam ClassAttributeIconSize 0
+    skinparam style strictuml
+    skinparam linetype ortho
+
+    abstract "**ThingWithBranches**" as TWB {
+        - branches: list
+        + add_branch()
+        + move_branch()
+        + remove_branch()
+        + rename_branch()
+    }
+    class "**Branch**" as B {
+        +name:str
+        +weight:int
+        +lenght:int
+    }
+    class "**Tree**" as T {}
+
+    TWB <|-- B 
+    TWB <|-- T 
+    T -left-o " 0..*" B : \t\t\t\t
+    B -up-o "0..*" B
+
+    
 
 @enduml
