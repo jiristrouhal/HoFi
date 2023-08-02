@@ -75,7 +75,6 @@ class Thing_With_Branches(abc.ABC):
     
     
 class Tree(Thing_With_Branches):
-    
     pass
 
 
@@ -126,9 +125,4 @@ class Branch(Thing_With_Branches):
             if self.__parent._find_branch(name) is not None:
                 name = self._change_name_if_already_taken(name)
         self.__name = name.strip()
-
-
-
-def read_tree_data(path:str)->et.ElementTree:
-    return et.parse(path)
 
