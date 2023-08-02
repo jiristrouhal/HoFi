@@ -20,6 +20,7 @@ class App:
         self._trees.pop(name)
 
     def rename_tree(self,old_name:str,new_name:str)->None:
+        if old_name not in self._trees: return
         if old_name!=new_name and new_name in self._trees: 
             # tree cannot be renamed, if the new name is taken by other tree
             return
