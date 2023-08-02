@@ -2,7 +2,7 @@ from __future__ import annotations
 import tkinter
 from tkinter.ttk import Treeview
 import xml.etree.ElementTree as et
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Any
 import abc
 import re
 
@@ -21,7 +21,8 @@ class ThingWithBranches(abc.ABC):
         # display branches growint out of the current object (branch, tree, ...)
         return [b.name for b in self._branches]
     
-    def add_branch(self,branch:Branch,*branches_along_the_path:str)->None:
+    def add_branch(self,name:str,attributes:Dict[str,Any],*branches_along_the_path:str)->None:
+        branch = Branch(name,attributes)
         if branches_along_the_path:
             # add the new branch to some sub-branch
             smallest_parent_branch = self._find_branch(*branches_along_the_path)
@@ -79,19 +80,16 @@ class Tree(ThingWithBranches):
 
 class Branch(ThingWithBranches):
 
-    def __init__(self,name:str,weight:int,length:int)->None:
+    def __init__(self,name:str,attributes:Dict[str,Any])->None:
         self.__name = name.strip()
-        self.__weight = weight
-        self.__length = length
+        self.__attributes = attributes 
         self.__parent:ThingWithBranches|None = None
         super().__init__()
 
     @property
     def name(self)->str: return self.__name
     @property
-    def weight(self)->int: return self.__weight
-    @property
-    def length(self)->int: return self.__length
+    def attributes(self)->Dict[str,Any]: return self.__attributes
     @property 
     def parent(self)->ThingWithBranches|None: return self.__parent
 
