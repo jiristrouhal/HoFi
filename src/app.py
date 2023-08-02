@@ -16,6 +16,7 @@ class App:
         self._trees[name] = tree.Tree()
 
     def remove_tree(self,name:str)->None: 
+        if name not in self._trees: return
         self._trees.pop(name)
 
     def rename_tree(self,old_name:str,new_name:str)->None:
