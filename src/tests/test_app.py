@@ -33,6 +33,11 @@ class Test_Managing_Trees(unittest.TestCase):
         self.app_instance.new_tree("Tree 2")
         self.app_instance.rename_tree("Tree 2","Tree 1")
         self.assertListEqual(self.app_instance.trees,["Tree 1","Tree 2"])
+    
+    def test_creating_tree_under_already_existing_name_will_has_no_effect(self):
+        self.app_instance.new_tree("Tree 1")
+        self.app_instance.new_tree("Tree 1")
+        self.assertListEqual(self.app_instance.trees,["Tree 1"])
                              
 
 if __name__=="__main__": unittest.main()
