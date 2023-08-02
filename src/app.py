@@ -10,4 +10,8 @@ class App:
     @property
     def trees(self)->List[str]: return [t for t in self._trees.keys()]
 
-    def new_tree(self,name:str)->None: self._trees[name] = tree.Tree()
+    def new_tree(self,name:str)->None: 
+        self._trees[name] = tree.Tree()
+
+    def remove_tree(self,name:str)->None: 
+        self._trees.pop(name)
