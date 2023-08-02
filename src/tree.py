@@ -29,6 +29,7 @@ class ThingWithBranches(abc.ABC):
             if smallest_parent_branch is not None: branch._set_parent(smallest_parent_branch)
         # add the branch directly to the current object
         else: branch._set_parent(self)
+
         
     def move_branch(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...])->None:
         if self._does_path_point_to_child_of_branch_or_to_branch_itself(branch_path,new_branch_parent_path):
@@ -40,12 +41,19 @@ class ThingWithBranches(abc.ABC):
                 parent = self._find_branch(*new_branch_parent_path)
                 if parent is not None: branch._set_parent(parent)
 
-    def remove_branch(self,branch_name:str)->Branch|None:
-        branch = self._find_branch(branch_name)
-        if branch is not None:
-            # delete the branch only, when no other grows out of it 
-            if len(branch._branches)==0: self._branches.remove(branch)
-        return branch
+    def remove_branch(self,*branch_names:str)->Branch|None:
+        if len(branch_names)>1:
+            parent_branch = self._find_branch(*branch_names[:-1])
+            if parent_branch is None: 
+                return None
+            return parent_branch.remove_branch(*branch_names[1:])
+
+        # the branch to be deleted is supposed to be a child of the current object
+        branch_to_be_removed = self._find_branch(branch_names[-1])
+        if branch_to_be_removed is not None:
+            if branch_to_be_removed.branches(): return None
+            self._branches.remove(branch_to_be_removed)
+        return branch_to_be_removed
     
     def rename_branch(self,branch_path:Tuple[str,...],new_name:str)->None:
         branch = self._find_branch(*branch_path)
