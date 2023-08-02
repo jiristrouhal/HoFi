@@ -3,6 +3,7 @@ sys.path.insert(1,"src")
 
 import app
 import unittest
+import os
 
 
 class Test_Managing_Trees(unittest.TestCase):
@@ -48,6 +49,24 @@ class Test_Managing_Trees(unittest.TestCase):
         self.app_instance.new_tree("Tree 1")
         self.app_instance.rename_tree("Non-existent tree", "Tree X")
         self.assertListEqual(self.app_instance.trees,["Tree 1"])
+
+
+class Test_Saving_Trees(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.app_instance = app.App()
+
+    def test_data_file_path_is_always_set_to_existing_directory(self):
+        somepath = app.data_file_path("somefile")
+        self.assertTrue(os.path.isdir(os.path.dirname(somepath)))
+    
+    def test_empty_tree_after_saving_and_loading_is_unchanged(self):
+        self.app_instance.new_tree("Tree 1")
+        self.app_instance.save_new_tree("Tree 1")
+        self.app_instance.remove_tree("Tree 1")
+        self.assertListEqual(self.app_instance.trees, [])
+        self.app_instance.load_tree("Tree 1")
+        self.assertListEqual(self.app_instance.trees, ["Tree 1"])
               
 
 if __name__=="__main__": unittest.main()
