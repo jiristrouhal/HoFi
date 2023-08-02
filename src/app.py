@@ -19,6 +19,9 @@ class App:
     @property
     def trees(self)->List[str]: return [t for t in self._trees.keys()]
 
+    def tree(self,name:str)->tree.Tree:
+        if name in self._trees: return self._trees[name]
+
     def new_tree(self,name:str)->None: 
         if name in self._trees: # do not create new tree, if the tree name is already taken
             return
@@ -36,6 +39,8 @@ class App:
         self._trees[new_name] = self._trees.pop(old_name)
 
     def save_new_tree(self,name:str)->None:
+        if name not in self._trees: return
+        
         path_to_file = data_file_path(name)
         if os.path.isfile(path_to_file): os.remove(path_to_file)
 
