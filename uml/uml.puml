@@ -24,24 +24,43 @@
     skinparam linetype ortho
 
     abstract "**ThingWithBranches**" as TWB {
-        - branches: list
+        - branches : list
         + add_branch()
         + move_branch()
         + remove_branch()
         + rename_branch()
     }
     class "**Branch**" as B {
-        +name:str
-        +weight:int
-        +lenght:int
+        +name : string
+        +weight : integer
+        +lenght : integer
     }
     class "**Tree**" as T {}
 
     TWB <|-- B 
-    TWB <|-- T 
+    TWB <|--- T : \t\t\t\t\t\t
     T -left-o " 0..*" B : \t\t\t\t
     B -up-o "0..*" B
 
+    class "**TreeApp**" as TAPP {
+        # trees : list
+        + create_tree()
+        + destroy_tree()
+    }
+    class "**Displayer**" as Disp {
+        + update_displayed_tree()
+    }
+
+    TAPP -left-> T
+    TAPP -right-> Disp
+    Disp -right-> "**Treeview**"
+
+    class "**XmlManager**" as R {
+        + load_data()
+        + save_data()
+    }
+
+    R <-- TAPP
     
 
 @enduml

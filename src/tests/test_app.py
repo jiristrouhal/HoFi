@@ -3,9 +3,6 @@ sys.path.insert(1,"src")
 
 import app
 import unittest
-import xml.etree.ElementTree as et
-import os
-
 
 class Test_Creating_Tree(unittest.TestCase):
 
