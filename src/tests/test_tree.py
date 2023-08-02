@@ -26,6 +26,11 @@ class Test_Creating_Tree(unittest.TestCase):
         self.assertListEqual(self.tree.branches(), ["Branch 1", "Branch 2"])
         self.assertTrue(removed_branch is None)
 
+    def test_removing_a_branch_with_nonexistent_parent_has_no_effect(self):
+        self.tree.add_branch("Small branch",{"weight":25}, "Branch 1")
+        self.tree.remove_branch("Nonexistent branch","Small branch")
+        self.assertListEqual(self.tree.branches("Branch 1"), ["Small branch"])
+
     def test_removing_child_branch_of_a_child_branch(self):
         self.tree.add_branch("Small branch",{"weight":25}, "Branch 1")
         self.tree.remove_branch("Branch 1","Small branch")
