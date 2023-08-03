@@ -4,6 +4,7 @@
 bin
 build
 dist
+dummy.py
 
 *.pyc
 *.xml
