@@ -74,16 +74,17 @@ class Test_Saving_Trees(unittest.TestCase):
         self.app_instance.load_tree("Tree x")
         self.assertListEqual(self.app_instance.trees, ["Tree 1"])
 
-    # def test_nonempty_tree_after_saving_and_loading_is_unchanged(self):
-    #     self.app_instance.new_tree("Tree 1")
-    #     self.app_instance.tree("Tree 1").add_branch("Branch X",{})
+    def test_nonempty_tree_after_saving_and_loading_is_unchanged(self):
+        self.app_instance.new_tree("Tree 1")
+        self.app_instance.tree("Tree 1").add_branch("Branch X",{"weight":25})
+        self.app_instance.tree("Tree 1").add_branch("Branch Y",{"weight":30})
 
-    #     self.app_instance.save_new_tree("Tree 1")
-    #     self.app_instance.remove_tree("Tree 1")
-    #     self.assertListEqual(self.app_instance.trees, [])
-    #     self.app_instance.load_tree("Tree 1")
-    #     self.assertListEqual(self.app_instance.trees, ["Tree 1"])
-    #     self.assertListEqual(self.app_instance.tree("Tree 1").branches(), ["Branch X"])
+        self.app_instance.save_new_tree("Tree 1")
+        self.app_instance.remove_tree("Tree 1")
+        self.assertListEqual(self.app_instance.trees, [])
+        self.app_instance.load_tree("Tree 1")
+        self.assertListEqual(self.app_instance.trees, ["Tree 1"])
+        self.assertListEqual(self.app_instance.tree("Tree 1").branches(), ["Branch X","Branch Y"])
               
 
 if __name__=="__main__": unittest.main()

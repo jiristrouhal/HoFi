@@ -73,11 +73,11 @@ class ThingWithBranches(abc.ABC):
     def _find_branch(self,*branch_names:str)->Branch|None:
         if not branch_names: return None
         parent_name = branch_names[0]
-        for b in self._branches:
-            if parent_name==b.name:
+        for branch in self._branches:
+            if parent_name==branch.name:
                 if len(branch_names)>1: 
-                    return b._find_branch(*branch_names[1:])
-                return b
+                    return branch._find_branch(*branch_names[1:])
+                return branch
         return None
     
     
@@ -90,14 +90,17 @@ class Branch(ThingWithBranches):
 
     def __init__(self,name:str,attributes:Dict[str,Any])->None:
         self.__name = name.strip()
-        self.__attributes = attributes 
+        self.__attributes = {k:str(v) for k,v in attributes.items()} 
         self.__parent:ThingWithBranches|None = None
         super().__init__()
 
     @property
     def name(self)->str: return self.__name
     @property
-    def attributes(self)->Dict[str,Any]: return self.__attributes
+    def attributes(self)->Dict[str,str]: 
+        attrs = self.__attributes.copy()
+        attrs["name"] = self.name
+        return attrs
     @property 
     def parent(self)->ThingWithBranches|None: return self.__parent
 
