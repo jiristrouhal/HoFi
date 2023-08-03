@@ -6,7 +6,7 @@ import re
 
 class ThingWithBranches(abc.ABC):
 
-    def __init__(self,name:str="",attributes:Dict[str,Any]={})->None:
+    def __init__(self,name:str="",attributes:Dict[str,Any]=dict())->None:
         self._attributes = {k:str(v) for k,v in attributes.items()} 
         self._attributes["name"] = name.strip()
         self._branches:List[ThingWithBranches] = list()
@@ -58,7 +58,7 @@ class ThingWithBranches(abc.ABC):
         # display branches growint out of the current object (branch, tree, ...)
         return [b.name for b in self._branches]
     
-    def add_branch(self,name:str,attributes:Dict[str,Any],*branches_along_the_path:str)->None:
+    def add_branch(self,name:str,attributes:Dict[str,Any]=dict(),*branches_along_the_path:str)->None:
         branch = Branch(name,attributes)
         if branches_along_the_path:
             # add the new branch to some sub-branch
