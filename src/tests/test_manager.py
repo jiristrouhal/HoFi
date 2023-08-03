@@ -1,7 +1,7 @@
 import sys 
 sys.path.insert(1,"src")
 
-import app
+import manager
 import unittest
 import os
 
@@ -9,7 +9,7 @@ import os
 class Test_Managing_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_instance = app.App()
+        self.app_instance = manager.App()
 
     def test_create_new_tree(self):
         self.app_instance.new_tree("Tree 1")
@@ -54,10 +54,10 @@ class Test_Managing_Trees(unittest.TestCase):
 class Test_Saving_And_Loading_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_instance = app.App()
+        self.app_instance = manager.App()
 
     def test_data_file_path_is_always_set_to_existing_directory(self):
-        somepath = app.data_file_path("somefile")
+        somepath = manager.data_file_path("somefile")
         self.assertTrue(os.path.isdir(os.path.dirname(somepath)))
     
     def test_empty_tree_after_saving_and_loading_is_unchanged(self):
