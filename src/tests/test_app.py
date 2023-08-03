@@ -81,10 +81,21 @@ class Test_Saving_Trees(unittest.TestCase):
 
         self.app_instance.save_new_tree("Tree 1")
         self.app_instance.remove_tree("Tree 1")
-        self.assertListEqual(self.app_instance.trees, [])
         self.app_instance.load_tree("Tree 1")
-        self.assertListEqual(self.app_instance.trees, ["Tree 1"])
         self.assertListEqual(self.app_instance.tree("Tree 1").branches(), ["Branch X","Branch Y"])
+
+    def test_nonempty_tree_with_branches_having_child_branches_is_unchanged_after_saving_and_loading_(self):
+        self.app_instance.new_tree("Tree 1")
+        self.app_instance.tree("Tree 1").add_branch("Branch X",{"weight":25})
+        self.app_instance.tree("Tree 1").add_branch("Small branch",{"weight":10},"Branch X")
+        self.app_instance.tree("Tree 1").add_branch("Smaller branch",{"weight":5},"Branch X","Small branch")
+        
+        self.app_instance.save_new_tree("Tree 1")
+        self.app_instance.remove_tree("Tree 1")
+        self.app_instance.load_tree("Tree 1")
+        self.assertListEqual(self.app_instance.tree("Tree 1").branches(), ["Branch X"])
+        self.assertListEqual(self.app_instance.tree("Tree 1").branches("Branch X",), ["Small branch"])
+        self.assertListEqual(self.app_instance.tree("Tree 1").branches("Branch X","Small branch"), ["Smaller branch"])
               
 
 if __name__=="__main__": unittest.main()

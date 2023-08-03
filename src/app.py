@@ -72,12 +72,22 @@ class App:
         if not os.path.isfile(path_to_file): return
 
         xml = et.parse(path_to_file)
-        root = xml.getroot()
-        if root is None: return
+        xml_root = xml.getroot()
+        if xml_root is None: return
         
-        self.new_tree(root.attrib["name"])
-        for elem in root.findall("Branch"):
+        self.new_tree(xml_root.attrib["name"])
+        tree = self.tree(xml_root.attrib["name"])
+        self.__load_xml_elem(xml_root,tree)
+
+    def __load_xml_elem(
+        self,
+        xml_elem:et.Element,
+        thing_with_branches:tree_module.ThingWithBranches
+        )->None:
+
+        for elem in xml_elem.findall("Branch"):
             branch_name = elem.attrib["name"]
-            self.tree(root.attrib["name"]).add_branch(branch_name,elem.attrib)
+            thing_with_branches.add_branch(branch_name,elem.attrib)
 
-
+            child_branch = thing_with_branches._find_branch(branch_name)
+            self.__load_xml_elem(elem,child_branch)
