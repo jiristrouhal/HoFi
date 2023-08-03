@@ -14,6 +14,7 @@ class Treeview:
         return self.__widget.get_children("")
     
     def add_tree(self,tree:treemod.Tree)->None: 
+        if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
         self.__widget.insert("","end",iid=tree.name)
 
     def remove_tree(self,name:str)->None:
