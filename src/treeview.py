@@ -17,4 +17,6 @@ class Treeview:
         self.__widget.insert("","end",iid=tree.name)
 
     def remove_tree(self,name:str)->None:
+        if name not in self.trees: raise ValueError(f"Trying to delete nonexistent tree with name {name}.\n"
+                                                    f"The existing tree names are {self.trees}\n")
         self.__widget.delete(name)
