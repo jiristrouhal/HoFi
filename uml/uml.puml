@@ -30,37 +30,34 @@
         + remove_branch()
         + rename_branch()
     }
-    class "**Branch**" as B {
-        +name : string
-        +weight : integer
-        +lenght : integer
+    class "**Branch**" as Branch {
+        +attributes : dictionary
     }
-    class "**Tree**" as T {}
+    class "**Tree**" as Tree {}
 
-    TWB <|-- B 
-    TWB <|--- T : \t\t\t\t\t\t
-    T -left-o " 0..*" B : \t\t\t\t
-    B -up-o "0..*" B
+    TWB <|-- Branch 
+    TWB <|--- Tree : \t\t\t\t\t\t
+    Tree -left-o " 0..*" Branch  : \t\t\t\t\t
+    Branch -down-o "0..*" Branch
 
-    class "**TreeApp**" as TAPP {
+    class "**TreeManager**" as TreeManager {
         # trees : list
+        + load_xml()
+        + save_xml()
         + create_tree()
         + destroy_tree()
     }
-    class "**Displayer**" as Disp {
-        + update_displayed_tree()
-    }
 
-    TAPP -left-> T
-    TAPP -right-> Disp
-    Disp -right-> "**Treeview**"
+    class "**TreeApp**" as TreeApp {}
+    class "**Treeview**" as Treeview {}
 
-    class "**XmlManager**" as R {
-        + load_data()
-        + save_data()
-    }
+    TreeManager -left-> Tree
+    TreeApp -right-> Treeview
 
-    R <-- TAPP
+    class "**Xml**" as Xml {}
+
+    TreeManager <-right-TreeApp
+    Xml <-- TreeManager
     
 
 @enduml
