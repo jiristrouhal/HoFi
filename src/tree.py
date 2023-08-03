@@ -25,6 +25,7 @@ class ThingWithBranches(abc.ABC):
         on:Literal['add_branch','remove_branch','rename_branch'],
         action:Callable[[Dict[str,str]],None]
         )->None: 
+
         self._actions[on].append(action)
 
     def _set_parent(self,new_parent:ThingWithBranches)->None:
