@@ -1,7 +1,4 @@
 from __future__ import annotations
-import tkinter
-from tkinter.ttk import Treeview
-import xml.etree.ElementTree as et
 from typing import List, Tuple, Dict, Any
 import abc
 import re
@@ -9,8 +6,48 @@ import re
 
 class ThingWithBranches(abc.ABC):
 
-    def __init__(self)->None:
-        self._branches:List[Branch] = list()
+    def __init__(self,name:str="",attributes:Dict[str,Any]={})->None:
+        self._attributes = {k:str(v) for k,v in attributes.items()} 
+        self._attributes["name"] = name.strip()
+        self._branches:List[ThingWithBranches] = list()
+        self._parent:ThingWithBranches|None = None
+    
+    @property
+    def name(self)->str: return self._attributes["name"]
+    @property
+    def attributes(self)->Dict[str,str]: return self._attributes.copy()
+    @property 
+    def parent(self)->ThingWithBranches|None: return self._parent
+
+    def _set_parent(self,new_parent:ThingWithBranches)->None:
+        if self._parent is not None: 
+            self._parent._branches.remove(self)
+        # if the name already exists under the new parent, change the current name
+        while new_parent._find_branch(self.name) is not None: 
+            self._attributes["name"] = self._change_name_if_already_taken(self.name)
+        self._parent = new_parent
+        self._parent._branches.append(self)
+
+    def _change_name_if_already_taken(self,name:str)->str:
+        PATTERN = "[\s\S]*\(\d+\)"
+        if re.fullmatch(PATTERN,name):
+            s = name[:-1].strip() # get rid of closing parenthesis and spaces before that
+            # extract the number inside the parentheses
+            number_str = ""
+            while re.fullmatch("[\d]",s[-1]):
+                number_str += s[-1]
+                s = s[:-1]
+            number_str = str(int(number_str)+1)
+            name = s.strip() + number_str+')'
+        else:
+            name += " (1)"
+        return name
+
+    def rename(self,name:str)->None:
+        if self._parent is not None:
+            if self._parent._find_branch(name) is not None:
+                name = self._change_name_if_already_taken(name)
+        self._attributes["name"] = name.strip()
 
     def branches(self,*branches_along_the_path:str)->List[str]: 
         if branches_along_the_path:
@@ -41,7 +78,7 @@ class ThingWithBranches(abc.ABC):
                 parent = self._find_branch(*new_branch_parent_path)
                 if parent is not None: branch._set_parent(parent)
 
-    def remove_branch(self,*branch_names:str)->Branch|None:
+    def remove_branch(self,*branch_names:str)->ThingWithBranches|None:
         if len(branch_names)>1:
             parent_branch = self._find_branch(*branch_names[:-1])
             if parent_branch is None: 
@@ -70,7 +107,7 @@ class ThingWithBranches(abc.ABC):
             if x!=y: return False
         return True
     
-    def _find_branch(self,*branch_names:str)->Branch|None:
+    def _find_branch(self,*branch_names:str)->ThingWithBranches|None:
         if not branch_names: return None
         parent_name = branch_names[0]
         for branch in self._branches:
@@ -81,57 +118,9 @@ class ThingWithBranches(abc.ABC):
         return None
     
     
-    
-class Tree(ThingWithBranches):
-    pass
+class Tree(ThingWithBranches): pass
+class Branch(ThingWithBranches): pass
 
 
-class Branch(ThingWithBranches):
-
-    def __init__(self,name:str,attributes:Dict[str,Any])->None:
-        self.__name = name.strip()
-        self.__attributes = {k:str(v) for k,v in attributes.items()} 
-        self.__parent:ThingWithBranches|None = None
-        super().__init__()
-
-    @property
-    def name(self)->str: return self.__name
-    @property
-    def attributes(self)->Dict[str,str]: 
-        attrs = self.__attributes.copy()
-        attrs["name"] = self.name
-        return attrs
-    @property 
-    def parent(self)->ThingWithBranches|None: return self.__parent
-
-    def _set_parent(self,new_parent:ThingWithBranches)->None:
-        if self.__parent is not None: 
-            self.__parent._branches.remove(self)
-        # if the name already exists under the new parent, change the current name
-        while new_parent._find_branch(self.name) is not None: 
-            self.__name = self._change_name_if_already_taken(self.name)
-        self.__parent = new_parent
-        self.__parent._branches.append(self)
-
-    def _change_name_if_already_taken(self,name:str)->str:
-        PATTERN = "[\s\S]*\(\d+\)"
-        if re.fullmatch(PATTERN,name):
-            s = name[:-1].strip() # get rid of closing parenthesis and spaces before that
-            # extract the number inside the parentheses
-            number_str = ""
-            while re.fullmatch("[\d]",s[-1]):
-                number_str += s[-1]
-                s = s[:-1]
-            number_str = str(int(number_str)+1)
-            name = s.strip() + number_str+')'
-        else:
-            name += " (1)"
-        return name
-
-    def rename(self,name:str)->None:
-        if self.__parent is not None:
-            if self.__parent._find_branch(name) is not None:
-                name = self._change_name_if_already_taken(name)
-        self.__name = name.strip()
 
 
