@@ -67,16 +67,15 @@ class ThingWithBranches(abc.ABC):
         return [b.name for b in self._branches]
     
     def add_branch(self,name:str,attributes:Dict[str,Any]=dict(),*branches_along_the_path:str)->None:
-        branch = Branch(name,attributes)
         if branches_along_the_path:
             # add the new branch to some sub-branch
             smallest_parent_branch = self._find_branch(*branches_along_the_path)
             if smallest_parent_branch is not None: 
-                branch._set_parent(smallest_parent_branch)
+                Branch(name,attributes)._set_parent(smallest_parent_branch)
             else:
                 return
         # add the branch directly to the current object
-        else: branch._set_parent(self)
+        else: Branch(name,attributes)._set_parent(self)
         for action in self._actions['add_branch']: action({})
         
     def move_branch(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...])->None:
