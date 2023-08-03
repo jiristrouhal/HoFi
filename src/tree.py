@@ -11,7 +11,8 @@ class ThingWithBranches(abc.ABC):
         self._attributes["name"] = name.strip()
         self._branches:List[ThingWithBranches] = list()
         self._parent:ThingWithBranches|None = None
-        self._actions:Dict[str,List[Callable[[Dict[str,str]],None]]] = dict()
+        self._actions:Dict[str,List[Callable[[Dict[str,str]],None]]] = \
+            {'add_branch':[], 'remove_branch':[], 'rename_branch':[]}
     @property
     def name(self)->str: return self._attributes["name"]
     @property
@@ -21,11 +22,9 @@ class ThingWithBranches(abc.ABC):
 
     def add_action(
         self,
-        on:Literal['add_branch','remove_branch'],
+        on:Literal['add_branch','remove_branch','rename_branch'],
         action:Callable[[Dict[str,str]],None]
         )->None: 
-
-        if on not in self._actions: self._actions[on] = list()
         self._actions[on].append(action)
 
     def _set_parent(self,new_parent:ThingWithBranches)->None:
@@ -72,10 +71,13 @@ class ThingWithBranches(abc.ABC):
         if branches_along_the_path:
             # add the new branch to some sub-branch
             smallest_parent_branch = self._find_branch(*branches_along_the_path)
-            if smallest_parent_branch is not None: branch._set_parent(smallest_parent_branch)
+            if smallest_parent_branch is not None: 
+                branch._set_parent(smallest_parent_branch)
+            else:
+                return
         # add the branch directly to the current object
         else: branch._set_parent(self)
-
+        for action in self._actions['add_branch']: action({})
         
     def move_branch(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...])->None:
         if self._does_path_point_to_child_of_branch_or_to_branch_itself(branch_path,new_branch_parent_path):
@@ -88,22 +90,27 @@ class ThingWithBranches(abc.ABC):
                 if parent is not None: branch._set_parent(parent)
 
     def remove_branch(self,*branch_names:str)->ThingWithBranches|None:
+        removed_branch = None
         if len(branch_names)>1:
             parent_branch = self._find_branch(*branch_names[:-1])
-            if parent_branch is None: 
-                return None
-            return parent_branch.remove_branch(*branch_names[1:])
+            if parent_branch is not None: 
+                removed_branch = parent_branch.remove_branch(*branch_names[1:])
 
         # the branch to be deleted is supposed to be a child of the current object
-        branch_to_be_removed = self._find_branch(branch_names[-1])
-        if branch_to_be_removed is not None:
-            if branch_to_be_removed.branches(): return None
-            self._branches.remove(branch_to_be_removed)
-        return branch_to_be_removed
+        removed_branch = self._find_branch(branch_names[-1])
+        if removed_branch is not None:
+            if not removed_branch.branches(): 
+                self._branches.remove(removed_branch)
+
+        if removed_branch is not None:
+            for action in self._actions['remove_branch']: action({})
+        return removed_branch
     
     def rename_branch(self,branch_path:Tuple[str,...],new_name:str)->None:
         branch = self._find_branch(*branch_path)
-        if branch is not None: branch.rename(new_name)
+        if branch is not None: 
+            branch.rename(new_name)
+            for action in self._actions['rename_branch']: action({})
     
     def _does_path_point_to_child_of_branch_or_to_branch_itself(
         self,

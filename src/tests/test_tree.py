@@ -131,9 +131,29 @@ class Test_Actions(unittest.TestCase):
 
     def setUp(self) -> None:
         self.tree = tree.Tree("Tree 1")
+        self.tree.add_branch("Branch X")
+        self.x = 0
     
     def test_add_action_on_adding_new_branch(self):
-        pass
+        def foo(y): self.x=1
+        self.tree.add_action('add_branch',foo)
+        self.assertEqual(self.x,0)
+        self.tree.add_branch("Branch Y")
+        self.assertEqual(self.x,1)
+
+    def test_add_action_on_removing_branch(self):
+        def foo(y): self.x = 3
+        self.tree.add_action('remove_branch',foo)
+        self.assertEqual(self.x,0)
+        self.tree.remove_branch("Branch X")
+        self.assertEqual(self.x,3)
+
+    def test_add_action_on_renaming_branch(self):
+        def foo(y): self.x = 5
+        self.tree.add_action('rename_branch',foo)
+        self.assertEqual(self.x,0)
+        self.tree.rename_branch(("Branch X",), "Branch Y")
+        self.assertEqual(self.x,5)
 
 
 
