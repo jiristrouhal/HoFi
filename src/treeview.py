@@ -15,3 +15,6 @@ class Treeview:
     
     def add_tree(self,tree:treemod.Tree)->None: 
         self.__widget.insert("","end",iid=tree.name)
+
+    def remove_tree(self,name:str)->None:
+        self.__widget.delete(name)
