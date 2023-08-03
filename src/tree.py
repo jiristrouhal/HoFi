@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Callable, Literal
 import abc
 import re
 
@@ -11,13 +11,22 @@ class ThingWithBranches(abc.ABC):
         self._attributes["name"] = name.strip()
         self._branches:List[ThingWithBranches] = list()
         self._parent:ThingWithBranches|None = None
-    
+        self._actions:Dict[str,List[Callable[[Dict[str,str]],None]]] = dict()
     @property
     def name(self)->str: return self._attributes["name"]
     @property
     def attributes(self)->Dict[str,str]: return self._attributes.copy()
     @property 
     def parent(self)->ThingWithBranches|None: return self._parent
+
+    def add_action(
+        self,
+        on:Literal['add_branch','remove_branch'],
+        action:Callable[[Dict[str,str]],None]
+        )->None: 
+
+        if on not in self._actions: self._actions[on] = list()
+        self._actions[on].append(action)
 
     def _set_parent(self,new_parent:ThingWithBranches)->None:
         if self._parent is not None: 

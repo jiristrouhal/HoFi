@@ -127,5 +127,14 @@ class Test_Creating_Tree(unittest.TestCase):
         self.assertListEqual(self.tree.branches(),["Branch 1","Branch 1 (1)"])
 
 
+class Test_Actions(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.tree = tree.Tree("Tree 1")
+    
+    def test_add_action_on_adding_new_branch(self):
+        pass
+
+
 
 if __name__=="__main__": unittest.main()
