@@ -51,7 +51,7 @@ class Test_Managing_Trees(unittest.TestCase):
         self.assertListEqual(self.app_instance.trees,["Tree 1"])
 
 
-class Test_Saving_Trees(unittest.TestCase):
+class Test_Saving_And_Loading_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
         self.app_instance = app.App()
