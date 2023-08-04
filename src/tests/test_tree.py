@@ -135,7 +135,7 @@ class Test_Actions(unittest.TestCase):
         self.x = 0
     
     def test_add_action_on_adding_new_branch(self):
-        def foo(y): self.x=1
+        def foo(*args): self.x=1
         self.tree.add_action('add_branch',foo)
         self.assertEqual(self.x,0)
         self.tree.add_branch("Branch Y")

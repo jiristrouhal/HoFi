@@ -4,34 +4,35 @@ import abc
 import re
 
 
-class ThingWithBranches(abc.ABC):
+class TWB(abc.ABC):
 
     def __init__(self,name:str="",attributes:Dict[str,Any]=dict())->None:
         self._attributes = {k:str(v) for k,v in attributes.items()} 
         self._attributes["name"] = name.strip()
-        self._branches:List[ThingWithBranches] = list()
-        self._parent:ThingWithBranches|None = None
-        self._actions:Dict[str,List[Callable[[Dict[str,str]],None]]] = \
-            {
-                'add_branch':[], 
-                'remove_branch':[], 
-                'rename_branch':[]}
+        self._branches:List[TWB] = list()
+        self._parent:TWB|None = None
+        self._actions:Dict[str,List[Callable]] = \
+        {
+            'add_branch':[], 
+            'remove_branch':[], 
+            'rename_branch':[]
+        }
     @property
     def name(self)->str: return self._attributes["name"]
     @property
     def attributes(self)->Dict[str,str]: return self._attributes.copy()
     @property 
-    def parent(self)->ThingWithBranches|None: return self._parent
+    def parent(self)->TWB|None: return self._parent
 
     def add_action(
         self,
         on:Literal['add_branch','remove_branch','rename_branch'],
-        action:Callable[[Dict[str,str]],None]
+        action:Callable[[TWB,TWB],None]
         )->None: 
 
         self._actions[on].append(action)
 
-    def _set_parent(self,new_parent:ThingWithBranches)->None:
+    def _set_parent(self,new_parent:TWB)->None:
         if self._parent is not None: 
             self._parent._branches.remove(self)
         # if the name already exists under the new parent, change the current name
@@ -75,10 +76,12 @@ class ThingWithBranches(abc.ABC):
             # add the new branch to some sub-branch
             smallest_parent_branch = self._find_branch(*branches_along_the_path)
             if smallest_parent_branch is None: return
-            Branch(name,attributes)._set_parent(smallest_parent_branch)
-        # add the branch directly to the current object
-        else: Branch(name,attributes)._set_parent(self)
-        for action in self._actions['add_branch']: action({})
+            smallest_parent_branch.add_branch(name,attributes)
+        else:  # add the branch directly to the current object
+            branch = Branch(name,attributes)
+            branch._set_parent(self)
+            for action in self._actions['add_branch']: 
+                action(self,branch)
         
     def move_branch(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...])->None:
         if self._does_path_point_to_child_of_branch_or_to_branch_itself(branch_path,new_branch_parent_path):
@@ -116,7 +119,7 @@ class ThingWithBranches(abc.ABC):
             if x!=y: return False
         return True
     
-    def _find_branch(self,*branch_names:str)->ThingWithBranches|None:
+    def _find_branch(self,*branch_names:str)->TWB|None:
         if not branch_names: return None
         parent_name = branch_names[0]
         for branch in self._branches:
@@ -127,8 +130,8 @@ class ThingWithBranches(abc.ABC):
         return None
     
     
-class Tree(ThingWithBranches): pass
-class Branch(ThingWithBranches): pass
+class Tree(TWB): pass
+class Branch(TWB): pass
 
 
 
