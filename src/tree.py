@@ -15,22 +15,33 @@ class TWB(abc.ABC):
         {
             'add_branch':[], 
             'on_removal':[], 
-            'on_renaming':[]
+            'on_renaming':[],
+            'on_moving':[]
         }
+        self._data:Dict[str,Any] = dict()
     @property
     def name(self)->str: return self._attributes["name"]
     @property
     def attributes(self)->Dict[str,str]: return self._attributes.copy()
     @property 
     def parent(self)->TWB|None: return self._parent
+    @property
+    def data(self)->Dict[str,Any]: return self._data.copy()
 
     def add_action(
         self,
-        on:Literal['add_branch','on_removal','on_renaming'],
+        on:Literal['add_branch','on_removal','on_renaming','on_moving'],
         action:Callable[[TWB,TWB],None]
         )->None: 
 
         self._actions[on].append(action)
+
+    def add_data(self,new_key:str,value:Any)->None:
+        if new_key in self._data: 
+            raise KeyError(
+                f"Branch/tree {self.name}: Cannot add value to already existing key ({new_key})."
+            )
+        self._data[new_key] = value
 
     def _set_parent(self,new_parent:TWB)->None:
         if self._parent is not None: 
@@ -92,6 +103,9 @@ class TWB(abc.ABC):
             else:
                 parent = self._find_branch(*new_branch_parent_path)
                 if parent is not None: branch._set_parent(parent)
+
+            for action in branch._actions['on_moving']: 
+                action(parent,branch)
 
     def remove_branch(self,*branch_path:str)->None:
         if len(branch_path)>1:

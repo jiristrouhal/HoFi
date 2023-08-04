@@ -18,6 +18,7 @@ class Treeview:
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
         # create action, that the tree object will run after it creates a new branch
         self._widget.insert("","end",iid=tree.name)
+        tree.add_data("treeview_iid",tree.name)
         tree.add_action('add_branch', partial(self._on_new_child,tree.name))
 
     def remove_tree(self,name:str)->None:
@@ -36,9 +37,15 @@ class Treeview:
         new_branch.add_action('add_branch', partial(self._on_new_child, branch_iid))
         new_branch.add_action('on_removal', partial(self._on_removal, branch_iid))
         new_branch.add_action('on_renaming', partial(self._on_renaming, branch_iid))
+        new_branch.add_action('on_moving', partial(self._on_moving, branch_iid))
+        new_branch.add_data("treeview_iid",branch_iid)
 
     def _on_removal(self,branch_iid:str,branch_parent:treemod.TWB, new_branch:treemod.TWB)->None:
         self._widget.delete(branch_iid)
 
     def _on_renaming(self,branch_iid:str,branch_parent:treemod.TWB, branch:treemod.TWB)->None:
         self._widget.item(branch_iid,text=branch.name)
+
+    def _on_moving(self,branch_iid:str,new_parent:treemod.TWB, branch:treemod.TWB)->None:
+        self._widget.move(branch_iid, new_parent.data["treeview_iid"], -1)
+ 
