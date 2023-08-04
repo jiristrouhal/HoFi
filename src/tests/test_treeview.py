@@ -51,6 +51,11 @@ class Test_Empty_Trees(unittest.TestCase):
         self.tree1.add_branch("Branch X")
         self.tree1.remove_branch("Branch X")
         self.assertEqual(self.view._widget.get_children("Tree 1"), ())
+
+    def test_removing_nonexistent_branch_does_not_alter_the_treeview(self):
+        self.tree1.add_branch("Branch X")
+        self.tree1.remove_branch("Nonexistent branch")
+        self.assertEqual(len(self.view._widget.get_children("Tree 1")), 1)
         
 
 if __name__=="__main__": unittest.main()
