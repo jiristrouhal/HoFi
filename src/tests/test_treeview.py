@@ -47,6 +47,15 @@ class Test_Empty_Trees(unittest.TestCase):
         branch_x_iid = self.view._widget.get_children("Tree 1")[0]
         self.assertEqual(len(self.view._widget.get_children(branch_x_iid)), 1)
 
+    def test_adding_branch_with_already_existing_name_makes_treeview_show_the_adjusted_name(self):
+        self.tree1.add_branch("Branch X")
+        self.tree1.add_branch("Branch X")
+        adjusted_name = self.tree1._branches[-1].name
+        self.assertEqual(
+            self.view._widget.item(self.view._widget.get_children("Tree 1")[-1])["text"],
+            adjusted_name
+        )
+
     def test_removing_branch_from_tree_removes_element_from_the_treeview(self):
         self.tree1.add_branch("Branch X")
         self.tree1.remove_branch("Branch X")
