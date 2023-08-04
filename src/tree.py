@@ -14,7 +14,7 @@ class TWB(abc.ABC):
         self._actions:Dict[str,List[Callable]] = \
         {
             'add_branch':[], 
-            'remove_branch':[], 
+            'on_removal':[], 
             'rename_branch':[]
         }
     @property
@@ -26,7 +26,7 @@ class TWB(abc.ABC):
 
     def add_action(
         self,
-        on:Literal['add_branch','remove_branch','rename_branch'],
+        on:Literal['add_branch','on_removal','rename_branch'],
         action:Callable[[TWB,TWB],None]
         )->None: 
 
@@ -102,6 +102,8 @@ class TWB(abc.ABC):
         branch_to_be_removed = self._find_branch(branch_path[-1])
         if branch_to_be_removed is None or branch_to_be_removed.branches(): return
             
+        for action in branch_to_be_removed._actions['on_removal']: 
+            action(self,branch_to_be_removed)
         self._branches.remove(branch_to_be_removed)
     
     def rename_branch(self,branch_path:Tuple[str,...],new_name:str)->None:

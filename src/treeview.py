@@ -18,8 +18,7 @@ class Treeview:
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
         # create action, that the tree object will run after it creates a new branch
         self._widget.insert("","end",iid=tree.name)
-        foo = partial(self._on_new_child,tree.name)
-        tree.add_action('add_branch', foo)
+        tree.add_action('add_branch', partial(self._on_new_child,tree.name))
 
     def remove_tree(self,name:str)->None:
         if name not in self.trees: raise ValueError(f"Trying to delete nonexistent tree with name {name}.\n"
@@ -34,5 +33,8 @@ class Treeview:
         )->None:
 
         branch_iid = self._widget.insert(parent_iid,"end",text=new_branch.name)
-        goo = partial(self._on_new_child, branch_iid)
-        new_branch.add_action('add_branch', goo)
+        new_branch.add_action('add_branch', partial(self._on_new_child, branch_iid))
+        new_branch.add_action('on_removal', partial(self._on_removal, branch_iid))
+
+    def _on_removal(self,branch_iid:str,branch_parent:treemod.TWB, new_branch:treemod.TWB)->None:
+        self._widget.delete(branch_iid)
