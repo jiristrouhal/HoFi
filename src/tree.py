@@ -89,22 +89,17 @@ class ThingWithBranches(abc.ABC):
                 parent = self._find_branch(*new_branch_parent_path)
                 if parent is not None: branch._set_parent(parent)
 
-    def remove_branch(self,*branch_names:str)->ThingWithBranches|None:
-        removed_branch = None
-        if len(branch_names)>1:
-            parent_branch = self._find_branch(*branch_names[:-1])
+    def remove_branch(self,*branch_path:str)->None:
+        if len(branch_path)>1:
+            parent_branch = self._find_branch(*branch_path[:-1])
             if parent_branch is not None: 
-                removed_branch = parent_branch.remove_branch(*branch_names[1:])
+                parent_branch.remove_branch(*branch_path[1:])
 
-        # the branch to be deleted is supposed to be a child of the current object
-        removed_branch = self._find_branch(branch_names[-1])
-        if removed_branch is not None:
-            if not removed_branch.branches(): 
-                self._branches.remove(removed_branch)
-
-        if removed_branch is not None:
-            for action in self._actions['remove_branch']: action({})
-        return removed_branch
+        branch_to_be_removed = self._find_branch(branch_path[-1])
+        if branch_to_be_removed is None or branch_to_be_removed.branches(): return
+            
+        for action in self._actions['remove_branch']: action({})
+        self._branches.remove(branch_to_be_removed)
     
     def rename_branch(self,branch_path:Tuple[str,...],new_name:str)->None:
         branch = self._find_branch(*branch_path)
