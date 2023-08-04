@@ -12,7 +12,10 @@ class ThingWithBranches(abc.ABC):
         self._branches:List[ThingWithBranches] = list()
         self._parent:ThingWithBranches|None = None
         self._actions:Dict[str,List[Callable[[Dict[str,str]],None]]] = \
-            {'add_branch':[], 'remove_branch':[], 'rename_branch':[]}
+            {
+                'add_branch':[], 
+                'remove_branch':[], 
+                'rename_branch':[]}
     @property
     def name(self)->str: return self._attributes["name"]
     @property
@@ -98,14 +101,11 @@ class ThingWithBranches(abc.ABC):
         branch_to_be_removed = self._find_branch(branch_path[-1])
         if branch_to_be_removed is None or branch_to_be_removed.branches(): return
             
-        for action in self._actions['remove_branch']: action({})
         self._branches.remove(branch_to_be_removed)
     
     def rename_branch(self,branch_path:Tuple[str,...],new_name:str)->None:
         branch = self._find_branch(*branch_path)
-        if branch is not None: 
-            branch.rename(new_name)
-            for action in self._actions['rename_branch']: action({})
+        if branch is not None: branch.rename(new_name)
     
     def _does_path_point_to_child_of_branch_or_to_branch_itself(
         self,

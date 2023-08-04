@@ -35,6 +35,13 @@ class Test_Empty_Trees(unittest.TestCase):
     def test_adding_branch_to_tree_adds_element_to_the_treeview(self):
         self.tree1.add_branch("Branch X")
         self.assertEqual(len(self.view._widget.get_children("Tree 1")), 1)
+    
+    def __test_adding_branch_to_tree_branch_adds_element_to_the_treeview(self):
+        self.tree1.add_branch("Branch X")
+        self.tree1.add_branch("Small branch",{},"Branch X")
+        self.assertEqual(len(self.view._widget.get_children("Tree 1")), 1)
+        branch_x_iid = self.view._widget.get_children("Tree 1")[0]
+        self.assertEqual(len(self.view._widget.get_children(branch_x_iid)), 1)
         
 
 if __name__=="__main__": unittest.main()
