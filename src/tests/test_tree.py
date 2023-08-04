@@ -141,6 +141,13 @@ class Test_Actions(unittest.TestCase):
         self.tree.add_branch("Branch Y")
         self.assertEqual(self.x,1)
 
+    def test_adding_values_to_branch_data(self):
+        self.tree._branches[0].add_data("key1", 123)
+        self.assertEqual(self.tree._branches[0].data["key1"], 123)
+
+    def test_adding_values_to_branch_data_under_existing_key_raises_error(self):
+        self.tree._branches[0].add_data("key1", 123)
+        self.assertRaises(KeyError, self.tree._branches[0].add_data, "key1", 456)
 
 
 if __name__=="__main__": unittest.main()
