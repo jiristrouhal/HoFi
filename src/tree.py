@@ -15,7 +15,7 @@ class TWB(abc.ABC):
         {
             'add_branch':[], 
             'on_removal':[], 
-            'rename_branch':[]
+            'on_renaming':[]
         }
     @property
     def name(self)->str: return self._attributes["name"]
@@ -26,7 +26,7 @@ class TWB(abc.ABC):
 
     def add_action(
         self,
-        on:Literal['add_branch','on_removal','rename_branch'],
+        on:Literal['add_branch','on_removal','on_renaming'],
         action:Callable[[TWB,TWB],None]
         )->None: 
 
@@ -108,7 +108,10 @@ class TWB(abc.ABC):
     
     def rename_branch(self,branch_path:Tuple[str,...],new_name:str)->None:
         branch = self._find_branch(*branch_path)
-        if branch is not None: branch.rename(new_name)
+        if branch is None: return
+        branch.rename(new_name)
+        for action in branch._actions['on_renaming']: 
+            action(self,branch)
     
     def _does_path_point_to_child_of_branch_or_to_branch_itself(
         self,

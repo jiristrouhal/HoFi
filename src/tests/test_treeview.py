@@ -65,6 +65,23 @@ class Test_Empty_Trees(unittest.TestCase):
         self.tree1.add_branch("Branch X")
         self.tree1.remove_branch("Nonexistent branch")
         self.assertEqual(len(self.view._widget.get_children("Tree 1")), 1)
+
+    def test_renaming_branch_is_reflected_in_the_treeview(self):
+        self.tree1.add_branch("Branch X")
+        self.tree1.rename_branch(("Branch X",), "Branch Y")
+        self.assertEqual(
+            self.view._widget.item(self.view._widget.get_children("Tree 1")[-1])["text"],
+            "Branch Y"
+        )
+
+    def test_renaming_nonexistent_branch_does_not_affect_the_treeview(self):
+        self.tree1.add_branch("Branch X")
+        self.tree1.rename_branch(("Branch XXXX",), "Branch Y")
+        self.assertEqual(
+            self.view._widget.item(self.view._widget.get_children("Tree 1")[-1])["text"],
+            "Branch X"
+        )
+
         
 
 if __name__=="__main__": unittest.main()

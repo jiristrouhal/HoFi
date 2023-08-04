@@ -35,6 +35,10 @@ class Treeview:
         branch_iid = self._widget.insert(parent_iid,"end",text=new_branch.name)
         new_branch.add_action('add_branch', partial(self._on_new_child, branch_iid))
         new_branch.add_action('on_removal', partial(self._on_removal, branch_iid))
+        new_branch.add_action('on_renaming', partial(self._on_renaming, branch_iid))
 
     def _on_removal(self,branch_iid:str,branch_parent:treemod.TWB, new_branch:treemod.TWB)->None:
         self._widget.delete(branch_iid)
+
+    def _on_renaming(self,branch_iid:str,branch_parent:treemod.TWB, branch:treemod.TWB)->None:
+        self._widget.item(branch_iid,text=branch.name)
