@@ -74,10 +74,8 @@ class ThingWithBranches(abc.ABC):
         if branches_along_the_path:
             # add the new branch to some sub-branch
             smallest_parent_branch = self._find_branch(*branches_along_the_path)
-            if smallest_parent_branch is not None: 
-                Branch(name,attributes)._set_parent(smallest_parent_branch)
-            else:
-                return
+            if smallest_parent_branch is None: return
+            Branch(name,attributes)._set_parent(smallest_parent_branch)
         # add the branch directly to the current object
         else: Branch(name,attributes)._set_parent(self)
         for action in self._actions['add_branch']: action({})
