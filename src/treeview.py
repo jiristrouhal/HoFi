@@ -5,11 +5,14 @@ import tree as treemod
 from functools import partial
 
 
+MENU_CMD_BRANCH_DELETE = "Delete"
+
+
 class Treeview:
 
     def __init__(self, parent:tk.Widget|None = None)->None:
         self._widget = ttk.Treeview(parent)
-        self._widget.bind("<Button-3>",self._open_right_click_menu)
+        self._widget.bind("<Button-3>",self.right_click_item)
         self._map:Dict[str,treemod.Branch] = dict()
 
     @property
@@ -40,7 +43,6 @@ class Treeview:
 
         branch_iid = self._widget.insert(parent_iid,"end",text=new_branch.name)
         self._map[branch_iid] = new_branch
-
         new_branch.add_action('add_branch', partial(self._on_new_child, branch_iid))
         new_branch.add_action('on_removal', partial(self._on_removal, branch_iid))
         new_branch.add_action('on_renaming', partial(self._on_renaming, branch_iid))
@@ -57,7 +59,26 @@ class Treeview:
 
     def _on_moving(self,branch_iid:str,new_parent:treemod.TWB)->None:
         self._widget.move(branch_iid, new_parent.data["treeview_iid"], -1)
- 
-    @staticmethod
-    def _open_right_click_menu(event:tk.Event)->None:
+
+
+    def right_click_item(self,event:tk.Event)->None:
+        item_id = self._widget.identify_row(event.y)
+        if item_id.strip()=="": return 
+        self._open_right_click_menu_for_item(item_id)
+    
+    def _open_right_click_menu_for_item(self,item_id:str)->tk.Menu:
+        branch = self._map[item_id]
+        menu = tk.Menu(master=self._widget, tearoff=False)
+        menu.add_command(
+            label="Edit",
+            command=partial(self.open_edit_window,branch)
+        )
+        menu.add_command(
+            label=MENU_CMD_BRANCH_DELETE,
+            command=partial(branch.parent.remove_branch,branch.name)
+        )
+        return menu
+
+    def open_edit_window(self,branch:treemod.Branch)->None:
         pass
+        

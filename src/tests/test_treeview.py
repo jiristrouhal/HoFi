@@ -107,6 +107,24 @@ class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
         self.tree1.add_branch("Branch X")
         nonexistent_iid = "Nonexistent iid"
         self.assertEqual(self.view.branch(nonexistent_iid), None)
+
+
+class Test_Right_Click_Menu(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.view = treeview.Treeview()
+        self.tree1 = Tree("Tree 1")
+        self.view.add_tree_to_widget(self.tree1)
+
+    def test_creating_the_menu_for_branch(self):
+        self.tree1.add_branch("Branch X")
+        branch_x_iid = self.view._widget.get_children("Tree 1")[-1]
+        menu = self.view._open_right_click_menu_for_item(branch_x_iid)
+        self.assertListEqual(self.tree1.branches(),["Branch X"])
+        menu.invoke(treeview.MENU_CMD_BRANCH_DELETE)
+        self.assertListEqual(self.tree1.branches(),[])
+
+
         
 
 if __name__=="__main__": unittest.main()
