@@ -112,11 +112,6 @@ class Treeview:
         self.edit_window.destroy()
         self.edit_window = None
 
-    def _set_entry(self,entry_key:str,new_value:str)->None:
-        if entry_key not in self.edit_entries: return
-        self.edit_entries[entry_key].delete(0,"end")
-        self.edit_entries[entry_key].insert(0,new_value)
-
 
 
             
