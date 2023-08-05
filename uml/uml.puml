@@ -74,9 +74,17 @@
 skinparam Shadowing false
 skinparam Style strictuml
 
-    create Treeview
+    User -> Treeview: Select branch
+    activate Treeview
+    create PopUpMenu
+    Treeview -> PopUpMenu: Create
+    PopUpMenu -> Treeview: Select action
+    create EditWindow
+    destroy PopUpMenu
+
     create EditWindow
     Treeview -> EditWindow: Create
+    User -> EditWindow: Set entries, Confirm
     Branch <- EditWindow: Update
     destroy EditWindow
 

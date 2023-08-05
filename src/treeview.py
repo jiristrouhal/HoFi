@@ -9,6 +9,7 @@ class Treeview:
 
     def __init__(self, parent:tk.Widget|None = None)->None:
         self._widget = ttk.Treeview(parent)
+        self._widget.bind("<Button-3>",self._open_right_click_menu)
 
     @property
     def trees(self)->Tuple[str,...]: 
@@ -48,3 +49,6 @@ class Treeview:
     def _on_moving(self,branch_iid:str,new_parent:treemod.TWB)->None:
         self._widget.move(branch_iid, new_parent.data["treeview_iid"], -1)
  
+    @staticmethod
+    def _open_right_click_menu(event:tk.Event)->None:
+        pass
