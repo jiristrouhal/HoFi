@@ -1,12 +1,12 @@
 import tkinter.ttk as ttk
 import tkinter as tk
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Callable
 import tree as treemod
 from functools import partial
 
 
 MENU_CMD_BRANCH_DELETE = "Delete"
-
+MENU_CMD_BRANCH_EDIT = "Edit"
 
 class Treeview:
 
@@ -14,6 +14,8 @@ class Treeview:
         self._widget = ttk.Treeview(parent)
         self._widget.bind("<Button-3>",self.right_click_item)
         self._map:Dict[str,treemod.Branch] = dict()
+        self.right_click_menu:tk.Menu|None = None
+        self.edit_window:tk.Toplevel|None = None
 
     @property
     def trees(self)->Tuple[str,...]: 
@@ -65,19 +67,24 @@ class Treeview:
         item_id = self._widget.identify_row(event.y)
         if item_id.strip()=="": return 
         self._open_right_click_menu_for_item(item_id)
+
+    def _right_click_menu_command(self,cmd:Callable)->Callable:
+        def menu_cmd(*args,**kwargs): 
+            cmd(*args,**kwargs)
+            self.right_click_menu.destroy()
+            self.right_click_menu = None
+        return menu_cmd
     
-    def _open_right_click_menu_for_item(self,item_id:str)->tk.Menu:
+    def _open_right_click_menu_for_item(self,item_id:str)->None:
         branch = self._map[item_id]
-        menu = tk.Menu(master=self._widget, tearoff=False)
-        menu.add_command(
-            label="Edit",
-            command=partial(self.open_edit_window,branch)
-        )
-        menu.add_command(
+        self.right_click_menu = tk.Menu(master=self._widget, tearoff=False)
+
+        self.right_click_menu.add_command(
+            label=MENU_CMD_BRANCH_EDIT,
+            command=self._right_click_menu_command(partial(self.open_edit_window,branch)))
+        self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_DELETE,
-            command=partial(branch.parent.remove_branch,branch.name)
-        )
-        return menu
+            command=self._right_click_menu_command(partial(branch.parent.remove_branch,branch.name)))
 
     def open_edit_window(self,branch:treemod.Branch)->None:
         pass

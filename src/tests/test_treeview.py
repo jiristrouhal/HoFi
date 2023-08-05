@@ -115,15 +115,24 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.view = treeview.Treeview()
         self.tree1 = Tree("Tree 1")
         self.view.add_tree_to_widget(self.tree1)
-
-    def test_creating_the_menu_for_branch(self):
         self.tree1.add_branch("Branch X")
-        branch_x_iid = self.view._widget.get_children("Tree 1")[-1]
-        menu = self.view._open_right_click_menu_for_item(branch_x_iid)
-        self.assertListEqual(self.tree1.branches(),["Branch X"])
-        menu.invoke(treeview.MENU_CMD_BRANCH_DELETE)
-        self.assertListEqual(self.tree1.branches(),[])
+        self.branch_x_iid = self.view._widget.get_children("Tree 1")[-1] 
+        self.view._open_right_click_menu_for_item(self.branch_x_iid)
 
+    def test_deleting_branch(self):
+        self.assertListEqual(self.tree1.branches(),["Branch X"])
+        self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_DELETE)
+        self.assertListEqual(self.tree1.branches(),[])
+    
+    def test_menu_is_destroyed_after_running_its_command(self):
+        self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_DELETE)
+        self.assertEqual(self.view.right_click_menu,None)
+
+    def __test_renaming_branch(self):
+        self.assertListEqual(self.tree1.branches(),["Branch X"])
+        self.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_EDIT)
+        self.view.edit_window.set_name("Branch Y")
+        self.assertListEqual(self.tree1.branches(),["Branch Y"])
 
         
 
