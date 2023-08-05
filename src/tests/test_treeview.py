@@ -115,7 +115,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.view = treeview.Treeview()
         self.tree1 = Tree("Tree 1")
         self.view.add_tree_to_widget(self.tree1)
-        self.tree1.add_branch("Branch X")
+        self.tree1.add_branch("Branch X", {"length":45})
         self.branch_x_iid = self.view._widget.get_children("Tree 1")[-1] 
         self.view._open_right_click_menu_for_item(self.branch_x_iid)
 
@@ -128,12 +128,17 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_DELETE)
         self.assertEqual(self.view.right_click_menu,None)
 
-    def __test_renaming_branch(self):
-        self.assertListEqual(self.tree1.branches(),["Branch X"])
-        self.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_EDIT)
-        self.view.edit_window.set_name("Branch Y")
-        self.assertListEqual(self.tree1.branches(),["Branch Y"])
+    def test_manually_changing_tkinter_entries_and_confirming_choice_rewrites_branch_attributes(self):
+        self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_EDIT)
 
-        
+        self.view.edit_entries["name"].delete(0,"end")
+        self.view.edit_entries["name"].insert(0,"Branch YZ")
+        self.view.edit_entries["length"].delete(0,"end")
+        self.view.edit_entries["length"].insert(0,"78")
+
+        self.view.confirm_edit_entry_values(self.branch_x_iid)
+        self.assertEqual(self.tree1.branches()[0],"Branch YZ")
+        self.assertEqual(self.tree1._branches[0].attributes["length"],"78")
+
 
 if __name__=="__main__": unittest.main()

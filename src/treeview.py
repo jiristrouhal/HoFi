@@ -16,6 +16,7 @@ class Treeview:
         self._map:Dict[str,treemod.Branch] = dict()
         self.right_click_menu:tk.Menu|None = None
         self.edit_window:tk.Toplevel|None = None
+        self.edit_entries:Dict[str,tk.Entry] = dict()
 
     @property
     def trees(self)->Tuple[str,...]: 
@@ -81,11 +82,37 @@ class Treeview:
 
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_EDIT,
-            command=self._right_click_menu_command(partial(self.open_edit_window,branch)))
+            command=self._right_click_menu_command(partial(self.open_edit_window,item_id)))
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_DELETE,
             command=self._right_click_menu_command(partial(branch.parent.remove_branch,branch.name)))
 
-    def open_edit_window(self,branch:treemod.Branch)->None:
-        pass
-        
+    def open_edit_window(self,branch_id:str)->None:
+        self.edit_window = tk.Toplevel(self._widget)
+        self.edit_entries = dict()
+        branch = self._map[branch_id]
+        row = 0
+        for key,value in branch.attributes.items(): 
+            label = tk.Label(self.edit_window,text=key)
+            label.grid(row=row,column=0)
+            entry = tk.Entry(self.edit_window)
+            entry.insert(0,value)
+            entry.grid(row=row,column=1)
+            self.edit_entries[key] = entry
+
+    def confirm_edit_entry_values(self,branch_id:str)->None:
+        if self.edit_window is None: return
+        for attribute, entry in self.edit_entries.items():
+            self._map[branch_id].set_attribute(attribute, entry.get())
+
+        self.edit_window.destroy()
+        self.edit_window = None
+
+    def _set_entry(self,entry_key:str,new_value:str)->None:
+        if entry_key not in self.edit_entries: return
+        self.edit_entries[entry_key].delete(0,"end")
+        self.edit_entries[entry_key].insert(0,new_value)
+
+
+
+            

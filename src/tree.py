@@ -43,6 +43,9 @@ class TWB(abc.ABC):
             )
         self._data[new_key] = value
 
+    def set_attribute(self,attr_name:str,value:str)->None:
+        if attr_name in self._attributes: self._attributes[attr_name] = value
+
     def _set_parent(self,new_parent:TWB)->None:
         if self._parent is not None: 
             self._parent._branches.remove(self)
