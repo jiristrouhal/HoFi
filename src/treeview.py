@@ -111,6 +111,8 @@ class Treeview:
 
         self.edit_window.destroy()
         self.edit_window = None
+        del self.edit_entries
+        self.edit_entries:Dict[str,tk.Entry] = dict()
 
 
 
