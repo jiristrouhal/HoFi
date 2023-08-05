@@ -29,7 +29,6 @@ class Treeview:
     def _on_new_child(
         self,
         parent_iid:str,
-        branch_parent:treemod.TWB,
         new_branch:treemod.TWB
         )->None:
 
@@ -40,12 +39,12 @@ class Treeview:
         new_branch.add_action('on_moving', partial(self._on_moving, branch_iid))
         new_branch.add_data("treeview_iid",branch_iid)
 
-    def _on_removal(self,branch_iid:str,branch_parent:treemod.TWB, new_branch:treemod.TWB)->None:
+    def _on_removal(self,branch_iid:str,*args)->None:
         self._widget.delete(branch_iid)
 
-    def _on_renaming(self,branch_iid:str,branch_parent:treemod.TWB, branch:treemod.TWB)->None:
+    def _on_renaming(self,branch_iid:str,branch:treemod.TWB)->None:
         self._widget.item(branch_iid,text=branch.name)
 
-    def _on_moving(self,branch_iid:str,new_parent:treemod.TWB, branch:treemod.TWB)->None:
+    def _on_moving(self,branch_iid:str,new_parent:treemod.TWB)->None:
         self._widget.move(branch_iid, new_parent.data["treeview_iid"], -1)
  

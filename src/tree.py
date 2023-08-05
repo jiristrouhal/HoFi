@@ -31,7 +31,7 @@ class TWB(abc.ABC):
     def add_action(
         self,
         on:Literal['add_branch','on_removal','on_renaming','on_moving'],
-        action:Callable[[TWB,TWB],None]
+        action:Callable[[TWB],None]
         )->None: 
 
         self._actions[on].append(action)
@@ -92,7 +92,7 @@ class TWB(abc.ABC):
             branch = Branch(name,attributes)
             branch._set_parent(self)
             for action in self._actions['add_branch']: 
-                action(self,branch)
+                action(branch)
         
     def move_branch(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...])->None:
         if self._does_path_point_to_child_of_branch_or_to_branch_itself(branch_path,new_branch_parent_path):
@@ -105,7 +105,7 @@ class TWB(abc.ABC):
                 if parent is not None: branch._set_parent(parent)
 
             for action in branch._actions['on_moving']: 
-                action(parent,branch)
+                action(parent)
 
     def remove_branch(self,*branch_path:str)->None:
         if len(branch_path)>1:
@@ -117,7 +117,7 @@ class TWB(abc.ABC):
         if branch_to_be_removed is None or branch_to_be_removed.branches(): return
             
         for action in branch_to_be_removed._actions['on_removal']: 
-            action(self,branch_to_be_removed)
+            action(branch_to_be_removed)
         self._branches.remove(branch_to_be_removed)
     
     def rename_branch(self,branch_path:Tuple[str,...],new_name:str)->None:
@@ -125,7 +125,7 @@ class TWB(abc.ABC):
         if branch is None: return
         branch.rename(new_name)
         for action in branch._actions['on_renaming']: 
-            action(self,branch)
+            action(branch)
     
     def _does_path_point_to_child_of_branch_or_to_branch_itself(
         self,
