@@ -15,7 +15,7 @@ class Treeview:
     def trees(self)->Tuple[str,...]: 
         return self._widget.get_children("")
     
-    def add_tree(self,tree:treemod.Tree)->None: 
+    def add_tree_to_widget(self,tree:treemod.Tree)->None: 
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
         # create action, that the tree object will run after it creates a new branch
         self._widget.insert("","end",iid=tree.name)
