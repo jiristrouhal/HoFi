@@ -123,6 +123,11 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.assertListEqual(self.tree1.branches(),["Branch X"])
         self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_DELETE)
         self.assertListEqual(self.tree1.branches(),[])
+
+    def test_right_clicking_again_outside_any_treeview_item_does_not_create_any_menu(self):
+        ID_IF_NO_ITEM_CLICKED = ""
+        self.view._open_right_click_menu_for_item(ID_IF_NO_ITEM_CLICKED)
+        self.assertEqual(self.view.right_click_menu,None)
     
     def test_menu_is_destroyed_after_running_its_command(self):
         self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_DELETE)

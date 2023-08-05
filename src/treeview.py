@@ -77,6 +77,10 @@ class Treeview:
         return menu_cmd
     
     def _open_right_click_menu_for_item(self,item_id:str)->None:
+        if self.right_click_menu is not None: 
+            self.right_click_menu.destroy()
+            self.right_click_menu = None
+        if item_id.strip()=="": return
         branch = self._map[item_id]
         self.right_click_menu = tk.Menu(master=self._widget, tearoff=False)
 
