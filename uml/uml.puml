@@ -67,6 +67,17 @@
         - cancel()
     }
     EditWindow <-- Treeview
+@enduml
 
-    
+
+@startuml treeview_sequence_diagram
+skinparam Shadowing false
+skinparam Style strictuml
+
+    create Treeview
+    create EditWindow
+    Treeview -> EditWindow: Create
+    Branch <- EditWindow: Update
+    destroy EditWindow
+
 @enduml
