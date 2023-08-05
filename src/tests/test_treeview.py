@@ -90,10 +90,23 @@ class Test_Empty_Trees(unittest.TestCase):
         branch_x_iid = self.view._widget.get_children("Tree 1")[0]
         self.assertEqual(len(self.view._widget.get_children(branch_x_iid)), 1)
 
+
+class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.view = treeview.Treeview()
+        self.tree1 = Tree("Tree 1")
+        self.view.add_tree_to_widget(self.tree1)
+
     def test_accessing_the_branch_associated_with_the_treeview_item(self):
         self.tree1.add_branch("Branch X")
         branch_x_iid = self.view._widget.get_children("Tree 1")[0]
         self.assertEqual(self.view.branch(branch_x_iid).name, "Branch X")
+
+    def test_accessing_the_branch_with_nonexistent_iid_returns_none(self):
+        self.tree1.add_branch("Branch X")
+        nonexistent_iid = "Nonexistent iid"
+        self.assertEqual(self.view.branch(nonexistent_iid), None)
         
 
 if __name__=="__main__": unittest.main()
