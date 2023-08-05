@@ -87,8 +87,13 @@ class Test_Empty_Trees(unittest.TestCase):
         self.tree1.add_branch("Branch to be moved")
         self.tree1.move_branch(("Branch to be moved",), ("Branch X",))
         self.assertEqual(len(self.view._widget.get_children("Tree 1")), 1)
-        branch_x_iid = self.view._widget.get_children("Tree 1")
+        branch_x_iid = self.view._widget.get_children("Tree 1")[0]
         self.assertEqual(len(self.view._widget.get_children(branch_x_iid)), 1)
+
+    def test_accessing_the_branch_associated_with_the_treeview_item(self):
+        self.tree1.add_branch("Branch X")
+        branch_x_iid = self.view._widget.get_children("Tree 1")[0]
+        self.assertEqual(self.view.branch(branch_x_iid).name, "Branch X")
         
 
 if __name__=="__main__": unittest.main()
