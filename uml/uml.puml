@@ -18,12 +18,14 @@
     D -right- TV: updates >
 @enduml
 
+
+
 @startuml class_diagram
     skinparam ClassAttributeIconSize 0
     skinparam style strictuml
     skinparam linetype ortho
 
-    abstract "**ThingWithBranches**" as TWB {
+    abstract "**TWB**" as TWB {
         - branches : list
         + add_branch()
         + move_branch()
@@ -37,8 +39,8 @@
 
     TWB <|-- Branch 
     TWB <|--- Tree : \t\t\t\t\t\t
-    Tree -left-o " 0..*" Branch  : \t\t\t\t\t
-    Branch -down-o "0..*" Branch
+    Tree o-left- " 0..*" Branch  : \t\t\t\t\t
+    Branch o-down- "0..*" Branch
 
     class "**TreeManager**" as TreeManager {
         # trees : list
@@ -58,6 +60,13 @@
 
     TreeManager <-right-TreeApp
     Xml <-- TreeManager
-    
 
+    class "**EditWindow**" as EditWindow {
+        - element : Branch
+        + confirm()
+        - cancel()
+    }
+    EditWindow <-- Treeview
+
+    
 @enduml
