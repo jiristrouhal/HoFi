@@ -18,6 +18,8 @@ class Treeview:
         self.edit_window:tk.Toplevel|None = None
         self.edit_entries:Dict[str,tk.Entry] = dict()
 
+        self._widget.bind("<Button-3>",self.right_click_item)
+
     @property
     def trees(self)->Tuple[str,...]: 
         return self._widget.get_children("")
@@ -111,9 +113,15 @@ class Treeview:
 
         self.edit_window.destroy()
         self.edit_window = None
-        del self.edit_entries
-        self.edit_entries:Dict[str,tk.Entry] = dict()
+        for entry_name in self.edit_entries: self.edit_entries[entry_name].destroy()
+        self.edit_entries.clear()
 
+    def disregard_edit_entry_values(self,branch_id:str)->None:
+        if self.edit_window is None: return
+        self.edit_window.destroy()
+        self.edit_window = None
+        for entry_name in self.edit_entries: self.edit_entries[entry_name].destroy()
+        self.edit_entries.clear()
 
 
             

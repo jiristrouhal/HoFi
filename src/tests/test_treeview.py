@@ -147,10 +147,15 @@ class Test_Right_Click_Menu(unittest.TestCase):
     
     def test_after_confirming_the_entries_the_edit_window_closes(self):
         self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_EDIT)
-
         self.view.confirm_edit_entry_values(self.branch_x_iid)
         self.assertEqual(self.view.edit_window,None)
         self.assertDictEqual(self.view.edit_entries,{})
+
+    def test_after_disregarding_the_changes_the_edit_window_closes(self):
+        self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_EDIT)
+        self.view.disregard_edit_entry_values(self.branch_x_iid)
+        self.assertEqual(self.view.edit_window,None)
+        self.assertDictEqual(self.view.edit_entries,{})   
 
 
 if __name__=="__main__": unittest.main()
