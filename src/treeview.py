@@ -12,12 +12,14 @@ class Treeview:
 
     def __init__(self, parent:tk.Widget|None = None)->None:
         self._widget = ttk.Treeview(parent)
-        self._widget.bind("<Button-3>",self.right_click_item)
+        self.__configure_widget()
+
         self._map:Dict[str,treemod.Branch] = dict()
         self.right_click_menu:tk.Menu|None = None
         self.edit_window:tk.Toplevel|None = None
         self.edit_entries:Dict[str,tk.Entry] = dict()
-
+        
+    def __configure_widget(self)->None:
         self._widget.bind("<Button-3>",self.right_click_item)
 
     @property
