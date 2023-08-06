@@ -140,12 +140,7 @@ class Treeview:
 
     def open_move_window(self,item_id:str)->None:
         # copy the treeview and throw away the moved item and its children
-        if self.move_window is not None:
-            self.move_window.destroy()
-            self.move_window = None
-        if self.available_parents is not None:
-            self.available_parents.destroy()
-            self.available_parents = None
+        assert(self.move_window is None and self.available_parents is None)
 
         self.move_window = tk.Toplevel(self.widget)
 
