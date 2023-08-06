@@ -117,18 +117,27 @@ class Treeview:
             self.right_click_menu = None
         return menu_cmd
 
-    def open_edit_window(self,branch_id:str)->None:
+    def open_edit_window(self,item_id:str)->None:
         self.edit_window = tk.Toplevel(self.widget)
         self.edit_entries = dict()
-        branch = self._map[branch_id]
+        item = self._map[item_id]
         row = 0
-        for key,value in branch.attributes.items(): 
+        for key,value in item.attributes.items(): 
             label = tk.Label(self.edit_window,text=key)
             label.grid(row=row,column=0)
             entry = tk.Entry(self.edit_window)
             entry.insert(0,value)
             entry.grid(row=row,column=1)
             self.edit_entries[key] = entry
+            row += 1
+        
+        assert(self.edit_window is not None)
+        button_frame(
+            self.edit_window,
+            ok_cmd = partial(self.confirm_edit_entry_values,item_id),
+            cancel_cmd = self.disregard_edit_entry_values
+        ).grid(row=row,column=0,columnspan=2)
+        
 
     def confirm_edit_entry_values(self,branch_id:str)->None:
         if self.edit_window is None: return
@@ -140,7 +149,7 @@ class Treeview:
         for entry_name in self.edit_entries: self.edit_entries[entry_name].destroy()
         self.edit_entries.clear()
 
-    def disregard_edit_entry_values(self,item_id:str)->None:
+    def disregard_edit_entry_values(self)->None:
         if self.edit_window is None: return
         self.edit_window.destroy()
         self.edit_window = None
@@ -158,21 +167,11 @@ class Treeview:
         self.available_parents.insert("","end",iid=tree_id)
         self._collect_available_parents(tree_id,item_id)
         self.available_parents.pack()
-        
-        button_frame = tk.Frame(self.move_window)
-        ok_button = tk.Button(
-            button_frame,
-            text=BUTTON_OK,
-            command=partial(self._confirm_parent_and_close_move_window,item_id)
-        )
-        cancel_button = tk.Button(
-            button_frame,
-            text=BUTTON_CANCEL,
-            command=self._close_move_window
-        )
-        ok_button.pack(side=tk.LEFT)
-        cancel_button.pack(side=tk.RIGHT)
-        button_frame.pack()
+        button_frame(
+            self.move_window,
+            ok_cmd = partial(self._confirm_parent_and_close_move_window,item_id),
+            cancel_cmd = self._close_move_window
+        ).pack(side=tk.BOTTOM)
 
     def _confirm_parent_and_close_move_window(self,item_id:str)->None:
         if self.available_parents is None: return
@@ -203,3 +202,18 @@ class Treeview:
             tree_id = id
             id = self.widget.parent(tree_id)
         return str(tree_id)
+
+
+def button_frame(
+    master:tk.Toplevel|tk.Tk,
+    ok_cmd:Callable[[],None],
+    cancel_cmd:Callable[[],None],
+    **commands:Callable[[],None]
+    )->tk.Frame:
+
+    frame = tk.Frame(master)
+    for name,cmd in commands.items():
+        tk.Button(master=frame,text=name,command=cmd).pack(side=tk.RIGHT)
+    tk.Button(master=frame,text=BUTTON_OK,command=ok_cmd).pack(side=tk.RIGHT)
+    tk.Button(master=frame,text=BUTTON_CANCEL,command=cancel_cmd).pack(side=tk.RIGHT)
+    return frame
