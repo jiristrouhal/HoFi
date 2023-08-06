@@ -4,8 +4,6 @@ from typing import Tuple, Dict, Callable
 import tree as treemod
 from functools import partial
 
-import copy
-
 
 MENU_CMD_BRANCH_DELETE = "Delete"
 MENU_CMD_BRANCH_EDIT = "Edit"
@@ -13,6 +11,7 @@ MENU_CMD_BRANCH_MOVE = "Move"
 
 BUTTON_OK = "OK"
 BUTTON_CANCEL = "Cancel"
+
 
 class Treeview:
 
