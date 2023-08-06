@@ -5,6 +5,9 @@ sys.path.insert(1,"src")
 import treeview 
 from tree import Tree
 import unittest
+from typing import List
+import tkinter.ttk as ttk
+import tkinter as tk
 
 
 class Test_Empty_Trees(unittest.TestCase):
@@ -34,43 +37,43 @@ class Test_Empty_Trees(unittest.TestCase):
     
     def test_adding_branch_to_tree_adds_element_to_the_treeview(self):
         self.tree1.add_branch("Branch X")
-        self.assertEqual(len(self.view._widget.get_children("Tree 1")), 1)
+        self.assertEqual(len(self.view.widget.get_children("Tree 1")), 1)
         self.assertEqual(
-            self.view._widget.item(self.view._widget.get_children("Tree 1")[0])["text"],
+            self.view.widget.item(self.view.widget.get_children("Tree 1")[0])["text"],
             "Branch X",
         )
     
     def test_adding_branch_to_tree_branch_adds_element_to_the_treeview(self):
         self.tree1.add_branch("Branch X")
         self.tree1.add_branch("Small branch",{},"Branch X")
-        self.assertEqual(len(self.view._widget.get_children("Tree 1")), 1)
-        branch_x_iid = self.view._widget.get_children("Tree 1")[0]
-        self.assertEqual(len(self.view._widget.get_children(branch_x_iid)), 1)
+        self.assertEqual(len(self.view.widget.get_children("Tree 1")), 1)
+        branch_x_iid = self.view.widget.get_children("Tree 1")[0]
+        self.assertEqual(len(self.view.widget.get_children(branch_x_iid)), 1)
 
     def test_adding_branch_with_already_existing_name_makes_treeview_show_the_adjusted_name(self):
         self.tree1.add_branch("Branch X")
         self.tree1.add_branch("Branch X")
         adjusted_name = self.tree1._branches[-1].name
         self.assertEqual(
-            self.view._widget.item(self.view._widget.get_children("Tree 1")[-1])["text"],
+            self.view.widget.item(self.view.widget.get_children("Tree 1")[-1])["text"],
             adjusted_name
         )
 
     def test_removing_branch_from_tree_removes_element_from_the_treeview(self):
         self.tree1.add_branch("Branch X")
         self.tree1.remove_branch("Branch X")
-        self.assertEqual(self.view._widget.get_children("Tree 1"), ())
+        self.assertEqual(self.view.widget.get_children("Tree 1"), ())
 
     def test_removing_nonexistent_branch_does_not_alter_the_treeview(self):
         self.tree1.add_branch("Branch X")
         self.tree1.remove_branch("Nonexistent branch")
-        self.assertEqual(len(self.view._widget.get_children("Tree 1")), 1)
+        self.assertEqual(len(self.view.widget.get_children("Tree 1")), 1)
 
     def test_renaming_branch_is_reflected_in_the_treeview(self):
         self.tree1.add_branch("Branch X")
         self.tree1.rename_branch(("Branch X",), "Branch Y")
         self.assertEqual(
-            self.view._widget.item(self.view._widget.get_children("Tree 1")[-1])["text"],
+            self.view.widget.item(self.view.widget.get_children("Tree 1")[-1])["text"],
             "Branch Y"
         )
 
@@ -78,7 +81,7 @@ class Test_Empty_Trees(unittest.TestCase):
         self.tree1.add_branch("Branch X")
         self.tree1.rename_branch(("Branch XXXX",), "Branch Y")
         self.assertEqual(
-            self.view._widget.item(self.view._widget.get_children("Tree 1")[-1])["text"],
+            self.view.widget.item(self.view.widget.get_children("Tree 1")[-1])["text"],
             "Branch X"
         )
 
@@ -86,9 +89,9 @@ class Test_Empty_Trees(unittest.TestCase):
         self.tree1.add_branch("Branch X")
         self.tree1.add_branch("Branch to be moved")
         self.tree1.move_branch(("Branch to be moved",), ("Branch X",))
-        self.assertEqual(len(self.view._widget.get_children("Tree 1")), 1)
-        branch_x_iid = self.view._widget.get_children("Tree 1")[0]
-        self.assertEqual(len(self.view._widget.get_children(branch_x_iid)), 1)
+        self.assertEqual(len(self.view.widget.get_children("Tree 1")), 1)
+        branch_x_iid = self.view.widget.get_children("Tree 1")[0]
+        self.assertEqual(len(self.view.widget.get_children(branch_x_iid)), 1)
 
 
 class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
@@ -100,7 +103,7 @@ class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
 
     def test_accessing_the_branch_associated_with_the_treeview_item(self):
         self.tree1.add_branch("Branch X")
-        branch_x_iid = self.view._widget.get_children("Tree 1")[0]
+        branch_x_iid = self.view.widget.get_children("Tree 1")[0]
         self.assertEqual(self.view.branch(branch_x_iid).name, "Branch X")
 
     def test_accessing_the_branch_with_nonexistent_iid_returns_none(self):
@@ -116,7 +119,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.tree1 = Tree("Tree 1")
         self.view.add_tree_to_widget(self.tree1)
         self.tree1.add_branch("Branch X", {"length":45})
-        self.branch_x_iid = self.view._widget.get_children("Tree 1")[-1] 
+        self.branch_x_iid = self.view.widget.get_children("Tree 1")[-1] 
         self.view._open_right_click_menu_for_item(self.branch_x_iid)
 
     def test_deleting_branch(self):
@@ -155,7 +158,55 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_EDIT)
         self.view.disregard_edit_entry_values(self.branch_x_iid)
         self.assertEqual(self.view.edit_window,None)
-        self.assertDictEqual(self.view.edit_entries,{})   
+        self.assertDictEqual(self.view.edit_entries,{})
+
+
+class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.view = treeview.Treeview()
+        self.tree1 = Tree("Tree 1")
+        self.view.add_tree_to_widget(self.tree1)
+        self.tree1.add_branch("Branch X", {"length":45})
+        self.tree1.add_branch("Branch Y", {"length":45})
+        self.tree1.add_branch("Branch Z", {"length":20})
+        self.tree1.add_branch("Child of Z", {"length":10}, "Branch Z")
+        self.small_branch_id = self.view.widget.get_children("Tree 1")[-1] 
+        self.view._open_right_click_menu_for_item(self.small_branch_id)
+        self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_MOVE)
+        
+    def test_available_parents_do_not_include_branch_itself_nor_its_children(self):
+        def get_descendant_names(treeview_widget:ttk.Treeview, item_id:str)->List[str]:
+            descendants_names:List[str] = list()
+            for child_id in treeview_widget.get_children(item_id):
+                descendants_names.append(self.view._map[child_id].name)
+                descendants_names.extend(get_descendant_names(treeview_widget,child_id))
+            return descendants_names
+        self.assertListEqual(get_descendant_names(self.view.available_parents,"Tree 1"), ["Branch X","Branch Y"])
+        
+    def test_move_branch_under_a_new_parent(self):
+        self.view.available_parents.selection_set(self.tree1._find_branch("Branch X").data["treeview_iid"])
+        ok_button:tk.Button = self.view.move_window.winfo_children()[-1].winfo_children()[0]
+        ok_button.invoke()
+
+        moved_branch = self.view._map[self.small_branch_id]
+        self.assertEqual(moved_branch.parent.name,"Branch X")
+        #test that move window closes after clicking the ok button
+        self.assertEqual(self.view.move_window,None)
+        #test that available parents are deleted after clicking the ok button
+        self.assertEqual(self.view.available_parents,None)
+
+    def test_selecting_a_new_parent_but_canceling_the_move_have_no_effect_on_the_tree(self):
+        self.view.available_parents.selection_set(self.tree1._find_branch("Branch X").data["treeview_iid"])
+        cancel_button:tk.Button = self.view.move_window.winfo_children()[-1].winfo_children()[1]
+        cancel_button.invoke()
+
+        moved_branch = self.view._map[self.small_branch_id]
+        self.assertEqual(moved_branch.parent.name,"Tree 1")
+        #test that move window closes after clicking the cancel button
+        self.assertEqual(self.view.move_window,None)
+        #test that available parents are deleted after clicking the cancel button
+        self.assertEqual(self.view.available_parents,None)
 
 
 if __name__=="__main__": unittest.main()

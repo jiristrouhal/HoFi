@@ -4,14 +4,20 @@ from typing import Tuple, Dict, Callable
 import tree as treemod
 from functools import partial
 
+import copy
+
 
 MENU_CMD_BRANCH_DELETE = "Delete"
 MENU_CMD_BRANCH_EDIT = "Edit"
+MENU_CMD_BRANCH_MOVE = "Move"
+
+BUTTON_OK = "OK"
+BUTTON_CANCEL = "Cancel"
 
 class Treeview:
 
     def __init__(self, parent:tk.Widget|None = None)->None:
-        self._widget = ttk.Treeview(parent)
+        self.widget = ttk.Treeview(parent)
         self.__configure_widget()
 
         self._map:Dict[str,treemod.Branch] = dict()
@@ -19,12 +25,15 @@ class Treeview:
         self.edit_window:tk.Toplevel|None = None
         self.edit_entries:Dict[str,tk.Entry] = dict()
         
+        self.move_window:tk.Toplevel|None = None
+        self.available_parents:ttk.Treeview|None = None
+        
     def __configure_widget(self)->None:
-        self._widget.bind("<Button-3>",self.right_click_item)
+        self.widget.bind("<Button-3>",self.right_click_item)
 
     @property
     def trees(self)->Tuple[str,...]: 
-        return self._widget.get_children("")
+        return self.widget.get_children("")
     
     def branch(self,treeview_iid:str)->treemod.Branch|None:
         if treeview_iid not in self._map: return None
@@ -33,14 +42,14 @@ class Treeview:
     def add_tree_to_widget(self,tree:treemod.Tree)->None: 
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
         # create action, that the tree object will run after it creates a new branch
-        self._widget.insert("","end",iid=tree.name)
+        self.widget.insert("","end",iid=tree.name)
         tree.add_data("treeview_iid",tree.name)
         tree.add_action('add_branch', partial(self._on_new_child,tree.name))
 
     def remove_tree(self,name:str)->None:
         if name not in self.trees: raise ValueError(f"Trying to delete nonexistent tree with name {name}.\n"
                                                     f"The existing tree names are {self.trees}\n")
-        self._widget.delete(name)
+        self.widget.delete(name)
 
     def _on_new_child(
         self,
@@ -48,7 +57,7 @@ class Treeview:
         new_branch:treemod.TWB
         )->None:
 
-        branch_iid = self._widget.insert(parent_iid,"end",text=new_branch.name)
+        branch_iid = self.widget.insert(parent_iid,"end",text=new_branch.name)
         self._map[branch_iid] = new_branch
         new_branch.add_action('add_branch', partial(self._on_new_child, branch_iid))
         new_branch.add_action('on_removal', partial(self._on_removal, branch_iid))
@@ -59,26 +68,19 @@ class Treeview:
 
     def _on_removal(self,branch_iid:str,*args)->None:
         self._map.pop(branch_iid)
-        self._widget.delete(branch_iid)
+        self.widget.delete(branch_iid)
 
     def _on_renaming(self,branch_iid:str,branch:treemod.TWB)->None:
-        self._widget.item(branch_iid,text=branch.name)
+        self.widget.item(branch_iid,text=branch.name)
 
     def _on_moving(self,branch_iid:str,new_parent:treemod.TWB)->None:
-        self._widget.move(branch_iid, new_parent.data["treeview_iid"], -1)
+        self.widget.move(branch_iid, new_parent.data["treeview_iid"], -1)
 
 
     def right_click_item(self,event:tk.Event)->None:
-        item_id = self._widget.identify_row(event.y)
+        item_id = self.widget.identify_row(event.y)
         if item_id.strip()=="": return 
         self._open_right_click_menu_for_item(item_id)
-
-    def _right_click_menu_command(self,cmd:Callable)->Callable:
-        def menu_cmd(*args,**kwargs): 
-            cmd(*args,**kwargs)
-            self.right_click_menu.destroy()
-            self.right_click_menu = None
-        return menu_cmd
     
     def _open_right_click_menu_for_item(self,item_id:str)->None:
         if self.right_click_menu is not None: 
@@ -86,17 +88,28 @@ class Treeview:
             self.right_click_menu = None
         if item_id.strip()=="": return
         branch = self._map[item_id]
-        self.right_click_menu = tk.Menu(master=self._widget, tearoff=False)
+        self.right_click_menu = tk.Menu(master=self.widget, tearoff=False)
 
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_EDIT,
             command=self._right_click_menu_command(partial(self.open_edit_window,item_id)))
         self.right_click_menu.add_command(
+            label=MENU_CMD_BRANCH_MOVE,
+            command=self._right_click_menu_command(partial(self.open_move_window,item_id))
+        )
+        self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_DELETE,
             command=self._right_click_menu_command(partial(branch.parent.remove_branch,branch.name)))
+        
+    def _right_click_menu_command(self,cmd:Callable)->Callable:
+        def menu_cmd(*args,**kwargs): 
+            cmd(*args,**kwargs)
+            self.right_click_menu.destroy()
+            self.right_click_menu = None
+        return menu_cmd
 
     def open_edit_window(self,branch_id:str)->None:
-        self.edit_window = tk.Toplevel(self._widget)
+        self.edit_window = tk.Toplevel(self.widget)
         self.edit_entries = dict()
         branch = self._map[branch_id]
         row = 0
@@ -118,12 +131,71 @@ class Treeview:
         for entry_name in self.edit_entries: self.edit_entries[entry_name].destroy()
         self.edit_entries.clear()
 
-    def disregard_edit_entry_values(self,branch_id:str)->None:
+    def disregard_edit_entry_values(self,item_id:str)->None:
         if self.edit_window is None: return
         self.edit_window.destroy()
         self.edit_window = None
         for entry_name in self.edit_entries: self.edit_entries[entry_name].destroy()
         self.edit_entries.clear()
 
+    def open_move_window(self,item_id:str)->None:
+        # copy the treeview and throw away the moved item and its children
+        if self.move_window is not None:
+            self.move_window.destroy()
+            self.move_window = None
+        if self.available_parents is not None:
+            self.available_parents.destroy()
+            self.available_parents = None
 
-            
+        self.move_window = tk.Toplevel(self.widget)
+
+        self.available_parents = ttk.Treeview(self.move_window, selectmode='browse')
+        tree_id = self.__get_tree_id(item_id)
+        self.available_parents.insert("","end",iid=tree_id)
+        self._collect_available_parents(tree_id,item_id)
+        self.available_parents.pack()
+        
+        button_frame = tk.Frame(self.move_window)
+        ok_button = tk.Button(
+            button_frame,
+            text=BUTTON_OK,
+            command=partial(self._confirm_parent_and_close_move_window,item_id)
+        )
+        cancel_button = tk.Button(
+            button_frame,
+            text=BUTTON_CANCEL,
+            command=self._close_move_window
+        )
+        ok_button.pack(side=tk.LEFT)
+        cancel_button.pack(side=tk.RIGHT)
+        button_frame.pack()
+
+    def _confirm_parent_and_close_move_window(self,item_id:str)->None:
+        if self.available_parents is None: return
+        selection = self.available_parents.selection()
+        if not selection: return #empty selection
+        branch = self._map[item_id]
+        branch._set_parent(self._map[selection[0]])
+        self.widget.move(item_id,selection[0],-1)
+        self._close_move_window()
+
+    def _close_move_window(self)->None:
+        assert(self.move_window is not None and self.available_parents is not None)
+        self.move_window.destroy()
+        self.move_window = None
+        self.available_parents = None
+
+    def _collect_available_parents(self,parent_id:str,item_id:str):
+        assert(self.available_parents is not None)
+        for child_id in self.widget.get_children(parent_id):
+            if child_id==item_id: continue
+            child = self.widget.item(child_id)
+            self.available_parents.insert(parent_id,"end",iid=child_id,text=child["text"])
+            self._collect_available_parents(child_id,item_id)
+
+    def __get_tree_id(self,item_id:str)->str:
+        id = item_id
+        while not id=="":
+            tree_id = id
+            id = self.widget.parent(tree_id)
+        return str(tree_id)
