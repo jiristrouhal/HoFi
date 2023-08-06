@@ -160,6 +160,16 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.assertEqual(self.view.edit_window,None)
         self.assertDictEqual(self.view.edit_entries,{})
 
+    def test_bringing_back_original_entry_values_in_the_edit_window(self):
+        self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_EDIT)
+        self.view.edit_entries["name"].delete(0,"end")
+        self.view.edit_entries["name"].insert(0,"Branch YZ")
+
+        self.assertEqual(self.view.edit_entries["name"].get(),"Branch YZ")
+        button_frame = self.view.edit_window.winfo_children()[1]
+        revert_button:tk.Button = button_frame.winfo_children()[0]
+        revert_button.invoke()
+        self.assertEqual(self.view.edit_entries["name"].get(),"Branch X")
 
 class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
 

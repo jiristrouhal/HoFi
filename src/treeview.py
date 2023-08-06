@@ -121,11 +121,12 @@ class Treeview:
         self.edit_window = tk.Toplevel(self.widget)
         self.edit_entries = dict()
         item = self._map[item_id]
+        entries_frame = tk.Frame(self.edit_window)
         row = 0
         for key,value in item.attributes.items(): 
-            label = tk.Label(self.edit_window,text=key)
+            label = tk.Label(entries_frame,text=key)
             label.grid(row=row,column=0)
-            entry = tk.Entry(self.edit_window)
+            entry = tk.Entry(entries_frame)
             entry.insert(0,value)
             entry.grid(row=row,column=1)
             self.edit_entries[key] = entry
@@ -135,9 +136,16 @@ class Treeview:
         button_frame(
             self.edit_window,
             ok_cmd = partial(self.confirm_edit_entry_values,item_id),
-            cancel_cmd = self.disregard_edit_entry_values
+            cancel_cmd = self.disregard_edit_entry_values,
+            revert_cmd = partial(self.back_to_original_edit_entry_values,item_id)
         ).grid(row=row,column=0,columnspan=2)
         
+
+    def back_to_original_edit_entry_values(self,branch_id:str)->None:
+        if self.edit_window is None: return
+        for attribute, entry in self.edit_entries.items():
+            entry.delete(0,tk.END)
+            entry.insert(0,self._map[branch_id].attributes[attribute])
 
     def confirm_edit_entry_values(self,branch_id:str)->None:
         if self.edit_window is None: return
