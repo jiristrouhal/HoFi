@@ -15,18 +15,18 @@ class Test_Empty_Trees(unittest.TestCase):
     def setUp(self) -> None:
         self.view = treeview.Treeview()
         self.tree1 = Tree("Tree 1")
-        self.view.add_tree_to_widget(self.tree1)
+        self.view.load_tree(self.tree1)
 
     def test_adding_single_tree(self):
         self.assertEqual(self.view.trees, ("Tree 1",))
-        self.view.add_tree_to_widget(Tree("Tree 2"))
+        self.view.load_tree(Tree("Tree 2"))
         self.assertEqual(self.view.trees, ("Tree 1", "Tree 2"))
 
     def test_adding_already_existing_tree_raises_exception(self):
-        self.assertRaises(ValueError,self.view.add_tree_to_widget,Tree("Tree 1"))
+        self.assertRaises(ValueError,self.view.load_tree,Tree("Tree 1"))
 
     def test_removing_tree(self):
-        self.view.add_tree_to_widget(Tree("Tree 2"))
+        self.view.load_tree(Tree("Tree 2"))
         self.view.remove_tree("Tree 1")
         self.assertEqual(self.view.trees, ("Tree 2",))
         self.view.remove_tree("Tree 2")
@@ -99,7 +99,7 @@ class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
     def setUp(self) -> None:
         self.view = treeview.Treeview()
         self.tree1 = Tree("Tree 1")
-        self.view.add_tree_to_widget(self.tree1)
+        self.view.load_tree(self.tree1)
 
     def test_accessing_the_branch_associated_with_the_treeview_item(self):
         self.tree1.add_branch("Branch X")
@@ -117,7 +117,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
     def setUp(self) -> None:
         self.view = treeview.Treeview()
         self.tree1 = Tree("Tree 1")
-        self.view.add_tree_to_widget(self.tree1)
+        self.view.load_tree(self.tree1)
         self.tree1.add_branch("Branch X", {"length":45})
         self.branch_x_iid = self.view.widget.get_children("Tree 1")[-1] 
         self.view._open_right_click_menu_for_item(self.branch_x_iid)
@@ -166,7 +166,7 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
     def setUp(self) -> None:
         self.view = treeview.Treeview()
         self.tree1 = Tree("Tree 1")
-        self.view.add_tree_to_widget(self.tree1)
+        self.view.load_tree(self.tree1)
         self.tree1.add_branch("Branch X", {"length":45})
         self.tree1.add_branch("Branch Y", {"length":45})
         self.tree1.add_branch("Branch Z", {"length":20})
@@ -207,6 +207,27 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
         self.assertEqual(self.view.move_window,None)
         #test that available parents are deleted after clicking the cancel button
         self.assertEqual(self.view.available_parents,None)
+
+
+class Test_Load_Existing_Tree(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.tree1 = Tree("Tree 1")
+        self.tree1.add_branch("Branch X")
+        self.tree1.add_branch("Child of X",{},"Branch X")
+        self.tree1.add_branch("Branch Y")
+        self.tree1.add_branch("Grandchild of X",{},"Branch X","Child of X")
+
+    def test_loading_tree(self):
+        view = treeview.Treeview()
+        view.load_tree(self.tree1)
+        main_branches_ids = view.widget.get_children("Tree 1")
+        self.assertListEqual([view._map[id].name for id in main_branches_ids], ["Branch X","Branch Y"])
+        branch_x_id = self.tree1._branches[0].data["treeview_iid"]
+        child_of_x_id = view.widget.get_children(branch_x_id)[0]
+        self.assertEqual(view.branch(child_of_x_id).name,"Child of X")
+        grandchild_of_x_id = view.widget.get_children(child_of_x_id)[0]
+        self.assertEqual(view.branch(grandchild_of_x_id).name,"Grandchild of X")
 
 
 if __name__=="__main__": unittest.main()
