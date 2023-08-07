@@ -271,4 +271,23 @@ class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
         self.assertDictEqual(self.view.add_window_entries, {})
 
 
+class Test_Modifying_Loaded_Tree(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.tree1 = Tree("Tree 1")
+        self.tree1.add_branch("Branch X")
+
+        self.view = treeview.Treeview()
+        self.view.load_tree(self.tree1)
+    
+    def test_adding_child_to_branch_x(self):
+        branch_x_id = self.view.widget.get_children("Tree 1")[0]
+        self.view._open_right_click_menu(branch_x_id)
+        self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_ADD)
+        self.view.add_window_entries["name"].delete(0,"end")
+        self.view.add_window_entries["name"].insert(0,"Child of X")
+        self.view.add_window.winfo_children()[1].winfo_children()[0].invoke()
+        self.assertEqual(self.view._map[self.view.widget.get_children(branch_x_id)[0]].name,"Child of X")
+
+
 if __name__=="__main__": unittest.main()

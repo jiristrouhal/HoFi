@@ -1,7 +1,10 @@
+
+
+
 import tkinter.ttk as ttk
 import tkinter as tk
 from typing import Tuple, Dict, Callable, Any
-import tree as treemod
+import src.tree as treemod
 from functools import partial
 
 
@@ -16,12 +19,13 @@ BUTTON_CANCEL = "Cancel"
 
 class Treeview:
 
-    def __init__(self, parent:tk.Widget|None = None)->None:
+    def __init__(self, parent:tk.Tk|tk.Toplevel|tk.Frame|None = None)->None:
         self.widget = ttk.Treeview(parent)
         self.__configure_widget()
-        self._attribute_template = {"name":"New"}
 
-        self._map:Dict[str,treemod.Branch] = dict()
+        self._attribute_template = {"name":"New", "lenght":"0"}
+
+        self._map:Dict[str,treemod.TWB] = dict()
         self.right_click_menu:tk.Menu|None = None
 
         self.edit_window:tk.Toplevel|None = None
@@ -35,19 +39,21 @@ class Treeview:
         
     def __configure_widget(self)->None:
         self.widget.bind("<Button-3>",self.right_click_item)
+        self.widget.bind("<Double-Button-1>",self.open_edit_window_on_double_click,add="")
+        self.widget.pack()
 
     @property
     def trees(self)->Tuple[str,...]: 
         return self.widget.get_children("")
     
-    def branch(self,treeview_iid:str)->treemod.Branch|None:
+    def branch(self,treeview_iid:str)->treemod.TWB|None:
         if treeview_iid not in self._map: return None
         return self._map[treeview_iid]
     
     def load_tree(self,tree:treemod.Tree)->None: 
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
         # create action, that the tree object will run after it creates a new branch
-        self.widget.insert("","end",iid=tree.name)
+        self.widget.insert("","end",iid=tree.name,text=tree.name)
         self._map[tree.name] = tree
         tree.add_data("treeview_iid",tree.name)
         tree.add_action('add_branch', partial(self._on_new_child,tree.name)) 
@@ -58,7 +64,7 @@ class Treeview:
             iid = self.widget.insert(parent.data["treeview_iid"],"end",text=branch.name)
             self._map[iid] = branch
             branch.add_data("treeview_iid",iid)
-            branch.add_action('add_branch', partial(self._on_new_child,branch.name))
+            branch.add_action('add_branch', partial(self._on_new_child,iid))
             self._load_branches(branch)
         
 
@@ -80,6 +86,8 @@ class Treeview:
         new_branch.add_action('on_renaming', partial(self._on_renaming, branch_iid))
         new_branch.add_action('on_moving', partial(self._on_moving, branch_iid))
         new_branch.add_data("treeview_iid",branch_iid)
+        # always open the item under which the new one has been added 
+        self.widget.item(parent_iid,open=True)
 
 
     def _on_removal(self,branch_iid:str,*args)->None:
@@ -96,7 +104,12 @@ class Treeview:
     def right_click_item(self,event:tk.Event)->None:
         item_id = self.widget.identify_row(event.y)
         if item_id.strip()=="": return 
-        self._open_right_click_menu(item_id)
+
+        if self._map[item_id].parent is None: 
+            self._open_right_click_menu(item_id,root=True)
+        else: self._open_right_click_menu(item_id)
+        if self.right_click_menu is not None:
+            self.right_click_menu.tk_popup(x=event.x_root,y=event.y_root)
     
     def _open_right_click_menu(self,item_id:str,root:bool=False)->None:
         if self.right_click_menu is not None: 
@@ -122,10 +135,9 @@ class Treeview:
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_EDIT,
             command=self._right_click_menu_command(partial(self.open_edit_window,root_id)))
-        self.right_click_menu.add_separator()
 
     def __add_commands_for_item(self,item_id:str)->None:
-        branch = self._map[item_id]
+        branch:treemod.TWB = self._map[item_id]
         if self.right_click_menu is None: return
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_ADD,
@@ -145,7 +157,7 @@ class Treeview:
             command=self._right_click_menu_command(partial(self.open_move_window,item_id))
         )
         self.right_click_menu.add_separator()
-
+        assert(branch.parent is not None)
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_DELETE,
             command=self._right_click_menu_command(partial(branch.parent.remove_branch,branch.name)))
@@ -159,6 +171,7 @@ class Treeview:
     
     def open_add_window(self,parent_id:str,attributes:Dict[str,Any])->None:
         self.add_window = tk.Toplevel(self.widget)
+        self.add_window.grab_set()
         self.add_window_entries = dict()
         entries_frame = tk.Frame(self.add_window)
         row=0
@@ -166,15 +179,17 @@ class Treeview:
             tk.Label(entries_frame,text=key).grid(row=row,column=0)
             entry = tk.Entry(entries_frame)
             entry.insert(0,value)
+            entry.grid(row=row,column=1)
             self.add_window_entries[key] = entry
             row += 1
+        entries_frame.pack()
 
         assert(self.add_window is not None)
         button_frame(
             self.add_window,
             ok_cmd = partial(self.confirm_add_entry_values,parent_id),
             cancel_cmd = self.disregard_add_entry_values
-        ).grid(row=row,column=0,columnspan=2)
+        ).pack(side=tk.BOTTOM)
 
     def confirm_add_entry_values(self,parent_id:str)->None:
         if self.add_window is None: return
@@ -200,8 +215,17 @@ class Treeview:
             self.add_window_entries[entry_name].destroy()
         self.add_window_entries.clear()
 
+    def open_edit_window_on_double_click(self,event:tk.Event)->None:
+        iid = self.widget.identify_row(event.y)
+        if iid.strip()=="": return
+        # prevent automatic opening/closing of the element when double-clicked
+        self.widget.item(iid,open=not self.widget.item(iid)["open"])
+        self.open_edit_window(iid)
+
     def open_edit_window(self,item_id:str)->None:
         self.edit_window = tk.Toplevel(self.widget)
+        self.edit_window.grab_set()
+        self.edit_window.focus_get()
         self.edit_entries = dict()
         item = self._map[item_id]
         entries_frame = tk.Frame(self.edit_window)
@@ -213,6 +237,7 @@ class Treeview:
             entry.grid(row=row,column=1)
             self.edit_entries[key] = entry
             row += 1
+        entries_frame.pack()
         
         assert(self.edit_window is not None)
         button_frame(
@@ -220,7 +245,7 @@ class Treeview:
             ok_cmd = partial(self.confirm_edit_entry_values,item_id),
             cancel_cmd = self.disregard_edit_entry_values,
             revert_cmd = partial(self.back_to_original_edit_entry_values,item_id)
-        ).grid(row=row,column=0,columnspan=2)
+        ).pack(side=tk.BOTTOM)
         
 
     def back_to_original_edit_entry_values(self,branch_id:str)->None:
@@ -233,6 +258,8 @@ class Treeview:
         if self.edit_window is None: return
         for attribute, entry in self.edit_entries.items():
             self._map[branch_id].set_attribute(attribute, entry.get())
+        # rename element in the tree
+        self.widget.item(branch_id,text=self.edit_entries["name"].get())
 
         self.edit_window.destroy()
         self.edit_window = None
