@@ -120,7 +120,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.view.load_tree(self.tree1)
         self.tree1.add_branch("Branch X", {"length":45})
         self.branch_x_iid = self.view.widget.get_children("Tree 1")[-1] 
-        self.view._open_right_click_menu_for_item(self.branch_x_iid)
+        self.view._open_right_click_menu(self.branch_x_iid)
 
     def test_deleting_branch(self):
         self.assertListEqual(self.tree1.branches(),["Branch X"])
@@ -129,7 +129,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
 
     def test_right_clicking_again_outside_any_treeview_item_does_not_create_any_menu(self):
         ID_IF_NO_ITEM_CLICKED = ""
-        self.view._open_right_click_menu_for_item(ID_IF_NO_ITEM_CLICKED)
+        self.view._open_right_click_menu(ID_IF_NO_ITEM_CLICKED)
         self.assertEqual(self.view.right_click_menu,None)
     
     def test_menu_is_destroyed_after_running_its_command(self):
@@ -182,7 +182,7 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
         self.tree1.add_branch("Branch Z", {"length":20})
         self.tree1.add_branch("Child of Z", {"length":10}, "Branch Z")
         self.small_branch_id = self.view.widget.get_children("Tree 1")[-1] 
-        self.view._open_right_click_menu_for_item(self.small_branch_id)
+        self.view._open_right_click_menu(self.small_branch_id)
         self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_MOVE)
         
     def test_available_parents_do_not_include_branch_itself_nor_its_children(self):
@@ -238,6 +238,37 @@ class Test_Load_Existing_Tree(unittest.TestCase):
         self.assertEqual(view.branch(child_of_x_id).name,"Child of X")
         grandchild_of_x_id = view.widget.get_children(child_of_x_id)[0]
         self.assertEqual(view.branch(grandchild_of_x_id).name,"Grandchild of X")
+
+
+class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.tree1 = Tree("Tree 1")
+        self.view = treeview.Treeview()
+        self.view.load_tree(self.tree1)
+        self.view._open_right_click_menu("Tree 1",root=True)
+
+    def test_adding_single_branch_to_the_tree(self):
+        self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_ADD)
+        self.view.add_window_entries["name"].delete(0,"end")
+        self.view.add_window_entries["name"].insert(0,"Branch X")
+        ok_button:tk.Button = self.view.add_window.winfo_children()[1].winfo_children()[0]
+        ok_button.invoke()
+        self.assertListEqual(self.tree1.branches(),["Branch X"])
+        # add_window and add_window_entries are destroyed
+        self.assertEqual(self.view.add_window,None)
+        self.assertDictEqual(self.view.add_window_entries, {})
+    
+    def test_canceling_adding_of_a_new_branch(self):
+        self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_ADD)
+        self.view.add_window_entries["name"].delete(0,"end")
+        self.view.add_window_entries["name"].insert(0,"Branch X")
+        cancel_button:tk.Button = self.view.add_window.winfo_children()[1].winfo_children()[-1]
+        cancel_button.invoke()
+        self.assertListEqual(self.tree1.branches(),[])
+        # add_window and add_window_entries are destroyed
+        self.assertEqual(self.view.add_window,None)
+        self.assertDictEqual(self.view.add_window_entries, {})
 
 
 if __name__=="__main__": unittest.main()

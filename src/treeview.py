@@ -1,6 +1,6 @@
 import tkinter.ttk as ttk
 import tkinter as tk
-from typing import Tuple, Dict, Callable
+from typing import Tuple, Dict, Callable, Any
 import tree as treemod
 from functools import partial
 
@@ -8,6 +8,7 @@ from functools import partial
 MENU_CMD_BRANCH_DELETE = "Delete"
 MENU_CMD_BRANCH_EDIT = "Edit"
 MENU_CMD_BRANCH_MOVE = "Move"
+MENU_CMD_BRANCH_ADD = "Add new"
 
 BUTTON_OK = "OK"
 BUTTON_CANCEL = "Cancel"
@@ -18,11 +19,16 @@ class Treeview:
     def __init__(self, parent:tk.Widget|None = None)->None:
         self.widget = ttk.Treeview(parent)
         self.__configure_widget()
+        self._attribute_template = {"name":"New"}
 
         self._map:Dict[str,treemod.Branch] = dict()
         self.right_click_menu:tk.Menu|None = None
+
         self.edit_window:tk.Toplevel|None = None
         self.edit_entries:Dict[str,tk.Entry] = dict()
+
+        self.add_window:tk.Toplevel|None = None
+        self.add_window_entries:Dict[str,tk.Entry] = dict()
         
         self.move_window:tk.Toplevel|None = None
         self.available_parents:ttk.Treeview|None = None
@@ -42,6 +48,7 @@ class Treeview:
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
         # create action, that the tree object will run after it creates a new branch
         self.widget.insert("","end",iid=tree.name)
+        self._map[tree.name] = tree
         tree.add_data("treeview_iid",tree.name)
         tree.add_action('add_branch', partial(self._on_new_child,tree.name)) 
         self._load_branches(tree)
@@ -89,16 +96,47 @@ class Treeview:
     def right_click_item(self,event:tk.Event)->None:
         item_id = self.widget.identify_row(event.y)
         if item_id.strip()=="": return 
-        self._open_right_click_menu_for_item(item_id)
+        self._open_right_click_menu(item_id)
     
-    def _open_right_click_menu_for_item(self,item_id:str)->None:
+    def _open_right_click_menu(self,item_id:str,root:bool=False)->None:
         if self.right_click_menu is not None: 
             self.right_click_menu.destroy()
             self.right_click_menu = None
         if item_id.strip()=="": return
-        branch = self._map[item_id]
         self.right_click_menu = tk.Menu(master=self.widget, tearoff=False)
+        if not root: self.__add_commands_for_item(item_id)
+        else: self.__add_commands_for_root(item_id)
 
+    def __add_commands_for_root(self,root_id:str)->None:
+        if self.right_click_menu is None: return
+        self.right_click_menu.add_command(
+            label=MENU_CMD_BRANCH_ADD,
+            command=self._right_click_menu_command(
+                partial(
+                    self.open_add_window,
+                    root_id,
+                    self._attribute_template,
+                )
+            )
+        )
+        self.right_click_menu.add_command(
+            label=MENU_CMD_BRANCH_EDIT,
+            command=self._right_click_menu_command(partial(self.open_edit_window,root_id)))
+        self.right_click_menu.add_separator()
+
+    def __add_commands_for_item(self,item_id:str)->None:
+        branch = self._map[item_id]
+        if self.right_click_menu is None: return
+        self.right_click_menu.add_command(
+            label=MENU_CMD_BRANCH_ADD,
+            command=self._right_click_menu_command(
+                partial(
+                    self.open_add_window,
+                    item_id,
+                    self._attribute_template
+                )
+            )
+        )
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_EDIT,
             command=self._right_click_menu_command(partial(self.open_edit_window,item_id)))
@@ -106,6 +144,8 @@ class Treeview:
             label=MENU_CMD_BRANCH_MOVE,
             command=self._right_click_menu_command(partial(self.open_move_window,item_id))
         )
+        self.right_click_menu.add_separator()
+
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_DELETE,
             command=self._right_click_menu_command(partial(branch.parent.remove_branch,branch.name)))
@@ -116,6 +156,49 @@ class Treeview:
             self.right_click_menu.destroy()
             self.right_click_menu = None
         return menu_cmd
+    
+    def open_add_window(self,parent_id:str,attributes:Dict[str,Any])->None:
+        self.add_window = tk.Toplevel(self.widget)
+        self.add_window_entries = dict()
+        entries_frame = tk.Frame(self.add_window)
+        row=0
+        for key,value in attributes.items():
+            tk.Label(entries_frame,text=key).grid(row=row,column=0)
+            entry = tk.Entry(entries_frame)
+            entry.insert(0,value)
+            self.add_window_entries[key] = entry
+            row += 1
+
+        assert(self.add_window is not None)
+        button_frame(
+            self.add_window,
+            ok_cmd = partial(self.confirm_add_entry_values,parent_id),
+            cancel_cmd = self.disregard_add_entry_values
+        ).grid(row=row,column=0,columnspan=2)
+
+    def confirm_add_entry_values(self,parent_id:str)->None:
+        if self.add_window is None: return
+        attributes = dict()
+
+        for label, entry in self.add_window_entries.items():
+            attributes[label] = entry.get()
+        
+        name = attributes.pop("name")
+        self._map[parent_id].add_branch(name,attributes)
+
+        self.add_window.destroy()
+        self.add_window = None
+        for entry_name in self.add_window_entries: 
+            self.add_window_entries[entry_name].destroy()
+        self.add_window_entries.clear()
+
+    def disregard_add_entry_values(self)->None:
+        if self.add_window is None: return
+        self.add_window.destroy()
+        self.add_window = None
+        for entry_name in self.add_window_entries: 
+            self.add_window_entries[entry_name].destroy()
+        self.add_window_entries.clear()
 
     def open_edit_window(self,item_id:str)->None:
         self.edit_window = tk.Toplevel(self.widget)
@@ -124,8 +207,7 @@ class Treeview:
         entries_frame = tk.Frame(self.edit_window)
         row = 0
         for key,value in item.attributes.items(): 
-            label = tk.Label(entries_frame,text=key)
-            label.grid(row=row,column=0)
+            tk.Label(entries_frame,text=key).grid(row=row,column=0)
             entry = tk.Entry(entries_frame)
             entry.insert(0,value)
             entry.grid(row=row,column=1)
