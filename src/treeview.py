@@ -49,6 +49,10 @@ class Treeview:
     def __configure_widget(self)->None:
         self.widget.bind("<Button-3>",self.right_click_item)
         self.widget.bind("<Double-Button-1>",self.open_edit_window_on_double_click,add="")
+
+        # hide zeroth row, that would contain the tree columns' headings
+        self.widget.config(show='tree')
+
         self.widget.pack()
 
     @property
@@ -308,6 +312,7 @@ class Treeview:
         self.move_window = tk.Toplevel(self.widget)
 
         self.available_parents = ttk.Treeview(self.move_window, selectmode='browse')
+        self.available_parents.config(show='tree')
         tree_id = self.__get_tree_id(item_id)
         self.available_parents.insert("","end",iid=tree_id)
         self._collect_available_parents(tree_id,item_id)
