@@ -18,6 +18,9 @@ class TWB(abc.ABC):
             'on_renaming':[],
             'on_moving':[]
         }
+        self._do_on_error:Dict[str,List[Callable]] = {
+            'cannot_remove_branch_with_children':[],
+        }
         self._data:Dict[str,Any] = dict()
     @property
     def name(self)->str: return self._attributes["name"]
@@ -42,6 +45,14 @@ class TWB(abc.ABC):
                 f"Branch/tree {self.name}: Cannot add value to already existing key ({new_key})."
             )
         self._data[new_key] = value
+
+    def do_if_error_occurs(
+        self,
+        on:Literal['cannot_remove_branch_with_children'],
+        action:Callable
+        )->None:
+
+        self._do_on_error[on].append(action)
 
     def set_attribute(self,attr_name:str,value:str)->None:
         if attr_name in self._attributes: self._attributes[attr_name] = value
@@ -117,8 +128,13 @@ class TWB(abc.ABC):
                 parent_branch.remove_branch(*branch_path[1:])
 
         branch_to_be_removed = self._find_branch(branch_path[-1])
-        if branch_to_be_removed is None or branch_to_be_removed.branches(): return
-            
+        if branch_to_be_removed is None: return
+
+        if branch_to_be_removed.branches(): 
+            for action in branch_to_be_removed._do_on_error['cannot_remove_branch_with_children']: 
+                action(branch_to_be_removed)
+            return
+
         for action in branch_to_be_removed._actions['on_removal']: 
             action(branch_to_be_removed)
         self._branches.remove(branch_to_be_removed)

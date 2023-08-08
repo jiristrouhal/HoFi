@@ -3,6 +3,7 @@
 
 import tkinter.ttk as ttk
 import tkinter as tk
+import tkinter.messagebox as tkmsg
 from typing import Tuple, Dict, Callable, Any
 import src.tree as treemod
 from functools import partial
@@ -15,6 +16,10 @@ MENU_CMD_BRANCH_ADD = "Add new"
 
 BUTTON_OK = "OK"
 BUTTON_CANCEL = "Cancel"
+
+
+DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE = "Cannot delete item"
+DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT = ": Cannot delete item with children."
 
 
 class Treeview:
@@ -36,6 +41,10 @@ class Treeview:
         
         self.move_window:tk.Toplevel|None = None
         self.available_parents:ttk.Treeview|None = None
+
+        # this flag will prevent some events to occur when the treeview is tested
+        # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
+        self._messageboxes_allowed:bool = False
         
     def __configure_widget(self)->None:
         self.widget.bind("<Button-3>",self.right_click_item)
@@ -63,8 +72,16 @@ class Treeview:
         for branch in parent._branches:
             iid = self.widget.insert(parent.data["treeview_iid"],"end",text=branch.name)
             self._map[iid] = branch
+            branch.add_action('add_branch', partial(self._on_new_child, iid))
+            branch.add_action('on_removal', partial(self._on_removal, iid))
+            branch.add_action('on_renaming', partial(self._on_renaming, iid))
+            branch.add_action('on_moving', partial(self._on_moving, iid))
             branch.add_data("treeview_iid",iid)
-            branch.add_action('add_branch', partial(self._on_new_child,iid))
+
+            branch.do_if_error_occurs(
+                'cannot_remove_branch_with_children',
+                self._cannot_remove_branch_with_children
+            )
             self._load_branches(branch)
         
 
@@ -86,9 +103,20 @@ class Treeview:
         new_branch.add_action('on_renaming', partial(self._on_renaming, branch_iid))
         new_branch.add_action('on_moving', partial(self._on_moving, branch_iid))
         new_branch.add_data("treeview_iid",branch_iid)
+
+        new_branch.do_if_error_occurs(
+            'cannot_remove_branch_with_children',
+            self._cannot_remove_branch_with_children
+        )
         # always open the item under which the new one has been added 
         self.widget.item(parent_iid,open=True)
-
+    
+    def _cannot_remove_branch_with_children(self,branch:treemod.TWB)->None:
+        if not self._messageboxes_allowed: return
+        tkmsg.showerror(
+            DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE,
+            branch.name+DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT
+        )
 
     def _on_removal(self,branch_iid:str,*args)->None:
         self._map.pop(branch_iid)
@@ -101,7 +129,7 @@ class Treeview:
         self.widget.move(branch_iid, new_parent.data["treeview_iid"], -1)
 
 
-    def right_click_item(self,event:tk.Event)->None:
+    def right_click_item(self,event:tk.Event)->None: # pragma: no cover
         item_id = self.widget.identify_row(event.y)
         if item_id.strip()=="": return 
 
@@ -215,7 +243,7 @@ class Treeview:
             self.add_window_entries[entry_name].destroy()
         self.add_window_entries.clear()
 
-    def open_edit_window_on_double_click(self,event:tk.Event)->None:
+    def open_edit_window_on_double_click(self,event:tk.Event)->None: # pragma: no cover
         iid = self.widget.identify_row(event.y)
         if iid.strip()=="": return
         # prevent automatic opening/closing of the element when double-clicked

@@ -16,6 +16,8 @@ class Test_Empty_Trees(unittest.TestCase):
         self.view = treeview.Treeview()
         self.tree1 = Tree("Tree 1")
         self.view.load_tree(self.tree1)
+        # prevent all GUI elements from showing up
+        self.view._messageboxes_allowed = False
 
     def test_adding_single_tree(self):
         self.assertEqual(self.view.trees, ("Tree 1",))
@@ -93,13 +95,14 @@ class Test_Empty_Trees(unittest.TestCase):
         branch_x_iid = self.view.widget.get_children("Tree 1")[0]
         self.assertEqual(len(self.view.widget.get_children(branch_x_iid)), 1)
 
-
 class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
 
     def setUp(self) -> None:
         self.view = treeview.Treeview()
         self.tree1 = Tree("Tree 1")
         self.view.load_tree(self.tree1)
+        # prevent all GUI elements from showing up
+        self.view._messageboxes_allowed = False
 
     def test_accessing_the_branch_associated_with_the_treeview_item(self):
         self.tree1.add_branch("Branch X")
@@ -111,12 +114,13 @@ class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
         nonexistent_iid = "Nonexistent iid"
         self.assertEqual(self.view.branch(nonexistent_iid), None)
 
-
 class Test_Right_Click_Menu(unittest.TestCase):
 
     def setUp(self) -> None:
         self.view = treeview.Treeview()
         self.tree1 = Tree("Tree 1")
+        # prevent all GUI elements from showing up
+        self.view._messageboxes_allowed = False
         self.view.load_tree(self.tree1)
         self.tree1.add_branch("Branch X", {"length":45})
         self.branch_x_iid = self.view.widget.get_children("Tree 1")[-1] 
@@ -176,6 +180,8 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
     def setUp(self) -> None:
         self.view = treeview.Treeview()
         self.tree1 = Tree("Tree 1")
+        # prevent all GUI elements from showing up
+        self.view._messageboxes_allowed = False
         self.view.load_tree(self.tree1)
         self.tree1.add_branch("Branch X", {"length":45})
         self.tree1.add_branch("Branch Y", {"length":45})
@@ -247,6 +253,8 @@ class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
         self.view = treeview.Treeview()
         self.view.load_tree(self.tree1)
         self.view._open_right_click_menu("Tree 1",root=True)
+        # prevent all GUI elements from showing up
+        self.view._messageboxes_allowed = False
 
     def test_adding_single_branch_to_the_tree(self):
         self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_ADD)
@@ -279,6 +287,8 @@ class Test_Modifying_Loaded_Tree(unittest.TestCase):
 
         self.view = treeview.Treeview()
         self.view.load_tree(self.tree1)
+    # prevent all GUI elements from showing up
+        self.view._messageboxes_allowed = False
     
     def test_adding_child_to_branch_x(self):
         branch_x_id = self.view.widget.get_children("Tree 1")[0]
@@ -288,6 +298,29 @@ class Test_Modifying_Loaded_Tree(unittest.TestCase):
         self.view.add_window_entries["name"].insert(0,"Child of X")
         self.view.add_window.winfo_children()[1].winfo_children()[0].invoke()
         self.assertEqual(self.view._map[self.view.widget.get_children(branch_x_id)[0]].name,"Child of X")
+
+
+class Test_Error_Message(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.tree1 = Tree("Tree 1")
+        self.tree1.add_branch("Branch with children")
+        self.tree1.add_branch("Child",{},"Branch with children")
+
+        self.view = treeview.Treeview()
+        self.view.load_tree(self.tree1)
+        # prevent all GUI elements from showing up
+        self.view._messageboxes_allowed = False
+
+    def test_pop_up_error_message_when_attempting_to_delete_branch_with_children(self):
+        self.x = 0
+        def set_x_to_one(*args): self.x=1
+        self.tree1._find_branch("Branch with children").do_if_error_occurs(
+            'cannot_remove_branch_with_children',
+            set_x_to_one
+        )
+        self.tree1.remove_branch("Branch with children")
+        self.assertEqual(self.x,1)
 
 
 if __name__=="__main__": unittest.main()
