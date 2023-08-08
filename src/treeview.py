@@ -22,7 +22,10 @@ DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE = "Cannot delete item"
 DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT = ": Cannot delete item with children."
 
 
-def configure_treeview_appearance(treeview:ttk.Treeview)->None:
+MOVE_WINDOW_TITLE = "Select new parent"
+
+
+def configure_treeview(treeview:ttk.Treeview)->None:
     # hide zeroth row, that would contain the tree columns' headings
     treeview.config(
         selectmode='browse',
@@ -58,7 +61,7 @@ class Treeview:
         self.widget.bind("<Button-3>",self.right_click_item)
         self.widget.bind("<Double-Button-1>",self.open_edit_window_on_double_click,add="")
 
-        configure_treeview_appearance(self.widget)
+        configure_treeview(self.widget)
 
         self.widget.pack()
 
@@ -317,11 +320,13 @@ class Treeview:
         assert(self.move_window is None and self.available_parents is None)
 
         self.move_window = tk.Toplevel(self.widget)
+        self.move_window.grab_set()
+        self.move_window.title(MOVE_WINDOW_TITLE)
 
         self.available_parents = ttk.Treeview(self.move_window)
-        configure_treeview_appearance(self.available_parents)
+        configure_treeview(self.available_parents)
         tree_id = self.__get_tree_id(item_id)
-        self.available_parents.insert("","end",iid=tree_id)
+        self.available_parents.insert("","end",iid=tree_id,text=tree_id)
         self._collect_available_parents(tree_id,item_id)
         self.available_parents.pack()
         button_frame(
