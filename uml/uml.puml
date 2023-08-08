@@ -89,3 +89,27 @@ skinparam Style strictuml
     destroy EditWindow
 
 @enduml
+
+
+@startuml error_message_sequence_diagram
+skinparam Shadowing false
+skinparam Style strictuml
+
+    actor "User" as User
+    participant "<u>: Treeview</u>" as Treeview
+    activate Treeview
+    participant "<u>: Branch</u>" as Branch
+
+    User -> Treeview: Select action
+    Treeview -> Branch: Call action on branch
+    group Action fails
+        Branch -> Treeview: Error message
+
+        participant "<u>: MessageBox</u>" as MessageBox
+        create MessageBox
+
+        Treeview -> MessageBox: Create
+        User -> MessageBox: Close
+        destroy MessageBox
+    end
+@enduml
