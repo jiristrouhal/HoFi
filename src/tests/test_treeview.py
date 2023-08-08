@@ -213,6 +213,7 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
         self.assertEqual(self.view.available_parents,None)
 
     def test_selecting_a_new_parent_but_canceling_the_move_have_no_effect_on_the_tree(self):
+        
         self.view.available_parents.selection_set(self.tree1._find_branch("Branch X").data["treeview_iid"])
         cancel_button:tk.Button = self.view.move_window.winfo_children()[-1].winfo_children()[1]
         cancel_button.invoke()

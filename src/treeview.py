@@ -226,6 +226,8 @@ class Treeview:
     def open_add_window(self,parent_id:str,attributes:Dict[str,Any])->None:
         self.add_window = tk.Toplevel(self.widget)
         self.add_window.grab_set()
+        self.add_window.focus_set()
+
         self.add_window_entries = dict()
         entries_frame = tk.Frame(self.add_window)
         row=0
@@ -239,11 +241,15 @@ class Treeview:
         entries_frame.pack()
 
         assert(self.add_window is not None)
+        self.add_window.bind("<Key-Escape>",self._disregard_add_entry_values_on_keypress)
         button_frame(
             self.add_window,
             ok_cmd = partial(self.confirm_add_entry_values,parent_id),
             cancel_cmd = self.disregard_add_entry_values
         ).pack(side=tk.BOTTOM)
+
+    def _disregard_add_entry_values_on_keypress(self,event:tk.Event)->None:
+        self.disregard_add_entry_values()
 
     def confirm_add_entry_values(self,parent_id:str)->None:
         if self.add_window is None: return
@@ -279,7 +285,7 @@ class Treeview:
     def open_edit_window(self,item_id:str)->None:
         self.edit_window = tk.Toplevel(self.widget)
         self.edit_window.grab_set()
-        self.edit_window.focus_get()
+        self.edit_window.focus_set()
         self.edit_entries = dict()
         item = self._map[item_id]
         entries_frame = tk.Frame(self.edit_window)
@@ -294,6 +300,7 @@ class Treeview:
         entries_frame.pack()
         
         assert(self.edit_window is not None)
+        self.edit_window.bind("<Key-Escape>",self._disregard_edit_entry_values_on_keypress)
         button_frame(
             self.edit_window,
             ok_cmd = partial(self.confirm_edit_entry_values,item_id),
@@ -319,6 +326,9 @@ class Treeview:
         self.edit_window = None
         for entry_name in self.edit_entries: self.edit_entries[entry_name].destroy()
         self.edit_entries.clear()
+    
+    def _disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None:
+        self.disregard_edit_entry_values()
 
     def disregard_edit_entry_values(self)->None:
         if self.edit_window is None: return
@@ -333,6 +343,7 @@ class Treeview:
 
         self.move_window = tk.Toplevel(self.widget)
         self.move_window.grab_set()
+        self.move_window.focus_set()
         self.move_window.title(MOVE_WINDOW_TITLE)
 
         self.available_parents = ttk.Treeview(self.move_window)
