@@ -111,7 +111,7 @@ class Treeview:
         # always open the item under which the new one has been added 
         self.widget.item(parent_iid,open=True)
     
-    def _cannot_remove_branch_with_children(self,branch:treemod.TWB)->None:
+    def _cannot_remove_branch_with_children(self,branch:treemod.TWB)->None: # pragma: no cover
         if not self._messageboxes_allowed: return
         tkmsg.showerror(
             DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE,
