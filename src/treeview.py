@@ -26,10 +26,13 @@ MOVE_WINDOW_TITLE = "Select new parent"
 
 
 def configure_treeview(treeview:ttk.Treeview)->None:
-    # hide zeroth row, that would contain the tree columns' headings
+
+    style = ttk.Style()
+    style.configure('Treeview',indent=10)
+
     treeview.config(
         selectmode='browse',
-        show='tree'
+        show='tree', # hide zeroth row, that would contain the tree columns' headings
     )
 
 
@@ -55,15 +58,24 @@ class Treeview:
 
         # this flag will prevent some events to occur when the treeview is tested
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
-        self._messageboxes_allowed:bool = False
+        self._messageboxes_allowed:bool = True
         
     def __configure_widget(self)->None:
         self.widget.bind("<Button-3>",self.right_click_item)
         self.widget.bind("<Double-Button-1>",self.open_edit_window_on_double_click,add="")
-
+        self.widget.bind("<Key-Delete>",self.remove_selected_item)
         configure_treeview(self.widget)
 
         self.widget.pack()
+
+    def remove_selected_item(self,event:tk.Event)->None:
+        selection = self.widget.selection()
+        if not selection: return
+        item_iid = self.widget.selection()[0]
+        if item_iid.strip()=="": return # cannot delete treeview root
+        item = self._map[item_iid]
+        if item.parent is None: return # cannot delete tree
+        item.parent.remove_branch(item.name)
 
     @property
     def trees(self)->Tuple[str,...]: 
