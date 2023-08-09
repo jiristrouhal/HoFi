@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import List, Tuple, Dict, Any, Callable, Literal
 import abc
-import re
+import naming
 
 
 class TWB(abc.ABC):
@@ -62,29 +62,14 @@ class TWB(abc.ABC):
             self._parent._branches.remove(self)
         # if the name already exists under the new parent, change the current name
         while new_parent._find_branch(self.name) is not None: 
-            self._attributes["name"] = self._change_name_if_already_taken(self.name)
+            self._attributes["name"] = naming.change_name_if_already_taken(self.name)
         self._parent = new_parent
         self._parent._branches.append(self)
-
-    def _change_name_if_already_taken(self,name:str)->str:
-        PATTERN = "[\s\S]*\(\d+\)"
-        if re.fullmatch(PATTERN,name):
-            s = name[:-1].strip() # get rid of closing parenthesis and spaces before that
-            # extract the number inside the parentheses
-            number_str = ""
-            while re.fullmatch("[\d]",s[-1]):
-                number_str += s[-1]
-                s = s[:-1]
-            number_str = str(int(number_str)+1)
-            name = s.strip() + number_str+')'
-        else:
-            name += " (1)"
-        return name
 
     def rename(self,name:str)->None:
         if self._parent is not None:
             if self._parent._find_branch(name) is not None:
-                name = self._change_name_if_already_taken(name)
+                name = naming.change_name_if_already_taken(name)
         self._attributes["name"] = name.strip()
 
     def branches(self,*branches_along_the_path:str)->List[str]: 
