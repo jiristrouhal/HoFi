@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import List, Tuple, Dict, Any, Callable, Literal
 import abc
-import naming
+import src.naming
 
 
 class TWB(abc.ABC):
@@ -62,14 +62,14 @@ class TWB(abc.ABC):
             self._parent._branches.remove(self)
         # if the name already exists under the new parent, change the current name
         while new_parent._find_branch(self.name) is not None: 
-            self._attributes["name"] = naming.change_name_if_already_taken(self.name)
+            self._attributes["name"] = src.naming.change_name_if_already_taken(self.name)
         self._parent = new_parent
         self._parent._branches.append(self)
 
     def rename(self,name:str)->None:
         if self._parent is not None:
             if self._parent._find_branch(name) is not None:
-                name = naming.change_name_if_already_taken(name)
+                name = src.naming.change_name_if_already_taken(name)
         self._attributes["name"] = name.strip()
 
     def branches(self,*branches_along_the_path:str)->List[str]: 
