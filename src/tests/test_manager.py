@@ -76,8 +76,8 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
 
     def test_nonempty_tree_after_saving_and_loading_is_unchanged(self):
         self.app_instance.new_tree("Tree 1")
-        self.app_instance.tree("Tree 1").add_branch("Branch X",{"weight":25})
-        self.app_instance.tree("Tree 1").add_branch("Branch Y",{"weight":30})
+        self.app_instance.tree("Tree 1").add_branch("Branch X",attributes={"weight":25})
+        self.app_instance.tree("Tree 1").add_branch("Branch Y",attributes={"weight":30})
 
         self.app_instance.save_new_tree("Tree 1")
         self.app_instance.remove_tree("Tree 1")
@@ -86,9 +86,9 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
 
     def test_nonempty_tree_with_branches_having_child_branches_is_unchanged_after_saving_and_loading_(self):
         self.app_instance.new_tree("Tree 1")
-        self.app_instance.tree("Tree 1").add_branch("Branch X",{"weight":25})
-        self.app_instance.tree("Tree 1").add_branch("Small branch",{"weight":10},"Branch X")
-        self.app_instance.tree("Tree 1").add_branch("Smaller branch",{"weight":5},"Branch X","Small branch")
+        self.app_instance.tree("Tree 1").add_branch("Branch X",attributes={"weight":25})
+        self.app_instance.tree("Tree 1").add_branch("Small branch","Branch X",attributes={"weight":10})
+        self.app_instance.tree("Tree 1").add_branch("Smaller branch","Branch X","Small branch",attributes={"weight":5})
         
         self.app_instance.save_new_tree("Tree 1")
         self.app_instance.remove_tree("Tree 1")

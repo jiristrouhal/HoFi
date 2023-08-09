@@ -6,7 +6,7 @@ import src.naming
 
 class TreeItem(abc.ABC):
 
-    def __init__(self,name:str="",attributes:Dict[str,Any]=dict())->None:
+    def __init__(self,name:str="",attributes:Dict[str,Any]=dict(),type:Literal['leaf','branch']='branch')->None:
         self._attributes = {k:str(v) for k,v in attributes.items()} 
         self._attributes["name"] = name.strip()
         self._branches:List[TreeItem] = list()
@@ -22,6 +22,7 @@ class TreeItem(abc.ABC):
             'cannot_remove_branch_with_children':[],
         }
         self._data:Dict[str,Any] = dict()
+        self.__type = type
     @property
     def name(self)->str: return self._attributes["name"]
     @property
@@ -30,6 +31,8 @@ class TreeItem(abc.ABC):
     def parent(self)->TreeItem|None: return self._parent
     @property
     def data(self)->Dict[str,Any]: return self._data.copy()
+    @property
+    def type(self)->str: return self.__type
 
     def add_action(
         self,
@@ -72,7 +75,9 @@ class TreeItem(abc.ABC):
                 name = src.naming.change_name_if_already_taken(name)
         self._attributes["name"] = name.strip()
 
-    def branches(self,*branches_along_the_path:str)->List[str]: 
+    def branches(self,*branches_along_the_path:str)->List[str]:
+        if self.__type=='leaf': return [] 
+
         if branches_along_the_path:
             # list branches growing out of some child element of the current object
             lowest_level_branch = self._find_branch(*branches_along_the_path)
@@ -81,12 +86,14 @@ class TreeItem(abc.ABC):
         # display branches growint out of the current object (branch, tree, ...)
         return [b.name for b in self._branches]
     
-    def add_branch(self,name:str,attributes:Dict[str,Any]=dict(),*branches_along_the_path:str)->None:
+    def add_branch(self,name:str,*branches_along_the_path:str,attributes:Dict[str,Any]=dict())->None:
+        if self.__type=='leaf': return 
+
         if branches_along_the_path:
             # add the new branch to some sub-branch
             smallest_parent_branch = self._find_branch(*branches_along_the_path)
             if smallest_parent_branch is None: return
-            smallest_parent_branch.add_branch(name,attributes)
+            smallest_parent_branch.add_branch(name,attributes={})
         else:  # add the branch directly to the current object
             branch = Branch(name,attributes)
             branch._set_parent(self)
@@ -94,6 +101,8 @@ class TreeItem(abc.ABC):
                 action(branch)
         
     def move_branch(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...])->None:
+        if self.__type=='leaf': return 
+
         if self._does_path_point_to_child_of_branch_or_to_branch_itself(branch_path,new_branch_parent_path):
             return
         branch = self._find_branch(*branch_path)
@@ -107,6 +116,8 @@ class TreeItem(abc.ABC):
                 action(parent)
 
     def remove_branch(self,*branch_path:str)->None:
+        if self.__type=='leaf': return 
+
         if len(branch_path)>1:
             parent_branch = self._find_branch(*branch_path[:-1])
             if parent_branch is not None: 
@@ -125,6 +136,8 @@ class TreeItem(abc.ABC):
         self._branches.remove(branch_to_be_removed)
     
     def rename_branch(self,branch_path:Tuple[str,...],new_name:str)->None:
+        if self.__type=='leaf': return 
+
         branch = self._find_branch(*branch_path)
         if branch is None: return
         branch.rename(new_name)

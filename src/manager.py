@@ -87,7 +87,7 @@ class App:
 
         for elem in xml_elem.findall("Branch"):
             branch_name = elem.attrib["name"]
-            thing_with_branches.add_branch(branch_name,elem.attrib)
+            thing_with_branches.add_branch(branch_name,attributes=elem.attrib)
 
             child_branch = thing_with_branches._find_branch(branch_name)
             self.__load_xml_elem(elem,child_branch)

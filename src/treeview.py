@@ -171,7 +171,7 @@ class Treeview:
         self.widget.item(branch_iid,text=branch.name)
 
     def _on_moving(self,branch_iid:str,new_parent:treemod.TreeItem)->None:
-        self.widget.move(branch_iid, new_parent.data["treeview_iid"], -1)
+        self.widget.move(branch_iid, new_parent.data["treeview_iid"], 0)
 
 
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
@@ -301,7 +301,7 @@ class Treeview:
             attributes[label] = entry.get()
         
         name = attributes.pop("name")
-        self._map[parent_id].add_branch(name,attributes)
+        self._map[parent_id].add_branch(name,attributes=attributes)
 
         self.add_window.destroy()
         self.add_window = None

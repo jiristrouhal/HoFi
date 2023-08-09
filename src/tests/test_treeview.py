@@ -47,7 +47,7 @@ class Test_Empty_Trees(unittest.TestCase):
     
     def test_adding_branch_to_tree_branch_adds_element_to_the_treeview(self):
         self.tree1.add_branch("Branch X")
-        self.tree1.add_branch("Small branch",{},"Branch X")
+        self.tree1.add_branch("Small branch","Branch X",attributes={})
         self.assertEqual(len(self.view.widget.get_children("Tree 1")), 1)
         branch_x_iid = self.view.widget.get_children("Tree 1")[0]
         self.assertEqual(len(self.view.widget.get_children(branch_x_iid)), 1)
@@ -122,7 +122,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
         # prevent all GUI elements from showing up
         self.view._messageboxes_allowed = False
         self.view.load_tree(self.tree1)
-        self.tree1.add_branch("Branch X", {"length":45})
+        self.tree1.add_branch("Branch X", attributes={"length":45})
         self.branch_x_iid = self.view.widget.get_children("Tree 1")[-1] 
         self.view._open_right_click_menu(self.branch_x_iid)
 
@@ -183,10 +183,10 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
         # prevent all GUI elements from showing up
         self.view._messageboxes_allowed = False
         self.view.load_tree(self.tree1)
-        self.tree1.add_branch("Branch X", {"length":45})
-        self.tree1.add_branch("Branch Y", {"length":45})
-        self.tree1.add_branch("Branch Z", {"length":20})
-        self.tree1.add_branch("Child of Z", {"length":10}, "Branch Z")
+        self.tree1.add_branch("Branch X", attributes={"length":45})
+        self.tree1.add_branch("Branch Y", attributes={"length":45})
+        self.tree1.add_branch("Branch Z", attributes={"length":20})
+        self.tree1.add_branch("Child of Z", "Branch Z", attributes={"length":10})
         self.small_branch_id = self.view.widget.get_children("Tree 1")[0] 
         self.view._open_right_click_menu(self.small_branch_id)
         self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_MOVE)
@@ -231,9 +231,9 @@ class Test_Load_Existing_Tree(unittest.TestCase):
     def setUp(self) -> None:
         self.tree1 = Tree("Tree 1")
         self.tree1.add_branch("Branch X")
-        self.tree1.add_branch("Child of X",{},"Branch X")
+        self.tree1.add_branch("Child of X","Branch X",attributes={})
         self.tree1.add_branch("Branch Y")
-        self.tree1.add_branch("Grandchild of X",{},"Branch X","Child of X")
+        self.tree1.add_branch("Grandchild of X","Branch X","Child of X",attributes={})
 
     def test_loading_tree(self):
         view = treeview.Treeview()
@@ -284,7 +284,7 @@ class Test_Modifying_Loaded_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
         self.tree1 = Tree("Tree 1")
-        self.tree1.add_branch("Branch X")
+        self.tree1.add_branch("Branch X",attributes={})
 
         self.view = treeview.Treeview()
         self.view.load_tree(self.tree1)
@@ -305,9 +305,8 @@ class Test_Error_Message(unittest.TestCase):
 
     def setUp(self) -> None:
         self.tree1 = Tree("Tree 1")
-        self.tree1.add_branch("Branch with children")
-        self.tree1.add_branch("Child",{},"Branch with children")
-
+        self.tree1.add_branch("Branch with children",attributes={})
+        self.tree1.add_branch("Child","Branch with children",attributes={})
         self.view = treeview.Treeview()
         self.view.load_tree(self.tree1)
         # prevent all GUI elements from showing up
