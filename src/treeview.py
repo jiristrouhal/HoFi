@@ -290,7 +290,7 @@ class Treeview:
             cancel_cmd = self.disregard_add_entry_values
         ).pack(side=tk.BOTTOM)
 
-    def _disregard_add_entry_values_on_keypress(self,event:tk.Event)->None:
+    def _disregard_add_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
         self.disregard_add_entry_values()
 
     def confirm_add_entry_values(self,parent_id:str)->None:
@@ -369,7 +369,7 @@ class Treeview:
         for entry_name in self.edit_entries: self.edit_entries[entry_name].destroy()
         self.edit_entries.clear()
     
-    def _disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None:
+    def _disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
         self.disregard_edit_entry_values()
 
     def disregard_edit_entry_values(self)->None:
