@@ -123,13 +123,13 @@ class Treeview:
         new_branch:treemod.TWB
         )->None:
 
-        branch_iid = self.widget.insert(parent_iid,"end",text=new_branch.name)
-        self._map[branch_iid] = new_branch
-        new_branch.add_action('add_branch', partial(self._on_new_child, branch_iid))
-        new_branch.add_action('on_removal', partial(self._on_removal, branch_iid))
-        new_branch.add_action('on_renaming', partial(self._on_renaming, branch_iid))
-        new_branch.add_action('on_moving', partial(self._on_moving, branch_iid))
-        new_branch.add_data("treeview_iid",branch_iid)
+        item_iid = self.widget.insert(parent_iid,"end",text=new_branch.name)
+        self._map[item_iid] = new_branch
+        new_branch.add_action('add_branch', partial(self._on_new_child, item_iid))
+        new_branch.add_action('on_removal', partial(self._on_removal, item_iid))
+        new_branch.add_action('on_renaming', partial(self._on_renaming, item_iid))
+        new_branch.add_action('on_moving', partial(self._on_moving, item_iid))
+        new_branch.add_data("treeview_iid",item_iid)
 
         new_branch.do_if_error_occurs(
             'cannot_remove_branch_with_children',
@@ -137,6 +137,9 @@ class Treeview:
         )
         # always open the item under which the new one has been added 
         self.widget.item(parent_iid,open=True)
+        self.widget.selection_set(item_iid)
+        # scroll to the added item
+        self.widget.see(item_iid)
     
     def _cannot_remove_branch_with_children(self,branch:treemod.TWB)->None: # pragma: no cover
         if not self._messageboxes_allowed: return
