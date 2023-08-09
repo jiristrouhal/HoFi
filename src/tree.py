@@ -81,7 +81,7 @@ class TreeItem(abc.ABC):
     def leafs(self,*branches_along_the_path:str)->List[str]:
         return self._list_children(*branches_along_the_path,type='leaf')
     
-    def _list_children(self,*branches_along_the_path:str,type:Literal['leaf','branch','none'])->List[str]:
+    def _list_children(self,*branches_along_the_path:str,type:Literal['leaf','branch','all'])->List[str]:
         if self.__type=='leaf': return [] 
 
         if branches_along_the_path:
@@ -90,7 +90,7 @@ class TreeItem(abc.ABC):
             if lowest_level_branch is not None:
                 return lowest_level_branch.branches()
         # display branches growint out of the current object (branch, tree, ...)
-        if type=='none':
+        if type=='all':
             return [b.name for b in self._children]
         return [b.name for b in self._children if b.type==type]
     
