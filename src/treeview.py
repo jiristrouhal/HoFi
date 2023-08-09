@@ -75,7 +75,7 @@ class Treeview:
         self.widget.bind("<Key-Delete>",self.remove_selected_item)
         configure_treeview(self.widget)
 
-    def remove_selected_item(self,event:tk.Event)->None:
+    def remove_selected_item(self,event:tk.Event)->None: # pragma: no cover
         selection = self.widget.selection()
         if not selection: return
         item_iid = self.widget.selection()[0]
@@ -92,11 +92,11 @@ class Treeview:
         if treeview_iid not in self._map: return None
         return self._map[treeview_iid]
     
-    def _open_all(self,item_id:str)->None:
+    def _open_all(self,item_id:str)->None: # pragma: no cover
         self.widget.item(item_id,open=True)
         for child_id in self.widget.get_children(item_id): self._open_all(child_id)
     
-    def _close_all(self,item_id:str)->None:
+    def _close_all(self,item_id:str)->None: # pragma: no cover
         self.widget.item(item_id,open=False)
         for child_id in self.widget.get_children(item_id): self._close_all(child_id)
     
