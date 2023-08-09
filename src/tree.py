@@ -78,7 +78,7 @@ class TreeItem(abc.ABC):
     def branches(self,*branches_along_the_path:str)->List[str]:
         return self._list_children(*branches_along_the_path,type='branch')
     
-    def leafs(self,*branches_along_the_path:str)->List[str]:
+    def leaves(self,*branches_along_the_path:str)->List[str]:
         return self._list_children(*branches_along_the_path,type='leaf')
     
     def _list_children(self,*branches_along_the_path:str,type:Literal['leaf','branch','all'])->List[str]:

@@ -159,7 +159,7 @@ class Test_Adding_Leaf_Type_Item(unittest.TestCase):
 
     def test_leaves_and_branches_can_be_obtained_separatelly(self):
         self.assertEqual(self.tree.branches(),["Branch X"])
-        self.assertEqual(self.tree.leafs(),["Leaf X"])
+        self.assertEqual(self.tree.leaves(),["Leaf X"])
         
     def test_branches_and_leaves_names_can_be_retrieved_together(self):
         self.assertEqual(self.tree._list_children(type='all'),["Branch X","Leaf X"])
