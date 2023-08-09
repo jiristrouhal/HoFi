@@ -42,8 +42,6 @@ def configure_treeview(treeview:ttk.Treeview)->None:
 
     )
 
-
-
 def _open_descendants(treeview:ttk.Treeview,item_id:str)->None:
     for child_id in treeview.get_children(item_id):
         treeview.item(child_id,open=True)
@@ -100,7 +98,7 @@ class Treeview:
     def load_tree(self,tree:treemod.Tree)->None: 
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
         # create action, that the tree object will run after it creates a new branch
-        self.widget.insert("","end",iid=tree.name,text=tree.name)
+        self.widget.insert("",index=0,iid=tree.name,text=tree.name)
         self._map[tree.name] = tree
         tree.add_data("treeview_iid",tree.name)
         tree.add_action('add_branch', partial(self._on_new_child,tree.name)) 
@@ -109,7 +107,7 @@ class Treeview:
 
     def _load_branches(self,parent:treemod.TWB)->None:
         for branch in parent._branches:
-            iid = self.widget.insert(parent.data["treeview_iid"],"end",text=branch.name)
+            iid = self.widget.insert(parent.data["treeview_iid"],index=0,text=branch.name)
             self._map[iid] = branch
             branch.add_action('add_branch', partial(self._on_new_child, iid))
             branch.add_action('on_removal', partial(self._on_removal, iid))
@@ -135,7 +133,7 @@ class Treeview:
         new_branch:treemod.TWB
         )->None:
 
-        item_iid = self.widget.insert(parent_iid,"end",text=new_branch.name)
+        item_iid = self.widget.insert(parent_iid,index=0,text=new_branch.name)
         self._map[item_iid] = new_branch
         new_branch.add_action('add_branch', partial(self._on_new_child, item_iid))
         new_branch.add_action('on_removal', partial(self._on_removal, item_iid))
@@ -365,7 +363,7 @@ class Treeview:
         self.available_parents = ttk.Treeview(self.move_window)
         configure_treeview(self.available_parents)
         tree_id = self.__get_tree_id(item_id)
-        self.available_parents.insert("","end",iid=tree_id,text=tree_id)
+        self.available_parents.insert("",index=0,iid=tree_id,text=tree_id)
         self._collect_available_parents(tree_id,item_id)
         self.available_parents.pack()
         button_frame(
@@ -394,7 +392,7 @@ class Treeview:
         for child_id in self.widget.get_children(parent_id):
             if child_id==item_id: continue
             child = self.widget.item(child_id)
-            self.available_parents.insert(parent_id,"end",iid=child_id,text=child["text"])
+            self.available_parents.insert(parent_id,index=0,iid=child_id,text=child["text"])
             self._collect_available_parents(child_id,item_id)
 
     def __get_tree_id(self,item_id:str)->str:
