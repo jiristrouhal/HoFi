@@ -16,6 +16,7 @@ MENU_CMD_BRANCH_ADD = "Add new"
 
 BUTTON_OK = "OK"
 BUTTON_CANCEL = "Cancel"
+REVERT_ENTRY_VALUE_CHANGES = "Revert"
 
 
 DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE = "Cannot delete item"
@@ -305,7 +306,7 @@ class Treeview:
             self.edit_window,
             ok_cmd = partial(self.confirm_edit_entry_values,item_id),
             cancel_cmd = self.disregard_edit_entry_values,
-            revert_cmd = partial(self.back_to_original_edit_entry_values,item_id)
+            commands={REVERT_ENTRY_VALUE_CHANGES:partial(self.back_to_original_edit_entry_values,item_id)}
         ).pack(side=tk.BOTTOM)
         
 
@@ -393,7 +394,7 @@ def button_frame(
     master:tk.Toplevel|tk.Tk,
     ok_cmd:Callable[[],None],
     cancel_cmd:Callable[[],None],
-    **commands:Callable[[],None]
+    commands:Dict[str,Callable[[],None]] = {}
     )->tk.Frame:
 
     frame = tk.Frame(master)
