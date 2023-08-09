@@ -55,7 +55,7 @@ class Test_Empty_Trees(unittest.TestCase):
     def test_adding_branch_with_already_existing_name_makes_treeview_show_the_adjusted_name(self):
         self.tree1.add_branch("Branch X")
         self.tree1.add_branch("Branch X")
-        adjusted_name = self.tree1._branches[-1].name
+        adjusted_name = self.tree1._children[-1].name
         self.assertEqual(
             self.view.widget.item(self.view.widget.get_children("Tree 1")[0])["text"],
             adjusted_name
@@ -150,7 +150,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
 
         self.view.confirm_edit_entry_values(self.branch_x_iid)
         self.assertEqual(self.tree1.branches()[0],"Branch YZ")
-        self.assertEqual(self.tree1._branches[0].attributes["length"],"78")
+        self.assertEqual(self.tree1._children[0].attributes["length"],"78")
     
     def test_after_confirming_the_entries_the_edit_window_closes(self):
         self.view.right_click_menu.invoke(treeview.MENU_CMD_BRANCH_EDIT)
@@ -240,7 +240,7 @@ class Test_Load_Existing_Tree(unittest.TestCase):
         view.load_tree(self.tree1)
         main_branches_ids = view.widget.get_children("Tree 1")
         self.assertListEqual([view._map[id].name for id in main_branches_ids], ["Branch Y","Branch X"])
-        branch_x_id = self.tree1._branches[0].data["treeview_iid"]
+        branch_x_id = self.tree1._children[0].data["treeview_iid"]
         child_of_x_id = view.widget.get_children(branch_x_id)[0]
         self.assertEqual(view.branch(child_of_x_id).name,"Child of X")
         grandchild_of_x_id = view.widget.get_children(child_of_x_id)[0]

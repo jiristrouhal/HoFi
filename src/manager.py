@@ -63,7 +63,7 @@ class App:
         parent_xml_elem:et.Element
         )->None:
 
-        for branch in parent._branches:
+        for branch in parent._children:
             xml_elem = et.SubElement(parent_xml_elem,"Branch",branch.attributes)
             self.__create_xml_elem(branch,xml_elem)
 

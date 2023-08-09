@@ -9,7 +9,7 @@ class TreeItem(abc.ABC):
     def __init__(self,name:str="",attributes:Dict[str,Any]=dict(),type:Literal['leaf','branch']='branch')->None:
         self._attributes = {k:str(v) for k,v in attributes.items()} 
         self._attributes["name"] = name.strip()
-        self._branches:List[TreeItem] = list()
+        self._children:List[TreeItem] = list()
         self._parent:TreeItem|None = None
         self._actions:Dict[str,List[Callable]] = \
         {
@@ -62,12 +62,12 @@ class TreeItem(abc.ABC):
 
     def _set_parent(self,new_parent:TreeItem)->None:
         if self._parent is not None: 
-            self._parent._branches.remove(self)
+            self._parent._children.remove(self)
         # if the name already exists under the new parent, change the current name
         while new_parent._find_branch(self.name) is not None: 
             self._attributes["name"] = src.naming.change_name_if_already_taken(self.name)
         self._parent = new_parent
-        self._parent._branches.append(self)
+        self._parent._children.append(self)
 
     def rename(self,name:str)->None:
         if self._parent is not None:
@@ -76,6 +76,12 @@ class TreeItem(abc.ABC):
         self._attributes["name"] = name.strip()
 
     def branches(self,*branches_along_the_path:str)->List[str]:
+        return self._list_children(*branches_along_the_path,type='branch')
+    
+    def leafs(self,*branches_along_the_path:str)->List[str]:
+        return self._list_children(*branches_along_the_path,type='leaf')
+    
+    def _list_children(self,*branches_along_the_path:str,type:Literal['leaf','branch','none'])->List[str]:
         if self.__type=='leaf': return [] 
 
         if branches_along_the_path:
@@ -84,9 +90,27 @@ class TreeItem(abc.ABC):
             if lowest_level_branch is not None:
                 return lowest_level_branch.branches()
         # display branches growint out of the current object (branch, tree, ...)
-        return [b.name for b in self._branches]
+        if type=='none':
+            return [b.name for b in self._children]
+        return [b.name for b in self._children if b.type==type]
     
-    def add_branch(self,name:str,*branches_along_the_path:str,attributes:Dict[str,Any]=dict())->None:
+    def add_leaf(
+        self,
+        name:str,
+        *branches_along_the_path:str,
+        attributes:Dict[str,Any]=dict()
+        )->None:
+
+        self.add_branch(name,*branches_along_the_path,attributes=attributes,type='leaf')
+
+    def add_branch(
+        self,
+        name:str,
+        *branches_along_the_path:str,
+        attributes:Dict[str,Any]=dict(),
+        type:Literal['branch','leaf'] = 'branch',
+        )->None:
+
         if self.__type=='leaf': return 
 
         if branches_along_the_path:
@@ -95,7 +119,7 @@ class TreeItem(abc.ABC):
             if smallest_parent_branch is None: return
             smallest_parent_branch.add_branch(name,attributes={})
         else:  # add the branch directly to the current object
-            branch = Branch(name,attributes)
+            branch = Branch(name,attributes,type=type)
             branch._set_parent(self)
             for action in self._actions['add_branch']: 
                 action(branch)
@@ -133,7 +157,7 @@ class TreeItem(abc.ABC):
 
         for action in branch_to_be_removed._actions['on_removal']: 
             action(branch_to_be_removed)
-        self._branches.remove(branch_to_be_removed)
+        self._children.remove(branch_to_be_removed)
     
     def rename_branch(self,branch_path:Tuple[str,...],new_name:str)->None:
         if self.__type=='leaf': return 
@@ -158,7 +182,7 @@ class TreeItem(abc.ABC):
     def _find_branch(self,*branch_names:str)->TreeItem|None:
         if not branch_names: return None
         parent_name = branch_names[0]
-        for branch in self._branches:
+        for branch in self._children:
             if parent_name==branch.name:
                 if len(branch_names)>1: 
                     return branch._find_branch(*branch_names[1:])

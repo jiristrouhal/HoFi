@@ -111,7 +111,7 @@ class Treeview:
         self._open_all("")
 
     def _load_branches(self,parent:treemod.TreeItem)->None:
-        for branch in parent._branches:
+        for branch in parent._children:
             iid = self.widget.insert(parent.data["treeview_iid"],index=0,text=branch.name)
             self._map[iid] = branch
             branch.add_action('add_branch', partial(self._on_new_child, iid))

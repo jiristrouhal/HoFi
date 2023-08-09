@@ -142,13 +142,26 @@ class Test_Actions(unittest.TestCase):
         self.assertEqual(self.x,1)
 
     def test_adding_values_to_branch_data(self):
-        self.tree._branches[0].add_data("key1", 123)
-        self.assertEqual(self.tree._branches[0].data["key1"], 123)
+        self.tree._children[0].add_data("key1", 123)
+        self.assertEqual(self.tree._children[0].data["key1"], 123)
 
     def test_adding_values_to_branch_data_under_existing_key_raises_error(self):
-        self.tree._branches[0].add_data("key1", 123)
-        self.assertRaises(KeyError, self.tree._branches[0].add_data, "key1", 456)
+        self.tree._children[0].add_data("key1", 123)
+        self.assertRaises(KeyError, self.tree._children[0].add_data, "key1", 456)
 
+
+class Test_Adding_Leaf_Type_Item(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.tree = tree.Tree("Tree 1")
+        self.tree.add_branch("Branch X")
+
+    def test_leaves_and_branches_can_be_obtained_separatelly(self):
+        self.tree.add_leaf("Leaf X")
+        self.tree.add_branch("Small branch","Leaf X", attributes={})
+        self.assertEqual(self.tree.branches(),["Branch X"])
+        self.assertEqual(self.tree.leafs(),["Leaf X"])
+        
 
 
 if __name__=="__main__": unittest.main()
