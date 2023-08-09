@@ -13,6 +13,8 @@ MENU_CMD_BRANCH_DELETE = "Delete"
 MENU_CMD_BRANCH_EDIT = "Edit"
 MENU_CMD_BRANCH_MOVE = "Move"
 MENU_CMD_BRANCH_ADD = "Add new"
+MENU_CMD_BRANCH_OPEN_ALL = "Expand all"
+MENU_CMD_BRANCH_CLOSE_ALL = "Collapse all"
 
 BUTTON_OK = "OK"
 BUTTON_CANCEL = "Cancel"
@@ -41,11 +43,6 @@ def configure_treeview(treeview:ttk.Treeview)->None:
         yscrollcommand=scroll_y.set,
 
     )
-
-def _open_descendants(treeview:ttk.Treeview,item_id:str)->None:
-    for child_id in treeview.get_children(item_id):
-        treeview.item(child_id,open=True)
-        _open_descendants(treeview,child_id)
     
 
 class Treeview:
@@ -95,6 +92,14 @@ class Treeview:
         if treeview_iid not in self._map: return None
         return self._map[treeview_iid]
     
+    def _open_all(self,item_id:str)->None:
+        self.widget.item(item_id,open=True)
+        for child_id in self.widget.get_children(item_id): self._open_all(child_id)
+    
+    def _close_all(self,item_id:str)->None:
+        self.widget.item(item_id,open=False)
+        for child_id in self.widget.get_children(item_id): self._close_all(child_id)
+    
     def load_tree(self,tree:treemod.Tree)->None: 
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
         # create action, that the tree object will run after it creates a new branch
@@ -103,7 +108,7 @@ class Treeview:
         tree.add_data("treeview_iid",tree.name)
         tree.add_action('add_branch', partial(self._on_new_child,tree.name)) 
         self._load_branches(tree)
-        _open_descendants(self.widget,"")
+        self._open_all("")
 
     def _load_branches(self,parent:treemod.TWB)->None:
         for branch in parent._branches:
@@ -203,6 +208,18 @@ class Treeview:
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_EDIT,
             command=self._right_click_menu_command(partial(self.open_edit_window,root_id)))
+    
+        self.right_click_menu.add_separator()
+
+        self.right_click_menu.add_command(
+            label=MENU_CMD_BRANCH_OPEN_ALL,
+            command=self._right_click_menu_command(partial(self._open_all,root_id))
+        )
+        self.right_click_menu.add_command(
+            label=MENU_CMD_BRANCH_CLOSE_ALL,
+            command=self._right_click_menu_command(partial(self._close_all,root_id))
+        )
+
 
     def __add_commands_for_item(self,item_id:str)->None:
         branch:treemod.TWB = self._map[item_id]
@@ -225,6 +242,18 @@ class Treeview:
             command=self._right_click_menu_command(partial(self.open_move_window,item_id))
         )
         self.right_click_menu.add_separator()
+
+        self.right_click_menu.add_command(
+            label=MENU_CMD_BRANCH_OPEN_ALL,
+            command=self._right_click_menu_command(partial(self._open_all,item_id))
+        )
+        self.right_click_menu.add_command(
+            label=MENU_CMD_BRANCH_CLOSE_ALL,
+            command=self._right_click_menu_command(partial(self._close_all,item_id))
+        )
+
+        self.right_click_menu.add_separator()
+
         assert(branch.parent is not None)
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_DELETE,
