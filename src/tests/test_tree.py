@@ -7,7 +7,7 @@ import unittest
 class Test_Creating_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.tree = tree.Tree()
+        self.tree = tree.Tree("Tree 1")
         self.tree.add_branch("Branch 1",attributes={"weight":50})
 
     def test_add_branch_to_a_tree(self):

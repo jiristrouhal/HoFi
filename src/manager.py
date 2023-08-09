@@ -25,7 +25,7 @@ class App:
     def new_tree(self,name:str)->None: 
         if name in self._trees: # do not create new tree, if the tree name is already taken
             return
-        self._trees[name] = tree_module.Tree()
+        self._trees[name] = tree_module.Tree(name)
 
     def remove_tree(self,name:str)->None: 
         if name not in self._trees: return

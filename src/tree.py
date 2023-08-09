@@ -6,7 +6,7 @@ import src.naming
 
 class TreeItem(abc.ABC):
 
-    def __init__(self,name:str="",attributes:Dict[str,Any]=dict(),type:Literal['leaf','branch']='branch')->None:
+    def __init__(self,name:str,attributes:Dict[str,Any]=dict(),type:Literal['leaf','branch']='branch')->None:
         self._attributes = {k:str(v) for k,v in attributes.items()} 
         self._attributes["name"] = name.strip()
         self._children:List[TreeItem] = list()
