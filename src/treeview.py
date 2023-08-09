@@ -30,12 +30,25 @@ def configure_treeview(treeview:ttk.Treeview)->None:
 
     style = ttk.Style()
     style.configure('Treeview',indent=10)
+    
+    treeview.pack(side=tk.RIGHT,expand=1,fill=tk.BOTH)
+    scroll_y = ttk.Scrollbar(treeview.master,orient=tk.VERTICAL,command=treeview.yview)
+    scroll_y.pack(side=tk.LEFT,fill=tk.Y)
 
     treeview.config(
         selectmode='browse',
         show='tree', # hide zeroth row, that would contain the tree columns' headings
+        yscrollcommand=scroll_y.set,
+
     )
 
+
+
+def _open_descendants(treeview:ttk.Treeview,item_id:str)->None:
+    for child_id in treeview.get_children(item_id):
+        treeview.item(child_id,open=True)
+        _open_descendants(treeview,child_id)
+    
 
 class Treeview:
 
@@ -67,8 +80,6 @@ class Treeview:
         self.widget.bind("<Key-Delete>",self.remove_selected_item)
         configure_treeview(self.widget)
 
-        self.widget.pack()
-
     def remove_selected_item(self,event:tk.Event)->None:
         selection = self.widget.selection()
         if not selection: return
@@ -94,6 +105,7 @@ class Treeview:
         tree.add_data("treeview_iid",tree.name)
         tree.add_action('add_branch', partial(self._on_new_child,tree.name)) 
         self._load_branches(tree)
+        _open_descendants(self.widget,"")
 
     def _load_branches(self,parent:treemod.TWB)->None:
         for branch in parent._branches:
