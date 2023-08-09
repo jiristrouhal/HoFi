@@ -4,9 +4,19 @@ import abc
 import src.naming
 
 
+DEFAULT_TAG = "Item"
+
+
 class TreeItem(abc.ABC):
 
-    def __init__(self,name:str,attributes:Dict[str,Any]=dict(),type:Literal['leaf','branch']='branch')->None:
+    def __init__(
+        self,
+        name:str,
+        attributes:Dict[str,Any]=dict(),
+        tag:str = DEFAULT_TAG, 
+        type:Literal['leaf','branch']='branch'
+        )->None:
+
         self._attributes = {k:str(v) for k,v in attributes.items()} 
         self._attributes["name"] = name.strip()
         self._children:List[TreeItem] = list()
@@ -23,6 +33,9 @@ class TreeItem(abc.ABC):
         }
         self._data:Dict[str,Any] = dict()
         self.__type = type
+        self.__tag = tag
+
+
     @property
     def name(self)->str: return self._attributes["name"]
     @property
@@ -33,6 +46,8 @@ class TreeItem(abc.ABC):
     def data(self)->Dict[str,Any]: return self._data.copy()
     @property
     def type(self)->str: return self.__type
+    @property
+    def tag(self)->str: return self.__tag
 
     def add_action(
         self,

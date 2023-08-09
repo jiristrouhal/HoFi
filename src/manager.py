@@ -53,7 +53,7 @@ class App:
         tree = self.tree(name)
         if tree is None: return None
 
-        xml_root = et.Element("Tree", {"name":name})
+        xml_root = et.Element(tree.tag, {"name":name})
         self.__create_xml_elem(tree,xml_root)
         return et.ElementTree(xml_root)
 
@@ -64,7 +64,7 @@ class App:
         )->None:
 
         for branch in parent._children:
-            xml_elem = et.SubElement(parent_xml_elem,"Branch",branch.attributes)
+            xml_elem = et.SubElement(parent_xml_elem,branch.tag,branch.attributes)
             self.__create_xml_elem(branch,xml_elem)
 
     def load_tree(self,name:str)->None:
@@ -85,7 +85,7 @@ class App:
         thing_with_branches:tree_module.TreeItem
         )->None:
 
-        for elem in xml_elem.findall("Branch"):
+        for elem in xml_elem:
             branch_name = elem.attrib["name"]
             thing_with_branches.add_branch(branch_name,attributes=elem.attrib)
 
