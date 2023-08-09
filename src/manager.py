@@ -59,7 +59,7 @@ class App:
 
     def __create_xml_elem(
         self,
-        parent:tree_module.TWB,
+        parent:tree_module.TreeItem,
         parent_xml_elem:et.Element
         )->None:
 
@@ -82,7 +82,7 @@ class App:
     def __load_xml_elem(
         self,
         xml_elem:et.Element,
-        thing_with_branches:tree_module.TWB
+        thing_with_branches:tree_module.TreeItem
         )->None:
 
         for elem in xml_elem.findall("Branch"):

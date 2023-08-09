@@ -4,13 +4,13 @@ import abc
 import src.naming
 
 
-class TWB(abc.ABC):
+class TreeItem(abc.ABC):
 
     def __init__(self,name:str="",attributes:Dict[str,Any]=dict())->None:
         self._attributes = {k:str(v) for k,v in attributes.items()} 
         self._attributes["name"] = name.strip()
-        self._branches:List[TWB] = list()
-        self._parent:TWB|None = None
+        self._branches:List[TreeItem] = list()
+        self._parent:TreeItem|None = None
         self._actions:Dict[str,List[Callable]] = \
         {
             'add_branch':[], 
@@ -27,14 +27,14 @@ class TWB(abc.ABC):
     @property
     def attributes(self)->Dict[str,str]: return self._attributes.copy()
     @property 
-    def parent(self)->TWB|None: return self._parent
+    def parent(self)->TreeItem|None: return self._parent
     @property
     def data(self)->Dict[str,Any]: return self._data.copy()
 
     def add_action(
         self,
         on:Literal['add_branch','on_removal','on_renaming','on_moving'],
-        action:Callable[[TWB],None]
+        action:Callable[[TreeItem],None]
         )->None: 
 
         self._actions[on].append(action)
@@ -57,7 +57,7 @@ class TWB(abc.ABC):
     def set_attribute(self,attr_name:str,value:str)->None:
         if attr_name in self._attributes: self._attributes[attr_name] = value
 
-    def _set_parent(self,new_parent:TWB)->None:
+    def _set_parent(self,new_parent:TreeItem)->None:
         if self._parent is not None: 
             self._parent._branches.remove(self)
         # if the name already exists under the new parent, change the current name
@@ -142,7 +142,7 @@ class TWB(abc.ABC):
             if x!=y: return False
         return True
     
-    def _find_branch(self,*branch_names:str)->TWB|None:
+    def _find_branch(self,*branch_names:str)->TreeItem|None:
         if not branch_names: return None
         parent_name = branch_names[0]
         for branch in self._branches:
@@ -153,8 +153,8 @@ class TWB(abc.ABC):
         return None
     
     
-class Tree(TWB): pass
-class Branch(TWB): pass
+class Tree(TreeItem): pass
+class Branch(TreeItem): pass
 
 
 

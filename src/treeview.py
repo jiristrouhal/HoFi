@@ -53,7 +53,7 @@ class Treeview:
 
         self._attribute_template = {"name":"New", "lenght":"0"}
 
-        self._map:Dict[str,treemod.TWB] = dict()
+        self._map:Dict[str,treemod.TreeItem] = dict()
         self.right_click_menu:tk.Menu|None = None
 
         self.edit_window:tk.Toplevel|None = None
@@ -88,7 +88,7 @@ class Treeview:
     def trees(self)->Tuple[str,...]: 
         return self.widget.get_children("")
     
-    def branch(self,treeview_iid:str)->treemod.TWB|None:
+    def branch(self,treeview_iid:str)->treemod.TreeItem|None:
         if treeview_iid not in self._map: return None
         return self._map[treeview_iid]
     
@@ -110,7 +110,7 @@ class Treeview:
         self._load_branches(tree)
         self._open_all("")
 
-    def _load_branches(self,parent:treemod.TWB)->None:
+    def _load_branches(self,parent:treemod.TreeItem)->None:
         for branch in parent._branches:
             iid = self.widget.insert(parent.data["treeview_iid"],index=0,text=branch.name)
             self._map[iid] = branch
@@ -135,7 +135,7 @@ class Treeview:
     def _on_new_child(
         self,
         parent_iid:str,
-        new_branch:treemod.TWB
+        new_branch:treemod.TreeItem
         )->None:
 
         item_iid = self.widget.insert(parent_iid,index=0,text=new_branch.name)
@@ -156,7 +156,7 @@ class Treeview:
         # scroll to the added item
         self.widget.see(item_iid)
     
-    def _cannot_remove_branch_with_children(self,branch:treemod.TWB)->None: # pragma: no cover
+    def _cannot_remove_branch_with_children(self,branch:treemod.TreeItem)->None: # pragma: no cover
         if not self._messageboxes_allowed: return
         tkmsg.showerror(
             DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE,
@@ -167,10 +167,10 @@ class Treeview:
         self._map.pop(branch_iid)
         self.widget.delete(branch_iid)
 
-    def _on_renaming(self,branch_iid:str,branch:treemod.TWB)->None:
+    def _on_renaming(self,branch_iid:str,branch:treemod.TreeItem)->None:
         self.widget.item(branch_iid,text=branch.name)
 
-    def _on_moving(self,branch_iid:str,new_parent:treemod.TWB)->None:
+    def _on_moving(self,branch_iid:str,new_parent:treemod.TreeItem)->None:
         self.widget.move(branch_iid, new_parent.data["treeview_iid"], -1)
 
 
@@ -222,7 +222,7 @@ class Treeview:
 
 
     def __add_commands_for_item(self,item_id:str)->None:
-        branch:treemod.TWB = self._map[item_id]
+        branch:treemod.TreeItem = self._map[item_id]
         if self.right_click_menu is None: return
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_ADD,
