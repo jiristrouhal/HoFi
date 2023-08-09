@@ -241,23 +241,22 @@ class Treeview:
             label=MENU_CMD_BRANCH_MOVE,
             command=self._right_click_menu_command(partial(self.open_move_window,item_id))
         )
-        self.right_click_menu.add_separator()
-
-        self.right_click_menu.add_command(
-            label=MENU_CMD_BRANCH_OPEN_ALL,
-            command=self._right_click_menu_command(partial(self._open_all,item_id))
-        )
-        self.right_click_menu.add_command(
-            label=MENU_CMD_BRANCH_CLOSE_ALL,
-            command=self._right_click_menu_command(partial(self._close_all,item_id))
-        )
 
         self.right_click_menu.add_separator()
-
-        assert(branch.parent is not None)
-        self.right_click_menu.add_command(
-            label=MENU_CMD_BRANCH_DELETE,
-            command=self._right_click_menu_command(partial(branch.parent.remove_branch,branch.name)))
+        if self.widget.get_children(item_id):
+            self.right_click_menu.add_command(
+                label=MENU_CMD_BRANCH_OPEN_ALL,
+                command=self._right_click_menu_command(partial(self._open_all,item_id))
+            )
+            self.right_click_menu.add_command(
+                label=MENU_CMD_BRANCH_CLOSE_ALL,
+                command=self._right_click_menu_command(partial(self._close_all,item_id))
+            )
+        else:
+            assert(branch.parent is not None)
+            self.right_click_menu.add_command(
+                label=MENU_CMD_BRANCH_DELETE,
+                command=self._right_click_menu_command(partial(branch.parent.remove_branch,branch.name)))
         
     def _right_click_menu_command(self,cmd:Callable)->Callable:
         def menu_cmd(*args,**kwargs): 
