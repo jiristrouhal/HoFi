@@ -20,5 +20,7 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.treemanager.new("Tree X")
         self.assertListEqual(self.treemanager.trees, ["Tree X", "Tree X (1)"])
 
+    
+
 
 if __name__=="__main__": unittest.main()
