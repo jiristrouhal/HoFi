@@ -11,7 +11,7 @@ def data_file_path(name:str)->str:
     if not os.path.isdir(FILES_PATH): os.mkdir(FILES_PATH)
     return os.path.join(FILES_PATH,name+FORMAT)
 
-class App:
+class Tree_XML_Converter:
 
     def __init__(self)->None:
         self._trees:Dict[str,tree_module.Tree] = dict()
