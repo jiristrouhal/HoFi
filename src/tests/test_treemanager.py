@@ -26,5 +26,8 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.manager.tree_name_entry.insert(0,"Tree XY")
         self.manager.buttons[tmg.ButtonID.NEW_TREE_OK].invoke()
         self.assertListEqual(self.manager.trees, ["Tree XY"])
+        self.assertEqual(self.manager.new_tree_window, None)
+        self.assertEqual(self.manager.tree_name_entry, None)
+
 
 if __name__=="__main__": unittest.main()
