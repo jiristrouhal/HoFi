@@ -113,3 +113,27 @@ skinparam Style strictuml
         destroy MessageBox
     end
 @enduml
+
+
+@startuml app_class_diagram
+skinparam Style strictuml
+skinparam Linetype ortho
+    
+    class App
+    class Tree
+    class TreeToXml
+    class Analyst
+    class TreeManager
+    class Treeview
+
+
+    Treeview -up-> Tree
+    TreeToXml -up-> Tree
+    Analyst -up-> Tree
+
+    TreeManager -up-> TreeToXml
+    App -up-> TreeManager
+    App -up-> Analyst
+    App -up-> Treeview
+
+@enduml

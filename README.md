@@ -26,3 +26,16 @@ The branch should basically call some methods for printing out the error message
 The called methods are provided by the displayer/displayers. 
 
 
+# The app
+The app comprises the xml file handling and managing the tree object indirectly via UI. 
+
+A GUI for the tree management (aside from the treeview) is created. 
+
+The app defines the tree elements' templates (the tags and attributes) and passes them to the tree objects via the UI part responsible for the tree editing (Treeview).
+
+Trees cannot be loaded or unloaded via the Treeview - it can only serve for their editing. That is the job for the TreeManager, which vice versa cannot modify the trees, it only enables to handle them as a whole, to load or save them or to create a new (empty) tree.
+
+The basic structure of the app is shown below, including the Tree object, the App itself and TreeView and TreeToXml converter. The app controls the converted via the TreeManager. The Analyst conducts calculations and a displays the results.
+
+![App class diagram](./out/uml/uml/app_class_diagram.svg)
+
