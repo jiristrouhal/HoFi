@@ -1,7 +1,7 @@
 import sys 
 sys.path.insert(1,"src")
 
-import manager
+import tree_to_xml
 import unittest
 import os
 
@@ -9,7 +9,7 @@ import os
 class Test_Managing_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.converter = manager.Tree_XML_Converter()
+        self.converter = tree_to_xml.Tree_XML_Converter()
 
     def test_create_new_tree(self):
         self.converter.new_tree("Tree 1")
@@ -54,10 +54,10 @@ class Test_Managing_Trees(unittest.TestCase):
 class Test_Saving_And_Loading_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.converter = manager.Tree_XML_Converter()
+        self.converter = tree_to_xml.Tree_XML_Converter()
 
     def test_data_file_path_is_always_set_to_existing_directory(self):
-        somepath = manager.data_file_path("somefile")
+        somepath = tree_to_xml.data_file_path("somefile")
         self.assertTrue(os.path.isdir(os.path.dirname(somepath)))
     
     def test_empty_tree_after_saving_and_loading_is_unchanged(self):
