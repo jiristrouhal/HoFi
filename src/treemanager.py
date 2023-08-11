@@ -19,6 +19,14 @@ NAME_ALREADY_TAKEN_MESSAGE_1 = "A tree with the name "
 NAME_ALREADY_TAKEN_MESSAGE_2 = " already exists. Use different name."
 
 
+TREE_MANAGER_TITLE = "Tree Manager"
+SET_NEW_TREE_NAME = "Set new tree name"
+RENAME_TREE = "Rename tree"
+NAME_ENTRY_LABEL = "Name"
+
+DEFAULT_TREE_NAME = "New"
+
+
 class ButtonID(enum.Enum):
     NEW_TREE = enum.auto()
     NEW_TREE_OK = enum.auto()
@@ -27,14 +35,6 @@ class ButtonID(enum.Enum):
     RENAME_TREE_OK = enum.auto()
     RENAME_TREE_CANCEL = enum.auto()
 
-
-TREE_MANAGER_TITLE = "Tree Manager"
-SET_NEW_TREE_NAME = "Set new tree name"
-RENAME_TREE = "Rename tree"
-NAME_ENTRY_LABEL = "Name"
-
-
-DEFAULT_TREE_NAME = "New"
 
 
 BUTTONTEXT:Dict[ButtonID,str] = {
@@ -51,21 +51,17 @@ class Tree_Manager:
 
     def __init__(self,treelist:nlist.NamedItemsList,ui_master:tk.Frame|tk.Tk|None = None, )->None:
         self.__converter = txml.Tree_XML_Converter()
-        self.__treelist = treelist
-        self.__treelist.add_name_warning(self.__error_if_tree_names_already_taken)
-
         self.__ui = ttk.LabelFrame(master=ui_master,text=TREE_MANAGER_TITLE)
         self._buttons:Dict[ButtonID,tk.Button] = dict()
-
         self._view = ttk.Treeview(self.__ui, selectmode='browse')
         self._iid_to_tree_map:Dict[str,treemod.Tree] = dict()
+        self._window_new:tk.Toplevel|None = None
+        self._entry_name:tk.Entry|None = None
+        self._window_rename:tk.Toplevel|None = None
         self.__configure_ui()
-
-        self._new_tree_window:tk.Toplevel|None = None
-        self._tree_name_entry:tk.Entry|None = None
-
-        self._rename_tree_window:tk.Toplevel|None = None
-
+        
+        self.__treelist = treelist
+        self.__treelist.add_name_warning(self.__error_if_tree_names_already_taken)
         # this flag will prevent some events to occur when the treeview is tested
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
         self._messageboxes_allowed:bool = True
@@ -105,20 +101,20 @@ class Tree_Manager:
         self._view.pack(side=tk.BOTTOM,expand=1,fill=tk.X)
 
     def __cleanup_new_tree_widgets(self)->None:
-        if self._new_tree_window is not None:
-            self._new_tree_window.destroy()
-            self._new_tree_window = None
-        if self._tree_name_entry is not None: 
-            self._tree_name_entry.destroy()
-            self._tree_name_entry = None
+        if self._window_new is not None:
+            self._window_new.destroy()
+            self._window_new = None
+        if self._entry_name is not None: 
+            self._entry_name.destroy()
+            self._entry_name = None
 
     def __cleanup_rename_tree_widgets(self)->None:
-        if self._rename_tree_window is not None:
-            self._rename_tree_window.destroy()
-            self._rename_tree_window = None
-        if self._tree_name_entry is not None: 
-            self._tree_name_entry.destroy()
-            self._tree_name_entry = None
+        if self._window_rename is not None:
+            self._window_rename.destroy()
+            self._window_rename = None
+        if self._entry_name is not None: 
+            self._entry_name.destroy()
+            self._entry_name = None
 
     def __add_button(
         self, 
@@ -138,24 +134,37 @@ class Tree_Manager:
 
     def _open_rename_tree_window(self,tree:treemod.Tree)->None: # pragma: no cover
         self.__cleanup_rename_tree_widgets()
-        self._rename_tree_window = tk.Toplevel(self.__ui)
-        self._rename_tree_window.title(RENAME_TREE)
-        self._tree_name_entry = tk.Entry(self._new_tree_window,width=50)
-        self._tree_name_entry.pack()
-        self._tree_name_entry.insert(0,tree.name)
+        self._window_rename = tk.Toplevel(self.__ui)
+        self._window_rename.title(RENAME_TREE)
+        self._entry_name = tk.Entry(self._window_new,width=50)
+        self._entry_name.pack()
+        self._entry_name.insert(0,tree.name)
 
-        button_frame = tk.Frame(self._new_tree_window)
+        button_frame = tk.Frame(self._window_new)
         button_frame.pack(side=tk.BOTTOM)
         self.__add_button(button_frame,ButtonID.RENAME_TREE_OK,partial(self._confirm_rename,tree),side='left')
         self.__add_button(button_frame,ButtonID.RENAME_TREE_CANCEL,self._close_rename_tree_window,side='left')
+        
+    def open_new_tree_window(self)->None: # pragma: no cover
+        self.__cleanup_new_tree_widgets()
+        self._window_new = tk.Toplevel(self.__ui)
+        self._window_new.title(SET_NEW_TREE_NAME)
+        self._entry_name = tk.Entry(self._window_new,width=50)
+        self._entry_name.insert(0,DEFAULT_TREE_NAME)
+        self._entry_name.pack()
+        
+        button_frame = tk.Frame(self._window_new)
+        button_frame.pack(side=tk.BOTTOM)
+        self.__add_button(button_frame,ButtonID.NEW_TREE_OK,self._confirm_new_tree_name,side='left')
+        self.__add_button(button_frame,ButtonID.NEW_TREE_CANCEL,self.__close_new_tree_window,side='left')
 
     def _confirm_rename(self,tree:treemod.Tree)->None:
-        assert(self._tree_name_entry is not None)
-        new_name = self._tree_name_entry.get()
+        assert(self._entry_name is not None)
+        new_name = self._entry_name.get()
         if self.tree_exists(new_name) and self.get_tree(new_name) is not tree: 
             self.__error_if_tree_names_already_taken(new_name)
             return 
-        tree.rename(self._tree_name_entry.get())
+        tree.rename(self._entry_name.get())
         self._close_rename_tree_window()
 
     def _close_rename_tree_window(self)->None:
@@ -164,25 +173,12 @@ class Tree_Manager:
         if ButtonID.RENAME_TREE_CANCEL in self._buttons: 
             self._buttons.pop(ButtonID.RENAME_TREE_CANCEL)
         self.__cleanup_rename_tree_widgets()
-        
-    def open_new_tree_window(self)->None: # pragma: no cover
-        self.__cleanup_new_tree_widgets()
-        self._new_tree_window = tk.Toplevel(self.__ui)
-        self._new_tree_window.title(SET_NEW_TREE_NAME)
-        self._tree_name_entry = tk.Entry(self._new_tree_window,width=50)
-        self._tree_name_entry.insert(0,DEFAULT_TREE_NAME)
-        self._tree_name_entry.pack()
-        
-        button_frame = tk.Frame(self._new_tree_window)
-        button_frame.pack(side=tk.BOTTOM)
-        self.__add_button(button_frame,ButtonID.NEW_TREE_OK,self._confirm_new_tree_name,side='left')
-        self.__add_button(button_frame,ButtonID.NEW_TREE_CANCEL,self.__close_new_tree_window,side='left')
 
     def _confirm_new_tree_name(self)->None:
-        assert(self._tree_name_entry is not None)
-        self.new(self._tree_name_entry.get())
+        assert(self._entry_name is not None)
+        self.new(self._entry_name.get())
         self.__close_new_tree_window()
-        assert(self._tree_name_entry is None)
+        assert(self._entry_name is None)
 
     def __close_new_tree_window(self)->None:
         if ButtonID.NEW_TREE_OK in self._buttons: 
