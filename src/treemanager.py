@@ -63,11 +63,7 @@ class Tree_Manager:
         )
 
     def __configure_ui(self)->None: # pragma: no cover
-        self._buttons[ButtonID.NEW_TREE] = tk.Button(
-            self.__ui,
-            text=BUTTONTEXT[ButtonID.NEW_TREE],
-            command=self.open_new_tree_window)
-        self._buttons[ButtonID.NEW_TREE].pack(side=tk.LEFT)
+        self.__add_button(self.__ui,ButtonID.NEW_TREE,command=self.open_new_tree_window)
 
     def __cleanup_new_tree_widgets(self)->None:
         if self._new_tree_window is not None:
@@ -79,7 +75,7 @@ class Tree_Manager:
 
     def __add_button(
         self,
-        master:tk.Frame|tk.Toplevel|tk.Tk,
+        master:tk.Frame|tk.Toplevel|tk.Tk|ttk.Labelframe,
         id:ButtonID,
         command:Callable[[],None]
         )->None:

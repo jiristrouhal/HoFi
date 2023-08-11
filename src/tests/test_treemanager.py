@@ -36,7 +36,10 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.assertListEqual(self.manager.trees, ["Tree X"])
         self.manager.rename("Tree X", "Tree Y")
         self.assertListEqual(self.manager.trees, ["Tree Y"])
-        
+
+    def __test_rename_tree_via_ui(self):
+        self.manager.new("Tree X")
+        self.manager._buttons[tmg.ButtonID.RENAME_TREE].invoke()
 
 
 if __name__=="__main__": unittest.main()
