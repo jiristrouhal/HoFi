@@ -28,28 +28,12 @@ DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT = ": Cannot delete item with children.
 MOVE_WINDOW_TITLE = "Select new parent"
 
 
-def configure_treeview(treeview:ttk.Treeview)->None:
-
-    style = ttk.Style()
-    style.configure('Treeview',indent=10)
-    
-    treeview.pack(side=tk.RIGHT,expand=1,fill=tk.BOTH)
-    scroll_y = ttk.Scrollbar(treeview.master,orient=tk.VERTICAL,command=treeview.yview)
-    scroll_y.pack(side=tk.LEFT,fill=tk.Y)
-
-    treeview.config(
-        selectmode='browse',
-        show='tree', # hide zeroth row, that would contain the tree columns' headings
-        yscrollcommand=scroll_y.set,
-
-    )
-    
-
 class Treeview:
 
     def __init__(self, parent:tk.Tk|tk.Toplevel|tk.Frame|None = None)->None:
         self.widget = ttk.Treeview(parent)
-        self.__configure_widget()
+        self._bind_keys()
+        self._configure_widget()
 
         self._attribute_template = {"name":"New", "lenght":"0"}
 
@@ -68,12 +52,29 @@ class Treeview:
         # this flag will prevent some events to occur when the treeview is tested
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
         self._messageboxes_allowed:bool = True
-        
-    def __configure_widget(self)->None:
+
+    def _bind_keys(self)->None:
         self.widget.bind("<Button-3>",self.right_click_item)
         self.widget.bind("<Double-Button-1>",self.open_edit_window_on_double_click,add="")
         self.widget.bind("<Key-Delete>",self.remove_selected_item)
-        configure_treeview(self.widget)
+        
+    def _configure_widget(self)->None:
+        style = ttk.Style()
+        style.configure('Treeview',indent=10)
+        
+        self.widget.pack(side=tk.RIGHT,expand=1,fill=tk.BOTH)
+        scroll_y = ttk.Scrollbar(
+            self.widget.master,
+            orient=tk.VERTICAL,
+            command=self.widget.yview)
+        scroll_y.pack(side=tk.LEFT,fill=tk.Y)
+
+        self.widget.config(
+            selectmode='browse',
+            show='tree', # hide zeroth row, that would contain the tree columns' headings
+            yscrollcommand=scroll_y.set,
+
+        )
 
     def remove_selected_item(self,event:tk.Event)->None: # pragma: no cover
         selection = self.widget.selection()
@@ -389,7 +390,7 @@ class Treeview:
         self.move_window.title(MOVE_WINDOW_TITLE)
 
         self.available_parents = ttk.Treeview(self.move_window)
-        configure_treeview(self.available_parents)
+        self._configure_widget()
         tree_id = self.__get_tree_id(item_id)
         self.available_parents.insert("",index=0,iid=tree_id,text=tree_id)
         self._collect_available_parents(tree_id,item_id)
