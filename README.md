@@ -39,3 +39,12 @@ The basic structure of the app is shown below, including the Tree object, the Ap
 
 ![App class diagram](./out/uml/uml/app_class_diagram.svg)
 
+
+## Where are the xml files?
+Files are stored at custom locations. When saving or loading a tree, the user is prompted to specify the file via dialog window.
+
+## Actions of the Tree Manager
+- **save** the tree at specific location (the tree name is preserved, and user is prompted to choose a different name, if tree already exists)
+- **update** an existing tree; if the xml file to be updated or the directory no longer exist, they are **created** anew and the user is **notified** of this
+- **load** the tree from file specified by the user via **dialog window**
+- **unload** the tree from the **tree list**
