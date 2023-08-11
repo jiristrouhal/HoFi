@@ -31,5 +31,12 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.assertEqual(self.manager._new_tree_window, None)
         self.assertEqual(self.manager._tree_name_entry, None)
 
+    def test_rename_tree(self):
+        self.manager.new("Tree X")
+        self.assertListEqual(self.manager.trees, ["Tree X"])
+        self.manager.rename("Tree X", "Tree Y")
+        self.assertListEqual(self.manager.trees, ["Tree Y"])
+        
+
 
 if __name__=="__main__": unittest.main()

@@ -112,12 +112,20 @@ class Tree_Manager:
 
 
     def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
-        while self.__tree_name_is_taken(name):
+        while self.tree_exists(name):
             name = naming.change_name_if_already_taken(name)
 
         tree = treemod.Tree(name,tag=tag,attributes=attributes)
         self.__treelist.append(tree)
 
-    def __tree_name_is_taken(self,name:str)->bool: 
+    def get_tree(self,name:str)->treemod.Tree|None:
+        return self.__treelist.item(name)
+
+    def rename(self,old_name:str,new_name:str)->None:
+        tree_to_be_renamed= self.get_tree(old_name)
+        if tree_to_be_renamed is None: return
+        tree_to_be_renamed.rename(new_name)
+
+    def tree_exists(self,name:str)->bool: 
         return name in self.trees
     
