@@ -122,6 +122,7 @@ class TreeItem(abc.ABC):
         self,
         name:str,
         *branches_along_the_path:str,
+        tag:str = DEFAULT_TAG,
         attributes:Dict[str,Any]=dict(),
         type:Literal['branch','leaf'] = 'branch',
         )->None:
@@ -134,7 +135,7 @@ class TreeItem(abc.ABC):
             if smallest_parent_branch is None: return
             smallest_parent_branch.add_branch(name,attributes={})
         else:  # add the branch directly to the current object
-            branch = Branch(name,attributes,type=type)
+            branch = Branch(name,attributes,type=type,tag=tag)
             branch._set_parent(self)
             for action in self._actions['add_branch']: 
                 action(branch)

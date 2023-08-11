@@ -3,12 +3,14 @@ sys.path.insert(1,"src")
 
 import unittest
 import treemanager as tmg
+import nlist
 
 
 class Test_Creating_New_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.manager = tmg.Tree_Manager()
+        self.treelist = nlist.NamedItemsList()
+        self.manager = tmg.Tree_Manager(self.treelist)
 
     def test_creating_new_tree_via_manager(self):
         self.manager.new("Tree 1")
@@ -21,13 +23,13 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.assertListEqual(self.manager.trees, ["Tree X", "Tree X (1)"])
 
     def test_creating_new_tree_via_ui(self):
-        self.manager.buttons[tmg.ButtonID.NEW_TREE].invoke()
-        self.manager.tree_name_entry.delete(0,"end")
-        self.manager.tree_name_entry.insert(0,"Tree XY")
-        self.manager.buttons[tmg.ButtonID.NEW_TREE_OK].invoke()
+        self.manager._buttons[tmg.ButtonID.NEW_TREE].invoke()
+        self.manager._tree_name_entry.delete(0,"end")
+        self.manager._tree_name_entry.insert(0,"Tree XY")
+        self.manager._buttons[tmg.ButtonID.NEW_TREE_OK].invoke()
         self.assertListEqual(self.manager.trees, ["Tree XY"])
-        self.assertEqual(self.manager.new_tree_window, None)
-        self.assertEqual(self.manager.tree_name_entry, None)
+        self.assertEqual(self.manager._new_tree_window, None)
+        self.assertEqual(self.manager._tree_name_entry, None)
 
 
 if __name__=="__main__": unittest.main()

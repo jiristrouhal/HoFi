@@ -1,7 +1,7 @@
 from typing import List, Protocol, Callable, Tuple
 
 
-class NItem(Protocol):
+class _NItem(Protocol):
 
     @property
     def name(self)->str: ...
@@ -10,10 +10,10 @@ class NItem(Protocol):
 class NamedItemsList:
 
     def __init__(self)->None:
-        self.__items:List[NItem] = list()
+        self.__items:List[_NItem] = list()
         self.__name_warnings:List[Callable[[str],None]] = list()
 
-    def append(self,*items:NItem)->None: 
+    def append(self,*items:_NItem)->None: 
         already_taken_names:List[str] = list()
         for item in items: 
             if self.item(item.name) is None: 
@@ -24,7 +24,7 @@ class NamedItemsList:
             for warning in self.__name_warnings:
                 warning(*already_taken_names)
             
-    def item(self,name:str)->NItem|None:
+    def item(self,name:str)->_NItem|None:
         for item in self.__items:
             if name==item.name: return item
         return None
