@@ -37,9 +37,17 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.manager.rename("Tree X", "Tree Y")
         self.assertListEqual(self.manager.trees, ["Tree Y"])
 
-    def __test_rename_tree_via_ui(self):
+    def test_rename_tree_via_ui(self):
         self.manager.new("Tree X")
+        self.manager._view.selection_set(self.manager._view.get_children()[0])
         self.manager._buttons[tmg.ButtonID.RENAME_TREE].invoke()
+        self.assertEqual(self.manager._tree_name_entry.get(),"Tree X")
+        self.manager._tree_name_entry.delete(0,"end")
+        self.manager._tree_name_entry.insert(0,"Tree Y")
+        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
+        self.assertEqual(self.manager._rename_tree_window, None)
+        self.assertListEqual(self.manager.trees, ["Tree Y"])
+
 
 
 if __name__=="__main__": unittest.main()
