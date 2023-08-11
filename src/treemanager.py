@@ -73,7 +73,7 @@ class Tree_Manager:
     @property
     def trees(self)->List[str]: return self.__treelist.names
 
-    def __error_if_tree_names_already_taken(self,name:str)->None:
+    def __error_if_tree_names_already_taken(self,name:str)->None:  # pragma: no cover
         if self._messageboxes_allowed:
             tkmsg.showerror(
                 NAME_ALREADY_TAKEN_TITLE, 
