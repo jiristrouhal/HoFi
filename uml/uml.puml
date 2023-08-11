@@ -137,3 +137,32 @@ skinparam Linetype ortho
     App -up-> Treeview
 
 @enduml
+
+
+@startuml app_class_diagram_2
+skinparam Linetype ortho
+skinparam Style strictuml
+
+    class App
+    class TreeList
+    class Tree
+    class TreeToXml
+    class Analyst
+    class TreeManager
+    class Treeview
+
+
+    Treeview -up-> Tree
+    TreeToXml -up-> Tree
+    Analyst -up-> Tree
+
+    TreeManager -up-> TreeToXml
+    App -up-> TreeManager
+    App -up-> Analyst
+    App -up-> Treeview
+
+    Analyst -> TreeList
+    TreeManager -> TreeList
+    Treeview -> TreeList
+
+@enduml
