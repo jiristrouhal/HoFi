@@ -49,7 +49,7 @@ BUTTONTEXT:Dict[ButtonID,str] = {
 
 class Tree_Manager:
 
-    def __init__(self,treelist:nlist.NamedItemsList,ui_master:tk.Frame|tk.Tk|None = None)->None:
+    def __init__(self,treelist:nlist.NamedItemsList,ui_master:tk.Frame|tk.Tk|None = None, )->None:
         self.__converter = txml.Tree_XML_Converter()
         self.__treelist = treelist
         self.__treelist.add_name_warning(self.__error_if_tree_names_already_taken)
@@ -66,14 +66,19 @@ class Tree_Manager:
 
         self._rename_tree_window:tk.Toplevel|None = None
 
+        # this flag will prevent some events to occur when the treeview is tested
+        # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
+        self._messageboxes_allowed:bool = True
+
     @property
     def trees(self)->List[str]: return self.__treelist.names
 
     def __error_if_tree_names_already_taken(self,name:str)->None:
-        tkmsg.showerror(
-            NAME_ALREADY_TAKEN_TITLE, 
-            NAME_ALREADY_TAKEN_MESSAGE_1+f"{name}"+NAME_ALREADY_TAKEN_MESSAGE_2
-        )
+        if self._messageboxes_allowed:
+            tkmsg.showerror(
+                NAME_ALREADY_TAKEN_TITLE, 
+                NAME_ALREADY_TAKEN_MESSAGE_1+f"{name}"+NAME_ALREADY_TAKEN_MESSAGE_2
+            )
 
     def __configure_ui(self)->None: # pragma: no cover
         button_frame = tk.Frame(self.__ui)
@@ -147,7 +152,7 @@ class Tree_Manager:
     def _confirm_rename(self,tree:treemod.Tree)->None:
         assert(self._tree_name_entry is not None)
         new_name = self._tree_name_entry.get()
-        if self.tree_exists(new_name): 
+        if self.tree_exists(new_name) and self.get_tree(new_name) is not tree: 
             self.__error_if_tree_names_already_taken(new_name)
             return 
         tree.rename(self._tree_name_entry.get())
