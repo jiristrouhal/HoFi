@@ -24,10 +24,11 @@ SET_NEW_TREE_NAME = "Set new tree name"
 RENAME_TREE = "Rename tree"
 
 MENU_CMD_TREE_RENAME = "Rename"
-MENU_CMD_TREE_EXPORT = "Save"
+MENU_CMD_TREE_EXPORT = "Export"
 MENU_CMD_TREE_DELETE = "Delete"
 
-FILEDIALOG_EXPORT_TITLE = "Save tree as .xml"
+FILEDIALOG_EXPORT_TITLE = "Export tree into file"
+FILEDIALOG_LOAD_TITLE = "Load tree from file"
 
 MSGBOX_ASK_TO_DELETE_TREE_TITLE = "Delete tree"
 MSGBOX_ASK_TO_DELETE_TREE_MSG_1 = "Do you really want to delete '"
@@ -130,9 +131,10 @@ class Tree_Manager:
     def _load_tree(self,)->None:
         treename = self._last_exported_tree_name
         dir = self._last_export_dir
-        if self._messageboxes_allowed:
-            filepath = filedialog.askopenfilename(
-                "r",
+        if self._messageboxes_allowed:  # pragma: no cover
+            filepath = filedialog.askopenfilename(   # pragma: no cover
+                title=FILEDIALOG_LOAD_TITLE,
+                filetypes=(('XML file','.xml'),),
                 defaultextension='.xml',
                 initialdir=self._last_export_dir,
             )
