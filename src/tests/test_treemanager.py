@@ -100,19 +100,19 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.manager._open_right_click_menu("")
         self.assertEqual(self.manager.right_click_menu,None)
 
-    def test_save_and_load_tree(self):
-        self.manager.new("Saved tree")
+    def test_export_and_load_tree(self):
+        self.manager.new("Exported tree")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_SAVE)
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
 
-        self.manager._remove_tree(self.manager.get_tree("Saved tree"))
+        self.manager._remove_tree(self.manager.get_tree("Exported tree"))
         self.assertEqual(self.manager.trees, [])
         self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
-        self.assertEqual(self.manager.trees, ["Saved tree"])
+        self.assertEqual(self.manager.trees, ["Exported tree"])
 
     def tearDown(self) -> None:
-        if os.path.isfile("Saved tree.xml"):
-            os.remove("Saved tree.xml")
+        if os.path.isfile("Exported tree.xml"):
+            os.remove("Exported tree.xml")
 
 
 

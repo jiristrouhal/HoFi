@@ -24,10 +24,10 @@ SET_NEW_TREE_NAME = "Set new tree name"
 RENAME_TREE = "Rename tree"
 
 MENU_CMD_TREE_RENAME = "Rename"
-MENU_CMD_TREE_SAVE = "Save"
+MENU_CMD_TREE_EXPORT = "Save"
 MENU_CMD_TREE_DELETE = "Delete"
 
-FILEDIALOG_SAVE_TITLE = "Save tree as .xml"
+FILEDIALOG_EXPORT_TITLE = "Save tree as .xml"
 
 MSGBOX_ASK_TO_DELETE_TREE_TITLE = "Delete tree"
 MSGBOX_ASK_TO_DELETE_TREE_MSG_1 = "Do you really want to delete '"
@@ -85,8 +85,8 @@ class Tree_Manager:
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
         self._messageboxes_allowed:bool = True
 
-        self._last_dir:str = "."
-        self._last_saved_tree_name:str = ""
+        self._last_export_dir:str = "."
+        self._last_exported_tree_name:str = ""
 
     @property
     def trees(self)->List[str]: return self.__treelist.names
@@ -114,9 +114,9 @@ class Tree_Manager:
             )
         )
         self.right_click_menu.add_command(
-            label=MENU_CMD_TREE_SAVE,
+            label=MENU_CMD_TREE_EXPORT,
             command=self._right_click_menu_command(
-                partial(self._save_tree,tree)
+                partial(self._export_tree,tree)
             )
         )
         self.right_click_menu.add_separator()
@@ -128,13 +128,13 @@ class Tree_Manager:
         )
 
     def _load_tree(self,)->None:
-        treename = self._last_saved_tree_name
-        dir = self._last_dir
+        treename = self._last_exported_tree_name
+        dir = self._last_export_dir
         if self._messageboxes_allowed:
             filepath = filedialog.askopenfilename(
                 "r",
                 defaultextension='.xml',
-                initialdir=self._last_dir,
+                initialdir=self._last_export_dir,
             )
             if filepath=="": return
             dir = os.path.dirname(filepath)
@@ -145,8 +145,8 @@ class Tree_Manager:
         assert(tree is not None)
         self.__treelist.append(tree)
 
-    def _save_tree(self,tree:treemod.Tree)->None:
-        dir = self._last_dir
+    def _export_tree(self,tree:treemod.Tree)->None:
+        dir = self._last_export_dir
         if self._messageboxes_allowed: dir = self._ask_for_directory()
         if self._xml_already_exists(dir,tree.name):
             rename_tree = True
@@ -154,13 +154,13 @@ class Tree_Manager:
             if rename_tree: self._open_rename_tree_window(tree)
         else:
             self.__converter.save_tree(tree,dir)
-            self._last_dir = dir
-            self._last_saved_tree_name = tree.name
+            self._last_export_dir = dir
+            self._last_exported_tree_name = tree.name
 
     def _ask_for_directory(self)->str:  # pragma: no cover
         return filedialog.askdirectory(
-                initialdir=self._last_dir,
-                title = FILEDIALOG_SAVE_TITLE
+                initialdir=self._last_export_dir,
+                title = FILEDIALOG_EXPORT_TITLE
         )
 
     def _ask_to_rename_tree(self,name:str)->bool:
