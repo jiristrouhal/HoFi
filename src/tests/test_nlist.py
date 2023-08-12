@@ -48,21 +48,23 @@ class Test_Modifying_List(unittest.TestCase):
 
     def test_action_on_adding_tree(self):
         self.x = ""
-        def action(name): 
-            self.x = "Item " + name + " was added."
+        item = NamedThing("XYZ")
+        def action(item:NamedThing): 
+            self.x = "Item " + item.name + " was added."
         self.nlist.add_action_on_adding(action)
         self.nlist.append(NamedThing("XYZ"))
         self.assertEqual(self.x,  "Item XYZ was added.")
 
     def test_action_on_removal(self):
         self.x = ""
-        def action(name): 
-            self.x = "Item " + name + " was removed."
+        item = NamedThing("XYZ")
+        def action(item:NamedThing): 
+            self.x = "Item " + item.name + " was removed."
         
         self.nlist.add_action_on_removal(action)
-        self.nlist.append(NamedThing("XYZ"))
+        self.nlist.append(item)
         self.nlist.remove("XYZ")
         self.assertEqual(self.x,  "Item XYZ was removed.")
-        
+
 
 if __name__=="__main__": unittest.main()
