@@ -5,10 +5,11 @@ import naming
 class _NItem(Protocol):
 
     @property
-    def name(self)->str: ...
+    def name(self)->str: # pragma: no cover
+        ...  
 
-    def rename(self,new_name:str)->None: ...
-
+    def rename(self,new_name:str)->None: # pragma: no cover
+        ... 
 class NamedItemsList:
 
     def __init__(self)->None:
