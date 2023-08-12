@@ -10,8 +10,6 @@ from functools import partial
 import tree_to_xml as txml
 import nlist
 import tree as treemod
-import naming
-
 
 
 NAME_ALREADY_TAKEN_TITLE = "Name already exists"
@@ -22,7 +20,6 @@ NAME_ALREADY_TAKEN_MESSAGE_2 = " already exists. Use different name."
 TREE_MANAGER_TITLE = "Tree Manager"
 SET_NEW_TREE_NAME = "Set new tree name"
 RENAME_TREE = "Rename tree"
-NAME_ENTRY_LABEL = "Name"
 
 
 MENU_CMD_TREE_RENAME = "Rename"
