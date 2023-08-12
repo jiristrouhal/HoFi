@@ -171,10 +171,34 @@ class Test_Creating_New_Tree(unittest.TestCase):
 
         self.assertEqual(self.manager.get_tree("Exported tree").attributes["height"], "15")
 
+    def test_removing_one_tree_and_adding_other_with_the_same_name_cannot_update_the_old_tree_file(self):
+        self.manager.new("Exported tree")
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.manager._remove_tree(self.manager.get_tree("Exported tree"))
+        self.assertListEqual(self.manager.trees,[])
+        
+        # Create new tree and proceed to export it to a file under the same name as the previous one
+        self.manager.new("Exported tree")
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager._update_file(self.manager.get_tree("Exported tree"))
+        # The user is prompted to choose a different name 
+        self.assertTrue(self.manager._window_rename is not None)
+        # After choosing different name, the export might be repeated
+        self.manager._entry_name.insert("end", " 2")
+        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
+        self.assertListEqual(self.manager.trees, ["Exported tree 2"])
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.assertTrue(self.manager._window_rename is None)
+
 
     def tearDown(self) -> None:
         if os.path.isfile("Exported tree.xml"):
             os.remove("Exported tree.xml")
+        if os.path.isfile("Exported tree 2.xml"):
+            os.remove("Exported tree 2.xml")
+
 
 
 

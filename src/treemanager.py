@@ -42,6 +42,11 @@ MSGBOX_ASK_TO_RENAME_TREE_MSG_2 = \
         or click 'Cancel' to cancel the tree saving."
 
 
+MSGBOX_TREE_WAS_NOT_YET_EXPORTED_TITLE = "Export required"
+MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_1 = "No file is yet connected to the '"
+MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_2 = "'. Export is required first."
+
+
 DEFAULT_TREE_NAME = "New"
 
 
@@ -196,7 +201,16 @@ class Tree_Manager:
         return os.path.isfile(file_path)
     
     def _update_file(self,tree:treemod.Tree)->None:
-        assert(tree in self._exported_trees)
+        if tree not in self._exported_trees: 
+            if self._messageboxes_allowed:
+                tkmsg.showinfo(
+                    MSGBOX_TREE_WAS_NOT_YET_EXPORTED_TITLE,
+                    MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_1 + tree.name +
+                    MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_2
+                )
+            self._export_tree(tree)
+            return
+        
         filepath = self._exported_trees[tree]
         dir = os.path.dirname(filepath)
         filename_without_extension = os.path.splitext(os.path.basename(filepath))
