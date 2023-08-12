@@ -52,7 +52,6 @@ class Test_Modifying_List(unittest.TestCase):
 
     def test_action_on_adding_tree(self):
         self.x = ""
-        item = NamedThing("XYZ")
         def action(item:NamedThing): 
             self.x = "Item " + item.name + " was added."
         self.nlist.add_action_on_adding(action)
