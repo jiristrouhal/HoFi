@@ -110,6 +110,31 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
         self.assertEqual(self.manager.trees, ["Exported tree"])
 
+    def test_exporting_to_existing_file_name_prompts_the_user_to_rename_the_tree(self):
+        self.manager.new("Exported tree")
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+
+        self.manager._remove_tree(self.manager.get_tree("Exported tree"))
+
+        # Create new tree with some random name and then rename it 
+        # to the same name as the previously exported and deleted tree
+        self.manager.new("Some tree")
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
+        self.manager._entry_name.delete(0,"end")
+        self.manager._entry_name.insert(0,"Exported tree")
+        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
+        self.assertTrue(self.manager._window_rename is None)
+
+        # Try to export the new tree with the same name as the old one
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        # After the user is notified that a file with the tree name already exists in
+        # the directory and after he/she clicks OK, the window_rename opens up automatically
+        self.assertTrue(self.manager._window_rename is not None)
+    
+
     def tearDown(self) -> None:
         if os.path.isfile("Exported tree.xml"):
             os.remove("Exported tree.xml")
