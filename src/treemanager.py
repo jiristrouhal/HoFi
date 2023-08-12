@@ -158,11 +158,6 @@ class Tree_Manager:
         self._buttons[id] = tk.Button(master,text=BUTTONTEXT[id],command=command)
         self._buttons[id].pack(side=side)
 
-    def _open_rename_window_for_selected_tree(self)->None:
-        if not self._view.selection(): return
-        tree = self._map[self._view.selection()[0]]
-        self._open_rename_tree_window(tree)
-
     def _open_rename_tree_window(self,tree:treemod.Tree)->None: # pragma: no cover
         self.__cleanup_rename_tree_widgets()
         self._window_rename = tk.Toplevel(self.__ui)
