@@ -126,6 +126,9 @@ class Test_Creating_Tree(unittest.TestCase):
         self.tree.rename_branch(("Branch 2",),"Branch 1")
         self.assertListEqual(self.tree.branches(),["Branch 1","Branch 1 (1)"])
 
+    def test_listing_children_of_nonexistent_item_yields_empty_list(self):
+        self.assertListEqual(self.tree._list_children("Branch 2", "Nonexistent child of Branch 2", type='all'), [])
+
 
 class Test_Actions(unittest.TestCase):
 
@@ -163,6 +166,9 @@ class Test_Adding_Leaf_Type_Item(unittest.TestCase):
         
     def test_branches_and_leaves_names_can_be_retrieved_together(self):
         self.assertEqual(self.tree._list_children(type='all'),["Branch X","Leaf X"])
+
+    def test_listing_leaf_children_yields_empty_list(self):
+        self.assertListEqual(self.tree._children[1]._list_children(type='all'),[])
 
 
 if __name__=="__main__": unittest.main()

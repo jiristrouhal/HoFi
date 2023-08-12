@@ -104,6 +104,8 @@ class TreeItem(abc.ABC):
             lowest_level_branch = self._find_branch(*branches_along_the_path)
             if lowest_level_branch is not None:
                 return lowest_level_branch.branches()
+            else:
+                return []
         # display branches growint out of the current object (branch, tree, ...)
         if type=='all':
             return [b.name for b in self._children]
