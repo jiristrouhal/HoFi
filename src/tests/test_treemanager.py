@@ -79,5 +79,14 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.assertEqual(self.manager._window_rename, None)
         self.assertListEqual(self.manager.trees, ["Tree X"])
 
+    def test_renaming_tree_using_right_click(self):
+        self.manager.new("Tree X")
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_RENAME)
+        self.manager._entry_name.delete(0,"end")
+        self.manager._entry_name.insert(0,"Tree Y")
+        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
+        self.assertListEqual(self.manager.trees,["Tree Y"])
+
 
 if __name__=="__main__": unittest.main()

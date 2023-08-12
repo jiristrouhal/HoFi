@@ -24,6 +24,10 @@ SET_NEW_TREE_NAME = "Set new tree name"
 RENAME_TREE = "Rename tree"
 NAME_ENTRY_LABEL = "Name"
 
+
+MENU_CMD_RENAME = "Rename"
+
+
 DEFAULT_TREE_NAME = "New"
 
 
@@ -63,12 +67,48 @@ class Tree_Manager:
         self.__treelist = treelist
         self.__treelist.add_name_warning(self.__error_if_tree_names_already_taken)
         self.__treelist.add_action_on_adding(self.__add_tree_to_view)
+
+        self.right_click_menu:tk.Menu|None = None
         # this flag will prevent some events to occur when the treeview is tested
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
         self._messageboxes_allowed:bool = True
 
     @property
     def trees(self)->List[str]: return self.__treelist.names
+
+    def _bind_keys(self)->None:
+        self._view.bind("<Button-3>",self.right_click_item)
+
+    def right_click_item(self,event:tk.Event)->None: # pragma: no cover
+        item_id = self._view.identify_row(event.y)
+        if item_id.strip()=="": return 
+        self._open_right_click_menu(item_id)
+
+        if self.right_click_menu is not None:
+            self.right_click_menu.tk_popup(x=event.x_root,y=event.y_root)
+
+    def _open_right_click_menu(self,item_id:str)->None:
+        if self.right_click_menu is not None: 
+            self.right_click_menu.destroy()
+            self.right_click_menu = None
+        if item_id.strip()=="": return
+        self.right_click_menu = tk.Menu(master=self._view, tearoff=False)
+
+        tree = self._map[item_id]
+        self.right_click_menu.add_command(
+            label=MENU_CMD_RENAME,
+            command=self._right_click_menu_command(
+                partial(self._open_rename_tree_window,tree)
+            )
+        )
+
+    def _right_click_menu_command(self,cmd:Callable)->Callable:
+        def menu_cmd(*args,**kwargs): 
+            cmd(*args,**kwargs)
+            self.right_click_menu.destroy()
+            self.right_click_menu = None
+        return menu_cmd
+
 
     def __error_if_tree_names_already_taken(self,name:str)->None:  # pragma: no cover
         if self._messageboxes_allowed:
