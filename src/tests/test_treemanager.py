@@ -94,5 +94,10 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_DELETE)
         self.assertListEqual(self.manager.trees, [])
 
+    def test_right_click_menu_does_not_popup_if_no_item_is_clicked(self):
+        self.manager.new("Some tree")
+        self.manager._open_right_click_menu("")
+        self.assertEqual(self.manager.right_click_menu,None)
+
 
 if __name__=="__main__": unittest.main()
