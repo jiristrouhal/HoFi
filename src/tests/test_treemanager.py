@@ -4,6 +4,7 @@ sys.path.insert(1,"src")
 import unittest
 import treemanager as tmg
 import nlist
+import os
 
 
 class Test_Creating_New_Tree(unittest.TestCase):
@@ -98,6 +99,21 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.manager.new("Some tree")
         self.manager._open_right_click_menu("")
         self.assertEqual(self.manager.right_click_menu,None)
+
+    def test_save_and_load_tree(self):
+        self.manager.new("Saved tree")
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_SAVE)
+
+        self.manager._remove_tree(self.manager.get_tree("Saved tree"))
+        self.assertEqual(self.manager.trees, [])
+        self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
+        self.assertEqual(self.manager.trees, ["Saved tree"])
+
+    def tearDown(self) -> None:
+        if os.path.isfile("Saved tree.xml"):
+            os.remove("Saved tree.xml")
+
 
 
 if __name__=="__main__": unittest.main()

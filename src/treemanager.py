@@ -3,8 +3,10 @@ from typing import List, Dict, Callable, Any, Literal
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.messagebox as tkmsg
+import tkinter.filedialog as filedialog
 import enum
 from functools import partial
+import os
 
 
 import tree_to_xml as txml
@@ -21,14 +23,21 @@ TREE_MANAGER_TITLE = "Tree Manager"
 SET_NEW_TREE_NAME = "Set new tree name"
 RENAME_TREE = "Rename tree"
 
-
 MENU_CMD_TREE_RENAME = "Rename"
+MENU_CMD_TREE_SAVE = "Save"
 MENU_CMD_TREE_DELETE = "Delete"
 
+FILEDIALOG_SAVE_TITLE = "Save tree as .xml"
 
 MSGBOX_ASK_TO_DELETE_TREE_TITLE = "Delete tree"
 MSGBOX_ASK_TO_DELETE_TREE_MSG_1 = "Do you really want to delete '"
 MSGBOX_ASK_TO_DELETE_TREE_MSG_2 = "?"
+
+MSGBOX_ASK_TO_RENAME_TREE_TITLE = "File already exists"
+MSGBOX_ASK_TO_RENAME_TREE_MSG_1 = "The file with name '"
+MSGBOX_ASK_TO_RENAME_TREE_MSG_2 = \
+    "' already exists in the directory. Click 'OK' to specify other name for the saved tree \
+        or click 'Cancel' to cancel the tree saving."
 
 
 DEFAULT_TREE_NAME = "New"
@@ -36,6 +45,7 @@ DEFAULT_TREE_NAME = "New"
 
 class ButtonID(enum.Enum):
     NEW_TREE = enum.auto()
+    LOAD_TREE = enum.auto()
     NEW_TREE_OK = enum.auto()
     NEW_TREE_CANCEL = enum.auto()
     RENAME_TREE_OK = enum.auto()
@@ -45,6 +55,7 @@ class ButtonID(enum.Enum):
 
 BUTTONTEXT:Dict[ButtonID,str] = {
     ButtonID.NEW_TREE: "New",
+    ButtonID.LOAD_TREE: "Load",
     ButtonID.NEW_TREE_OK: "OK",
     ButtonID.NEW_TREE_CANCEL: "Cancel",
     ButtonID.RENAME_TREE_OK: "OK",
@@ -74,6 +85,9 @@ class Tree_Manager:
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
         self._messageboxes_allowed:bool = True
 
+        self._last_dir:str = "."
+        self._last_saved_tree_name:str = ""
+
     @property
     def trees(self)->List[str]: return self.__treelist.names
 
@@ -100,11 +114,67 @@ class Tree_Manager:
             )
         )
         self.right_click_menu.add_command(
+            label=MENU_CMD_TREE_SAVE,
+            command=self._right_click_menu_command(
+                partial(self._save_tree,tree)
+            )
+        )
+        self.right_click_menu.add_separator()
+        self.right_click_menu.add_command(
             label=MENU_CMD_TREE_DELETE,
             command=self._right_click_menu_command(
                 partial(self._remove_tree,tree)
             )
         )
+
+    def _load_tree(self,)->None:
+        treename = self._last_saved_tree_name
+        dir = self._last_dir
+        if self._messageboxes_allowed:
+            filepath = filedialog.askopenfilename(
+                "r",
+                defaultextension='.xml',
+                initialdir=self._last_dir,
+            )
+            if filepath=="": return
+            dir = os.path.dirname(filepath)
+            filename = os.path.basename(filepath)
+            treename = os.path.splitext(filename)[0]
+
+        tree = self.__converter.load_tree(treename,dir)
+        assert(tree is not None)
+        self.__treelist.append(tree)
+
+    def _save_tree(self,tree:treemod.Tree)->None:
+        dir = self._last_dir
+        if self._messageboxes_allowed: dir = self._ask_for_directory()
+        if self._xml_already_exists(dir,tree.name):
+            rename_tree = True
+            if self._messageboxes_allowed: rename_tree = self._ask_to_rename_tree(tree.name)
+            if rename_tree: self._open_rename_tree_window(tree)
+        else:
+            self.__converter.save_tree(tree,dir)
+            self._last_dir = dir
+            self._last_saved_tree_name = tree.name
+
+    def _ask_for_directory(self)->str:  # pragma: no cover
+        return filedialog.askdirectory(
+                initialdir=self._last_dir,
+                title = FILEDIALOG_SAVE_TITLE
+        )
+
+    def _ask_to_rename_tree(self,name:str)->bool:
+        return tkmsg.askokcancel(
+            MSGBOX_ASK_TO_RENAME_TREE_TITLE,
+            MSGBOX_ASK_TO_RENAME_TREE_MSG_1 + 
+            name +
+            MSGBOX_ASK_TO_RENAME_TREE_MSG_2
+        )
+        
+    @staticmethod
+    def _xml_already_exists(dir:str,tree_name:str)->bool:
+        file_path = os.path.join(dir,tree_name)+".xml"
+        return os.path.isfile(file_path)
 
     def _remove_tree(self,tree:treemod.Tree)->None:
         answer = True
@@ -138,7 +208,14 @@ class Tree_Manager:
             button_frame,
             ButtonID.NEW_TREE,
             command=self.open_new_tree_window,
-            side='left')
+            side='left'
+        )
+        self.__add_button(
+            button_frame,
+            ButtonID.LOAD_TREE,
+            command=self._load_tree,
+            side='left'
+        )
         button_frame.pack()
 
         scroll_y = ttk.Scrollbar(self._view.master,orient=tk.VERTICAL,command=self._view.yview)
