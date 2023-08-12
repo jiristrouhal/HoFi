@@ -92,8 +92,9 @@ class Tree_Manager:
     @property
     def trees(self)->List[str]: return self.__treelist.names
 
-    def _bind_keys(self)->None:   # pragma: no cover
-        self._view.bind("<Button-3>",self.right_click_item)
+    def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
+        tree = treemod.Tree(name,tag=tag,attributes=attributes)
+        self.__treelist.append(tree)
 
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
         item_id = self._view.identify_row(event.y)
@@ -127,6 +128,9 @@ class Tree_Manager:
                 partial(self._remove_tree,tree)
             )
         )
+
+    def _bind_keys(self)->None:   # pragma: no cover
+        self._view.bind("<Button-3>",self.right_click_item)
 
     def _load_tree(self,)->None:
         treename = self._last_exported_tree_name
@@ -209,7 +213,7 @@ class Tree_Manager:
         self.__add_button(
             button_frame,
             ButtonID.NEW_TREE,
-            command=self.open_new_tree_window,
+            command=self._open_new_tree_window,
             side='left'
         )
         self.__add_button(
@@ -229,22 +233,6 @@ class Tree_Manager:
             yscrollcommand=scroll_y.set,
         )
         self._view.pack(side=tk.BOTTOM,expand=1,fill=tk.X)
-
-    def __cleanup_new_tree_widgets(self)->None:
-        if self._window_new is not None:
-            self._window_new.destroy()
-            self._window_new = None
-        if self._entry_name is not None: 
-            self._entry_name.destroy()
-            self._entry_name = None
-
-    def __cleanup_rename_tree_widgets(self)->None:
-        if self._window_rename is not None:
-            self._window_rename.destroy()
-            self._window_rename = None
-        if self._entry_name is not None: 
-            self._entry_name.destroy()
-            self._entry_name = None
 
     def __add_button(
         self, 
@@ -270,7 +258,7 @@ class Tree_Manager:
         self.__add_button(button_frame,ButtonID.RENAME_TREE_OK,partial(self._confirm_rename,tree),side='left')
         self.__add_button(button_frame,ButtonID.RENAME_TREE_CANCEL,self.__close_rename_tree_window,side='left')
         
-    def open_new_tree_window(self)->None: # pragma: no cover
+    def _open_new_tree_window(self)->None: # pragma: no cover
         self.__cleanup_new_tree_widgets()
         self._window_new = tk.Toplevel(self.__ui)
         self._window_new.title(SET_NEW_TREE_NAME)
@@ -304,9 +292,21 @@ class Tree_Manager:
     def __close_new_tree_window(self)->None:
         self.__cleanup_new_tree_widgets()
 
-    def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
-        tree = treemod.Tree(name,tag=tag,attributes=attributes)
-        self.__treelist.append(tree)
+    def __cleanup_new_tree_widgets(self)->None:
+        if self._window_new is not None:
+            self._window_new.destroy()
+            self._window_new = None
+        if self._entry_name is not None: 
+            self._entry_name.destroy()
+            self._entry_name = None
+
+    def __cleanup_rename_tree_widgets(self)->None:
+        if self._window_rename is not None:
+            self._window_rename.destroy()
+            self._window_rename = None
+        if self._entry_name is not None: 
+            self._entry_name.destroy()
+            self._entry_name = None
 
     def __add_tree_to_view(self,tree:treemod.Tree)->None:
         tree_iid = self._view.insert("",0,text=tree.name)
