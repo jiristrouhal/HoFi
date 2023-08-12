@@ -111,8 +111,8 @@ class Tree_Manager:
 
     def _remove_tree(self,tree:treemod.Tree)->None:
         answer = True
-        if self._messageboxes_allowed:
-            answer = tkmsg.askokcancel(
+        if self._messageboxes_allowed:   # pragma: no cover
+            answer = tkmsg.askokcancel(   # pragma: no cover
                 MSGBOX_ASK_TO_DELETE_TREE_TITLE, 
                 MSGBOX_ASK_TO_DELETE_TREE_MSG_1 + 
                 tree.name + 
