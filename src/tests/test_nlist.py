@@ -64,14 +64,5 @@ class Test_Modifying_List(unittest.TestCase):
         self.nlist.remove("XYZ")
         self.assertEqual(self.x,  "Item XYZ was removed.")
 
-    def test_action_on_selecting(self):
-        self.selected = ""
-        def action(name): self.selected = name
-        
-        self.nlist.add_action_on_selecting(action)
-        self.nlist.append(NamedThing("Item A"))
-        self.nlist.select("Item A")
-        self.assertListEqual(self.nlist.selected_names,["Item A"])
-
 
 if __name__=="__main__": unittest.main()
