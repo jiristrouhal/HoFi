@@ -62,7 +62,7 @@ class Tree_Manager:
         
         self.__treelist = treelist
         self.__treelist.add_name_warning(self.__error_if_tree_names_already_taken)
-        self.__treelist.add_action_on_adding()
+        self.__treelist.add_action_on_adding(self.__add_tree_to_view)
         # this flag will prevent some events to occur when the treeview is tested
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
         self._messageboxes_allowed:bool = True
@@ -194,8 +194,6 @@ class Tree_Manager:
 
         tree = treemod.Tree(name,tag=tag,attributes=attributes)
         self.__treelist.append(tree)
-        tree_iid = self._view.insert("",0,text=tree.name)
-        self._iid_to_tree_map[tree_iid] = tree
 
     def __add_tree_to_view(self,tree:treemod.Tree)->None:
         tree_iid = self._view.insert("",0,text=tree.name)

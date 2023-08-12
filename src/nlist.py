@@ -22,14 +22,13 @@ class NamedItemsList:
     def add_action_on_adding(self,action:Callable[[_NItem],None])->None:
         self.__on_adding.append(action)
 
-    def append(self,*items:_NItem)->None: 
+    def append(self,item:_NItem)->None: 
         already_taken_names:List[str] = list()
-        for item in items: 
-            if self.item(item.name) is None: 
-                self.__items.append(item)
-                for action in self.__on_adding: action(item)
-            else:
-                already_taken_names.append(item.name)
+        if self.item(item.name) is None: 
+            self.__items.append(item)
+            for action in self.__on_adding: action(item)
+        else:
+            already_taken_names.append(item.name)
         if already_taken_names:
             for warning in self.__name_warnings:
                 warning(*already_taken_names)

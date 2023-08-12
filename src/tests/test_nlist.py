@@ -18,11 +18,13 @@ class Test_Modifying_List(unittest.TestCase):
         
     
     def test_adding_to_list(self)->None:
-        self.nlist.append(NamedThing("Item 1"), NamedThing("Item 2"))
+        self.nlist.append(NamedThing("Item 1"))
+        self.nlist.append(NamedThing("Item 2"))
         self.assertListEqual(self.nlist.names, ["Item 1", "Item 2"])
 
     def test_removing_from_list(self)->None:
-        self.nlist.append(NamedThing("Item 1"), NamedThing("Item 2"))
+        self.nlist.append(NamedThing("Item 1"))
+        self.nlist.append(NamedThing("Item 2"))
         self.nlist.remove("Item 1")
         self.assertListEqual(self.nlist.names, ["Item 2"])
 
