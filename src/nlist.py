@@ -30,8 +30,9 @@ class NamedItemsList:
 
     def append(self,item:_NItem)->None: 
         name = item.name
-        while name in self.names:
-            name = naming.change_name_if_already_taken(item.name)
+        names = self.names
+        while name in names:
+            name = naming.change_name_if_already_taken(name)
         item.rename(name)
         self.__items.append(item)
         for action in self.__on_adding: action(item)

@@ -7,11 +7,14 @@ import tkinter.filedialog as filedialog
 import enum
 from functools import partial
 import os
+import sys
+
+sys.path.insert(1,"src")
 
 
-import tree_to_xml as txml
-import nlist
-import tree as treemod
+import src.tree_to_xml as txml
+import src.nlist as nlist
+import src.tree as treemod
 
 
 NAME_ALREADY_TAKEN_TITLE = "Name already exists"
@@ -99,6 +102,32 @@ class Tree_Manager:
 
     @property
     def trees(self)->List[str]: return self.__treelist.names
+
+    def __configure_ui(self)->None: # pragma: no cover
+        button_frame = tk.Frame(self.__ui)
+        self.__add_button(
+            button_frame,
+            ButtonID.NEW_TREE,
+            command=self._open_new_tree_window,
+            side='left'
+        )
+        self.__add_button(
+            button_frame,
+            ButtonID.LOAD_TREE,
+            command=self._load_tree,
+            side='left'
+        )
+        button_frame.pack()
+        scroll_y = ttk.Scrollbar(self._view.master,orient=tk.VERTICAL,command=self._view.yview)
+        scroll_y.pack(side=tk.LEFT,fill=tk.Y)
+
+        self._view.config(
+            selectmode='browse',
+            show='tree', # hide zeroth row, that would contain the tree columns' headings
+            yscrollcommand=scroll_y.set,
+        )
+        self._view.pack(side=tk.BOTTOM,expand=1,fill=tk.X)
+        self.__ui.pack(expand=1,fill=tk.BOTH)
 
     def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
         tree = treemod.Tree(name,tag=tag,attributes=attributes)
@@ -244,32 +273,6 @@ class Tree_Manager:
                 NAME_ALREADY_TAKEN_TITLE, 
                 NAME_ALREADY_TAKEN_MESSAGE_1+f"{name}"+NAME_ALREADY_TAKEN_MESSAGE_2
             )
-
-    def __configure_ui(self)->None: # pragma: no cover
-        button_frame = tk.Frame(self.__ui)
-        self.__add_button(
-            button_frame,
-            ButtonID.NEW_TREE,
-            command=self._open_new_tree_window,
-            side='left'
-        )
-        self.__add_button(
-            button_frame,
-            ButtonID.LOAD_TREE,
-            command=self._load_tree,
-            side='left'
-        )
-        button_frame.pack()
-
-        scroll_y = ttk.Scrollbar(self._view.master,orient=tk.VERTICAL,command=self._view.yview)
-        scroll_y.pack(side=tk.LEFT,fill=tk.Y)
-
-        self._view.config(
-            selectmode='browse',
-            show='tree', # hide zeroth row, that would contain the tree columns' headings
-            yscrollcommand=scroll_y.set,
-        )
-        self._view.pack(side=tk.BOTTOM,expand=1,fill=tk.X)
 
     def __add_button(
         self, 

@@ -22,7 +22,8 @@ class Test_Creating_New_Tree(unittest.TestCase):
     def test_creating_new_tree_with_existing_name(self):
         self.manager.new("Tree X")
         self.manager.new("Tree X")
-        self.assertListEqual(self.manager.trees, ["Tree X", "Tree X (1)"])
+        self.manager.new("Tree X")
+        self.assertListEqual(self.manager.trees, ["Tree X", "Tree X (1)", "Tree X (2)"])
 
     def test_creating_new_tree_via_ui(self):
         self.manager._buttons[tmg.ButtonID.NEW_TREE].invoke()
