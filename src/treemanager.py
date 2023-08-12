@@ -165,7 +165,7 @@ class Tree_Manager:
                 title = FILEDIALOG_EXPORT_TITLE
         )
 
-    def _ask_to_rename_tree(self,name:str)->bool:
+    def _ask_to_rename_tree(self,name:str)->bool: # pragma: no cover
         return tkmsg.askokcancel(
             MSGBOX_ASK_TO_RENAME_TREE_TITLE,
             MSGBOX_ASK_TO_RENAME_TREE_MSG_1 + 
