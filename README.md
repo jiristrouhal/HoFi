@@ -52,3 +52,8 @@ Files are stored at custom locations. When saving or loading a tree, the user is
 
 ## Adding an item to the Named Items List
 - Adding an item with already existing name will result in adding the new item, however under an adjusted name (e.g., if item is added under already taken name "Thing", it will be added as "Thing (1)").
+
+## Updating already existing xml file
+The Tree Manager keeps pair of the Tree object and the xml file. When the user chooses the update the file, the program checks, that the file is still present. If it is, the file is updated. If not, the user is notified of the missing file and asked to either specify the new location of the file or to cancel the operation.
+
+If the tree is renamed in the app, after the update the file is also renamed. If the name is already taken, the user is prompted to choose another name or to export the tree to other location.
