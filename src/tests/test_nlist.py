@@ -9,6 +9,9 @@ import unittest
 class NamedThing: 
     def __init__(self,name:str)->None:
         self.name = name
+    
+    def rename(self,name:str)->None:
+        self.name = name
 
 
 class Test_Modifying_List(unittest.TestCase):
@@ -45,8 +48,7 @@ class Test_Modifying_List(unittest.TestCase):
 
         self.nlist.append(NamedThing("Item X"))
         self.nlist.append(NamedThing("Item X"))
-        self.assertListEqual(self.nlist.names, ["Item X"])
-        self.assertListEqual(self.produced_warnings, ["Name 'Item X' is already taken."])
+        self.assertListEqual(self.nlist.names, ["Item X", "Item X (1)"])
 
     def test_action_on_adding_tree(self):
         self.x = ""

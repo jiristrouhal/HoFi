@@ -189,9 +189,6 @@ class Tree_Manager:
         self.__cleanup_new_tree_widgets()
 
     def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
-        while self.tree_exists(name):
-            name = naming.change_name_if_already_taken(name)
-
         tree = treemod.Tree(name,tag=tag,attributes=attributes)
         self.__treelist.append(tree)
 

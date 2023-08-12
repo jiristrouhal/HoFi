@@ -1,4 +1,5 @@
 from typing import List, Protocol, Callable
+import naming
 
 
 class _NItem(Protocol):
@@ -6,6 +7,7 @@ class _NItem(Protocol):
     @property
     def name(self)->str: ...
 
+    def rename(self,new_name:str)->None: ...
 
 class NamedItemsList:
 
@@ -16,6 +18,9 @@ class NamedItemsList:
         self.__on_removal:List[Callable[[_NItem],None]] = list()
         self.__on_adding:List[Callable[[_NItem],None]] = list()
 
+    @property
+    def names(self)->List[str]: return [i.name for i in self.__items]
+
     def add_action_on_removal(self,action:Callable[[_NItem],None])->None:
         self.__on_removal.append(action)
 
@@ -23,15 +28,12 @@ class NamedItemsList:
         self.__on_adding.append(action)
 
     def append(self,item:_NItem)->None: 
-        already_taken_names:List[str] = list()
-        if self.item(item.name) is None: 
-            self.__items.append(item)
-            for action in self.__on_adding: action(item)
-        else:
-            already_taken_names.append(item.name)
-        if already_taken_names:
-            for warning in self.__name_warnings:
-                warning(*already_taken_names)
+        name = item.name
+        while name in self.names:
+            name = naming.change_name_if_already_taken(item.name)
+        item.rename(name)
+        self.__items.append(item)
+        for action in self.__on_adding: action(item)
             
     def item(self,name:str)->_NItem|None:
         for item in self.__items:
@@ -47,11 +49,6 @@ class NamedItemsList:
     def add_name_warning(self,warning_action:Callable[[str],None]):
         self.__name_warnings.append(warning_action)
 
-    @property
-    def names(self)->List[str]: return [i.name for i in self.__items]
-    
-
-    
 
     
 

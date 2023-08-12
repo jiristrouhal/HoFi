@@ -48,3 +48,7 @@ Files are stored at custom locations. When saving or loading a tree, the user is
 - **update** an existing tree; if the xml file to be updated or the directory no longer exist, they are **created** anew and the user is **notified** of this
 - **load** the tree from file specified by the user via **dialog window**
 - **unload** the tree from the **tree list**
+
+
+## Adding an item to the Named Items List
+- Adding an item with already existing name will result in adding the new item, however under an adjusted name (e.g., if item is added under already taken name "Thing", it will be added as "Thing (1)").
