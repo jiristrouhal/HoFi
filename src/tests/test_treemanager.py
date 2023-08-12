@@ -138,13 +138,30 @@ class Test_Creating_New_Tree(unittest.TestCase):
         # the directory and after he/she clicks OK, the window_rename opens up automatically
         self.assertTrue(self.manager._window_rename is not None)
 
-    def __test_updating_to_existing_file(self):
+    def test_updating_existing_file(self):
         self.manager.new("Exported tree",attributes={"height":"25"})
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
 
-        print(self.manager.get_tree("Exported tree").attributes['height'])
-        self.manager.get_tree("Exported tree").attributes["height"] = "15"
+        self.manager._set_tree_attribute("Exported tree","height","15")
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_UPDATE_FILE)
+
+        self.manager._remove_tree(self.manager.get_tree("Exported tree"))
+        self.assertEqual(self.manager.trees, [])
+        self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
+
+        self.assertEqual(self.manager.get_tree("Exported tree").attributes["height"], "15")
+
+    def test_removing_the_file_and_then_trying_to_update_it_leads_to_creating_the_file_anew_silently(self):
+        self.manager.new("Exported tree",attributes={"height":"25"})
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+
+        exported_file_path = self.manager._exported_trees[self.manager.get_tree("Exported tree")]
+        os.remove(exported_file_path)
+
+        self.manager._set_tree_attribute("Exported tree","height","15")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_UPDATE_FILE)
 

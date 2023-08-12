@@ -90,6 +90,8 @@ class Tree_Manager:
         self._last_export_dir:str = "."
         self._last_exported_tree_name:str = ""
 
+        self._exported_trees:Dict[treemod.Tree,str] = dict()
+
     @property
     def trees(self)->List[str]: return self.__treelist.names
 
@@ -116,12 +118,15 @@ class Tree_Manager:
                 partial(self._open_rename_tree_window,tree)
             )
         )
-        self.right_click_menu.add_command(
-            label=MENU_CMD_TREE_UPDATE_FILE,
-            command=self._right_click_menu_command(
-                partial(self._update_file,tree)
+
+        if tree in self._exported_trees:
+            self.right_click_menu.add_command(
+                label=MENU_CMD_TREE_UPDATE_FILE,
+                command=self._right_click_menu_command(
+                    partial(self._update_file,tree)
+                )
             )
-        )
+
         self.right_click_menu.add_command(
             label=MENU_CMD_TREE_EXPORT,
             command=self._right_click_menu_command(
@@ -167,6 +172,7 @@ class Tree_Manager:
             if rename_tree: self._open_rename_tree_window(tree)
         else:
             self.__converter.save_tree(tree,dir)
+            self._exported_trees[tree] = os.path.join(dir,tree.name)+'.xml'
             self._last_export_dir = dir
             self._last_exported_tree_name = tree.name
 
@@ -190,7 +196,14 @@ class Tree_Manager:
         return os.path.isfile(file_path)
     
     def _update_file(self,tree:treemod.Tree)->None:
-        pass
+        assert(tree in self._exported_trees)
+        filepath = self._exported_trees[tree]
+        dir = os.path.dirname(filepath)
+        filename_without_extension = os.path.splitext(os.path.basename(filepath))
+        if os.path.isfile(filepath): 
+            if tree.name!=filename_without_extension:
+                os.remove(filepath)
+        self.__converter.save_tree(tree,dir)
 
     def _remove_tree(self,tree:treemod.Tree)->None:
         answer = True
@@ -324,6 +337,11 @@ class Tree_Manager:
 
     def get_tree(self,name:str)->treemod.Tree|None:
         return self.__treelist.item(name)
+
+    def _set_tree_attribute(self,name:str,key:str,value:str)->None:
+        tree:treemod.Tree = self.__treelist.item(name)
+        if key in tree.attributes:
+            tree._attributes[key] = value
 
     def rename(self,old_name:str,new_name:str)->None:
         tree_to_be_renamed= self.get_tree(old_name)
