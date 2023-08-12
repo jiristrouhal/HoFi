@@ -40,6 +40,9 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         self.assertListEqual(loaded_tree.branches(), ["Branch X"])
         self.assertListEqual(loaded_tree.branches("Branch X",), ["Small branch"])
         self.assertListEqual(loaded_tree.branches("Branch X","Small branch"), ["Smaller branch"])
+
+    def test_loading_tree_from_nonexistent_path_returns_none(self):
+        self.assertEqual(self.converter.load_tree("Nonexistent tree"), None)
               
 
 if __name__=="__main__": unittest.main()

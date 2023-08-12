@@ -43,7 +43,6 @@ class Tree_XML_Converter:
 
         xml = et.parse(path_to_file)
         xml_root = xml.getroot()
-        if xml_root is None: return None
         
         tree = treemod.Tree(xml_root.attrib["name"])
         self.__load_xml_elem(xml_root,tree)
