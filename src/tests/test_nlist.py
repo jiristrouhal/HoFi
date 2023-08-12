@@ -36,16 +36,7 @@ class Test_Modifying_List(unittest.TestCase):
         self.nlist.remove("Nonexistent item")
         self.assertListEqual(self.nlist.names, ["Item X"])
 
-    def test_adding_item_with_already_existing_name_makes_the_list_to_run_warning_action(self):
-
-        self.produced_warnings = list()
-        # create an example of a warning, that the name of the item is already taken
-        def warning_action(*names:str): 
-            for name in names: 
-                self.produced_warnings.append(f"Name '{name}' is already taken.")
-
-        self.nlist.add_name_warning(warning_action)
-
+    def test_adding_item_with_already_existing_name_makes_the_new_tree_name_to_adjust(self):
         self.nlist.append(NamedThing("Item X"))
         self.nlist.append(NamedThing("Item X"))
         self.assertListEqual(self.nlist.names, ["Item X", "Item X (1)"])
