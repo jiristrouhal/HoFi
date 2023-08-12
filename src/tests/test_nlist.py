@@ -59,10 +59,10 @@ class Test_Modifying_List(unittest.TestCase):
         def action(name): 
             self.x = "Item " + name + " was removed."
         
-        self.nlist.add_action_on_adding(action)
+        self.nlist.add_action_on_removal(action)
         self.nlist.append(NamedThing("XYZ"))
         self.nlist.remove("XYZ")
         self.assertEqual(self.x,  "Item XYZ was removed.")
-
+        
 
 if __name__=="__main__": unittest.main()
