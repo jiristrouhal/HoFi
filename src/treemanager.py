@@ -268,7 +268,7 @@ class Tree_Manager:
         button_frame = tk.Frame(self._window_new)
         button_frame.pack(side=tk.BOTTOM)
         self.__add_button(button_frame,ButtonID.RENAME_TREE_OK,partial(self._confirm_rename,tree),side='left')
-        self.__add_button(button_frame,ButtonID.RENAME_TREE_CANCEL,self._close_rename_tree_window,side='left')
+        self.__add_button(button_frame,ButtonID.RENAME_TREE_CANCEL,self.__close_rename_tree_window,side='left')
         
     def open_new_tree_window(self)->None: # pragma: no cover
         self.__cleanup_new_tree_widgets()
@@ -290,14 +290,7 @@ class Tree_Manager:
             self.__error_if_tree_names_already_taken(new_name)
             return 
         tree.rename(self._entry_name.get())
-        self._close_rename_tree_window()
-
-    def _close_rename_tree_window(self)->None:
-        if ButtonID.RENAME_TREE_OK in self._buttons: 
-            self._buttons.pop(ButtonID.RENAME_TREE_OK)
-        if ButtonID.RENAME_TREE_CANCEL in self._buttons: 
-            self._buttons.pop(ButtonID.RENAME_TREE_CANCEL)
-        self.__cleanup_rename_tree_widgets()
+        self.__close_rename_tree_window()
 
     def _confirm_new_tree_name(self)->None:
         assert(self._entry_name is not None)
@@ -305,11 +298,10 @@ class Tree_Manager:
         self.__close_new_tree_window()
         assert(self._entry_name is None)
 
+    def __close_rename_tree_window(self)->None:
+        self.__cleanup_rename_tree_widgets()
+
     def __close_new_tree_window(self)->None:
-        if ButtonID.NEW_TREE_OK in self._buttons: 
-            self._buttons.pop(ButtonID.NEW_TREE_OK)
-        if ButtonID.NEW_TREE_CANCEL in self._buttons: 
-            self._buttons.pop(ButtonID.NEW_TREE_CANCEL)
         self.__cleanup_new_tree_widgets()
 
     def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
