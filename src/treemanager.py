@@ -84,11 +84,13 @@ class Tree_Manager:
         self._window_new:tk.Toplevel|None = None
         self._entry_name:tk.Entry|None = None
         self._window_rename:tk.Toplevel|None = None
+        self._bind_keys()
         self.__configure_ui()
         
         self.__treelist = treelist
         self.__treelist.add_name_warning(self.__error_if_tree_names_already_taken)
         self.__treelist.add_action_on_adding(self.__add_tree_to_view)
+        self.__treelist.add_action_on_adding(self.__remove_tree_from_view)
 
         self.right_click_menu:tk.Menu|None = None
         # this flag will prevent some events to occur when the treeview is tested
@@ -132,10 +134,13 @@ class Tree_Manager:
     def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
         tree = treemod.Tree(name,tag=tag,attributes=attributes)
         self.__treelist.append(tree)
+        tree.add_data("treemanager_id",tree.name)
 
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
         item_id = self._view.identify_row(event.y)
+        print("here")
         if item_id.strip()=="": return 
+        print("here again")
         self._open_right_click_menu(item_id)
 
         if self.right_click_menu is not None:
@@ -352,6 +357,9 @@ class Tree_Manager:
         tree_iid = self._view.insert("",0,text=tree.name)
         self._map[tree_iid] = tree
 
+    def __remove_tree_from_view(self,tree:treemod.Tree)->None:
+        pass
+    
     def get_tree(self,name:str)->treemod.Tree|None:
         return self.__treelist.item(name)
 
