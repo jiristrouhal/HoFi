@@ -195,7 +195,7 @@ class Treeview:
         else: self.__add_commands_for_root(item_id)
 
     def __add_commands_for_root(self,root_id:str)->None:
-        if self.right_click_menu is None: return
+        assert(self.right_click_menu is not None)
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_ADD,
             command=self._right_click_menu_command(
@@ -224,7 +224,7 @@ class Treeview:
 
     def __add_commands_for_item(self,item_id:str)->None:
         branch:treemod.TreeItem = self._map[item_id]
-        if self.right_click_menu is None: return
+        assert(self.right_click_menu is not None)
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_ADD,
             command=self._right_click_menu_command(
