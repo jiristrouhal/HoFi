@@ -54,7 +54,7 @@ class Tree_Manager:
         self.__ui = ttk.LabelFrame(master=ui_master,text=TREE_MANAGER_TITLE)
         self._buttons:Dict[ButtonID,tk.Button] = dict()
         self._view = ttk.Treeview(self.__ui, selectmode='browse')
-        self._iid_to_tree_map:Dict[str,treemod.Tree] = dict()
+        self._map:Dict[str,treemod.Tree] = dict()
         self._window_new:tk.Toplevel|None = None
         self._entry_name:tk.Entry|None = None
         self._window_rename:tk.Toplevel|None = None
@@ -130,7 +130,7 @@ class Tree_Manager:
 
     def _open_rename_window_for_selected_tree(self)->None:
         if not self._view.selection(): return
-        tree = self._iid_to_tree_map[self._view.selection()[0]]
+        tree = self._map[self._view.selection()[0]]
         self._open_rename_tree_window(tree)
 
     def _open_rename_tree_window(self,tree:treemod.Tree)->None: # pragma: no cover
@@ -194,7 +194,7 @@ class Tree_Manager:
 
     def __add_tree_to_view(self,tree:treemod.Tree)->None:
         tree_iid = self._view.insert("",0,text=tree.name)
-        self._iid_to_tree_map[tree_iid] = tree
+        self._map[tree_iid] = tree
 
     def get_tree(self,name:str)->treemod.Tree|None:
         return self.__treelist.item(name)
