@@ -25,6 +25,7 @@ RENAME_TREE = "Rename tree"
 
 MENU_CMD_TREE_RENAME = "Rename"
 MENU_CMD_TREE_EXPORT = "Export"
+MENU_CMD_TREE_UPDATE_FILE = "Update file"
 MENU_CMD_TREE_DELETE = "Delete"
 
 FILEDIALOG_EXPORT_TITLE = "Export tree into file"
@@ -116,6 +117,12 @@ class Tree_Manager:
             )
         )
         self.right_click_menu.add_command(
+            label=MENU_CMD_TREE_UPDATE_FILE,
+            command=self._right_click_menu_command(
+                partial(self._update_file,tree)
+            )
+        )
+        self.right_click_menu.add_command(
             label=MENU_CMD_TREE_EXPORT,
             command=self._right_click_menu_command(
                 partial(self._export_tree,tree)
@@ -181,6 +188,9 @@ class Tree_Manager:
     def _xml_already_exists(dir:str,tree_name:str)->bool:
         file_path = os.path.join(dir,tree_name)+".xml"
         return os.path.isfile(file_path)
+    
+    def _update_file(self,tree:treemod.Tree)->None:
+        pass
 
     def _remove_tree(self,tree:treemod.Tree)->None:
         answer = True

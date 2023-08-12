@@ -137,7 +137,23 @@ class Test_Creating_New_Tree(unittest.TestCase):
         # After the user is notified that a file with the tree name already exists in
         # the directory and after he/she clicks OK, the window_rename opens up automatically
         self.assertTrue(self.manager._window_rename is not None)
-    
+
+    def __test_updating_to_existing_file(self):
+        self.manager.new("Exported tree",attributes={"height":"25"})
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+
+        print(self.manager.get_tree("Exported tree").attributes['height'])
+        self.manager.get_tree("Exported tree").attributes["height"] = "15"
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_UPDATE_FILE)
+
+        self.manager._remove_tree(self.manager.get_tree("Exported tree"))
+        self.assertEqual(self.manager.trees, [])
+        self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
+
+        self.assertEqual(self.manager.get_tree("Exported tree").attributes["height"], "15")
+
 
     def tearDown(self) -> None:
         if os.path.isfile("Exported tree.xml"):

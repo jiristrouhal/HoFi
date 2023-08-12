@@ -23,7 +23,7 @@ class Tree_XML_Converter:
         xml_tree.write(path_to_file)
 
     def __xml_tree(self,tree:treemod.Tree)->et.ElementTree:
-        xml_root = et.Element(tree.tag, {"name":tree.name})
+        xml_root = et.Element(tree.tag, attrib=tree.attributes)
         self.__create_xml_elem(tree,xml_root)
         return et.ElementTree(xml_root)
 
@@ -34,7 +34,7 @@ class Tree_XML_Converter:
         )->None:
 
         for branch in parent._children:
-            xml_elem = et.SubElement(parent_xml_elem,branch.tag,branch.attributes)
+            xml_elem = et.SubElement(parent_xml_elem,branch.tag, attrib=branch.attributes)
             self.__create_xml_elem(branch,xml_elem)
 
     def load_tree(self,name:str,dir:str=DEFAULT_DIRECTORY)->treemod.Tree|None:
@@ -44,7 +44,7 @@ class Tree_XML_Converter:
         xml = et.parse(path_to_file)
         xml_root = xml.getroot()
         
-        tree = treemod.Tree(xml_root.attrib["name"])
+        tree = treemod.Tree(xml_root.attrib["name"],attributes=xml_root.attrib)
         self.__load_xml_elem(xml_root,tree)
         return tree
 
