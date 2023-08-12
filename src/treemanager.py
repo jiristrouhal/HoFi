@@ -76,7 +76,7 @@ class Tree_Manager:
     @property
     def trees(self)->List[str]: return self.__treelist.names
 
-    def _bind_keys(self)->None:
+    def _bind_keys(self)->None:   # pragma: no cover
         self._view.bind("<Button-3>",self.right_click_item)
 
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
@@ -88,9 +88,6 @@ class Tree_Manager:
             self.right_click_menu.tk_popup(x=event.x_root,y=event.y_root)
 
     def _open_right_click_menu(self,item_id:str)->None:
-        if self.right_click_menu is not None: 
-            self.right_click_menu.destroy()
-            self.right_click_menu = None
         if item_id.strip()=="": return
         self.right_click_menu = tk.Menu(master=self._view, tearoff=False)
 
