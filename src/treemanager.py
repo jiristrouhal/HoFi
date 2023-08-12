@@ -25,7 +25,13 @@ RENAME_TREE = "Rename tree"
 NAME_ENTRY_LABEL = "Name"
 
 
-MENU_CMD_RENAME = "Rename"
+MENU_CMD_TREE_RENAME = "Rename"
+MENU_CMD_TREE_DELETE = "Delete"
+
+
+MSGBOX_ASK_TO_DELETE_TREE_TITLE = "Delete tree"
+MSGBOX_ASK_TO_DELETE_TREE_MSG_1 = "Do you really want to delete '"
+MSGBOX_ASK_TO_DELETE_TREE_MSG_2 = "?"
 
 
 DEFAULT_TREE_NAME = "New"
@@ -91,11 +97,28 @@ class Tree_Manager:
 
         tree = self._map[item_id]
         self.right_click_menu.add_command(
-            label=MENU_CMD_RENAME,
+            label=MENU_CMD_TREE_RENAME,
             command=self._right_click_menu_command(
                 partial(self._open_rename_tree_window,tree)
             )
         )
+        self.right_click_menu.add_command(
+            label=MENU_CMD_TREE_DELETE,
+            command=self._right_click_menu_command(
+                partial(self._remove_tree,tree)
+            )
+        )
+
+    def _remove_tree(self,tree:treemod.Tree)->None:
+        answer = True
+        if self._messageboxes_allowed:
+            answer = tkmsg.askokcancel(
+                MSGBOX_ASK_TO_DELETE_TREE_TITLE, 
+                MSGBOX_ASK_TO_DELETE_TREE_MSG_1 + 
+                tree.name + 
+                MSGBOX_ASK_TO_DELETE_TREE_MSG_2
+            )
+        if answer==True: self.__treelist.remove(tree.name)
 
     def _right_click_menu_command(self,cmd:Callable)->Callable:
         def menu_cmd(*args,**kwargs): 
