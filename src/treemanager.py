@@ -35,7 +35,6 @@ class ButtonID(enum.Enum):
     NEW_TREE = enum.auto()
     NEW_TREE_OK = enum.auto()
     NEW_TREE_CANCEL = enum.auto()
-    RENAME_TREE = enum.auto()
     RENAME_TREE_OK = enum.auto()
     RENAME_TREE_CANCEL = enum.auto()
 
@@ -45,7 +44,6 @@ BUTTONTEXT:Dict[ButtonID,str] = {
     ButtonID.NEW_TREE: "New",
     ButtonID.NEW_TREE_OK: "OK",
     ButtonID.NEW_TREE_CANCEL: "Cancel",
-    ButtonID.RENAME_TREE: "Rename",
     ButtonID.RENAME_TREE_OK: "OK",
     ButtonID.RENAME_TREE_CANCEL: "Cancel",
 }
@@ -120,11 +118,6 @@ class Tree_Manager:
             button_frame,
             ButtonID.NEW_TREE,
             command=self.open_new_tree_window,
-            side='left')
-        self.__add_button(
-            button_frame,
-            ButtonID.RENAME_TREE,
-            command=self._open_rename_window_for_selected_tree,
             side='left')
         button_frame.pack()
 

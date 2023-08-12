@@ -40,8 +40,8 @@ class Test_Creating_New_Tree(unittest.TestCase):
 
     def test_rename_tree_via_ui(self):
         self.manager.new("Tree X")
-        self.manager._view.selection_set(self.manager._view.get_children()[0])
-        self.manager._buttons[tmg.ButtonID.RENAME_TREE].invoke()
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_RENAME)
         self.assertEqual(self.manager._entry_name.get(),"Tree X")
         self.manager._entry_name.delete(0,"end")
         self.manager._entry_name.insert(0,"Tree Y")
@@ -52,8 +52,8 @@ class Test_Creating_New_Tree(unittest.TestCase):
     def test_renaming_tree_to_existing_name_has_no_effect_and_the_rename_window_remains_opened(self):
         self.manager.new("Tree X")
         self.manager.new("Tree Y")
-        self.manager._view.selection_set(self.manager._view.get_children()[1])
-        self.manager._buttons[tmg.ButtonID.RENAME_TREE].invoke()
+        self.manager._open_right_click_menu(self.manager._view.get_children()[1])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_RENAME)
         self.assertEqual(self.manager._entry_name.get(),"Tree X")
 
         # renaming to already taken name will not be succesfull and the window stays opened
@@ -72,8 +72,8 @@ class Test_Creating_New_Tree(unittest.TestCase):
 
     def test_renaming_tree_to_its_original_name_is_allowed(self):
         self.manager.new("Tree X")
-        self.manager._view.selection_set(self.manager._view.get_children()[0])
-        self.manager._buttons[tmg.ButtonID.RENAME_TREE].invoke()
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_RENAME)
         # the name is kept unchanged
         self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
         self.assertEqual(self.manager._window_rename, None)
