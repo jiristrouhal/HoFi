@@ -128,7 +128,7 @@ class Tree_Manager:
             show='tree', # hide zeroth row, that would contain the tree columns' headings
             yscrollcommand=scroll_y.set,
         )
-        self._view.pack(side=tk.BOTTOM,expand=1,fill=tk.X)
+        self._view.pack(side=tk.TOP,expand=1,fill=tk.X)
         self.__ui.pack(expand=1,fill=tk.BOTH)
 
     def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
@@ -292,11 +292,11 @@ class Tree_Manager:
         self.__cleanup_rename_tree_widgets()
         self._window_rename = tk.Toplevel(self.__ui)
         self._window_rename.title(RENAME_TREE)
-        self._entry_name = tk.Entry(self._window_new,width=50)
+        self._entry_name = tk.Entry(self._window_rename,width=50)
         self._entry_name.pack()
         self._entry_name.insert(0,tree.name)
 
-        button_frame = tk.Frame(self._window_new)
+        button_frame = tk.Frame(self._window_rename)
         button_frame.pack(side=tk.BOTTOM)
         self.__add_button(button_frame,ButtonID.RENAME_TREE_OK,partial(self._confirm_rename,tree),side='left')
         self.__add_button(button_frame,ButtonID.RENAME_TREE_CANCEL,self.__close_rename_tree_window,side='left')

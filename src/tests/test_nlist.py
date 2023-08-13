@@ -60,5 +60,14 @@ class Test_Modifying_List(unittest.TestCase):
         self.nlist.remove("XYZ")
         self.assertEqual(self.x,  "Item XYZ was removed.")
 
+    def test_action_on_renaming(self):
+        self.name = "Foo"
+        def action(item:NamedThing):
+            self.name = "Wee"
+        
+        self.nlist.add_action_on_renaming(action)
+        self.nlist.append(NamedThing("Thing"))
+        self.nlist.rename("Thing", "It")
+        self.assertEqual(self.name, "Wee")
 
 if __name__=="__main__": unittest.main()

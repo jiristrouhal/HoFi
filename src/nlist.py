@@ -18,6 +18,7 @@ class NamedItemsList:
 
         self.__on_removal:List[Callable[[_NItem],None]] = list()
         self.__on_adding:List[Callable[[_NItem],None]] = list()
+        self.__on_renaming:List[Callable[[_NItem],None]] = list()
 
     @property
     def names(self)->List[str]: return [i.name for i in self.__items]
@@ -27,6 +28,9 @@ class NamedItemsList:
 
     def add_action_on_adding(self,action:Callable[[_NItem],None])->None:
         self.__on_adding.append(action)
+
+    def add_action_on_renaming(self,action:Callable[[_NItem],None])->None:
+        self.__on_renaming.append(action)
 
     def append(self,item:_NItem)->None: 
         name = item.name
@@ -47,6 +51,12 @@ class NamedItemsList:
         if item is None: return
         self.__items.remove(item)
         for action in self.__on_removal: action(item)
+
+    def rename(self,old_name:str,new_name:str)->None:
+        item = self.item(old_name)
+        if item is None: return
+        item.rename(new_name)
+        for action in self.__on_renaming: action(item)
 
     def add_name_warning(self,warning_action:Callable[[str],None]):
         self.__name_warnings.append(warning_action)
