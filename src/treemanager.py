@@ -41,8 +41,8 @@ MSGBOX_ASK_TO_DELETE_TREE_MSG_2 = "?"
 MSGBOX_ASK_TO_RENAME_TREE_TITLE = "File already exists"
 MSGBOX_ASK_TO_RENAME_TREE_MSG_1 = "The file with name '"
 MSGBOX_ASK_TO_RENAME_TREE_MSG_2 = \
-    "' already exists in the directory. Click 'OK' to specify other name for the saved tree \
-        or click 'Cancel' to cancel the tree saving."
+"' already exists in the directory. Click 'OK' to specify other name for the saved tree \
+or 'Cancel' to cancel the export."
 
 
 MSGBOX_TREE_WAS_NOT_YET_EXPORTED_TITLE = "Export required"
@@ -101,7 +101,7 @@ class Tree_Manager:
         self._last_export_dir:str = "."
         self._last_exported_tree_name:str = ""
 
-        self._exported_trees:Dict[treemod.Tree,str] = dict()
+        self._tree_files:Dict[treemod.Tree,str] = dict()
 
     @property
     def trees(self)->List[str]: return self.__treelist.names
@@ -120,7 +120,7 @@ class Tree_Manager:
             command=self._load_tree,
             side='left'
         )
-        button_frame.pack()
+        button_frame.pack(side=tk.BOTTOM)
         scroll_y = ttk.Scrollbar(self._view.master,orient=tk.VERTICAL,command=self._view.yview)
         scroll_y.pack(side=tk.LEFT,fill=tk.Y)
 
@@ -129,7 +129,7 @@ class Tree_Manager:
             show='tree', # hide zeroth row, that would contain the tree columns' headings
             yscrollcommand=scroll_y.set,
         )
-        self._view.pack(side=tk.TOP,expand=1,fill=tk.X)
+        self._view.pack(side=tk.TOP,expand=1,fill=tk.BOTH)
         self.__ui.pack(expand=1,fill=tk.BOTH)
 
     def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
@@ -157,7 +157,7 @@ class Tree_Manager:
             )
         )
 
-        if tree in self._exported_trees:
+        if tree in self._tree_files:
             self.right_click_menu.add_command(
                 label=MENU_CMD_TREE_UPDATE_FILE,
                 command=self._right_click_menu_command(
@@ -198,6 +198,8 @@ class Tree_Manager:
             treename = os.path.splitext(filename)[0]
 
         tree = self.__converter.load_tree(treename,dir)
+        if self._messageboxes_allowed and tree is not None: 
+            self._tree_files[tree] = filepath
         assert(tree is not None)
         self.__treelist.append(tree)
 
@@ -212,7 +214,7 @@ class Tree_Manager:
             if rename_tree: self._open_rename_tree_window(tree)
         else:
             self.__converter.save_tree(tree,dir)
-            self._exported_trees[tree] = os.path.join(dir,tree.name)+'.xml'
+            self._tree_files[tree] = os.path.join(dir,tree.name)+'.xml'
             self._last_export_dir = dir
             self._last_exported_tree_name = tree.name
 
@@ -236,7 +238,7 @@ class Tree_Manager:
         return os.path.isfile(file_path)
     
     def _update_file(self,tree:treemod.Tree)->None:
-        if tree not in self._exported_trees: 
+        if tree not in self._tree_files: 
             if self._messageboxes_allowed:
                 tkmsg.showinfo(
                     MSGBOX_TREE_WAS_NOT_YET_EXPORTED_TITLE,
@@ -246,7 +248,7 @@ class Tree_Manager:
             self._export_tree(tree)
             return
         
-        filepath = self._exported_trees[tree]
+        filepath = self._tree_files[tree]
         dir = os.path.dirname(filepath)
         filename_without_extension = os.path.splitext(os.path.basename(filepath))
         if os.path.isfile(filepath): 
@@ -263,7 +265,9 @@ class Tree_Manager:
                 tree.name + 
                 MSGBOX_ASK_TO_DELETE_TREE_MSG_2
             )
-        if answer==True: self.__treelist.remove(tree.name)
+        if answer==True: 
+            self.__treelist.remove(tree.name)
+            self._tree_files.pop(tree)
 
     def _right_click_menu_command(self,cmd:Callable)->Callable:
         def menu_cmd(*args,**kwargs): 

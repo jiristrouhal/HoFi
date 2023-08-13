@@ -159,7 +159,7 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
 
-        exported_file_path = self.manager._exported_trees[self.manager.get_tree("Exported tree")]
+        exported_file_path = self.manager._tree_files[self.manager.get_tree("Exported tree")]
         os.remove(exported_file_path)
 
         self.manager._set_tree_attribute("Exported tree","height","15")
