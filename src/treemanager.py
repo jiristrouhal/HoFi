@@ -80,7 +80,7 @@ class Tree_Manager:
         self.__ui = ttk.LabelFrame(master=ui_master,text=TREE_MANAGER_TITLE)
         self._buttons:Dict[ButtonID,tk.Button] = dict()
         self._view = ttk.Treeview(self.__ui, selectmode='browse')
-        self._map:Dict[str,treemod.Tree] = dict()
+        self._map:Dict[str,nlist._NItem] = dict()
         self._window_new:tk.Toplevel|None = None
         self._entry_name:tk.Entry|None = None
         self._window_rename:tk.Toplevel|None = None
@@ -138,9 +138,7 @@ class Tree_Manager:
 
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
         item_id = self._view.identify_row(event.y)
-        print("here")
         if item_id.strip()=="": return 
-        print("here again")
         self._open_right_click_menu(item_id)
 
         if self.right_click_menu is not None:
@@ -353,14 +351,14 @@ class Tree_Manager:
             self._entry_name.destroy()
             self._entry_name = None
 
-    def __add_tree_to_view(self,tree:treemod.Tree)->None:
+    def __add_tree_to_view(self,tree:nlist._NItem)->None:
         tree_iid = self._view.insert("",0,text=tree.name)
         self._map[tree_iid] = tree
 
-    def __remove_tree_from_view(self,tree:treemod.Tree)->None:
+    def __remove_tree_from_view(self,tree:nlist._NItem)->None:
         pass
-    
-    def get_tree(self,name:str)->treemod.Tree|None:
+
+    def get_tree(self,name:str)->nlist._NItem|None:
         return self.__treelist.item(name)
 
     def _set_tree_attribute(self,name:str,key:str,value:str)->None:
