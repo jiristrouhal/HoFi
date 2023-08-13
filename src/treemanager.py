@@ -90,7 +90,8 @@ class Tree_Manager:
         self.__treelist = treelist
         self.__treelist.add_name_warning(self.__error_if_tree_names_already_taken)
         self.__treelist.add_action_on_adding(self.__add_tree_to_view)
-        self.__treelist.add_action_on_adding(self.__remove_tree_from_view)
+        self.__treelist.add_action_on_removal(self.__remove_tree_from_view)
+        self.__treelist.add_action_on_renaming(self.__rename_tree_in_view)
 
         self.right_click_menu:tk.Menu|None = None
         # this flag will prevent some events to occur when the treeview is tested
@@ -202,7 +203,9 @@ class Tree_Manager:
 
     def _export_tree(self,tree:treemod.Tree)->None:
         dir = self._last_export_dir
-        if self._messageboxes_allowed: dir = self._ask_for_directory()
+        if self._messageboxes_allowed: 
+            dir = self._ask_for_directory()
+            if dir.strip()=='': return
         if self._xml_already_exists(dir,tree.name):
             rename_tree = True
             if self._messageboxes_allowed: rename_tree = self._ask_to_rename_tree(tree.name)
@@ -320,7 +323,7 @@ class Tree_Manager:
         if self.tree_exists(new_name) and self.get_tree(new_name) is not tree: 
             self.__error_if_tree_names_already_taken(new_name)
             return 
-        tree.rename(self._entry_name.get())
+        self.__treelist.rename(tree.name,self._entry_name.get())
         self.__close_rename_tree_window()
 
     def _confirm_new_tree_name(self)->None:
@@ -352,11 +355,14 @@ class Tree_Manager:
             self._entry_name = None
 
     def __add_tree_to_view(self,tree:nlist._NItem)->None:
-        tree_iid = self._view.insert("",0,text=tree.name)
-        self._map[tree_iid] = tree
+        iid = self._view.insert("",0,text=tree.name,iid=str(id(tree)))
+        self._map[iid] = tree
 
     def __remove_tree_from_view(self,tree:nlist._NItem)->None:
-        pass
+        self._view.delete(str(id(tree)))
+
+    def __rename_tree_in_view(self,tree:nlist._NItem)->None:
+        self._view.item(str(id(tree)),text=tree.name)
 
     def get_tree(self,name:str)->nlist._NItem|None:
         return self.__treelist.item(name)
@@ -367,9 +373,7 @@ class Tree_Manager:
             tree._attributes[key] = value
 
     def rename(self,old_name:str,new_name:str)->None:
-        tree_to_be_renamed= self.get_tree(old_name)
-        if tree_to_be_renamed is None: return
-        tree_to_be_renamed.rename(new_name)
+        self.__treelist.rename(old_name,new_name)
 
     def tree_exists(self,name:str)->bool: 
         return name in self.trees

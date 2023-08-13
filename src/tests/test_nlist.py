@@ -18,7 +18,6 @@ class Test_Modifying_List(unittest.TestCase):
 
     def setUp(self) -> None:
         self.nlist = nl.NamedItemsList()
-        
     
     def test_adding_to_list(self)->None:
         self.nlist.append(NamedThing("Item 1"))
