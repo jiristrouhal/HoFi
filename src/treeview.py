@@ -373,6 +373,7 @@ class Treeview:
         if not item_id==tree_id:
             self.available_parents.insert("",index=0,iid=tree_id,text=tree_id)
             self._collect_available_parents(tree_id,item_id)
+            
         self.available_parents.pack()
         button_frame(
             self.move_window,

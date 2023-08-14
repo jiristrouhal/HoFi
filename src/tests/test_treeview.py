@@ -202,6 +202,15 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
             return descendants_names
         self.assertListEqual(get_descendant_names(self.view.available_parents,"Tree 1"), ["Branch X","Branch Y"])
         
+    def test_if_available_parents_are_none_object_confirming_parent_has_no_effect(self):
+        self.view.available_parents = None
+        ok_button:tk.Button = self.view.move_window.winfo_children()[-1].winfo_children()[0]
+        ok_button.invoke()
+
+    def test_confirming_moving_item_under_new_parent_has_no_effect_if_no_parent_is_selected_from_available_parents(self):
+        self.view.available_parents.selection_clear()
+        ok_button:tk.Button = self.view.move_window.winfo_children()[-1].winfo_children()[0]
+        ok_button.invoke()
         
     def test_move_branch_under_a_new_parent(self):
         self.view.available_parents.selection_set(self.tree1._find_branch("Branch X").data["treeview_iid"])
