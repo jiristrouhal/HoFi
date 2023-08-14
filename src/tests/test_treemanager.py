@@ -133,9 +133,14 @@ class Test_Editing_Trees(unittest.TestCase):
         self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
         self.assertListEqual(self.manager.trees,["Tree Y"])
 
-    def test_editing_nonexistent_tree_attributes_has_no_effect(self):
+    def test_editing_attributes_of_a_nonexistent_tree_has_no_effect(self):
         self.manager._set_tree_attribute("Nonexistent tree", "some attribute", "123")
 
+    def test_editing_nonexistent_attributes_has_no_effect(self):
+        self.assertTrue("Tree X" in self.manager.trees)
+        NONEXISTENT_ATTR_NAME = "Attr name"
+        self.manager._set_tree_attribute("Tree X", NONEXISTENT_ATTR_NAME, "123")
+        self.assertTrue(NONEXISTENT_ATTR_NAME not in self.manager.get_tree("Tree X").attributes)
 
 
 class Test_Removing_Trees(unittest.TestCase):
