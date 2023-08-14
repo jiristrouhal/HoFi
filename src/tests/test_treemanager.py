@@ -170,10 +170,13 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.treelist = treelist.TreeList()
         self.manager = Tree_Manager(self.treelist)
 
-    def test_right_click_menu_does_not_popup_if_no_item_is_clicked(self):
+    def test_right_click_menu_containts_options_for_creating_or_loading_tree_if_clicked_outside_of_all_items(self):
         self.manager.new("Some tree")
         self.manager._open_right_click_menu("")
-        self.assertEqual(self.manager.right_click_menu,None)
+        self.assertTrue(self.manager.right_click_menu is not None)
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_NEW)
+        self.assertTrue(self.manager._window_new is not None)
+        
 
 
 class Test_Tree_and_Xml_Interaction(unittest.TestCase):

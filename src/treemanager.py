@@ -30,6 +30,8 @@ MENU_CMD_TREE_RENAME = "Rename"
 MENU_CMD_TREE_EXPORT = "Export"
 MENU_CMD_TREE_UPDATE_FILE = "Update file"
 MENU_CMD_TREE_DELETE = "Delete"
+MENU_CMD_TREE_NEW = "New"
+MENU_CMD_TREE_LOAD = "Load"
 
 FILEDIALOG_EXPORT_TITLE = "Export tree into file"
 FILEDIALOG_LOAD_TITLE = "Load tree from file"
@@ -109,14 +111,33 @@ class Tree_Manager:
 
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
         item_id = self._view.identify_row(event.y)
-        if item_id.strip()=="": return 
         self._open_right_click_menu(item_id)
 
         if self.right_click_menu is not None:
             self.right_click_menu.tk_popup(x=event.x_root,y=event.y_root)
 
     def _open_right_click_menu(self,item_id:str)->None:
-        if item_id.strip()=="": return
+        if item_id.strip()=="": 
+            self._open_right_click_menu_for_manager()
+        else: 
+            self._open_right_click_menu_for_item(item_id)
+
+    def _open_right_click_menu_for_manager(self)->None:
+        self.right_click_menu = tk.Menu(master=self._view, tearoff=False)
+        self.right_click_menu.add_command(
+            label=MENU_CMD_TREE_NEW,
+            command=self._right_click_menu_command(
+                self._open_new_tree_window
+            )
+        )
+        self.right_click_menu.add_command(
+            label=MENU_CMD_TREE_LOAD,
+            command=self._right_click_menu_command(
+                self._load_tree
+            )
+        )
+
+    def _open_right_click_menu_for_item(self,item_id:str)->None:
         self.right_click_menu = tk.Menu(master=self._view, tearoff=False)
 
         tree = self._map[item_id]
