@@ -194,35 +194,6 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
         self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
         self.assertTrue(self.manager.xml_file_path not in self.manager._tree_files)
 
-    def test_exporting_to_existing_file_name_prompts_the_user_to_rename_the_tree(self):
-        self.manager.xml_file_path = "./Tree being exported.xml"
-
-        self.manager.new("Tree being exported")
-        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
-
-        self.manager.agree_with_removal = True
-        self.manager._remove_tree(self.manager.get_tree("Tree being exported"))
-        self.assertListEqual(self.manager.trees, [])
-
-        # Create new tree with some random name and then rename it 
-        # to the same name as the previously exported and deleted tree
-        self.manager.new("Some tree")
-        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
-        self.manager._entry_name.delete(0,"end")
-        self.manager._entry_name.insert(0,"Tree being exported")
-        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
-        self.assertTrue(self.manager._window_rename is None)
-
-        # Try to export the new tree with the same name as the old one
-        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.agree_with_renaming = True
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
-        # After the user is notified that a file with the tree name already exists in
-        # the directory and after he/she clicks OK, the window_rename opens up automatically
-        self.assertTrue(self.manager._window_rename is not None)
-
     def test_updating_existing_file(self):
         self.manager.xml_file_path = "./Tree being exported.xml"
 
@@ -298,6 +269,49 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
             os.remove("Tree being exported 2.xml")
 
 
+
+class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.treelist = treelist.TreeList()
+        self.manager = Tree_Manager(self.treelist)
+    
+        self.manager.xml_file_path = "./Tree being exported.xml"
+
+        self.manager.new("Tree being exported")
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+
+        self.manager.agree_with_removal = True
+        self.manager._remove_tree(self.manager.get_tree("Tree being exported"))
+        self.assertListEqual(self.manager.trees, [])
+
+        # to the same name as the previously exported and deleted tree
+        self.manager.new("Some tree")
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
+        self.manager._entry_name.delete(0,"end")
+        self.manager._entry_name.insert(0,"Tree being exported")
+        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
+        self.assertTrue(self.manager._window_rename is None)
+
+        # Try to export the new tree with the same name as the old one
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+
+
+    def test_exporting_to_existing_file_name_prompts_the_user_to_rename_the_tree(self):
+
+        # After the user is notified that a file with the tree name already exists in
+        # the directory and after he/she clicks OK, the window_rename opens up automatically
+        self.manager.agree_with_renaming = True
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.assertTrue(self.manager._window_rename is not None)
+
+    def test_exporting_to_existing_file_and_denying_to_rename_the_tree_aborts_the_export(self):
+        # The user chooses to cancel the export
+        self.manager.agree_with_renaming = False
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.assertTrue(self.manager._window_rename is None)
 
 
 if __name__=="__main__": unittest.main()
