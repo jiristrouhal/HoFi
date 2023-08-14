@@ -7,6 +7,7 @@ import tkinter.messagebox as tkmsg
 from typing import Tuple, Dict, Callable, Any
 import src.tree as treemod
 from functools import partial
+from collections import OrderedDict
 
 
 MENU_CMD_BRANCH_DELETE = "Delete"
@@ -35,7 +36,9 @@ class Treeview:
         self._bind_keys()
         self._configure_widget()
 
-        self._attribute_template = {"name":"New", "lenght":"0"}
+        self._attribute_template = OrderedDict()
+        self._attribute_template["name"] = "New" 
+        self._attribute_template["lenght"] = "0"
 
         self._map:Dict[str,treemod.TreeItem] = dict()
         self.right_click_menu:tk.Menu|None = None
