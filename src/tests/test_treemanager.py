@@ -65,21 +65,19 @@ class Test_Editing_Trees(unittest.TestCase):
     def setUp(self) -> None:
         self.treelist = treelist.TreeList()
         self.manager = Tree_Manager(self.treelist)
+        self.manager.new("Tree X")
 
     def test_rename_tree(self):
-        self.manager.new("Tree X")
         self.assertListEqual(self.manager.trees, ["Tree X"])
         self.manager.rename("Tree X", "Tree Y")
         self.assertListEqual(self.manager.trees, ["Tree Y"])
 
     def test_renaming_nonexistent_tree_has_no_effect(self):
         self.manager.rename("Nonexistent tree", "Tree Y")
-        self.assertListEqual(self.manager.trees, [])
+        self.assertListEqual(self.manager.trees, ["Tree X"])
 
     def test_rename_tree_via_ui(self):
         self.manager.agree_with_renaming = True
-
-        self.manager.new("Tree X")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
         self.assertEqual(self.manager._entry_name.get(),"Tree X")
@@ -91,8 +89,6 @@ class Test_Editing_Trees(unittest.TestCase):
 
     def test_renaming_tree_to_existing_name_has_no_effect_and_the_rename_window_remains_opened(self):
         self.manager.agree_with_renaming = True
-
-        self.manager.new("Tree X")
         self.manager.new("Tree Y")
         self.manager._open_right_click_menu(self.manager._view.get_children()[1])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
@@ -113,7 +109,6 @@ class Test_Editing_Trees(unittest.TestCase):
         self.assertListEqual(self.manager.trees, ["Tree Z", "Tree Y"])
 
     def test_renaming_tree_to_its_original_name_is_allowed(self):
-        self.manager.new("Tree X")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
         # the name is kept unchanged
@@ -122,13 +117,16 @@ class Test_Editing_Trees(unittest.TestCase):
         self.assertListEqual(self.manager.trees, ["Tree X"])
 
     def test_renaming_tree_using_right_click(self):
-        self.manager.new("Tree X")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
         self.manager._entry_name.delete(0,"end")
         self.manager._entry_name.insert(0,"Tree Y")
         self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
         self.assertListEqual(self.manager.trees,["Tree Y"])
+
+    def test_editing_nonexistent_tree_attributes_has_no_effect(self):
+        self.manager._set_tree_attribute("Nonexistent tree", "some attribute", "123")
+
 
 
 class Test_Removing_Trees(unittest.TestCase):
@@ -312,6 +310,8 @@ class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
         self.manager.agree_with_renaming = False
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
         self.assertTrue(self.manager._window_rename is None)
+
+
 
 
 if __name__=="__main__": unittest.main()
