@@ -196,9 +196,9 @@ class Tree_Manager:
         
         filepath = self._tree_files[tree]
         dir = os.path.dirname(filepath)
-        filename_without_extension = os.path.splitext(os.path.basename(filepath))
+        filename_without_extension = os.path.splitext(os.path.basename(filepath))[0]
         if os.path.isfile(filepath): 
-            if tree.name!=filename_without_extension:
+            if not tree.name==filename_without_extension:
                 os.remove(filepath)
         self.__converter.save_tree(tree,dir)
 

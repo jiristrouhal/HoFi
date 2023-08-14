@@ -290,6 +290,7 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
         self.manager.agree_with_renaming = True
 
         self.manager.rename("Tree being exported", "Tree being exported 2")
+        self.assertListEqual(self.manager.trees, ["Tree being exported 2"])
         self.manager._update_file(self.manager.get_tree("Tree being exported 2"))
 
         self.assertFalse(os.path.isfile("./Tree being exported.xml"))
