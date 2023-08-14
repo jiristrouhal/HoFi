@@ -189,6 +189,11 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
         self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
         self.assertEqual(self.manager.trees, [])
 
+    def test_loading_from_nonexistent_file_has_no_effect(self):
+        self.manager.xml_file_path = "./Nonexistent_file.xml"
+        self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
+        self.assertTrue(self.manager.xml_file_path not in self.manager._tree_files)
+
     def test_exporting_to_existing_file_name_prompts_the_user_to_rename_the_tree(self):
         self.manager.xml_file_path = "./Tree being exported.xml"
 
