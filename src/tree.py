@@ -140,7 +140,7 @@ class TreeItem(abc.ABC):
             for action in self._actions['add_branch']: 
                 action(branch)
         
-    def move_branch(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...])->None:
+    def move_branch(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...]=())->None:
         if self._does_path_point_to_child_of_branch_or_to_branch_itself(branch_path,new_branch_parent_path):
             return
         branch = self._find_branch(*branch_path)

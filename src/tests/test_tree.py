@@ -116,6 +116,10 @@ class Test_Creating_Tree(unittest.TestCase):
         # thus, it changed its name to 'Branch 1 (1)'
         self.assertListEqual(self.tree.branches(), ["Branch 1", "Branch 1 (1)"])
 
+    def test_moving_nonexistent_branch_has_no_effect(self):
+        self.tree.move_branch("Nonexistent branch","")
+        self.assertListEqual(self.tree.branches(),["Branch 1"])
+
     def test_renaming_branch_to_name_that_is_not_already_taken_can_be_done(self):
         self.tree.add_branch("Branch 2",attributes={"weight":25})
         self.tree.rename_branch(("Branch 2",),"Branch X")
