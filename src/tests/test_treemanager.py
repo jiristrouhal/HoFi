@@ -151,6 +151,13 @@ class Test_Removing_Trees(unittest.TestCase):
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_DELETE)
         self.assertListEqual(self.manager.trees, [])
 
+    def test_canceling_the_tree_removal(self):
+        self.manager.agree_with_removal = False
+        self.manager.new("Tree X")
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_DELETE)
+        self.assertListEqual(self.manager.trees, ["Tree X"])
+
 
 class Test_Right_Click_Menu(unittest.TestCase):
 
