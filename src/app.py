@@ -26,12 +26,10 @@ editor = tw.Treeview(edit_frame)
 
 
 def add_tree_to_editor(tree:treemod.Tree):
-    print("on selection")
     editor.load_tree(tree)
 
 
 def remove_tree_from_editor(tree:treemod.Tree):
-    print("on deselection")
     editor.remove_tree(tree.name)
 
 

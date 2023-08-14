@@ -58,10 +58,6 @@ class TreeItem(abc.ABC):
         self._actions[on].append(action)
 
     def add_data(self,new_key:str,value:Any)->None:
-        if new_key in self._data: 
-            raise KeyError(
-                f"Branch/tree {self.name}: Cannot add value to already existing key ({new_key})."
-            )
         self._data[new_key] = value
 
     def do_if_error_occurs(

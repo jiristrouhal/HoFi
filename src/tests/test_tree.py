@@ -152,10 +152,6 @@ class Test_Actions(unittest.TestCase):
         self.tree._children[0].add_data("key1", 123)
         self.assertEqual(self.tree._children[0].data["key1"], 123)
 
-    def test_adding_values_to_branch_data_under_existing_key_raises_error(self):
-        self.tree._children[0].add_data("key1", 123)
-        self.assertRaises(KeyError, self.tree._children[0].add_data, "key1", 456)
-
 
 class Test_Adding_Leaf_Type_Item(unittest.TestCase):
 
