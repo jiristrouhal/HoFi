@@ -95,6 +95,8 @@ class Test_Empty_Trees(unittest.TestCase):
         branch_x_iid = self.view.widget.get_children("Tree 1")[0]
         self.assertEqual(len(self.view.widget.get_children(branch_x_iid)), 1)
 
+    
+
 class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -200,6 +202,7 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
             return descendants_names
         self.assertListEqual(get_descendant_names(self.view.available_parents,"Tree 1"), ["Branch X","Branch Y"])
         
+        
     def test_move_branch_under_a_new_parent(self):
         self.view.available_parents.selection_set(self.tree1._find_branch("Branch X").data["treeview_iid"])
         ok_button:tk.Button = self.view.move_window.winfo_children()[-1].winfo_children()[0]
@@ -224,6 +227,18 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
         self.assertEqual(self.view.move_window,None)
         #test that available parents are deleted after clicking the cancel button
         self.assertEqual(self.view.available_parents,None)
+
+    
+class Test_Moving_Tree(unittest.TestCase):
+    
+    def setUp(self) -> None:
+        self.tree1 = Tree("Tree 1")
+        self.view = treeview.Treeview()
+        self.view.load_tree(self.tree1)
+    
+    def test_available_parents_for_tree_are_always_none(self):
+        self.view.open_move_window("Tree 1")
+        self.assertEqual(self.view.available_parents.get_children(),())
 
 
 class Test_Load_Existing_Tree(unittest.TestCase):
@@ -321,6 +336,7 @@ class Test_Error_Message(unittest.TestCase):
         )
         self.tree1.remove_branch("Branch with children")
         self.assertEqual(self.x,1)
+
 
 
 if __name__=="__main__": unittest.main()
