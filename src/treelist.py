@@ -1,6 +1,7 @@
 from typing import List, Callable
 import naming
 from tree import Tree
+from functools import partial
 
 
 class TreeList:

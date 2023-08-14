@@ -26,7 +26,8 @@ class TreeItem(abc.ABC):
             'add_branch':[], 
             'on_removal':[], 
             'on_renaming':[],
-            'on_moving':[]
+            'on_moving':[],
+            'on_self_rename':[]
         }
         self._do_on_error:Dict[str,List[Callable]] = {
             'cannot_remove_branch_with_children':[],
@@ -51,7 +52,7 @@ class TreeItem(abc.ABC):
 
     def add_action(
         self,
-        on:Literal['add_branch','on_removal','on_renaming','on_moving'],
+        on:Literal['add_branch','on_removal','on_renaming','on_moving','on_self_rename'],
         action:Callable[[TreeItem],None]
         )->None: 
 
@@ -85,6 +86,8 @@ class TreeItem(abc.ABC):
             if self._parent._find_branch(name) is not None:
                 name = src.naming.change_name_if_already_taken(name)
         self._attributes["name"] = name.strip()
+        for action in self._actions['on_self_rename']:
+            action(self)
 
     def branches(self,*branches_along_the_path:str)->List[str]:
         return self._list_children(*branches_along_the_path,type='branch')
