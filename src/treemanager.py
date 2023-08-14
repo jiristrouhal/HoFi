@@ -51,6 +51,11 @@ MSGBOX_TREE_WAS_NOT_YET_EXPORTED_TITLE = "Export required"
 MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_1 = "No file is yet connected to the '"
 MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_2 = "'. Export is required first."
 
+MSGBOX_FILE_ALREADY_USED_TITLE = "File already used by tree"
+MSGBOX_FILE_ALREADY_USED_MSG_1 = "The file '"
+MSGBOX_FILE_ALREADY_USED_MSG_2 = "' is already used by '"
+MSGBOX_FILE_ALREADY_USED_MSG_3 = "'. To proceed, use a copy of the file you want to load."
+
 
 DEFAULT_TREE_NAME = "New"
 
@@ -191,10 +196,11 @@ class Tree_Manager:
         self.__treelist.append(tree)
 
     def __file_already_in_use(self, file_to_be_loaded:str)->bool:
-        for filepath in self._tree_files.values():
-            if filepath==file_to_be_loaded: return True
+        for tree,filepath in self._tree_files.items():
+            if filepath==file_to_be_loaded: 
+                self._show_error_file_already_in_use(filepath,tree.name)
+                return True
         return False
-                
         
     def _export_tree(self,tree:treemod.Tree)->None:
         dir = self._ask_for_directory()
@@ -376,6 +382,13 @@ class Tree_Manager:
         tkmsg.showerror(
             NAME_ALREADY_TAKEN_TITLE, 
             NAME_ALREADY_TAKEN_MESSAGE_1+f"{name}"+NAME_ALREADY_TAKEN_MESSAGE_2
+        )
+                
+    def _show_error_file_already_in_use(self,filepath:str,tree_name:str)->None:  # pragma: no cover
+        tkmsg.showerror(MSGBOX_FILE_ALREADY_USED_TITLE, 
+            MSGBOX_FILE_ALREADY_USED_MSG_1 + filepath + \
+            MSGBOX_FILE_ALREADY_USED_MSG_2 + tree_name + \
+            MSGBOX_FILE_ALREADY_USED_MSG_3
         )
 
     def __configure_ui(self)->None: # pragma: no cover

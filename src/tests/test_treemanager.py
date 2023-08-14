@@ -7,6 +7,10 @@ import treelist
 import os
 
 
+def file_used_by_tree_msg(filepath:str, tree_name:str)->str:
+    return filepath + tree_name
+
+
 class Tree_Manager(tmg.Tree_Manager):
 
     def __init__(self,*args,**kwargs)->None:
@@ -14,6 +18,7 @@ class Tree_Manager(tmg.Tree_Manager):
         self.xml_file_path = ""
         self.agree_with_renaming = False
         self.agree_with_removal = False
+        self.file_already_in_use_error_msg = ""
 
     # override methods using messageboxes and filedialogs not suitable for unit testing
     def _get_filepath(self)->str:
@@ -33,6 +38,9 @@ class Tree_Manager(tmg.Tree_Manager):
 
     def _error_if_tree_names_already_taken(self, name: str) -> None:
         pass
+
+    def _show_error_file_already_in_use(self, filepath:str, name:str)->None:
+        self.file_already_in_use_error_msg = file_used_by_tree_msg(filepath,name)
 
 class Test_Creating_New_Tree(unittest.TestCase):
 
@@ -368,14 +376,27 @@ class Test_Loading_of_Xml(unittest.TestCase):
         self.assertListEqual(self.manager.trees, [])
         self.assertDictEqual(self.manager._tree_files, {})
 
-
-
-
     def test_repeated_loading_of_the_same_tree_is_not_allowed(self):
         self.manager._load_tree()
         self.assertListEqual(self.manager.trees, ["Tree X"])
         self.manager._load_tree()
         self.assertListEqual(self.manager.trees, ["Tree X"])
+        self.assertEqual(
+            self.manager.file_already_in_use_error_msg,
+            file_used_by_tree_msg(self.manager.xml_file_path,"Tree X")
+        )
+
+    def test_repeated_loading_of_the_same_and_renamed_tree_is_not_allowed(self):
+        self.manager._load_tree()
+        self.assertListEqual(self.manager.trees, ["Tree X"])
+        self.manager.rename("Tree X", "Tree Y")
+        self.manager._load_tree()
+        self.assertListEqual(self.manager.trees, ["Tree Y"])
+        self.assertEqual(
+            self.manager.file_already_in_use_error_msg,
+            file_used_by_tree_msg(self.manager.xml_file_path,"Tree Y")
+        )
+
 
     def tearDown(self) -> None:
         if os.path.isfile("data/Tree X.xml"):
