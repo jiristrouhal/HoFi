@@ -77,7 +77,6 @@ class Test_Editing_Trees(unittest.TestCase):
         self.assertListEqual(self.manager.trees, ["Tree X"])
 
     def test_rename_tree_via_ui(self):
-        self.manager.agree_with_renaming = True
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
         self.assertEqual(self.manager._entry_name.get(),"Tree X")
@@ -86,6 +85,16 @@ class Test_Editing_Trees(unittest.TestCase):
         self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
         self.assertEqual(self.manager._window_rename, None)
         self.assertListEqual(self.manager.trees, ["Tree Y"])
+
+    def test_cancelling_the_renaming_in_ui(self):
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
+        self.assertEqual(self.manager._entry_name.get(),"Tree X")
+        self.manager._entry_name.delete(0,"end")
+        self.manager._entry_name.insert(0,"Tree Y")
+        self.manager._buttons[tmg.ButtonID.RENAME_TREE_CANCEL].invoke()
+        self.assertEqual(self.manager._window_rename, None)
+        self.assertListEqual(self.manager.trees, ["Tree X"])
 
     def test_renaming_tree_to_existing_name_has_no_effect_and_the_rename_window_remains_opened(self):
         self.manager.agree_with_renaming = True
