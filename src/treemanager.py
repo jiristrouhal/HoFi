@@ -102,32 +102,6 @@ class Tree_Manager:
     @property
     def trees(self)->List[str]: return self.__treelist.names
 
-    def __configure_ui(self)->None: # pragma: no cover
-        button_frame = tk.Frame(self.__ui)
-        self.__add_button(
-            button_frame,
-            ButtonID.NEW_TREE,
-            command=self._open_new_tree_window,
-            side='left'
-        )
-        self.__add_button(
-            button_frame,
-            ButtonID.LOAD_TREE,
-            command=self._load_tree,
-            side='left'
-        )
-        button_frame.pack(side=tk.BOTTOM)
-        scroll_y = ttk.Scrollbar(self._view.master,orient=tk.VERTICAL,command=self._view.yview)
-        scroll_y.pack(side=tk.LEFT,fill=tk.Y)
-
-        self._view.config(
-            selectmode='browse',
-            show='tree', # hide zeroth row, that would contain the tree columns' headings
-            yscrollcommand=scroll_y.set,
-        )
-        self._view.pack(side=tk.TOP,expand=1,fill=tk.BOTH)
-        self.__ui.pack(expand=1,fill=tk.BOTH)
-
     def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
         tree = treemod.Tree(name,tag=tag,attributes=attributes)
         self.__treelist.append(tree)
@@ -377,3 +351,29 @@ class Tree_Manager:
             NAME_ALREADY_TAKEN_TITLE, 
             NAME_ALREADY_TAKEN_MESSAGE_1+f"{name}"+NAME_ALREADY_TAKEN_MESSAGE_2
         )
+
+    def __configure_ui(self)->None: # pragma: no cover
+        button_frame = tk.Frame(self.__ui)
+        self.__add_button(
+            button_frame,
+            ButtonID.NEW_TREE,
+            command=self._open_new_tree_window,
+            side='left'
+        )
+        self.__add_button(
+            button_frame,
+            ButtonID.LOAD_TREE,
+            command=self._load_tree,
+            side='left'
+        )
+        button_frame.pack(side=tk.BOTTOM)
+        scroll_y = ttk.Scrollbar(self._view.master,orient=tk.VERTICAL,command=self._view.yview)
+        scroll_y.pack(side=tk.LEFT,fill=tk.Y)
+
+        self._view.config(
+            selectmode='browse',
+            show='tree', # hide zeroth row, that would contain the tree columns' headings
+            yscrollcommand=scroll_y.set,
+        )
+        self._view.pack(side=tk.TOP,expand=1,fill=tk.BOTH)
+        self.__ui.pack(expand=1,fill=tk.BOTH)
