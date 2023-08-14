@@ -34,6 +34,13 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.assertEqual(self.manager._window_new, None)
         self.assertEqual(self.manager._entry_name, None)
 
+class Test_Editing_Trees(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.treelist = treelist.TreeList()
+        self.manager = tmg.Tree_Manager(self.treelist)
+        self.manager._messageboxes_allowed = False
+
     def test_rename_tree(self):
         self.manager.new("Tree X")
         self.assertListEqual(self.manager.trees, ["Tree X"])
@@ -94,11 +101,27 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
         self.assertListEqual(self.manager.trees,["Tree Y"])
 
+
+class Test_Removing_Trees(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.treelist = treelist.TreeList()
+        self.manager = tmg.Tree_Manager(self.treelist)
+        self.manager._messageboxes_allowed = False
+
     def test_remove_tree_using_right_click(self):
         self.manager.new("Tree X")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_DELETE)
         self.assertListEqual(self.manager.trees, [])
+
+
+class Test_Tree_and_Xml_Interaction(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.treelist = treelist.TreeList()
+        self.manager = tmg.Tree_Manager(self.treelist)
+        self.manager._messageboxes_allowed = False
 
     def test_right_click_menu_does_not_popup_if_no_item_is_clicked(self):
         self.manager.new("Some tree")
