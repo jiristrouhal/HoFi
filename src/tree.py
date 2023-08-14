@@ -97,8 +97,6 @@ class TreeItem(abc.ABC):
         return self._list_children(*branches_along_the_path,type='leaf')
     
     def _list_children(self,*branches_along_the_path:str,type:Literal['leaf','branch','all'])->List[str]:
-        if self.__type=='leaf': return [] 
-
         if branches_along_the_path:
             # list branches growing out of some child element of the current object
             lowest_level_branch = self._find_branch(*branches_along_the_path)
@@ -143,8 +141,6 @@ class TreeItem(abc.ABC):
                 action(branch)
         
     def move_branch(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...])->None:
-        if self.__type=='leaf': return 
-
         if self._does_path_point_to_child_of_branch_or_to_branch_itself(branch_path,new_branch_parent_path):
             return
         branch = self._find_branch(*branch_path)
@@ -158,8 +154,6 @@ class TreeItem(abc.ABC):
                 action(parent)
 
     def remove_branch(self,*branch_path:str)->None:
-        if self.__type=='leaf': return 
-
         if len(branch_path)>1:
             parent_branch = self._find_branch(*branch_path[:-1])
             if parent_branch is not None: 
@@ -178,8 +172,6 @@ class TreeItem(abc.ABC):
         self._children.remove(branch_to_be_removed)
     
     def rename_branch(self,branch_path:Tuple[str,...],new_name:str)->None:
-        if self.__type=='leaf': return 
-
         branch = self._find_branch(*branch_path)
         if branch is None: return
         branch.rename(new_name)

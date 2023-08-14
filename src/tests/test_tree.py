@@ -170,5 +170,10 @@ class Test_Adding_Leaf_Type_Item(unittest.TestCase):
     def test_listing_leaf_children_yields_empty_list(self):
         self.assertListEqual(self.tree._children[1]._list_children(type='all'),[])
 
+    def test_manipulating_leafs_items_has_no_effect(self):
+        leaf = self.tree._children[1]
+        leaf.add_branch("Leaf's branch")
+        self.assertListEqual(leaf._list_children(type='type'),[])
+
 
 if __name__=="__main__": unittest.main()
