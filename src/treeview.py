@@ -340,7 +340,6 @@ class Treeview:
         
 
     def back_to_original_edit_entry_values(self,branch_id:str)->None:
-        if self.edit_window is None: return
         for attribute, entry in self.edit_entries.items():
             entry.delete(0,tk.END)
             entry.insert(0,self._map[branch_id].attributes[attribute])
