@@ -295,28 +295,15 @@ class Treeview:
         self.disregard_add_entry_values()
 
     def confirm_add_entry_values(self,parent_id:str)->None:
-        if self.add_window is None: return
         attributes = dict()
-
         for label, entry in self.add_window_entries.items():
             attributes[label] = entry.get()
-        
         name = attributes.pop("name")
         self._map[parent_id].add_branch(name,attributes=attributes)
-
-        self.add_window.destroy()
-        self.add_window = None
-        for entry_name in self.add_window_entries: 
-            self.add_window_entries[entry_name].destroy()
-        self.add_window_entries.clear()
+        self.__clear_add_window_widgets()
 
     def disregard_add_entry_values(self)->None:
-        if self.add_window is None: return
-        self.add_window.destroy()
-        self.add_window = None
-        for entry_name in self.add_window_entries: 
-            self.add_window_entries[entry_name].destroy()
-        self.add_window_entries.clear()
+        self.__clear_add_window_widgets()
 
     def open_edit_window_on_double_click(self,event:tk.Event)->None: # pragma: no cover
         iid = self.widget.identify_row(event.y)
@@ -359,26 +346,17 @@ class Treeview:
             entry.insert(0,self._map[branch_id].attributes[attribute])
 
     def confirm_edit_entry_values(self,branch_id:str)->None:
-        if self.edit_window is None: return
         for attribute, entry in self.edit_entries.items():
             self._map[branch_id].set_attribute(attribute, entry.get())
         # rename element in the tree
         self.widget.item(branch_id,text=self.edit_entries["name"].get())
-
-        self.edit_window.destroy()
-        self.edit_window = None
-        for entry_name in self.edit_entries: self.edit_entries[entry_name].destroy()
-        self.edit_entries.clear()
+        self.__clear_edit_window_widgets()
     
     def _disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
         self.disregard_edit_entry_values()
 
     def disregard_edit_entry_values(self)->None:
-        if self.edit_window is None: return
-        self.edit_window.destroy()
-        self.edit_window = None
-        for entry_name in self.edit_entries: self.edit_entries[entry_name].destroy()
-        self.edit_entries.clear()
+        self.__clear_edit_window_widgets()
 
     def open_move_window(self,item_id:str)->None:
         # copy the treeview and throw away the moved item and its children
@@ -430,6 +408,22 @@ class Treeview:
             tree_id = id
             id = self.widget.parent(tree_id)
         return str(tree_id)
+    
+    def __clear_add_window_widgets(self)->None:
+        if self.add_window is not None:
+            self.add_window.destroy()
+            self.add_window = None
+        for entry_name in self.add_window_entries: 
+            self.add_window_entries[entry_name].destroy()
+        self.add_window_entries.clear()
+
+    def __clear_edit_window_widgets(self)->None:
+        if self.edit_window is not None:
+            self.edit_window.destroy()
+            self.edit_window = None
+        for entry_name in self.edit_entries: 
+            self.edit_entries[entry_name].destroy()
+        self.edit_entries.clear()
 
 
 def button_frame(
