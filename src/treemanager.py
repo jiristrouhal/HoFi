@@ -63,7 +63,9 @@ INFO_TREE_EXPORTED_MSG_1 = "'"
 INFO_TREE_EXPORTED_MSG_2 = "' was exported into '"
 INFO_TREE_EXPORTED_MSG_3 = "'."
 
-
+SELECTED_TREE_CANNOT_BE_DELETED_TITLE = "Cannot deleted selected tree"
+SELECTED_TREE_CANNOT_BE_DELETED_MSG_1 = "Please unselect the '"
+SELECTED_TREE_CANNOT_BE_DELETED_MSG_2 = "' before deletion."
 
 DEFAULT_TREE_NAME = "New"
 
@@ -103,6 +105,7 @@ class Tree_Manager:
         self.__configure_ui()
 
         self.__on_selection:List[Callable[[treemod.Tree],None]] = list()
+        self.__on_deselection:List[Callable[[treemod.Tree],None]] = list()
         
         self.__treelist = treelist
         self.__treelist.add_name_warning(self._error_if_tree_names_already_taken)
@@ -115,7 +118,7 @@ class Tree_Manager:
         self._last_exported_tree_name:str = ""
 
         self._tree_files:Dict[treemod.Tree,str] = dict()
-        self._selected_trees_names:List[treemod.Tree] = list()
+        self._selected_trees:List[treemod.Tree] = list()
 
     @property
     def trees(self)->List[str]: return self.__treelist.names
@@ -123,6 +126,10 @@ class Tree_Manager:
     def add_action_on_selection(self,action:Callable[[treemod.Tree],None])->None:
         if action not in self.__on_selection:
             self.__on_selection.append(action)
+
+    def add_action_on_deselection(self,action:Callable[[treemod.Tree],None])->None:
+        if action not in self.__on_deselection:
+            self.__on_deselection.append(action)
 
     def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
         tree = treemod.Tree(name,tag=tag,attributes=attributes)
@@ -159,12 +166,20 @@ class Tree_Manager:
         self.right_click_menu = tk.Menu(master=self._view, tearoff=False)
 
         tree = self._map[item_id]
-        self.right_click_menu.add_command(
-            label=MENU_CMD_TREE_SELECT,
-            command=self._right_click_menu_command(
-                partial(self._select,tree)
+        if tree in self._selected_trees:
+            self.right_click_menu.add_command(
+                label=MENU_CMD_TREE_DESELECT,
+                command=self._right_click_menu_command(
+                    partial(self._deselect,item_id)
+                )
             )
-        )
+        else:
+            self.right_click_menu.add_command(
+                label=MENU_CMD_TREE_SELECT,
+                command=self._right_click_menu_command(
+                    partial(self._select,item_id)
+                )
+            )
         self.right_click_menu.add_separator()
 
         tree = self._map[item_id]
@@ -205,11 +220,20 @@ class Tree_Manager:
             initialdir=self._last_export_dir,
         )
     
-    def _select(self,tree:treemod.Tree)->None:
+    def _select(self,tree_id:str)->None:
+        tree = self._map[tree_id]
         if not self.tree_exists(tree.name): return
-        if tree in self._selected_trees_names: return
-        self._selected_trees_names.append(tree)
+        if tree in self._selected_trees: return
+        self._selected_trees.append(tree)
         for action in self.__on_selection:
+            action(tree)
+
+    def _deselect(self,tree_id:str)->None:
+        tree = self._map[tree_id]
+        if not self.tree_exists(tree.name): return
+        if tree not in self._selected_trees: return
+        self._selected_trees.remove(tree)
+        for action in self.__on_deselection:
             action(tree)
 
     def _load_tree(self,)->None:
@@ -269,6 +293,11 @@ class Tree_Manager:
         self._tree_files[tree] = new_filepath
 
     def _remove_tree(self,tree:treemod.Tree)->None:
+        # The user has to deselect tree to be able to delete it
+        if tree in self._selected_trees: 
+            self._notify_the_user_selected_tree_cannot_be_deleted(tree.name)
+            return
+
         if not self._removal_confirmed(tree.name):  return
         if tree in self._tree_files: self._tree_files.pop(tree)
         self.__treelist.remove(tree.name)
@@ -429,6 +458,12 @@ class Tree_Manager:
             INFO_TREE_EXPORTED_MSG_1 + tree_name + \
             INFO_TREE_EXPORTED_MSG_2 + filepath + \
             INFO_TREE_EXPORTED_MSG_3
+        )
+
+    def _notify_the_user_selected_tree_cannot_be_deleted(self,tree_name:str)->None:
+        tkmsg.showerror(SELECTED_TREE_CANNOT_BE_DELETED_TITLE, 
+            SELECTED_TREE_CANNOT_BE_DELETED_MSG_1 + tree_name + \
+            SELECTED_TREE_CANNOT_BE_DELETED_MSG_2
         )
 
     def __configure_ui(self)->None: # pragma: no cover

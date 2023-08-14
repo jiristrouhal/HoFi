@@ -420,24 +420,21 @@ class Test_Actions(unittest.TestCase):
         def action(tree:treemod.Tree)->None:
             self.names.append(tree.name)
         self.manager.add_action_on_selection(action)
-
         self.manager._open_right_click_menu(self.manager._view.get_children()[1])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_SELECT)
-
         self.assertListEqual(self.names,["Tree X"])
 
-    def test_repeated_selection_has_no_effect(self):
+    def test_action_on_deselection(self):
         self.names = []
-        def action(tree:treemod.Tree)->None:
-            self.names.append(tree.name)
+        def action(tree:treemod.Tree)->None: self.names.append(tree.name)
+        def action2(tree:treemod.Tree)->None: self.names.remove(tree.name)
         self.manager.add_action_on_selection(action)
-
+        self.manager.add_action_on_deselection(action2)
         self.manager._open_right_click_menu(self.manager._view.get_children()[1])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_SELECT)
         self.manager._open_right_click_menu(self.manager._view.get_children()[1])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_SELECT)
-
-        self.assertListEqual(self.names,["Tree X"])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_DESELECT)
+        self.assertListEqual(self.names,[])
 
 
 if __name__=="__main__": unittest.main()

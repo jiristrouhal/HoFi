@@ -25,5 +25,19 @@ manager = tmg.Tree_Manager(treelist, manager_frame)
 editor = tw.Treeview(edit_frame)
 
 
+def add_tree_to_editor(tree:treemod.Tree):
+    print("on selection")
+    editor.load_tree(tree)
+
+
+def remove_tree_from_editor(tree:treemod.Tree):
+    print("on deselection")
+    editor.remove_tree(tree.name)
+
+
+manager.add_action_on_selection(add_tree_to_editor)
+manager.add_action_on_deselection(remove_tree_from_editor)
+
+
 if __name__=="__main__":
     root.mainloop()
