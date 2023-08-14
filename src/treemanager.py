@@ -364,7 +364,7 @@ class Tree_Manager:
             MSGBOX_ASK_TO_DELETE_TREE_MSG_2
         )
 
-    def _notify_tree_has_not_been_exported(self,name:str)->None:
+    def _notify_tree_has_not_been_exported(self,name:str)->None:  # pragma: no cover
         tkmsg.showinfo(
             MSGBOX_TREE_WAS_NOT_YET_EXPORTED_TITLE,
             MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_1 + name +
