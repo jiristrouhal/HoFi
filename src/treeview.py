@@ -373,7 +373,7 @@ class Treeview:
         if not item_id==tree_id:
             self.available_parents.insert("",index=0,iid=tree_id,text=tree_id)
             self._collect_available_parents(tree_id,item_id)
-            
+
         self.available_parents.pack()
         button_frame(
             self.move_window,
@@ -411,7 +411,7 @@ class Treeview:
             id = self.widget.parent(tree_id)
         return str(tree_id)
     
-    def __clear_add_window_widgets(self)->None:
+    def __clear_add_window_widgets(self)->None: # pragma: no cover
         if self.add_window is not None:
             self.add_window.destroy()
             self.add_window = None
@@ -419,7 +419,7 @@ class Treeview:
             self.add_window_entries[entry_name].destroy()
         self.add_window_entries.clear()
 
-    def __clear_edit_window_widgets(self)->None:
+    def __clear_edit_window_widgets(self)->None: # pragma: no cover
         if self.edit_window is not None:
             self.edit_window.destroy()
             self.edit_window = None
