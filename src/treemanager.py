@@ -117,10 +117,8 @@ class Tree_Manager:
             self.right_click_menu.tk_popup(x=event.x_root,y=event.y_root)
 
     def _open_right_click_menu(self,item_id:str)->None:
-        if item_id.strip()=="": 
-            self._open_right_click_menu_for_manager()
-        else: 
-            self._open_right_click_menu_for_item(item_id)
+        if item_id.strip()=="": self._open_right_click_menu_for_manager()
+        else: self._open_right_click_menu_for_item(item_id)
 
     def _open_right_click_menu_for_manager(self)->None:
         self.right_click_menu = tk.Menu(master=self._view, tearoff=False)
@@ -185,11 +183,19 @@ class Tree_Manager:
         dir = os.path.dirname(filepath)
         filename = os.path.basename(filepath)
         treename = os.path.splitext(filename)[0]
+        if self.__file_already_in_use(filepath): 
+            return 
         tree = self.__converter.load_tree(treename,dir)
         if tree is None: return
         self._tree_files[tree] = filepath
         self.__treelist.append(tree)
 
+    def __file_already_in_use(self, file_to_be_loaded:str)->bool:
+        for filepath in self._tree_files.values():
+            if filepath==file_to_be_loaded: return True
+        return False
+                
+        
     def _export_tree(self,tree:treemod.Tree)->None:
         dir = self._ask_for_directory()
         if dir.strip()=='':

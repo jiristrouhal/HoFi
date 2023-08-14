@@ -176,7 +176,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.assertTrue(self.manager.right_click_menu is not None)
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_NEW)
         self.assertTrue(self.manager._window_new is not None)
-        
+
 
 
 class Test_Tree_and_Xml_Interaction(unittest.TestCase):
@@ -352,6 +352,34 @@ class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
         self.assertTrue(self.manager._window_rename is None)
 
 
+class Test_Loading_of_Xml(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.manager = Tree_Manager(treelist.TreeList())
+        self.manager.new("Tree X")
+        self.manager.xml_file_path = ("data/Tree X.xml")
+        tree_x = self.manager.get_tree("Tree X")
+        # First, export the tree to a xml file and remove it from the manager
+        self.manager._export_tree(tree_x)
+        self.assertTrue(os.path.isfile("data/Tree X.xml"))
+        self.assertTrue(tree_x in self.manager._tree_files)
+        self.manager.agree_with_removal = True
+        self.manager._remove_tree(self.manager.get_tree("Tree X"))
+        self.assertListEqual(self.manager.trees, [])
+        self.assertDictEqual(self.manager._tree_files, {})
+
+
+
+
+    def test_repeated_loading_of_the_same_tree_is_not_allowed(self):
+        self.manager._load_tree()
+        self.assertListEqual(self.manager.trees, ["Tree X"])
+        self.manager._load_tree()
+        self.assertListEqual(self.manager.trees, ["Tree X"])
+
+    def tearDown(self) -> None:
+        if os.path.isfile("data/Tree X.xml"):
+            os.remove("data/Tree X.xml")
 
 
 if __name__=="__main__": unittest.main()
