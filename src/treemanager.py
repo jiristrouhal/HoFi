@@ -88,16 +88,12 @@ class Tree_Manager:
         self.__configure_ui()
         
         self.__treelist = treelist
-        self.__treelist.add_name_warning(self.__error_if_tree_names_already_taken)
+        self.__treelist.add_name_warning(self._error_if_tree_names_already_taken)
         self.__treelist.add_action_on_adding(self.__add_tree_to_view)
         self.__treelist.add_action_on_removal(self.__remove_tree_from_view)
         self.__treelist.add_action_on_renaming(self.__rename_tree_in_view)
 
         self.right_click_menu:tk.Menu|None = None
-        # this flag will prevent some events to occur when the treeview is tested
-        # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
-        self._messageboxes_allowed:bool = True
-
         self._last_export_dir:str = "."
         self._last_exported_tree_name:str = ""
 
@@ -182,56 +178,36 @@ class Tree_Manager:
     def _bind_keys(self)->None:   # pragma: no cover
         self._view.bind("<Button-3>",self.right_click_item)
 
-    def _load_tree(self,)->None:
-        treename = self._last_exported_tree_name
-        dir = self._last_export_dir
-        if self._messageboxes_allowed:  # pragma: no cover
-            filepath = filedialog.askopenfilename(   # pragma: no cover
-                title=FILEDIALOG_LOAD_TITLE,
-                filetypes=(('XML file','.xml'),),
-                defaultextension='.xml',
-                initialdir=self._last_export_dir,
-            )
-            if filepath=="": return
-            dir = os.path.dirname(filepath)
-            filename = os.path.basename(filepath)
-            treename = os.path.splitext(filename)[0]
 
+    def _get_filepath(self)->str:
+        return filedialog.askopenfilename(   # pragma: no cover
+            title=FILEDIALOG_LOAD_TITLE,
+            filetypes=(('XML file','.xml'),),
+            defaultextension='.xml',
+            initialdir=self._last_export_dir,
+        )
+
+    def _load_tree(self,)->None:
+        filepath = self._get_filepath()
+        if filepath=="": return
+        dir = os.path.dirname(filepath)
+        filename = os.path.basename(filepath)
+        treename = os.path.splitext(filename)[0]
         tree = self.__converter.load_tree(treename,dir)
         if tree is None: return
-
-        if self._messageboxes_allowed: 
-            self._tree_files[tree] = filepath
+        self._tree_files[tree] = filepath
         self.__treelist.append(tree)
 
     def _export_tree(self,tree:treemod.Tree)->None:
-        dir = self._last_export_dir
-        if self._messageboxes_allowed: 
-            dir = self._ask_for_directory()
-            if dir.strip()=='': return
+        dir = self._ask_for_directory()
+        if dir.strip()=='': return
         if self._xml_already_exists(dir,tree.name):
-            rename_tree = True
-            if self._messageboxes_allowed: rename_tree = self._ask_to_rename_tree(tree.name)
-            if rename_tree: self._open_rename_tree_window(tree)
+            if self._confirm_renaming_if_exported_file_already_exists(tree.name): self._open_rename_tree_window(tree)
         else:
             self.__converter.save_tree(tree,dir)
             self._tree_files[tree] = os.path.join(dir,tree.name)+'.xml'
             self._last_export_dir = dir
             self._last_exported_tree_name = tree.name
-
-    def _ask_for_directory(self)->str:  # pragma: no cover
-        return filedialog.askdirectory(
-                initialdir=self._last_export_dir,
-                title = FILEDIALOG_EXPORT_TITLE
-        )
-
-    def _ask_to_rename_tree(self,name:str)->bool: # pragma: no cover
-        return tkmsg.askokcancel(
-            MSGBOX_ASK_TO_RENAME_TREE_TITLE,
-            MSGBOX_ASK_TO_RENAME_TREE_MSG_1 + 
-            name +
-            MSGBOX_ASK_TO_RENAME_TREE_MSG_2
-        )
         
     @staticmethod
     def _xml_already_exists(dir:str,tree_name:str)->bool:
@@ -240,12 +216,7 @@ class Tree_Manager:
     
     def _update_file(self,tree:treemod.Tree)->None:
         if tree not in self._tree_files: 
-            if self._messageboxes_allowed:
-                tkmsg.showinfo(
-                    MSGBOX_TREE_WAS_NOT_YET_EXPORTED_TITLE,
-                    MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_1 + tree.name +
-                    MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_2
-                )
+            self._notify_tree_has_not_been_exported(tree.name)
             self._export_tree(tree)
             return
         
@@ -258,17 +229,9 @@ class Tree_Manager:
         self.__converter.save_tree(tree,dir)
 
     def _remove_tree(self,tree:treemod.Tree)->None:
-        answer = True
-        if self._messageboxes_allowed:   # pragma: no cover
-            answer = tkmsg.askokcancel(   # pragma: no cover
-                MSGBOX_ASK_TO_DELETE_TREE_TITLE, 
-                MSGBOX_ASK_TO_DELETE_TREE_MSG_1 + 
-                tree.name + 
-                MSGBOX_ASK_TO_DELETE_TREE_MSG_2
-            )
-        if answer==True: 
-            if tree in self._tree_files: self._tree_files.pop(tree)
-            self.__treelist.remove(tree.name)
+        if not self._removal_confirmed(tree.name):  return
+        if tree in self._tree_files: self._tree_files.pop(tree)
+        self.__treelist.remove(tree.name)
 
     def _right_click_menu_command(self,cmd:Callable)->Callable:
         def menu_cmd(*args,**kwargs): 
@@ -276,14 +239,6 @@ class Tree_Manager:
             self.right_click_menu.destroy()
             self.right_click_menu = None
         return menu_cmd
-
-
-    def __error_if_tree_names_already_taken(self,name:str)->None:  # pragma: no cover
-        if self._messageboxes_allowed:
-            tkmsg.showerror(
-                NAME_ALREADY_TAKEN_TITLE, 
-                NAME_ALREADY_TAKEN_MESSAGE_1+f"{name}"+NAME_ALREADY_TAKEN_MESSAGE_2
-            )
 
     def __add_button(
         self, 
@@ -326,7 +281,7 @@ class Tree_Manager:
         assert(self._entry_name is not None)
         new_name = self._entry_name.get()
         if self.tree_exists(new_name) and self.get_tree(new_name) is not tree: 
-            self.__error_if_tree_names_already_taken(new_name)
+            self._error_if_tree_names_already_taken(new_name)
             return 
         self.__treelist.rename(tree.name,self._entry_name.get())
         self.__close_rename_tree_window()
@@ -364,10 +319,12 @@ class Tree_Manager:
         self._map[iid] = tree
 
     def __remove_tree_from_view(self,tree:treemod.Tree)->None:
-        self._view.delete(str(id(tree)))
+        item_id = str(id(tree))
+        self._view.delete(item_id)
 
     def __rename_tree_in_view(self,tree:treemod.Tree)->None:
-        self._view.item(str(id(tree)),text=tree.name)
+        item_id = str(id(tree))
+        self._view.item(item_id,text=tree.name)
 
     def get_tree(self,name:str)->treemod.Tree|None:
         return self.__treelist.item(name)
@@ -384,3 +341,38 @@ class Tree_Manager:
     def tree_exists(self,name:str)->bool: 
         return name in self.trees
     
+
+    def _ask_for_directory(self)->str:  # pragma: no cover
+        return filedialog.askdirectory(
+                initialdir=self._last_export_dir,
+                title = FILEDIALOG_EXPORT_TITLE
+        )
+
+    def _confirm_renaming_if_exported_file_already_exists(self,name:str)->bool: # pragma: no cover
+        return tkmsg.askokcancel(
+            MSGBOX_ASK_TO_RENAME_TREE_TITLE,
+            MSGBOX_ASK_TO_RENAME_TREE_MSG_1 + 
+            name +
+            MSGBOX_ASK_TO_RENAME_TREE_MSG_2
+        )
+    
+    def _removal_confirmed(self,name:str)->bool:
+        return tkmsg.askokcancel(   # pragma: no cover
+            MSGBOX_ASK_TO_DELETE_TREE_TITLE, 
+            MSGBOX_ASK_TO_DELETE_TREE_MSG_1 + 
+            name + 
+            MSGBOX_ASK_TO_DELETE_TREE_MSG_2
+        )
+
+    def _notify_tree_has_not_been_exported(self,name:str)->None:
+        tkmsg.showinfo(
+            MSGBOX_TREE_WAS_NOT_YET_EXPORTED_TITLE,
+            MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_1 + name +
+            MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_2
+        )
+    
+    def _error_if_tree_names_already_taken(self,name:str)->None:  # pragma: no cover
+        tkmsg.showerror(
+            NAME_ALREADY_TAKEN_TITLE, 
+            NAME_ALREADY_TAKEN_MESSAGE_1+f"{name}"+NAME_ALREADY_TAKEN_MESSAGE_2
+        )
