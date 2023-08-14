@@ -56,6 +56,12 @@ MSGBOX_FILE_ALREADY_USED_MSG_1 = "The file '"
 MSGBOX_FILE_ALREADY_USED_MSG_2 = "' is already used by '"
 MSGBOX_FILE_ALREADY_USED_MSG_3 = "'. To proceed, use a copy of the file you want to load."
 
+INFO_TREE_EXPORTED_TITLE = "Tree export"
+INFO_TREE_EXPORTED_MSG_1 = "'"
+INFO_TREE_EXPORTED_MSG_2 = "' was exported into '"
+INFO_TREE_EXPORTED_MSG_3 = "'."
+
+
 
 DEFAULT_TREE_NAME = "New"
 
@@ -208,7 +214,8 @@ class Tree_Manager:
             return
         
         if not self._xml_already_exists(dir,tree.name):
-            self.__converter.save_tree(tree,dir)
+            filepath = self.__converter.save_tree(tree,dir)
+            self._show_export_info(tree.name,filepath)
             self._tree_files[tree] = os.path.join(dir,tree.name)+'.xml'
             self._last_export_dir = dir
             self._last_exported_tree_name = tree.name
@@ -390,6 +397,13 @@ class Tree_Manager:
             MSGBOX_FILE_ALREADY_USED_MSG_1 + filepath + \
             MSGBOX_FILE_ALREADY_USED_MSG_2 + tree_name + \
             MSGBOX_FILE_ALREADY_USED_MSG_3
+        )
+
+    def _show_export_info(self,tree_name:str,filepath:str)->None: # pragma: no cover
+        tkmsg.showinfo(INFO_TREE_EXPORTED_TITLE, 
+            INFO_TREE_EXPORTED_MSG_1 + tree_name + \
+            INFO_TREE_EXPORTED_MSG_2 + filepath + \
+            INFO_TREE_EXPORTED_MSG_3
         )
 
     def __configure_ui(self)->None: # pragma: no cover

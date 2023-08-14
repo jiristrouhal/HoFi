@@ -41,6 +41,9 @@ class Tree_Manager(tmg.Tree_Manager):
 
     def _show_error_file_already_in_use(self, filepath:str, name:str)->None:
         self.file_already_in_use_error_msg = file_used_by_tree_msg(filepath,name)
+    
+    def _show_export_info(self, tree_name: str, filepath: str) -> None:
+        pass
 
 class Test_Creating_New_Tree(unittest.TestCase):
 
