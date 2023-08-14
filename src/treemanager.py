@@ -149,10 +149,6 @@ class Tree_Manager:
             )
         )
 
-    def _bind_keys(self)->None:   # pragma: no cover
-        self._view.bind("<Button-3>",self.right_click_item)
-
-
     def _get_filepath(self)->str:
         return filedialog.askopenfilename(   # pragma: no cover
             title=FILEDIALOG_LOAD_TITLE,
@@ -175,14 +171,17 @@ class Tree_Manager:
 
     def _export_tree(self,tree:treemod.Tree)->None:
         dir = self._ask_for_directory()
-        if dir.strip()=='': return
-        if self._xml_already_exists(dir,tree.name):
-            if self._confirm_renaming_if_exported_file_already_exists(tree.name): self._open_rename_tree_window(tree)
-        else:
+        if dir.strip()=='':
+            return
+        
+        if not self._xml_already_exists(dir,tree.name):
             self.__converter.save_tree(tree,dir)
             self._tree_files[tree] = os.path.join(dir,tree.name)+'.xml'
             self._last_export_dir = dir
             self._last_exported_tree_name = tree.name
+
+        elif self._confirm_renaming_if_exported_file_already_exists(tree.name): 
+            self._open_rename_tree_window(tree)
         
     @staticmethod
     def _xml_already_exists(dir:str,tree_name:str)->bool:
@@ -377,3 +376,6 @@ class Tree_Manager:
         )
         self._view.pack(side=tk.TOP,expand=1,fill=tk.BOTH)
         self.__ui.pack(expand=1,fill=tk.BOTH)
+
+    def _bind_keys(self)->None:   # pragma: no cover
+        self._view.bind("<Button-3>",self.right_click_item)
