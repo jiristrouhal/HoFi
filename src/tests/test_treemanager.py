@@ -280,6 +280,21 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
         self.assertTrue(self.manager._window_rename is None)
 
+    def test_if_tree_is_updates_after_its_renaming_the_original_file_is_deleted_and_tree_is_exported_to_new_file(self):
+        self.manager.xml_file_path = "./Tree being exported.xml"
+        self.manager.new("Tree being exported")
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.assertTrue(os.path.isfile("./Tree being exported.xml"))
+
+        self.manager.agree_with_renaming = True
+
+        self.manager.rename("Tree being exported", "Tree being exported 2")
+        self.manager._update_file(self.manager.get_tree("Tree being exported 2"))
+
+        self.assertFalse(os.path.isfile("./Tree being exported.xml"))
+        self.assertTrue(os.path.isfile("./Tree being exported 2.xml"))
+
 
     def tearDown(self) -> None:
         if os.path.isfile("Tree being exported.xml"):
