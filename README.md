@@ -50,8 +50,14 @@ Files are stored at custom locations. When saving or loading a tree, the user is
 - **unload** the tree from the **tree list**
 
 
-## Adding an item to the Named Items List
+## Named Items List
+The rationale for using another object to represent all the trees inside the app is to unify the list of all accessible trees to all of the app's parts: the Tree Manager, the Analyst and Treeview.
+
+The only type of object, that can be stored in the list, it the Tree.
+
+### Adding an item to the Named Items List
 - Adding an item with already existing name will result in adding the new item, however under an adjusted name (e.g., if item is added under already taken name "Thing", it will be added as "Thing (1)").
+
 
 ## Updating already existing xml file
 The Tree Manager keeps pair of the Tree object and the xml file. When the user chooses the update the file, the program checks, that the file is still present. If it is, the file is updated. If not, the user is notified of the missing file and asked to either specify the new location of the file or to cancel the operation.

@@ -3,14 +3,14 @@ sys.path.insert(1,"src")
 
 import unittest
 import treemanager as tmg
-import nlist
+import treelist
 import os
 
 
 class Test_Creating_New_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.treelist = nlist.NamedItemsList()
+        self.treelist = treelist.TreeList()
         self.manager = tmg.Tree_Manager(self.treelist)
         self.manager._messageboxes_allowed = False
 

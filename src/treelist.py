@@ -1,38 +1,31 @@
-from typing import List, Protocol, Callable
+from typing import List, Callable
 import naming
+from tree import Tree
 
 
-class _NItem(Protocol):
-
-    @property
-    def name(self)->str: # pragma: no cover
-        ...  
-
-    def rename(self,new_name:str)->None: # pragma: no cover
-        ... 
-class NamedItemsList:
+class TreeList:
 
     def __init__(self)->None:
-        self.__items:List[_NItem] = list()
+        self.__items:List[Tree] = list()
         self.__name_warnings:List[Callable[[str],None]] = list()
 
-        self.__on_removal:List[Callable[[_NItem],None]] = list()
-        self.__on_adding:List[Callable[[_NItem],None]] = list()
-        self.__on_renaming:List[Callable[[_NItem],None]] = list()
+        self.__on_removal:List[Callable[[Tree],None]] = list()
+        self.__on_adding:List[Callable[[Tree],None]] = list()
+        self.__on_renaming:List[Callable[[Tree],None]] = list()
 
     @property
     def names(self)->List[str]: return [i.name for i in self.__items]
 
-    def add_action_on_removal(self,action:Callable[[_NItem],None])->None:
+    def add_action_on_removal(self,action:Callable[[Tree],None])->None:
         self.__on_removal.append(action)
 
-    def add_action_on_adding(self,action:Callable[[_NItem],None])->None:
+    def add_action_on_adding(self,action:Callable[[Tree],None])->None:
         self.__on_adding.append(action)
 
-    def add_action_on_renaming(self,action:Callable[[_NItem],None])->None:
+    def add_action_on_renaming(self,action:Callable[[Tree],None])->None:
         self.__on_renaming.append(action)
 
-    def append(self,item:_NItem)->None: 
+    def append(self,item:Tree)->None: 
         name = item.name
         names = self.names
         while name in names:
@@ -41,7 +34,7 @@ class NamedItemsList:
         self.__items.append(item)
         for action in self.__on_adding: action(item)
             
-    def item(self,name:str)->_NItem|None:
+    def item(self,name:str)->Tree|None:
         for item in self.__items:
             if name==item.name: return item
         return None

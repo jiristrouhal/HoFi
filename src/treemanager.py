@@ -13,7 +13,7 @@ sys.path.insert(1,"src")
 
 
 import src.tree_to_xml as txml
-import src.nlist as nlist
+import src.treelist as treelist
 import src.tree as treemod
 
 
@@ -75,12 +75,12 @@ BUTTONTEXT:Dict[ButtonID,str] = {
 
 class Tree_Manager:
 
-    def __init__(self,treelist:nlist.NamedItemsList,ui_master:tk.Frame|tk.Tk|None = None, )->None:
+    def __init__(self,treelist:treelist.TreeList,ui_master:tk.Frame|tk.Tk|None = None, )->None:
         self.__converter = txml.Tree_XML_Converter()
         self.__ui = ttk.LabelFrame(master=ui_master,text=TREE_MANAGER_TITLE)
         self._buttons:Dict[ButtonID,tk.Button] = dict()
         self._view = ttk.Treeview(self.__ui, selectmode='browse')
-        self._map:Dict[str,nlist._NItem] = dict()
+        self._map:Dict[str,treemod.Tree] = dict()
         self._window_new:tk.Toplevel|None = None
         self._entry_name:tk.Entry|None = None
         self._window_rename:tk.Toplevel|None = None
@@ -358,21 +358,22 @@ class Tree_Manager:
             self._entry_name.destroy()
             self._entry_name = None
 
-    def __add_tree_to_view(self,tree:nlist._NItem)->None:
+    def __add_tree_to_view(self,tree:treemod.Tree)->None:
         iid = self._view.insert("",0,text=tree.name,iid=str(id(tree)))
         self._map[iid] = tree
 
-    def __remove_tree_from_view(self,tree:nlist._NItem)->None:
+    def __remove_tree_from_view(self,tree:treemod.Tree)->None:
         self._view.delete(str(id(tree)))
 
-    def __rename_tree_in_view(self,tree:nlist._NItem)->None:
+    def __rename_tree_in_view(self,tree:treemod.Tree)->None:
         self._view.item(str(id(tree)),text=tree.name)
 
-    def get_tree(self,name:str)->nlist._NItem|None:
+    def get_tree(self,name:str)->treemod.Tree|None:
         return self.__treelist.item(name)
 
     def _set_tree_attribute(self,name:str,key:str,value:str)->None:
-        tree:treemod.Tree = self.__treelist.item(name)
+        tree = self.get_tree(name)
+        if tree is None: return
         if key in tree.attributes:
             tree._attributes[key] = value
 
