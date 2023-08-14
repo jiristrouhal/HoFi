@@ -177,6 +177,13 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
         self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
         self.assertEqual(self.manager.trees, ["Tree being exported"])
 
+    def test_canceling_directory_selection_when_exporting_file(self):
+        self.manager.xml_file_path = " " #empty path signifies cancelled file selection
+        self.manager.new("Tree to be exported")
+        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.assertEqual(self.manager._tree_files, {})
+
     def test_canceling_file_selection_when_loading_file(self):
         self.manager.xml_file_path = " " #empty path signifies cancelled file selection
         self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
