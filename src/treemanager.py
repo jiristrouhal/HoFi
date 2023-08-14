@@ -189,7 +189,8 @@ class Tree_Manager:
 
     def _load_tree(self,)->None:
         filepath = self._get_filepath()
-        if filepath=="": return
+        if filepath.strip()=="": 
+            return
         dir = os.path.dirname(filepath)
         filename = os.path.basename(filepath)
         treename = os.path.splitext(filename)[0]
