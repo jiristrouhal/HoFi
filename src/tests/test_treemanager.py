@@ -398,7 +398,7 @@ class Test_Loading_of_Xml(unittest.TestCase):
         )
 
 
-    def tearDown(self) -> None:
+    def tearDown(self) -> None: # pragma: no cover
         if os.path.isfile("data/Tree X.xml"):
             os.remove("data/Tree X.xml")
 
