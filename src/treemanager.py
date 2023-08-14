@@ -32,6 +32,8 @@ MENU_CMD_TREE_UPDATE_FILE = "Update file"
 MENU_CMD_TREE_DELETE = "Delete"
 MENU_CMD_TREE_NEW = "New"
 MENU_CMD_TREE_LOAD = "Load"
+MENU_CMD_TREE_SELECT = "Select"
+MENU_CMD_TREE_DESELECT = "Deselect"
 
 FILEDIALOG_EXPORT_TITLE = "Export tree into file"
 FILEDIALOG_LOAD_TITLE = "Load tree from file"
@@ -99,6 +101,8 @@ class Tree_Manager:
         self._window_rename:tk.Toplevel|None = None
         self._bind_keys()
         self.__configure_ui()
+
+        self.__on_selection:List[Callable[[treemod.Tree],None]] = list()
         
         self.__treelist = treelist
         self.__treelist.add_name_warning(self._error_if_tree_names_already_taken)
@@ -111,9 +115,14 @@ class Tree_Manager:
         self._last_exported_tree_name:str = ""
 
         self._tree_files:Dict[treemod.Tree,str] = dict()
+        self._selected_trees_names:List[treemod.Tree] = list()
 
     @property
     def trees(self)->List[str]: return self.__treelist.names
+
+    def add_action_on_selection(self,action:Callable[[treemod.Tree],None])->None:
+        if action not in self.__on_selection:
+            self.__on_selection.append(action)
 
     def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
         tree = treemod.Tree(name,tag=tag,attributes=attributes)
@@ -148,6 +157,15 @@ class Tree_Manager:
 
     def _open_right_click_menu_for_item(self,item_id:str)->None:
         self.right_click_menu = tk.Menu(master=self._view, tearoff=False)
+
+        tree = self._map[item_id]
+        self.right_click_menu.add_command(
+            label=MENU_CMD_TREE_SELECT,
+            command=self._right_click_menu_command(
+                partial(self._select,tree)
+            )
+        )
+        self.right_click_menu.add_separator()
 
         tree = self._map[item_id]
         self.right_click_menu.add_command(
@@ -186,6 +204,13 @@ class Tree_Manager:
             defaultextension='.xml',
             initialdir=self._last_export_dir,
         )
+    
+    def _select(self,tree:treemod.Tree)->None:
+        if not self.tree_exists(tree.name): return
+        if tree in self._selected_trees_names: return
+        self._selected_trees_names.append(tree)
+        for action in self.__on_selection:
+            action(tree)
 
     def _load_tree(self,)->None:
         filepath = self._get_filepath()

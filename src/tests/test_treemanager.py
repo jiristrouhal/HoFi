@@ -5,6 +5,7 @@ import unittest
 import treemanager as tmg
 import treelist
 import os
+import tree as treemod
 
 
 def file_used_by_tree_msg(filepath:str, tree_name:str)->str:
@@ -404,6 +405,39 @@ class Test_Loading_of_Xml(unittest.TestCase):
     def tearDown(self) -> None: # pragma: no cover
         if os.path.isfile("data/Tree X.xml"):
             os.remove("data/Tree X.xml")
+
+
+class Test_Actions(unittest.TestCase):
+
+    def setUp(self) -> None:
+        tlist = treelist.TreeList()
+        self.manager = tmg.Tree_Manager(tlist)
+        self.manager.new("Tree X")
+        self.manager.new("Tree Y")
+    
+    def test_action_on_tree_selection(self):
+        self.names = []
+        def action(tree:treemod.Tree)->None:
+            self.names.append(tree.name)
+        self.manager.add_action_on_selection(action)
+
+        self.manager._open_right_click_menu(self.manager._view.get_children()[1])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_SELECT)
+
+        self.assertListEqual(self.names,["Tree X"])
+
+    def test_repeated_selection_has_no_effect(self):
+        self.names = []
+        def action(tree:treemod.Tree)->None:
+            self.names.append(tree.name)
+        self.manager.add_action_on_selection(action)
+
+        self.manager._open_right_click_menu(self.manager._view.get_children()[1])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_SELECT)
+        self.manager._open_right_click_menu(self.manager._view.get_children()[1])
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_SELECT)
+
+        self.assertListEqual(self.names,["Tree X"])
 
 
 if __name__=="__main__": unittest.main()
