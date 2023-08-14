@@ -197,7 +197,7 @@ class Tree_Manager:
 
     def __file_already_in_use(self, file_to_be_loaded:str)->bool:
         for tree,filepath in self._tree_files.items():
-            if filepath==file_to_be_loaded: 
+            if os.path.samefile(filepath,file_to_be_loaded): 
                 self._show_error_file_already_in_use(filepath,tree.name)
                 return True
         return False
@@ -233,7 +233,8 @@ class Tree_Manager:
         if os.path.isfile(filepath): 
             if not tree.name==filename_without_extension:
                 os.remove(filepath)
-        self.__converter.save_tree(tree,dir)
+        new_filepath = self.__converter.save_tree(tree,dir)
+        self._tree_files[tree] = new_filepath
 
     def _remove_tree(self,tree:treemod.Tree)->None:
         if not self._removal_confirmed(tree.name):  return

@@ -13,7 +13,7 @@ def data_file_path(name:str,dir:str)->str:
 
 class Tree_XML_Converter:
 
-    def save_tree(self,tree:treemod.Tree,dir:str=DEFAULT_DIRECTORY)->None:
+    def save_tree(self,tree:treemod.Tree,dir:str=DEFAULT_DIRECTORY)->str:
         xml_tree = self.__xml_tree(tree)
         
         path_to_file = data_file_path(tree.name, dir)
@@ -21,6 +21,8 @@ class Tree_XML_Converter:
 
         et.indent(xml_tree,space="\t")
         xml_tree.write(path_to_file)
+
+        return path_to_file
 
     def __xml_tree(self,tree:treemod.Tree)->et.ElementTree:
         xml_root = et.Element(tree.tag, attrib=tree.attributes)
