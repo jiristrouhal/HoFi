@@ -198,9 +198,10 @@ class Tree_Manager:
             treename = os.path.splitext(filename)[0]
 
         tree = self.__converter.load_tree(treename,dir)
-        if self._messageboxes_allowed and tree is not None: 
+        if tree is None: return
+
+        if self._messageboxes_allowed: 
             self._tree_files[tree] = filepath
-        assert(tree is not None)
         self.__treelist.append(tree)
 
     def _export_tree(self,tree:treemod.Tree)->None:
@@ -266,8 +267,8 @@ class Tree_Manager:
                 MSGBOX_ASK_TO_DELETE_TREE_MSG_2
             )
         if answer==True: 
+            if tree in self._tree_files: self._tree_files.pop(tree)
             self.__treelist.remove(tree.name)
-            self._tree_files.pop(tree)
 
     def _right_click_menu_command(self,cmd:Callable)->Callable:
         def menu_cmd(*args,**kwargs): 

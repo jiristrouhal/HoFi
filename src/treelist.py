@@ -42,8 +42,8 @@ class TreeList:
     def remove(self,item_name:str)->None:
         item = self.item(item_name)
         if item is None: return
-        self.__items.remove(item)
         for action in self.__on_removal: action(item)
+        self.__items.remove(item)
 
     def rename(self,old_name:str,new_name:str)->None:
         item = self.item(old_name)
