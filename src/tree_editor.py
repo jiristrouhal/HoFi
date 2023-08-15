@@ -189,7 +189,6 @@ class TreeEditor:
         else: self.__add_commands_for_root(item_id)
 
     def __add_commands_for_root(self,root_id:str)->None:
-        assert(self.right_click_menu.winfo_exists())
         self.right_click_menu.add_commands(
             {
                 MENU_CMD_BRANCH_ADD : partial(self.open_add_window,root_id,self._attribute_template),
@@ -200,7 +199,6 @@ class TreeEditor:
 
     def __add_commands_for_item(self,item_id:str)->None:
         branch:treemod.TreeItem = self._map[item_id]
-        assert(self.right_click_menu.winfo_exists())
         self.right_click_menu.add_commands(
             {
                 MENU_CMD_BRANCH_ADD : partial(self.open_add_window,item_id,self._attribute_template),
