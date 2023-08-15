@@ -18,7 +18,7 @@ manager_frame.pack(expand=1,fill=tk.BOTH)
 edit_frame.pack(expand=2,fill=tk.BOTH)
 treelist = tl.TreeList()
 manager = tmg.Tree_Manager(treelist, manager_frame)
-editor = te.Treeview(edit_frame)
+editor = te.TreeEditor(edit_frame)
 
 
 def add_tree_to_editor(tree:treemod.Tree):

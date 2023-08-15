@@ -28,7 +28,7 @@ DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT = ": Cannot delete item with children.
 MOVE_WINDOW_TITLE = "Select new parent"
 
 
-class Treeview:
+class TreeEditor:
 
     def __init__(self, parent:tk.Tk|tk.Toplevel|tk.Frame|None = None)->None:
         self.widget = ttk.Treeview(parent)

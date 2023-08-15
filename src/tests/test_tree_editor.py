@@ -13,7 +13,7 @@ import tkinter as tk
 class Test_Empty_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.view = tree_editor.Treeview()
+        self.view = tree_editor.TreeEditor()
         self.tree1 = Tree("Tree 1")
         self.view.load_tree(self.tree1)
         # prevent all GUI elements from showing up
@@ -100,7 +100,7 @@ class Test_Empty_Trees(unittest.TestCase):
 class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.view = tree_editor.Treeview()
+        self.view = tree_editor.TreeEditor()
         self.tree1 = Tree("Tree 1")
         self.view.load_tree(self.tree1)
         # prevent all GUI elements from showing up
@@ -119,7 +119,7 @@ class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
 class Test_Right_Click_Menu(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.view = tree_editor.Treeview()
+        self.view = tree_editor.TreeEditor()
         self.tree1 = Tree("Tree 1")
         # prevent all GUI elements from showing up
         self.view._messageboxes_allowed = False
@@ -180,7 +180,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
 class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.view = tree_editor.Treeview()
+        self.view = tree_editor.TreeEditor()
         self.tree1 = Tree("Tree 1")
         # prevent all GUI elements from showing up
         self.view._messageboxes_allowed = False
@@ -242,7 +242,7 @@ class Test_Moving_Tree(unittest.TestCase):
     
     def setUp(self) -> None:
         self.tree1 = Tree("Tree 1")
-        self.view = tree_editor.Treeview()
+        self.view = tree_editor.TreeEditor()
         self.view.load_tree(self.tree1)
     
     def test_available_parents_for_tree_are_always_none(self):
@@ -260,7 +260,7 @@ class Test_Load_Existing_Tree(unittest.TestCase):
         self.tree1.add_branch("Grandchild of X","Branch X","Child of X",attributes={})
 
     def test_loading_tree(self):
-        view = tree_editor.Treeview()
+        view = tree_editor.TreeEditor()
         view.load_tree(self.tree1)
         main_branches_ids = view.widget.get_children("Tree 1")
         self.assertListEqual([view._map[id].name for id in main_branches_ids], ["Branch Y","Branch X"])
@@ -275,7 +275,7 @@ class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
 
     def setUp(self) -> None:
         self.tree1 = Tree("Tree 1")
-        self.view = tree_editor.Treeview()
+        self.view = tree_editor.TreeEditor()
         self.view.load_tree(self.tree1)
         self.view._open_right_click_menu("Tree 1",root=True)
         # prevent all GUI elements from showing up
@@ -310,7 +310,7 @@ class Test_Modifying_Loaded_Tree(unittest.TestCase):
         self.tree1 = Tree("Tree 1")
         self.tree1.add_branch("Branch X",attributes={})
 
-        self.view = tree_editor.Treeview()
+        self.view = tree_editor.TreeEditor()
         self.view.load_tree(self.tree1)
     # prevent all GUI elements from showing up
         self.view._messageboxes_allowed = False
@@ -331,7 +331,7 @@ class Test_Error_Message(unittest.TestCase):
         self.tree1 = Tree("Tree 1")
         self.tree1.add_branch("Branch with children",attributes={})
         self.tree1.add_branch("Child","Branch with children",attributes={})
-        self.view = tree_editor.Treeview()
+        self.view = tree_editor.TreeEditor()
         self.view.load_tree(self.tree1)
         # prevent all GUI elements from showing up
         self.view._messageboxes_allowed = False
