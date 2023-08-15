@@ -261,7 +261,8 @@ class TreeEditor:
 
     def open_edit_window_on_double_click(self,event:tk.Event)->None: # pragma: no cover
         iid = self.widget.identify_row(event.y)
-        if iid.strip()=="": return
+        if iid.strip()=="": return 
+        if self._map[iid].parent is None: return
         # prevent automatic opening/closing of the element when double-clicked
         self.widget.item(iid,open=not self.widget.item(iid)["open"])
         self.open_edit_window(iid)
