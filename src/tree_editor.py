@@ -210,12 +210,6 @@ class Treeview:
             )
         )
         self.right_click_menu.add_command(
-            label=MENU_CMD_BRANCH_EDIT,
-            command=self._right_click_menu_command(partial(self.open_edit_window,root_id)))
-    
-        self.right_click_menu.add_separator()
-
-        self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_OPEN_ALL,
             command=self._right_click_menu_command(partial(self._open_all,root_id))
         )
