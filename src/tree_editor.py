@@ -175,8 +175,6 @@ class TreeEditor:
 
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
         item_id = self.widget.identify_row(event.y)
-        if item_id.strip()=="": return 
-
         if self._map[item_id].parent is None: 
             self._open_right_click_menu(item_id,root=True)
         else: self._open_right_click_menu(item_id)
