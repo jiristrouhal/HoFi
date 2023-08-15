@@ -40,7 +40,7 @@ class Treeview:
         self._attribute_template["lenght"] = "0"
 
         self._map:Dict[str,treemod.TreeItem] = dict()
-        self.right_click_menu = tk.Menu(self.widget)
+        self.right_click_menu = rcm.RCMenu(self.widget)
 
         self.edit_window = tk.Toplevel(self.widget)
         self.edit_entries:Dict[str,tk.Entry] = dict()
@@ -193,62 +193,40 @@ class Treeview:
     def _open_right_click_menu(self,item_id:str,root:bool=False)->None:
         self.right_click_menu.destroy()
         if item_id.strip()=="": return
-        self.right_click_menu = tk.Menu(master=self.widget, tearoff=False)
+        self.right_click_menu = rcm.RCMenu(master=self.widget, tearoff=False)
         if not root: self.__add_commands_for_item(item_id)
         else: self.__add_commands_for_root(item_id)
 
     def __add_commands_for_root(self,root_id:str)->None:
         assert(self.right_click_menu.winfo_exists())
-        rcm.add_treeview_item_cmd(
-            self.right_click_menu,
-            MENU_CMD_BRANCH_ADD,
-            partial(self.open_add_window,root_id,self._attribute_template)
+        self.right_click_menu.add_commands(
+            {
+                MENU_CMD_BRANCH_ADD : partial(self.open_add_window,root_id,self._attribute_template),
+                MENU_CMD_BRANCH_OPEN_ALL : partial(self._open_all,root_id),
+                MENU_CMD_BRANCH_CLOSE_ALL :  partial(self._close_all,root_id)
+            }
         )  
-        rcm.add_treeview_item_cmd(
-            self.right_click_menu,
-            MENU_CMD_BRANCH_OPEN_ALL,
-            partial(self._open_all,root_id)
-        )
-        rcm.add_treeview_item_cmd(
-            self.right_click_menu,
-            MENU_CMD_BRANCH_CLOSE_ALL,
-            partial(self._close_all,root_id)
-        )
 
     def __add_commands_for_item(self,item_id:str)->None:
         branch:treemod.TreeItem = self._map[item_id]
         assert(self.right_click_menu.winfo_exists())
-        rcm.add_treeview_item_cmd(
-            self.right_click_menu,
-            MENU_CMD_BRANCH_ADD,
-            partial(self.open_add_window,item_id,self._attribute_template)
+        self.right_click_menu.add_commands(
+            {
+                MENU_CMD_BRANCH_ADD : partial(self.open_add_window,item_id,self._attribute_template),
+                MENU_CMD_BRANCH_EDIT : partial(self.open_edit_window,item_id),
+                MENU_CMD_BRANCH_MOVE : partial(self.open_move_window,item_id)
+            }
         )
-        rcm.add_treeview_item_cmd(
-            self.right_click_menu,
-            MENU_CMD_BRANCH_EDIT,
-            partial(self.open_edit_window,item_id)
-        )
-        rcm.add_treeview_item_cmd(
-            self.right_click_menu,
-            MENU_CMD_BRANCH_MOVE,
-            partial(self.open_move_window,item_id)
-        )
-
         self.right_click_menu.add_separator()
         if self.widget.get_children(item_id):
-            rcm.add_treeview_item_cmd(
-                self.right_click_menu,
-                MENU_CMD_BRANCH_OPEN_ALL,
-                partial(self._open_all,item_id)
-            )
-            rcm.add_treeview_item_cmd(
-                self.right_click_menu,
-                MENU_CMD_BRANCH_CLOSE_ALL,
-                partial(self._close_all,item_id)
+            self.right_click_menu.add_commands(
+                {
+                    MENU_CMD_BRANCH_OPEN_ALL : partial(self._open_all,item_id),
+                    MENU_CMD_BRANCH_CLOSE_ALL : partial(self._close_all,item_id)
+                }
             )
         elif branch.parent is not None:
-            rcm.add_treeview_item_cmd(
-                self.right_click_menu,
+            self.right_click_menu.add_single_command(
                 MENU_CMD_BRANCH_DELETE,
                 partial(branch.parent.remove_branch,branch.name)
             )

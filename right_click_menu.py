@@ -1,20 +1,25 @@
-from typing import Callable
+from typing import Callable, Dict
 import tkinter as tk
 import tkinter.ttk as ttk
 from functools import partial
 
 
-def add_treeview_item_cmd(
-    menu:tk.Menu,
-    label:str,
-    cmd:Callable[[],None]
-    )->None:
+class RCMenu(tk.Menu):
 
-    menu.add_command(label=label,command=_add_cmd(cmd,menu))
+    def add_single_command(
+        self,
+        label:str,
+        cmd:Callable[[],None]
+        )->None:
 
+        super().add_command(label=label,command=self._add_cmd(cmd))
 
-def _add_cmd(cmd:Callable,menu:tk.Menu)->Callable:
-    def menu_cmd(menu:tk.Menu,*args,**kwargs): 
-        cmd(*args,**kwargs)
-        menu.destroy()
-    return partial(menu_cmd,menu)
+    def add_commands(self,labeled_commands:Dict[str,Callable[[],None]])->None:
+        for label, command in labeled_commands.items():
+            super().add_command(label=label,command=self._add_cmd(command))
+
+    def _add_cmd(self,cmd:Callable)->Callable:
+        def menu_cmd(*args,**kwargs): 
+            cmd(*args,**kwargs)
+            self.destroy()
+        return partial(menu_cmd)
