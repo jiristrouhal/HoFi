@@ -41,16 +41,19 @@ class Treeview:
         self._attribute_template["lenght"] = "0"
 
         self._map:Dict[str,treemod.TreeItem] = dict()
-        self.right_click_menu:tk.Menu|None = None
+        self.right_click_menu = tk.Menu(self.widget)
 
-        self.edit_window:tk.Toplevel|None = None
+        self.edit_window = tk.Toplevel(self.widget)
         self.edit_entries:Dict[str,tk.Entry] = dict()
+        self.edit_window.wm_withdraw()
 
-        self.add_window:tk.Toplevel|None = None
+        self.add_window = tk.Toplevel(self.widget)
         self.add_window_entries:Dict[str,tk.Entry] = dict()
+        self.add_window.wm_withdraw()
         
-        self.move_window:tk.Toplevel|None = None
-        self.available_parents:ttk.Treeview|None = None
+        self.move_window = tk.Toplevel(self.widget)
+        self.available_parents = ttk.Treeview(self.move_window)
+        self.move_window.wm_withdraw()
 
         # this flag will prevent some events to occur when the treeview is tested
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
@@ -185,20 +188,18 @@ class Treeview:
         if self._map[item_id].parent is None: 
             self._open_right_click_menu(item_id,root=True)
         else: self._open_right_click_menu(item_id)
-        if self.right_click_menu is not None:
+        if self.right_click_menu.winfo_exists():
             self.right_click_menu.tk_popup(x=event.x_root,y=event.y_root)
     
     def _open_right_click_menu(self,item_id:str,root:bool=False)->None:
-        if self.right_click_menu is not None: 
-            self.right_click_menu.destroy()
-            self.right_click_menu = None
+        self.right_click_menu.destroy()
         if item_id.strip()=="": return
         self.right_click_menu = tk.Menu(master=self.widget, tearoff=False)
         if not root: self.__add_commands_for_item(item_id)
         else: self.__add_commands_for_root(item_id)
 
     def __add_commands_for_root(self,root_id:str)->None:
-        assert(self.right_click_menu is not None)
+        assert(self.right_click_menu.winfo_exists())
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_ADD,
             command=self._right_click_menu_command(
@@ -221,7 +222,7 @@ class Treeview:
 
     def __add_commands_for_item(self,item_id:str)->None:
         branch:treemod.TreeItem = self._map[item_id]
-        assert(self.right_click_menu is not None)
+        assert(self.right_click_menu.winfo_exists())
         self.right_click_menu.add_command(
             label=MENU_CMD_BRANCH_ADD,
             command=self._right_click_menu_command(
@@ -280,7 +281,7 @@ class Treeview:
             row += 1
         entries_frame.pack()
 
-        assert(self.add_window is not None)
+        assert(self.add_window.winfo_exists())
         self.add_window.bind("<Key-Escape>",self._disregard_add_entry_values_on_keypress)
         button_frame(
             self.add_window,
@@ -326,7 +327,7 @@ class Treeview:
             row += 1
         entries_frame.pack()
         
-        assert(self.edit_window is not None)
+        assert(self.edit_window.winfo_exists())
         self.edit_window.bind("<Key-Escape>",self._disregard_edit_entry_values_on_keypress)
         button_frame(
             self.edit_window,
@@ -356,8 +357,6 @@ class Treeview:
 
     def open_move_window(self,item_id:str)->None:
         # copy the treeview and throw away the moved item and its children
-        assert(self.move_window is None and self.available_parents is None)
-
         self.move_window = tk.Toplevel(self.widget)
         self.move_window.grab_set()
         self.move_window.focus_set()
@@ -379,7 +378,7 @@ class Treeview:
         ).pack(side=tk.BOTTOM)
 
     def _confirm_parent_and_close_move_window(self,item_id:str)->None:
-        if self.available_parents is None: return
+        if not self.available_parents.winfo_exists(): return
         selection = self.available_parents.selection()
         if not selection: return #empty selection
         branch = self._map[item_id]
@@ -388,13 +387,11 @@ class Treeview:
         self._close_move_window()
 
     def _close_move_window(self)->None:
-        assert(self.move_window is not None and self.available_parents is not None)
+        assert(self.move_window.winfo_exists() and self.available_parents.winfo_exists())
         self.move_window.destroy()
-        self.move_window = None
-        self.available_parents = None
 
     def _collect_available_parents(self,parent_id:str,item_id:str):
-        assert(self.available_parents is not None)
+        assert(self.available_parents.winfo_exists())
         for child_id in self.widget.get_children(parent_id):
             if child_id==item_id: continue
             child = self.widget.item(child_id)
@@ -409,17 +406,13 @@ class Treeview:
         return str(tree_id)
     
     def __clear_add_window_widgets(self)->None: # pragma: no cover
-        if self.add_window is not None:
-            self.add_window.destroy()
-            self.add_window = None
+        self.add_window.destroy()
         for entry_name in self.add_window_entries: 
             self.add_window_entries[entry_name].destroy()
         self.add_window_entries.clear()
 
     def __clear_edit_window_widgets(self)->None: # pragma: no cover
-        if self.edit_window is not None:
-            self.edit_window.destroy()
-            self.edit_window = None
+        self.edit_window.destroy()
         for entry_name in self.edit_entries: 
             self.edit_entries[entry_name].destroy()
         self.edit_entries.clear()
