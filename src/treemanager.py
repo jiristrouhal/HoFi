@@ -15,6 +15,7 @@ sys.path.insert(1,"src")
 import src.tree_to_xml as txml
 import src.treelist as treelist
 import src.tree as treemod
+import right_click_menu as rcm
 
 
 NAME_ALREADY_TAKEN_TITLE = "Name already exists"
@@ -113,7 +114,7 @@ class Tree_Manager:
         self.__treelist.add_action_on_removal(self.__remove_tree_from_view)
         self.__treelist.add_action_on_renaming(self.__rename_tree_in_view)
 
-        self.right_click_menu:tk.Menu|None = None
+        self.right_click_menu = rcm.RCMenu(self._view)
         self._last_export_dir:str = "."
         self._last_exported_tree_name:str = ""
 
@@ -139,77 +140,47 @@ class Tree_Manager:
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
         item_id = self._view.identify_row(event.y)
         self._open_right_click_menu(item_id)
-
-        if self.right_click_menu is not None:
-            self.right_click_menu.tk_popup(x=event.x_root,y=event.y_root)
+        self.right_click_menu.tk_popup(x=event.x_root,y=event.y_root)
 
     def _open_right_click_menu(self,item_id:str)->None:
         if item_id.strip()=="": self._open_right_click_menu_for_manager()
         else: self._open_right_click_menu_for_item(item_id)
 
     def _open_right_click_menu_for_manager(self)->None:
-        self.right_click_menu = tk.Menu(master=self._view, tearoff=False)
-        self.right_click_menu.add_command(
-            label=MENU_CMD_TREE_NEW,
-            command=self._right_click_menu_command(
-                self._open_new_tree_window
-            )
-        )
-        self.right_click_menu.add_command(
-            label=MENU_CMD_TREE_LOAD,
-            command=self._right_click_menu_command(
-                self._load_tree
-            )
+        self.right_click_menu = rcm.RCMenu(master=self._view, tearoff=False)
+        self.right_click_menu.add_commands(
+            {
+                MENU_CMD_TREE_NEW : self._open_new_tree_window,
+                MENU_CMD_TREE_LOAD: self._load_tree
+            }
         )
 
     def _open_right_click_menu_for_item(self,item_id:str)->None:
-        self.right_click_menu = tk.Menu(master=self._view, tearoff=False)
-
+        self.right_click_menu = rcm.RCMenu(master=self._view, tearoff=False)
         tree = self._map[item_id]
         if tree in self._selected_trees:
-            self.right_click_menu.add_command(
-                label=MENU_CMD_TREE_DESELECT,
-                command=self._right_click_menu_command(
-                    partial(self._deselect,item_id)
-                )
+            self.right_click_menu.add_single_command(
+                MENU_CMD_TREE_DESELECT, partial(self._deselect,item_id)
             )
         else:
-            self.right_click_menu.add_command(
-                label=MENU_CMD_TREE_SELECT,
-                command=self._right_click_menu_command(
-                    partial(self._select,item_id)
-                )
+            self.right_click_menu.add_single_command(
+                MENU_CMD_TREE_SELECT, partial(self._select,item_id)
             )
         self.right_click_menu.add_separator()
-
-        tree = self._map[item_id]
-        self.right_click_menu.add_command(
-            label=MENU_CMD_TREE_RENAME,
-            command=self._right_click_menu_command(
-                partial(self._open_rename_tree_window,tree)
-            )
+        self.right_click_menu.add_single_command(
+            MENU_CMD_TREE_RENAME,partial(self._open_rename_tree_window,tree)
         )
-
         if tree in self._tree_files:
-            self.right_click_menu.add_command(
-                label=MENU_CMD_TREE_UPDATE_FILE,
-                command=self._right_click_menu_command(
-                    partial(self._update_file,tree)
-                )
+            self.right_click_menu.add_single_command(
+                MENU_CMD_TREE_UPDATE_FILE, partial(self._update_file,tree)
             )
 
-        self.right_click_menu.add_command(
-            label=MENU_CMD_TREE_EXPORT,
-            command=self._right_click_menu_command(
-                partial(self._export_tree,tree)
-            )
+        self.right_click_menu.add_single_command(
+            MENU_CMD_TREE_EXPORT,partial(self._export_tree,tree)
         )
         self.right_click_menu.add_separator()
-        self.right_click_menu.add_command(
-            label=MENU_CMD_TREE_DELETE,
-            command=self._right_click_menu_command(
-                partial(self._remove_tree,tree)
-            )
+        self.right_click_menu.add_single_command(
+            MENU_CMD_TREE_DELETE, partial(self._remove_tree,tree)
         )
 
     def _get_filepath(self)->str:
@@ -301,13 +272,6 @@ class Tree_Manager:
         if not self._removal_confirmed(tree.name):  return
         if tree in self._tree_files: self._tree_files.pop(tree)
         self.__treelist.remove(tree.name)
-
-    def _right_click_menu_command(self,cmd:Callable)->Callable:
-        def menu_cmd(*args,**kwargs): 
-            cmd(*args,**kwargs)
-            self.right_click_menu.destroy()
-            self.right_click_menu = None
-        return menu_cmd
 
     def __add_button(
         self, 
