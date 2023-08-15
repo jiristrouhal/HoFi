@@ -161,13 +161,6 @@ class Treeview:
         self.widget.selection_set(item_iid)
         # scroll to the added item
         self.widget.see(item_iid)
-    
-    def _cannot_remove_branch_with_children(self,branch:treemod.TreeItem)->None: # pragma: no cover
-        if not self._messageboxes_allowed: return
-        tkmsg.showerror(
-            DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE,
-            branch.name+DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT
-        )
 
     def _on_removal(self,branch_iid:str,*args)->None:
         self._map.pop(branch_iid)
@@ -379,6 +372,13 @@ class Treeview:
     def __clear_edit_window_widgets(self)->None: # pragma: no cover
         self.edit_window.destroy()
         self.edit_entries.clear()
+
+    def _cannot_remove_branch_with_children(self,branch:treemod.TreeItem)->None: # pragma: no cover
+        if not self._messageboxes_allowed: return
+        tkmsg.showerror(
+            DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE,
+            branch.name+DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT
+        )
 
 
 def button_frame(
