@@ -69,8 +69,8 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.manager._entry_name.insert(0,"Tree XY")
         self.manager._buttons[tmg.ButtonID.NEW_TREE_OK].invoke()
         self.assertListEqual(self.manager.trees, ["Tree XY"])
-        self.assertEqual(self.manager._window_new, None)
-        self.assertEqual(self.manager._entry_name, None)
+        self.assertFalse(self.manager._window_new.winfo_exists())
+        self.assertFalse(self.manager._entry_name.winfo_exists())
 
 class Test_Editing_Trees(unittest.TestCase):
 
@@ -95,7 +95,7 @@ class Test_Editing_Trees(unittest.TestCase):
         self.manager._entry_name.delete(0,"end")
         self.manager._entry_name.insert(0,"Tree Y")
         self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
-        self.assertEqual(self.manager._window_rename, None)
+        self.assertFalse(self.manager._window_rename.winfo_exists())
         self.assertListEqual(self.manager.trees, ["Tree Y"])
 
     def test_cancelling_the_renaming_in_ui(self):
@@ -105,7 +105,7 @@ class Test_Editing_Trees(unittest.TestCase):
         self.manager._entry_name.delete(0,"end")
         self.manager._entry_name.insert(0,"Tree Y")
         self.manager._buttons[tmg.ButtonID.RENAME_TREE_CANCEL].invoke()
-        self.assertEqual(self.manager._window_rename, None)
+        self.assertFalse(self.manager._window_rename.winfo_exists())
         self.assertListEqual(self.manager.trees, ["Tree X"])
 
     def test_renaming_tree_to_existing_name_has_no_effect_and_the_rename_window_remains_opened(self):
@@ -119,14 +119,14 @@ class Test_Editing_Trees(unittest.TestCase):
         self.manager._entry_name.delete(0,"end")
         self.manager._entry_name.insert(0,"Tree Y")
         self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
-        self.assertTrue(self.manager._window_rename is not None)
+        self.assertTrue(self.manager._window_rename.winfo_exists())
         self.assertListEqual(self.manager.trees, ["Tree X", "Tree Y"])
 
         # renaming to some not already take name will take effect and the window closes
         self.manager._entry_name.delete(0,"end")
         self.manager._entry_name.insert(0,"Tree Z")
         self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
-        self.assertTrue(self.manager._window_rename is None)
+        self.assertFalse(self.manager._window_rename.winfo_exists())
         self.assertListEqual(self.manager.trees, ["Tree Z", "Tree Y"])
 
     def test_renaming_tree_to_its_original_name_is_allowed(self):
@@ -134,7 +134,7 @@ class Test_Editing_Trees(unittest.TestCase):
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
         # the name is kept unchanged
         self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
-        self.assertEqual(self.manager._window_rename, None)
+        self.assertFalse(self.manager._window_rename.winfo_exists())
         self.assertListEqual(self.manager.trees, ["Tree X"])
 
     def test_renaming_tree_using_right_click(self):
@@ -293,7 +293,7 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
         self.assertListEqual(self.manager.trees, ["Tree being exported 2"])
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
-        self.assertTrue(self.manager._window_rename is None)
+        self.assertFalse(self.manager._window_rename.winfo_exists())
 
     def test_if_tree_is_updates_after_its_renaming_the_original_file_is_deleted_and_tree_is_exported_to_new_file(self):
         self.manager.xml_file_path = "./Tree being exported.xml"
@@ -343,7 +343,7 @@ class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
         self.manager._entry_name.delete(0,"end")
         self.manager._entry_name.insert(0,"Tree being exported")
         self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
-        self.assertTrue(self.manager._window_rename is None)
+        self.assertFalse(self.manager._window_rename.winfo_exists())
 
         # Try to export the new tree with the same name as the old one
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
@@ -355,13 +355,13 @@ class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
         # the directory and after he/she clicks OK, the window_rename opens up automatically
         self.manager.agree_with_renaming = True
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
-        self.assertTrue(self.manager._window_rename is not None)
+        self.assertTrue(self.manager._window_rename.winfo_exists())
 
     def test_exporting_to_existing_file_and_denying_to_rename_the_tree_aborts_the_export(self):
         # The user chooses to cancel the export
         self.manager.agree_with_renaming = False
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
-        self.assertTrue(self.manager._window_rename is None)
+        self.assertFalse(self.manager._window_rename.winfo_exists())
 
 
 class Test_Loading_of_Xml(unittest.TestCase):

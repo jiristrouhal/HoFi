@@ -99,9 +99,9 @@ class Tree_Manager:
         self._buttons:Dict[ButtonID,tk.Button] = dict()
         self._view = ttk.Treeview(self.__ui, selectmode='browse')
         self._map:Dict[str,treemod.Tree] = dict()
-        self._window_new:tk.Toplevel|None = None
-        self._entry_name:tk.Entry|None = None
-        self._window_rename:tk.Toplevel|None = None
+        self._window_new = tk.Toplevel(self._view)
+        self._entry_name = tk.Entry()
+        self._window_rename = tk.Toplevel()
         self._bind_keys()
         self.__configure_ui()
 
@@ -116,7 +116,6 @@ class Tree_Manager:
 
         self.right_click_menu = rcm.RCMenu(self._view)
         self._last_export_dir:str = "."
-        self._last_exported_tree_name:str = ""
 
         self._tree_files:Dict[treemod.Tree,str] = dict()
         self._selected_trees:List[treemod.Tree] = list()
@@ -230,7 +229,7 @@ class Tree_Manager:
         
     def _export_tree(self,tree:treemod.Tree)->None:
         dir = self._ask_for_directory()
-        if dir.strip()=='':
+        if dir.strip()=='': # directory selection has been cancelled
             return
         
         if not self._xml_already_exists(dir,tree.name):
@@ -238,7 +237,6 @@ class Tree_Manager:
             self._show_export_info(tree.name,filepath)
             self._tree_files[tree] = os.path.join(dir,tree.name)+'.xml'
             self._last_export_dir = dir
-            self._last_exported_tree_name = tree.name
 
         elif self._confirm_renaming_if_exported_file_already_exists(tree.name): 
             self._open_rename_tree_window(tree)
@@ -267,11 +265,9 @@ class Tree_Manager:
         # The user has to deselect tree to be able to delete it
         if tree in self._selected_trees: 
             self._notify_the_user_selected_tree_cannot_be_deleted(tree.name)
-            return
-
-        if not self._removal_confirmed(tree.name):  return
-        if tree in self._tree_files: self._tree_files.pop(tree)
-        self.__treelist.remove(tree.name)
+        elif self._removal_confirmed(tree.name): 
+            if tree in self._tree_files: self._tree_files.pop(tree)
+            self.__treelist.remove(tree.name)
 
     def __add_button(
         self, 
@@ -311,19 +307,16 @@ class Tree_Manager:
         self.__add_button(button_frame,ButtonID.NEW_TREE_CANCEL,self.__close_new_tree_window,side='left')
 
     def _confirm_rename(self,tree:treemod.Tree)->None:
-        assert(self._entry_name is not None)
         new_name = self._entry_name.get()
         if self.tree_exists(new_name) and self.get_tree(new_name) is not tree: 
             self._error_if_tree_names_already_taken(new_name)
-            return 
-        self.__treelist.rename(tree.name,self._entry_name.get())
-        self.__close_rename_tree_window()
+        else:
+            self.__treelist.rename(tree.name,self._entry_name.get())
+            self.__close_rename_tree_window()
 
     def _confirm_new_tree_name(self)->None:
-        assert(self._entry_name is not None)
         self.new(self._entry_name.get())
         self.__close_new_tree_window()
-        assert(self._entry_name is None)
 
     def __close_rename_tree_window(self)->None:
         self.__cleanup_rename_tree_widgets()
@@ -332,20 +325,12 @@ class Tree_Manager:
         self.__cleanup_new_tree_widgets()
 
     def __cleanup_new_tree_widgets(self)->None:
-        if self._window_new is not None:
-            self._window_new.destroy()
-            self._window_new = None
-        if self._entry_name is not None: 
-            self._entry_name.destroy()
-            self._entry_name = None
+        self._window_new.destroy()
+        self._entry_name.destroy()
 
     def __cleanup_rename_tree_widgets(self)->None:
-        if self._window_rename is not None:
-            self._window_rename.destroy()
-            self._window_rename = None
-        if self._entry_name is not None: 
-            self._entry_name.destroy()
-            self._entry_name = None
+        self._window_rename.destroy()
+        self._entry_name.destroy()
 
     def __add_tree_to_view(self,tree:treemod.Tree)->None:
         iid = self._view.insert("",0,text=tree.name,iid=str(id(tree)))
