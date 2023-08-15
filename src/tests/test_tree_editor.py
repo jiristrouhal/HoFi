@@ -140,7 +140,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
     
     def test_menu_is_destroyed_after_running_its_command(self):
         self.view.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_DELETE)
-        self.assertEqual(self.view.right_click_menu,None)
+        self.assertFalse(self.view.right_click_menu.winfo_exists())
 
     def test_manually_changing_tkinter_entries_and_confirming_choice_rewrites_branch_attributes(self):
         self.view.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_EDIT)

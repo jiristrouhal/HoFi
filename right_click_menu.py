@@ -10,8 +10,7 @@ def add_treeview_item_cmd(
     cmd:Callable[[],None]
     )->None:
 
-    if menu.index(label)==None:
-        menu.add_command(label=label,command=_add_cmd(cmd,menu))
+    menu.add_command(label=label,command=_add_cmd(cmd,menu))
 
 
 def _add_cmd(cmd:Callable,menu:tk.Menu)->Callable:

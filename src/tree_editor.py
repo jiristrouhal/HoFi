@@ -1,6 +1,3 @@
-
-
-
 import tkinter.ttk as ttk
 import tkinter as tk
 import tkinter.messagebox as tkmsg
@@ -8,6 +5,8 @@ from typing import Tuple, Dict, Callable, Any
 import src.tree as treemod
 from functools import partial
 from collections import OrderedDict
+
+import right_click_menu as rcm
 
 
 MENU_CMD_BRANCH_DELETE = "Delete"
@@ -200,69 +199,59 @@ class Treeview:
 
     def __add_commands_for_root(self,root_id:str)->None:
         assert(self.right_click_menu.winfo_exists())
-        self.right_click_menu.add_command(
-            label=MENU_CMD_BRANCH_ADD,
-            command=self._right_click_menu_command(
-                partial(
-                    self.open_add_window,
-                    root_id,
-                    self._attribute_template,
-                )
-            )
+        rcm.add_treeview_item_cmd(
+            self.right_click_menu,
+            MENU_CMD_BRANCH_ADD,
+            partial(self.open_add_window,root_id,self._attribute_template)
+        )  
+        rcm.add_treeview_item_cmd(
+            self.right_click_menu,
+            MENU_CMD_BRANCH_OPEN_ALL,
+            partial(self._open_all,root_id)
         )
-        self.right_click_menu.add_command(
-            label=MENU_CMD_BRANCH_OPEN_ALL,
-            command=self._right_click_menu_command(partial(self._open_all,root_id))
+        rcm.add_treeview_item_cmd(
+            self.right_click_menu,
+            MENU_CMD_BRANCH_CLOSE_ALL,
+            partial(self._close_all,root_id)
         )
-        self.right_click_menu.add_command(
-            label=MENU_CMD_BRANCH_CLOSE_ALL,
-            command=self._right_click_menu_command(partial(self._close_all,root_id))
-        )
-
 
     def __add_commands_for_item(self,item_id:str)->None:
         branch:treemod.TreeItem = self._map[item_id]
         assert(self.right_click_menu.winfo_exists())
-        self.right_click_menu.add_command(
-            label=MENU_CMD_BRANCH_ADD,
-            command=self._right_click_menu_command(
-                partial(
-                    self.open_add_window,
-                    item_id,
-                    self._attribute_template
-                )
-            )
+        rcm.add_treeview_item_cmd(
+            self.right_click_menu,
+            MENU_CMD_BRANCH_ADD,
+            partial(self.open_add_window,item_id,self._attribute_template)
         )
-        self.right_click_menu.add_command(
-            label=MENU_CMD_BRANCH_EDIT,
-            command=self._right_click_menu_command(partial(self.open_edit_window,item_id)))
-        self.right_click_menu.add_command(
-            label=MENU_CMD_BRANCH_MOVE,
-            command=self._right_click_menu_command(partial(self.open_move_window,item_id))
+        rcm.add_treeview_item_cmd(
+            self.right_click_menu,
+            MENU_CMD_BRANCH_EDIT,
+            partial(self.open_edit_window,item_id)
+        )
+        rcm.add_treeview_item_cmd(
+            self.right_click_menu,
+            MENU_CMD_BRANCH_MOVE,
+            partial(self.open_move_window,item_id)
         )
 
         self.right_click_menu.add_separator()
         if self.widget.get_children(item_id):
-            self.right_click_menu.add_command(
-                label=MENU_CMD_BRANCH_OPEN_ALL,
-                command=self._right_click_menu_command(partial(self._open_all,item_id))
+            rcm.add_treeview_item_cmd(
+                self.right_click_menu,
+                MENU_CMD_BRANCH_OPEN_ALL,
+                partial(self._open_all,item_id)
             )
-            self.right_click_menu.add_command(
-                label=MENU_CMD_BRANCH_CLOSE_ALL,
-                command=self._right_click_menu_command(partial(self._close_all,item_id))
+            rcm.add_treeview_item_cmd(
+                self.right_click_menu,
+                MENU_CMD_BRANCH_CLOSE_ALL,
+                partial(self._close_all,item_id)
             )
-        else:
-            assert(branch.parent is not None)
-            self.right_click_menu.add_command(
-                label=MENU_CMD_BRANCH_DELETE,
-                command=self._right_click_menu_command(partial(branch.parent.remove_branch,branch.name)))
-        
-    def _right_click_menu_command(self,cmd:Callable)->Callable:
-        def menu_cmd(*args,**kwargs): 
-            cmd(*args,**kwargs)
-            self.right_click_menu.destroy()
-            self.right_click_menu = None
-        return menu_cmd
+        elif branch.parent is not None:
+            rcm.add_treeview_item_cmd(
+                self.right_click_menu,
+                MENU_CMD_BRANCH_DELETE,
+                partial(branch.parent.remove_branch,branch.name)
+            )
     
     def open_add_window(self,parent_id:str,attributes:Dict[str,Any])->None:
         self.add_window = tk.Toplevel(self.widget)
@@ -407,14 +396,10 @@ class Treeview:
     
     def __clear_add_window_widgets(self)->None: # pragma: no cover
         self.add_window.destroy()
-        for entry_name in self.add_window_entries: 
-            self.add_window_entries[entry_name].destroy()
         self.add_window_entries.clear()
 
     def __clear_edit_window_widgets(self)->None: # pragma: no cover
         self.edit_window.destroy()
-        for entry_name in self.edit_entries: 
-            self.edit_entries[entry_name].destroy()
         self.edit_entries.clear()
 
 
