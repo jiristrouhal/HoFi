@@ -17,9 +17,18 @@ class Properties:
         self.__configure_win()
 
     def display(self,item:treemod.TreeItem)->None:
-        self.clear()
-        self.__draw_properties(item.attributes, item.tag)
-        self.displayed_item = item
+        if self.displayed_item != item:
+            self.clear()
+            self.__draw_properties(item.attributes, item.tag)
+            self.displayed_item = item
+
+    def redraw(self)->None:
+        if self.displayed_item is not None:
+            self.clear()
+            self.__draw_properties(
+                self.displayed_item.attributes, 
+                self.displayed_item.tag
+            )
 
     def __draw_properties(self, properties:Dict[str,str], tag:str="")->None:
         row = 0

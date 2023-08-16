@@ -61,6 +61,7 @@ class TreeEditor:
         self._last_selection:Tuple[str,...] = ()
         self._on_selection:List[Callable[[treemod.TreeItem],None]] = list()
         self._on_deselection:List[Callable[[],None]] = list()
+        self._on_edit:List[Callable[[treemod.TreeItem],None]] = list()
 
     def _bind_keys(self)->None:
         self.widget.bind("<Button-3>",self.right_click_item)
@@ -75,6 +76,10 @@ class TreeEditor:
     def add_action_on_deselection(self,action:Callable[[],None])->None:
         if action not in self._on_deselection:
             self._on_deselection.append(action)
+    
+    def add_action_on_edit(self,action:Callable[[treemod.TreeItem],None])->None:
+        if action not in self._on_edit:
+            self._on_edit.append(action)
 
     def check_selection_changes(self,event:tk.Event|None=None)->None:
         current_selection = self.widget.selection()
@@ -340,6 +345,8 @@ class TreeEditor:
         # rename element in the tree
         self.widget.item(item_id,text=self.edit_entries["name"].get())
         self.__clear_edit_window_widgets()
+        for action in self._on_edit:
+            action(item)
     
     def _disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
         self.disregard_edit_entry_values()

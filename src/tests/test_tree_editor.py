@@ -389,13 +389,50 @@ class Test_Actions_On_Selection(unittest.TestCase):
         self.view.check_selection_changes()
         self.view.check_selection_changes()
         self.assertEqual(self.i, 1)
-        
+
         # the selection has to be first cleared and then repeated
         self.view.widget.selection_set()
         self.view.check_selection_changes()
         self.view.widget.selection_set(self.tree1_iid)
         self.view.check_selection_changes()
         self.assertEqual(self.i, 2)
+
+
+class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.tree1 = Tree("Tree 1",{"weight":50})
+        self.tree1_iid = str(id(self.tree1))
+        self.view = tree_editor.TreeEditor()
+        self.view.load_tree(self.tree1)
+        self.view._messageboxes_allowed = False
+
+    def test_edit_confirmation_runs_action(self)->None:
+        self.w = self.tree1.attributes["weight"]
+        def action(item:TreeItem)->None:
+            self.w = item.attributes["weight"]
+
+        self.view.add_action_on_edit(action)
+        self.assertEqual(self.w, "50")
+        self.view.open_edit_window(self.tree1_iid)
+        self.view.edit_entries["weight"].delete(0,"end")
+        self.view.edit_entries["weight"].insert(0,"75")
+        self.view.confirm_edit_entry_values(self.tree1_iid)
+        self.assertEqual(self.w, "75")
+
+    def test_edit_cancellation_does_not_run_action(self)->None:
+        self.w = self.tree1.attributes["weight"]
+        def action(item:TreeItem)->None:
+            self.w = item.attributes["weight"]
+
+        self.view.add_action_on_edit(action)
+        self.assertEqual(self.w, "50")
+        self.view.open_edit_window(self.tree1_iid)
+        self.view.edit_entries["weight"].delete(0,"end")
+        self.view.edit_entries["weight"].insert(0,"75")
+        self.view.disregard_edit_entry_values()
+        self.assertEqual(self.w, "50")
+    
 
 
 if __name__=="__main__": unittest.main()
