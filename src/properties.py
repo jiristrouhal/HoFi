@@ -5,10 +5,13 @@ from typing import Dict
 from collections import OrderedDict
 
 
+PROPERTIES_TITLE = "Properties"
+
+
 class Properties:
 
     def __init__(self,master:tk.Tk|tk.Frame|ttk.Labelframe|None = None)->None:
-        self.widget = tk.Frame(master)
+        self.widget = ttk.Labelframe(master,text=PROPERTIES_TITLE)
         self.props:Dict[str,tk.Label] = OrderedDict()
         self.displayed_item:treemod.TreeItem|None = None
         self.__configure_win()
