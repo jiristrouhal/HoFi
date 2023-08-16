@@ -23,9 +23,11 @@ class Properties:
     def __draw_properties(self, properties:Dict[str,str])->None:
         row = 0
         for name, value in properties.items():
-            label = tk.Label(self.widget,text="• "+ name+": "+value)
-            self.props[name] = tk.Label(self.widget,text=name+": "+value)
-            label.grid(row=row,sticky=tk.W,padx=15)
+            label = tk.Label(self.widget,text="• "+ name+": ")
+            value_widget = tk.Label(self.widget,text=value)
+            self.props[name] = value_widget
+            label.grid(row=row,column=0,sticky=tk.W,padx=(15,0))
+            value_widget.grid(row=row,column=1,sticky=tk.W,padx=(0,15))
             row += 1
 
     def clear(self)->None:
