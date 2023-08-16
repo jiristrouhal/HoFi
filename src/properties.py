@@ -22,7 +22,7 @@ class Properties:
         for name, value in properties.items():
             label = tk.Label(self.widget,text=name+": "+value)
             self.props[name] = tk.Label(self.widget,text=name+": "+value)
-            label.grid(row=row)
+            label.grid(row=row,sticky=tk.W)
             row += 1
 
     def clear(self)->None:
@@ -30,9 +30,6 @@ class Properties:
         for child in self.widget.winfo_children(): child.destroy()
         self.props.clear()
 
-    def pack(self,*args,**kwargs)->None:
-        self.widget.pack(*args,**kwargs)
-
     def __configure_win(self)->None:
-        pass
+        self.widget.pack(side=tk.LEFT)
 
