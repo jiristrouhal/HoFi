@@ -23,8 +23,8 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         self.assertEqual(tree.name, "Tree 1")
 
     def test_nonempty_tree_after_saving_and_loading_is_unchanged(self):
-        self.tree1.add_branch("Branch X",attributes={"weight":25})
-        self.tree1.add_branch("Branch Y",attributes={"weight":30})
+        self.tree1.add_branch("Branch X",attributes={"weight":"25"})
+        self.tree1.add_branch("Branch Y",attributes={"weight":"30"})
         self.converter.save_tree(self.tree1)
         tree = self.converter.load_tree("Tree 1")
         self.assertListEqual(tree.branches(), ["Branch X","Branch Y"])

@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import List, Tuple, Dict, Any, Callable, Literal
+from typing import List, Tuple, Dict, Any, Callable, Literal, OrderedDict
 import abc
 import src.naming
+from collections import OrderedDict
 
 
 DEFAULT_TAG = "Item"
@@ -12,13 +13,15 @@ class TreeItem(abc.ABC):
     def __init__(
         self,
         name:str,
-        attributes:Dict[str,Any]=dict(),
+        attributes:Dict[str,Any]=OrderedDict(),
         tag:str = DEFAULT_TAG, 
         type:Literal['leaf','branch']='branch'
         )->None:
 
-        self._attributes = {k:str(v) for k,v in attributes.items()} 
+        self._attributes = OrderedDict()
         self._attributes["name"] = name.strip()
+        for attr, value in attributes.items():
+            self._attributes[attr] = str(value)
         self._children:List[TreeItem] = list()
         self._parent:TreeItem|None = None
         self._actions:Dict[str,List[Callable]] = \

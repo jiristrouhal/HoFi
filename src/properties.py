@@ -17,11 +17,13 @@ class Properties:
         self.__configure_win()
 
     def display(self,item:treemod.TreeItem)->None:
-        self.__draw_properties(item.attributes)
+        self.__draw_properties(item.attributes, item.tag)
         self.displayed_item = item
 
-    def __draw_properties(self, properties:Dict[str,str])->None:
+    def __draw_properties(self, properties:Dict[str,str], tag:str="")->None:
         row = 0
+        if tag.strip()!="": 
+            properties["name"] += f" ({tag.lower()})"
         for name, value in properties.items():
             label = tk.Label(self.widget,text="• "+ name+": ")
             value_widget = tk.Label(self.widget,text=value)
