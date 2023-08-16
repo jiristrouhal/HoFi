@@ -63,3 +63,13 @@ The only type of object, that can be stored in the list, it the Tree.
 The Tree Manager keeps pair of the Tree object and the xml file. When the user chooses the update the file, the program checks, that the file is still present. If it is, the file is updated. If not, the user is notified of the missing file and asked to either specify the new location of the file or to cancel the operation.
 
 If the tree is renamed in the app, after the update the file is also renamed. If the name is already taken, the user is prompted to choose another name or to export the tree to other location.
+
+
+## Properties Widget
+The widget shows the properties of an item selected in the Editor. The editor should notify the Properties of the selection and send to it the data. It serves as an extension to the Editor. The Editor should prompt the Properties to redraw on the following events:
+- selection of some new item,
+- confirming changes of a selected item,
+- confirming changes of some of the selected item's children
+The Properties get cleared, when
+- the item is deselected,
+- the item is removed from editor
