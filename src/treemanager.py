@@ -134,7 +134,7 @@ class Tree_Manager:
     def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
         tree = treemod.Tree(name,tag=tag,attributes=attributes)
         self.__treelist.append(tree)
-        tree.add_data("treemanager_id",tree.name)
+        tree.add_data("treemanager_id",str(id(tree)))
 
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
         item_id = self._view.identify_row(event.y)

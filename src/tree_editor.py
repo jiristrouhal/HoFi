@@ -92,8 +92,8 @@ class TreeEditor:
 
     @property
     def trees(self)->Tuple[str,...]: 
-        return self.widget.get_children("")
-    
+        return tuple([self._map[iid].name for iid in self.widget.get_children("")])
+
     def branch(self,treeview_iid:str)->treemod.TreeItem|None:
         if treeview_iid not in self._map: return None
         return self._map[treeview_iid]
@@ -109,10 +109,14 @@ class TreeEditor:
     def load_tree(self,tree:treemod.Tree)->None: 
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
         # create action, that the tree object will run after it creates a new branch
-        self.widget.insert("",index=0,iid=tree.name,text=tree.name)
-        self._map[tree.name] = tree
-        tree.add_data("treeview_iid",tree.name)
-        tree.add_action('add_branch', partial(self._on_new_child,tree.name)) 
+        iid = str(id(tree)) 
+        self.widget.insert("",index=0,iid=iid,text=tree.name)
+        self._map[iid] = tree
+        tree.add_data("treeview_iid",iid)
+        for group in tree._actions:
+            tree._actions[group].clear()
+        tree.add_action('add_branch', partial(self._on_new_child,iid)) 
+        # tree.add_action('on_self_rename', partial(self._on_renaming,iid))
         self._load_branches(tree)
         self._open_all("")
 
@@ -133,10 +137,10 @@ class TreeEditor:
             self._load_branches(branch)
         
 
-    def remove_tree(self,name:str)->None:
-        if name not in self.trees: raise ValueError(f"Trying to delete nonexistent tree with name {name}.\n"
-                                                    f"The existing tree names are {self.trees}\n")
-        self.widget.delete(name)
+    def remove_tree(self,iid:str)->None:
+        if iid not in self.widget.get_children(): 
+            raise ValueError("Trying to delete nonexistent tree")
+        self.widget.delete(iid)
 
     def _on_new_child(
         self,
@@ -166,8 +170,8 @@ class TreeEditor:
         self._map.pop(branch_iid)
         self.widget.delete(branch_iid)
 
-    def _on_renaming(self,branch_iid:str,branch:treemod.TreeItem)->None:
-        self.widget.item(branch_iid,text=branch.name)
+    def _on_renaming(self,item_iid:str,branch:treemod.TreeItem)->None:
+        self.widget.item(item_iid,text=branch.name)
 
     def _on_moving(self,branch_iid:str,new_parent:treemod.TreeItem)->None:
         self.widget.move(branch_iid, new_parent.data["treeview_iid"], 0)
@@ -262,7 +266,7 @@ class TreeEditor:
     def open_edit_window_on_double_click(self,event:tk.Event)->None: # pragma: no cover
         iid = self.widget.identify_row(event.y)
         if iid.strip()=="": return 
-        if self._map[iid].parent is None: return
+        # if self._map[iid].parent is None: return
         # prevent automatic opening/closing of the element when double-clicked
         self.widget.item(iid,open=not self.widget.item(iid)["open"])
         self.open_edit_window(iid)
@@ -299,11 +303,15 @@ class TreeEditor:
             entry.delete(0,tk.END)
             entry.insert(0,self._map[branch_id].attributes[attribute])
 
-    def confirm_edit_entry_values(self,branch_id:str)->None:
+    def confirm_edit_entry_values(self,item_id:str)->None:
+        item = self._map[item_id]
         for attribute, entry in self.edit_entries.items():
-            self._map[branch_id].set_attribute(attribute, entry.get())
+            if attribute=="name": 
+                item.rename(entry.get())
+            else:
+                item.set_attribute(attribute, entry.get())
         # rename element in the tree
-        self.widget.item(branch_id,text=self.edit_entries["name"].get())
+        self.widget.item(item_id,text=self.edit_entries["name"].get())
         self.__clear_edit_window_widgets()
     
     def _disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
@@ -324,7 +332,7 @@ class TreeEditor:
         tree_id = self.__get_tree_id(item_id)
 
         if not item_id==tree_id:
-            self.available_parents.insert("",index=0,iid=tree_id,text=tree_id)
+            self.available_parents.insert("",index=0,iid=tree_id,text=self._map[tree_id].name)
             self._collect_available_parents(tree_id,item_id)
 
         self.available_parents.pack()

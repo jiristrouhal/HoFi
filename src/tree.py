@@ -55,8 +55,8 @@ class TreeItem(abc.ABC):
         on:Literal['add_branch','on_removal','on_renaming','on_moving','on_self_rename'],
         action:Callable[[TreeItem],None]
         )->None: 
-
-        self._actions[on].append(action)
+        if action not in self._actions[on]:
+            self._actions[on].append(action)
 
     def add_data(self,new_key:str,value:Any)->None:
         self._data[new_key] = value

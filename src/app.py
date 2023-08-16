@@ -24,10 +24,21 @@ editor = te.TreeEditor(edit_frame)
 def add_tree_to_editor(tree:treemod.Tree):
     editor.load_tree(tree)
 def remove_tree_from_editor(tree:treemod.Tree):
-    editor.remove_tree(tree.name)
+    editor.remove_tree(str(id(tree)))
+
 
 manager.add_action_on_selection(add_tree_to_editor)
 manager.add_action_on_deselection(remove_tree_from_editor)
+
+
+
+manager.new("Tree X")
+manager._select(str(id(manager.get_tree("Tree X"))))
+manager._deselect(str(id(manager.get_tree("Tree X"))))
+manager._select(str(id(manager.get_tree("Tree X"))))
+manager.get_tree("Tree X").add_branch("Branch A")
+
+
 
 
 if __name__=="__main__":

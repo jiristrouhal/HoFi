@@ -1,6 +1,7 @@
 from typing import List, Callable
 import naming
 from tree import Tree
+from functools import partial
 
 
 class TreeList:
@@ -32,6 +33,10 @@ class TreeList:
             name = naming.change_name_if_already_taken(name)
         item.rename(name)
         self.__items.append(item)
+
+        for action in self.__on_renaming:
+            item.add_action('on_self_rename',action)
+
         for action in self.__on_adding: action(item)
             
     def item(self,name:str)->Tree|None:
@@ -49,7 +54,7 @@ class TreeList:
         item = self.item(old_name)
         if item is None: return
         item.rename(new_name)
-        for action in self.__on_renaming: action(item)
+        # for action in self.__on_renaming: action(item)
 
     def add_name_warning(self,warning_action:Callable[[str],None]):
         self.__name_warnings.append(warning_action)
