@@ -23,9 +23,9 @@ class Properties:
     def __draw_properties(self, properties:Dict[str,str])->None:
         row = 0
         for name, value in properties.items():
-            label = tk.Label(self.widget,text=name+": "+value)
+            label = tk.Label(self.widget,text="• "+ name+": "+value)
             self.props[name] = tk.Label(self.widget,text=name+": "+value)
-            label.grid(row=row,sticky=tk.W,padx=15, pady=5)
+            label.grid(row=row,sticky=tk.W,padx=15)
             row += 1
 
     def clear(self)->None:
@@ -34,5 +34,5 @@ class Properties:
         self.props.clear()
 
     def __configure_win(self)->None:
-        self.widget.pack(side=tk.LEFT,expand=1,fill=tk.BOTH)
+        self.widget.pack(side=tk.LEFT,expand=1,fill=tk.BOTH,ipady=10)
 
