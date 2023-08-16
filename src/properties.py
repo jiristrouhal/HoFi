@@ -10,18 +10,28 @@ class Properties:
     def __init__(self,master:tk.Tk|tk.Frame|ttk.Labelframe|None = None)->None:
         self.widget = tk.Frame(master)
         self.props:Dict[str,tk.Label] = OrderedDict()
+        self.displayed_item:treemod.TreeItem|None = None
 
     def display(self,item:treemod.TreeItem)->None:
-        row = 0
-        for attr_name, attr_value in item.attributes.items():
-            label = tk.Label(self.widget,text=attr_name)
-            value_widget = tk.Label(self.widget,text=attr_value)
+        self.__draw_properties(item.attributes)
+        self.displayed_item = item
 
-            self.props[attr_name] = value_widget
+    def __draw_properties(self, properties:Dict[str,str])->None:
+        row = 0
+        for name, value in properties.items():
+            label = tk.Label(self.widget,text=name)
+            value_widget = tk.Label(self.widget,text=value)
+
+            self.props[name] = value_widget
 
             label.grid(row=row,column=0)
             value_widget.grid(row=row,column=1)
             row += 1
+
+    def clear(self)->None:
+        self.displayed_item = None
+        for child in self.widget.winfo_children(): child.destroy()
+        self.props.clear()
 
 
 
