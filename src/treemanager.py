@@ -99,9 +99,14 @@ class Tree_Manager:
         self._buttons:Dict[ButtonID,tk.Button] = dict()
         self._view = ttk.Treeview(self.__ui, selectmode='browse')
         self._map:Dict[str,treemod.Tree] = dict()
+
         self._window_new = tk.Toplevel(self._view)
+        self._window_new.wm_withdraw()
         self._entry_name = tk.Entry()
+
         self._window_rename = tk.Toplevel()
+        self._window_rename.wm_withdraw()
+
         self._bind_keys()
         self.__configure_ui()
 

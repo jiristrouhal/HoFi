@@ -1,7 +1,7 @@
 import tkinter.ttk as ttk
 import tkinter as tk
 import tkinter.messagebox as tkmsg
-from typing import Tuple, Dict, Callable, Any
+from typing import Tuple, Dict, Callable, Any, List
 import src.tree as treemod
 from functools import partial
 from collections import OrderedDict
@@ -33,7 +33,7 @@ class TreeEditor:
     def __init__(self, parent:tk.Tk|tk.Toplevel|tk.Frame|None = None)->None:
         self.widget = ttk.Treeview(parent)
         self._bind_keys()
-        self._configure_widget()
+        self.__configure_widget()
 
         self._attribute_template = OrderedDict()
         self._attribute_template["name"] = "New" 
@@ -58,12 +58,39 @@ class TreeEditor:
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
         self._messageboxes_allowed:bool = True
 
+        self._last_selection:Tuple[str,...] = ()
+        self._on_selection:List[Callable[[treemod.TreeItem],None]] = list()
+        self._on_deselection:List[Callable[[],None]] = list()
+
     def _bind_keys(self)->None:
         self.widget.bind("<Button-3>",self.right_click_item)
         self.widget.bind("<Double-Button-1>",self.open_edit_window_on_double_click,add="")
         self.widget.bind("<Key-Delete>",self.remove_selected_item)
+        self.widget.bind("<<TreeviewSelect>>",self.check_selection_changes)
+
+    def add_action_on_selection(self,action:Callable[[treemod.TreeItem],None])->None:
+        if action not in self._on_selection:
+            self._on_selection.append(action)
+
+    def add_action_on_deselection(self,action:Callable[[],None])->None:
+        if action not in self._on_deselection:
+            self._on_deselection.append(action)
+
+    def check_selection_changes(self,event:tk.Event|None=None)->None:
+        current_selection = self.widget.selection()
+        if current_selection==self._last_selection: return
+        self._last_selection = current_selection
+        if not current_selection: self.__no_item_selected()
+        else: self.__new_item_selected(current_selection[0])
+
+    def __new_item_selected(self,item_id:str)->None:
+        item = self._map[item_id]
+        for action in self._on_selection: action(item)
+
+    def __no_item_selected(self)->None:
+        for action in self._on_deselection: action()
         
-    def _configure_widget(self)->None:
+    def __configure_widget(self)->None:
         style = ttk.Style()
         style.configure('Treeview',indent=10)
         
@@ -328,7 +355,7 @@ class TreeEditor:
         self.move_window.title(MOVE_WINDOW_TITLE)
 
         self.available_parents = ttk.Treeview(self.move_window)
-        self._configure_widget()
+        self.__configure_widget()
         tree_id = self.__get_tree_id(item_id)
 
         if not item_id==tree_id:

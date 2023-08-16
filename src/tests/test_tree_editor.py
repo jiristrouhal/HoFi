@@ -3,7 +3,7 @@ sys.path.insert(1,"src")
 
 
 import tree_editor 
-from tree import Tree
+from tree import Tree, TreeItem
 import unittest
 from typing import List
 import tkinter.ttk as ttk
@@ -358,6 +358,44 @@ class Test_Error_Message(unittest.TestCase):
         self.tree1.remove_branch("Branch with children")
         self.assertEqual(self.x,1)
 
+
+class Test_Actions_On_Selection(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.tree1 = Tree("Tree 1")
+        self.tree1_iid = str(id(self.tree1))
+        self.view = tree_editor.TreeEditor()
+        self.view.load_tree(self.tree1)
+        self.view._messageboxes_allowed = False
+
+    def test_selection_of_item_runs_the_action(self)->None:
+        self.selection = ""
+        def action(item:TreeItem)->None:
+            self.selection = item.name
+        self.view.add_action_on_selection(action)
+        self.view.widget.selection_set(self.tree1_iid)
+        self.view.check_selection_changes()
+        self.assertEqual(self.selection, "Tree 1")
+
+    def test_repeated_selection_has_no_effect(self)->None:
+        self.i = 0
+        def action(item:TreeItem)->None:
+            self.i += 1
+
+        self.view.add_action_on_selection(action)
+
+        self.view.widget.selection_set(self.tree1_iid)
+        # this function is automatically run when user click in Treeview
+        self.view.check_selection_changes()
+        self.view.check_selection_changes()
+        self.assertEqual(self.i, 1)
+        
+        # the selection has to be first cleared and then repeated
+        self.view.widget.selection_set()
+        self.view.check_selection_changes()
+        self.view.widget.selection_set(self.tree1_iid)
+        self.view.check_selection_changes()
+        self.assertEqual(self.i, 2)
 
 
 if __name__=="__main__": unittest.main()

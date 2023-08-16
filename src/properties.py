@@ -17,6 +17,7 @@ class Properties:
         self.__configure_win()
 
     def display(self,item:treemod.TreeItem)->None:
+        self.clear()
         self.__draw_properties(item.attributes, item.tag)
         self.displayed_item = item
 
