@@ -154,7 +154,7 @@ class TreeEditor:
 
     def _load_branches(self,parent:treemod.TreeItem)->None:
         for branch in parent._children:
-            iid = self.widget.insert(parent.data["treeview_iid"],index=0,text=branch.name)
+            iid = self.widget.insert(parent.data["treeview_iid"],iid=str(id(branch)),index=0,text=branch.name)
             self._map[iid] = branch
             branch.add_action('add_branch', partial(self._on_new_child, iid))
             branch.add_action('on_removal', partial(self._on_removal, iid))
@@ -180,7 +180,8 @@ class TreeEditor:
         new_branch:treemod.TreeItem
         )->None:
 
-        item_iid = self.widget.insert(parent_iid,index=0,text=new_branch.name)
+        item_iid = str(id(new_branch))
+        self.widget.insert(parent_iid,iid=item_iid,index=0,text=new_branch.name)
         self._map[item_iid] = new_branch
         new_branch.add_action('add_branch', partial(self._on_new_child, item_iid))
         new_branch.add_action('on_removal', partial(self._on_removal, item_iid))
@@ -211,6 +212,8 @@ class TreeEditor:
 
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
         item_id = self.widget.identify_row(event.y)
+        if item_id.strip()=="": 
+            return 
         if self._map[item_id].parent is None: 
             self._open_right_click_menu(item_id,root=True)
         else: self._open_right_click_menu(item_id)
