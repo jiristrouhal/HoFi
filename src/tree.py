@@ -86,7 +86,8 @@ class TreeItem(abc.ABC):
 
     def rename(self,name:str)->None:
         if self._parent is not None:
-            if self._parent._find_branch(name) is not None:
+            item_with_same_name = self._parent._find_branch(name)
+            if item_with_same_name is not None and not item_with_same_name==self:
                 name = src.naming.change_name_if_already_taken(name)
         self._attributes["name"] = name.strip()
         for action in self._actions['on_self_rename']:
