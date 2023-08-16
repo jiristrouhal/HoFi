@@ -30,7 +30,7 @@ MOVE_WINDOW_TITLE = "Select new parent"
 
 class TreeEditor:
 
-    def __init__(self, parent:tk.Tk|tk.Toplevel|tk.Frame|None = None)->None:
+    def __init__(self, parent:tk.Tk|tk.Toplevel|tk.Frame|None = None, label:str = "TreeEditor")->None:
         self.widget = ttk.Treeview(parent)
         self._bind_keys()
         self.__configure_widget()
@@ -62,6 +62,8 @@ class TreeEditor:
         self._on_selection:List[Callable[[treemod.TreeItem],None]] = list()
         self._on_deselection:List[Callable[[],None]] = list()
         self._on_edit:List[Callable[[treemod.TreeItem],None]] = list()
+
+        self.label:str = label # an identifier used in actions of Tree Items
 
     def _bind_keys(self)->None:
         self.widget.bind("<Button-3>",self.right_click_item)
@@ -122,6 +124,7 @@ class TreeEditor:
         if item.parent is None: return # cannot delete tree
         item.parent.remove_branch(item.name)
 
+
     @property
     def trees(self)->Tuple[str,...]: 
         return tuple([self._map[iid].name for iid in self.widget.get_children("")])
@@ -147,7 +150,8 @@ class TreeEditor:
         tree.add_data("treeview_iid",iid)
         for group in tree._actions:
             tree._actions[group].clear()
-        tree.add_action('add_branch', partial(self._on_new_child,iid)) 
+        
+        tree.add_action(self.label,'add_branch', partial(self._on_new_child,iid)) 
         # tree.add_action('on_self_rename', partial(self._on_renaming,iid))
         self._load_branches(tree)
         self._open_all("")
@@ -156,10 +160,10 @@ class TreeEditor:
         for branch in parent._children:
             iid = self.widget.insert(parent.data["treeview_iid"],iid=str(id(branch)),index=0,text=branch.name)
             self._map[iid] = branch
-            branch.add_action('add_branch', partial(self._on_new_child, iid))
-            branch.add_action('on_removal', partial(self._on_removal, iid))
-            branch.add_action('on_renaming', partial(self._on_renaming, iid))
-            branch.add_action('on_moving', partial(self._on_moving, iid))
+            branch.add_action(self.label,'add_branch', partial(self._on_new_child, iid))
+            branch.add_action(self.label,'on_removal', partial(self._on_removal, iid))
+            branch.add_action(self.label,'on_renaming', partial(self._on_renaming, iid))
+            branch.add_action(self.label,'on_moving', partial(self._on_moving, iid))
             branch.add_data("treeview_iid",iid)
 
             branch.do_if_error_occurs(
@@ -169,10 +173,18 @@ class TreeEditor:
             self._load_branches(branch)
         
 
-    def remove_tree(self,iid:str)->None:
-        if iid not in self.widget.get_children(): 
+    def remove_tree(self,tree_id:str)->None:
+        if tree_id not in self.widget.get_children(): 
             raise ValueError("Trying to delete nonexistent tree")
-        self.widget.delete(iid)
+        
+        self._clear_related_actions(self._map[tree_id])
+        self.widget.delete(tree_id)
+
+    def _clear_related_actions(self,item:treemod.TreeItem):
+        if self.label in item._actions: 
+            item._actions[self.label].clear()
+            item._actions.pop(self.label)
+        for child in item._children: self._clear_related_actions(child)
 
     def _on_new_child(
         self,
@@ -183,10 +195,10 @@ class TreeEditor:
         item_iid = str(id(new_branch))
         self.widget.insert(parent_iid,iid=item_iid,index=0,text=new_branch.name)
         self._map[item_iid] = new_branch
-        new_branch.add_action('add_branch', partial(self._on_new_child, item_iid))
-        new_branch.add_action('on_removal', partial(self._on_removal, item_iid))
-        new_branch.add_action('on_renaming', partial(self._on_renaming, item_iid))
-        new_branch.add_action('on_moving', partial(self._on_moving, item_iid))
+        new_branch.add_action(self.label,'add_branch', partial(self._on_new_child, item_iid))
+        new_branch.add_action(self.label,'on_removal', partial(self._on_removal, item_iid))
+        new_branch.add_action(self.label,'on_renaming', partial(self._on_renaming, item_iid))
+        new_branch.add_action(self.label,'on_moving', partial(self._on_moving, item_iid))
         new_branch.add_data("treeview_iid",item_iid)
 
         new_branch.do_if_error_occurs(
@@ -346,7 +358,7 @@ class TreeEditor:
             else:
                 item.set_attribute(attribute, entry.get())
         # rename element in the tree
-        self.widget.item(item_id,text=self.edit_entries["name"].get())
+        self.widget.item(item_id,text=item.name)
         self.__clear_edit_window_widgets()
         for action in self._on_edit:
             action(item)

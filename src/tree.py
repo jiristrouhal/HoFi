@@ -24,14 +24,9 @@ class TreeItem(abc.ABC):
             self._attributes[attr] = str(value)
         self._children:List[TreeItem] = list()
         self._parent:TreeItem|None = None
-        self._actions:Dict[str,List[Callable]] = \
-        {
-            'add_branch':[], 
-            'on_removal':[], 
-            'on_renaming':[],
-            'on_moving':[],
-            'on_self_rename':[]
-        }
+
+        self._actions:Dict[str,Dict[str,List[Callable]]] = {}
+
         self._do_on_error:Dict[str,List[Callable]] = {
             'cannot_remove_branch_with_children':[],
         }
@@ -55,11 +50,22 @@ class TreeItem(abc.ABC):
 
     def add_action(
         self,
+        owner_id:str,
         on:Literal['add_branch','on_removal','on_renaming','on_moving','on_self_rename'],
         action:Callable[[TreeItem],None]
         )->None: 
-        if action not in self._actions[on]:
-            self._actions[on].append(action)
+
+        if not owner_id in self._actions: self.__initialize_actions(owner_id)
+        self._actions[owner_id][on].append(action)
+
+    def __initialize_actions(self,owner_id:str)->None:
+        self._actions[owner_id] = {
+            'add_branch': [],
+            'on_removal': [],
+            'on_renaming': [],
+            'on_moving': [],
+            'on_self_rename': [],
+        }
 
     def add_data(self,new_key:str,value:Any)->None:
         self._data[new_key] = value
@@ -85,13 +91,16 @@ class TreeItem(abc.ABC):
         self._parent._children.append(self)
 
     def rename(self,name:str)->None:
+        name = name.strip()
         if self._parent is not None:
             item_with_same_name = self._parent._find_branch(name)
-            if item_with_same_name is not None and not item_with_same_name==self:
+            while item_with_same_name is not None and not item_with_same_name==self:
                 name = src.naming.change_name_if_already_taken(name)
-        self._attributes["name"] = name.strip()
-        for action in self._actions['on_self_rename']:
-            action(self)
+                item_with_same_name = self._parent._find_branch(name)
+        self._attributes["name"] = name
+
+        for owner in self._actions:
+            for action in self._actions[owner]['on_self_rename']: action(self)
 
     def branches(self,*branches_along_the_path:str)->List[str]:
         return self._list_children(*branches_along_the_path,type='branch')
@@ -140,8 +149,11 @@ class TreeItem(abc.ABC):
         else:  # add the branch directly to the current object
             branch = Branch(name,attributes,type=type,tag=tag)
             branch._set_parent(self)
-            for action in self._actions['add_branch']: 
-                action(branch)
+            for owner_id in self._actions:
+                if not self._actions[owner_id]: 
+                    self.__initialize_actions(owner_id)
+                for action in self._actions[owner_id]['add_branch']: 
+                    action(branch)
         
     def move_branch(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...]=())->None:
         if self._does_path_point_to_child_of_branch_or_to_branch_itself(branch_path,new_branch_parent_path):
@@ -153,8 +165,9 @@ class TreeItem(abc.ABC):
                 parent = self._find_branch(*new_branch_parent_path)
                 if parent is not None: branch._set_parent(parent)
 
-            for action in branch._actions['on_moving']: 
-                action(parent)
+            for owner in branch._actions:
+                for action in branch._actions[owner]['on_moving']: 
+                    action(parent)
 
     def remove_branch(self,*branch_path:str)->None:
         if len(branch_path)>1:
@@ -170,16 +183,20 @@ class TreeItem(abc.ABC):
                 action(branch_to_be_removed)
             return
 
-        for action in branch_to_be_removed._actions['on_removal']: 
-            action(branch_to_be_removed)
+        for owner in branch_to_be_removed._actions:
+            for action in branch_to_be_removed._actions[owner]['on_removal']: 
+                action(branch_to_be_removed)
+
         self._children.remove(branch_to_be_removed)
     
     def rename_branch(self,branch_path:Tuple[str,...],new_name:str)->None:
         branch = self._find_branch(*branch_path)
         if branch is None: return
         branch.rename(new_name)
-        for action in branch._actions['on_renaming']: 
-            action(branch)
+
+        for owner in branch._actions:
+            for action in branch._actions[owner]['on_renaming']: 
+                action(branch)
     
     def _does_path_point_to_child_of_branch_or_to_branch_itself(
         self,

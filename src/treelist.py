@@ -1,18 +1,19 @@
 from typing import List, Callable
 import naming
 from tree import Tree
-from functools import partial
 
 
 class TreeList:
 
-    def __init__(self)->None:
+    def __init__(self,label:str="")->None:
         self.__items:List[Tree] = list()
         self.__name_warnings:List[Callable[[str],None]] = list()
 
         self.__on_removal:List[Callable[[Tree],None]] = list()
         self.__on_adding:List[Callable[[Tree],None]] = list()
         self.__on_renaming:List[Callable[[Tree],None]] = list()
+
+        self.label:str = str(id(self)) if label.strip()=="" else label
 
     @property
     def names(self)->List[str]: return [i.name for i in self.__items]
@@ -35,7 +36,7 @@ class TreeList:
         self.__items.append(item)
 
         for action in self.__on_renaming:
-            item.add_action('on_self_rename',action)
+            item.add_action(self.label,'on_self_rename',action)
 
         for action in self.__on_adding: action(item)
             

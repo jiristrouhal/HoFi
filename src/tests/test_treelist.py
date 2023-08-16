@@ -10,7 +10,7 @@ from tree import Tree
 class Test_Modifying_List(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.nlist = tlist.TreeList()
+        self.nlist = tlist.TreeList(label='TreeList')
     
     def test_adding_to_list(self)->None:
         self.nlist.append(Tree("Item 1"))
