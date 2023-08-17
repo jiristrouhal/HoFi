@@ -2,9 +2,37 @@ from __future__ import annotations
 from typing import List, Tuple, Dict, Any, Callable, Literal, OrderedDict
 import src.naming
 from collections import OrderedDict
+import abc
+import re
 
 
 DEFAULT_TAG = "Item"
+
+
+class _Attribute(abc.ABC):
+    @property
+    def value(self)->str: return self._value
+
+    @staticmethod
+    @abc.abstractmethod
+    def valid_entry(value:str)->bool: pass
+
+    def set(self,value:str)->None:
+        if self.valid_entry(value): self._value = str(value)
+        else: raise ValueError("The passed value is not valid for the type of attribute")
+
+
+class Positive_Int_Attr(_Attribute):
+    default_value = "1"
+
+    def __init__(self)->None:
+        self._value = self.default_value
+
+    @staticmethod
+    def valid_entry(value:Any)->bool: 
+        if re.fullmatch("\d+",str(value)) is None: return False
+        return int(value)>0
+
 
 
 class TreeItem:
@@ -210,6 +238,7 @@ class TreeItem:
                     return branch._find_child(*branch_names[1:])
                 return branch
         return None
+    
     
     
 class Tree(TreeItem): pass

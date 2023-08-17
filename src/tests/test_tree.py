@@ -178,4 +178,31 @@ class Test_Adding_Leaf_Type_Item(unittest.TestCase):
         self.assertListEqual(leaf._list_children(type='type'),[])
 
 
+class Test_Positive_Int_Attribute(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.attr = tree.Positive_Int_Attr()
+        self.assertEqual(self.attr.value, tree.Positive_Int_Attr.default_value)
+
+    def test_value_validation(self):
+        self.assertTrue(self.attr.valid_entry("1"))
+        self.assertFalse(self.attr.valid_entry("  1"))
+        self.assertTrue(self.attr.valid_entry("5"))
+        self.assertFalse(self.attr.valid_entry("5.0"))
+        self.assertFalse(self.attr.valid_entry("0"))
+        self.assertFalse(self.attr.valid_entry("0.5"))
+        self.assertFalse(self.attr.valid_entry("-1"))
+        self.assertFalse(self.attr.valid_entry("-8"))
+        self.assertTrue(self.attr.valid_entry( 5))
+
+    def test_value_setting(self):
+        self.attr.set("50")
+        self.assertEqual(self.attr.value,"50")
+        self.attr.set("10")
+        self.assertEqual(self.attr.value,"10")
+        self.assertRaises(ValueError,self.attr.set,"-5")
+
+    
+
+
 if __name__=="__main__": unittest.main()
