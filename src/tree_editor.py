@@ -148,9 +148,6 @@ class TreeEditor:
         self.widget.insert("",index=0,iid=iid,text=tree.name)
         self._map[iid] = tree
         tree.add_data("treeview_iid",iid)
-        for group in tree._actions:
-            tree._actions[group].clear()
-        
         tree.add_action(self.label,'add_branch', partial(self._on_new_child,iid)) 
         # tree.add_action('on_self_rename', partial(self._on_renaming,iid))
         self._load_branches(tree)
