@@ -1,6 +1,8 @@
 import tree as treemod
 import xml.etree.ElementTree as et
 import os
+from collections import OrderedDict
+from typing import List
 
 
 DEFAULT_DIRECTORY = "./data"
@@ -25,7 +27,8 @@ class Tree_XML_Converter:
         return path_to_file
 
     def __xml_tree(self,tree:treemod.Tree)->et.ElementTree:
-        xml_root = et.Element(tree.tag, attrib=tree.attributes)
+        attrib = {label:str(x.value) for label,x in tree.attributes.items()}
+        xml_root = et.Element(tree.tag, attrib=attrib)
         self.__create_xml_elem(tree,xml_root)
         return et.ElementTree(xml_root)
 
@@ -36,7 +39,8 @@ class Tree_XML_Converter:
         )->None:
 
         for branch in parent._children:
-            xml_elem = et.SubElement(parent_xml_elem,branch.tag, attrib=branch.attributes)
+            attribs = {label:str(x.value) for label,x in branch.attributes.items()}
+            xml_elem = et.SubElement(parent_xml_elem,branch.tag, attrib=attribs)
             self.__create_xml_elem(branch,xml_elem)
 
     def load_tree(self,name:str,dir:str=DEFAULT_DIRECTORY)->treemod.Tree|None:
@@ -46,7 +50,13 @@ class Tree_XML_Converter:
         xml = et.parse(path_to_file)
         xml_root = xml.getroot()
         
-        tree = treemod.Tree(xml_root.attrib["name"],attributes=xml_root.attrib)
+        xml_attributes = xml_root.attrib
+        tree_attributes:OrderedDict[str,treemod._Attribute] = OrderedDict()
+        
+        for attr_name, value in xml_attributes.items():
+            tree_attributes[attr_name] = treemod.create_attribute(value)
+
+        tree = treemod.Tree(xml_root.attrib["name"],attributes=tree_attributes)
         self.__load_xml_elem(xml_root,tree)
         return tree
 
@@ -58,7 +68,10 @@ class Tree_XML_Converter:
 
         for elem in xml_elem:
             branch_name = elem.attrib["name"]
-            thing_with_branches.new(branch_name,attributes=elem.attrib)
+            branch_attributes:OrderedDict[str,treemod._Attribute] = OrderedDict()
+            for attr_name, value in elem.attrib.items():
+                branch_attributes[attr_name] = treemod.create_attribute(value)
 
+            thing_with_branches.new(branch_name,attributes=branch_attributes)
             child_branch = thing_with_branches._find_child(branch_name)
             self.__load_xml_elem(elem,child_branch)

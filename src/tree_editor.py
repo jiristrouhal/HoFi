@@ -35,9 +35,9 @@ class TreeEditor:
         self._bind_keys()
         self.__configure_widget()
 
-        self._attribute_template = OrderedDict()
-        self._attribute_template["name"] = "New" 
-        self._attribute_template["lenght"] = "0"
+        self._attribute_template:OrderedDict[str,treemod._Attribute] = OrderedDict()
+        self._attribute_template["name"] = treemod.Name_Attr()
+        self._attribute_template["lenght"] = treemod.Positive_Int_Attr()
 
         self._map:Dict[str,treemod.TreeItem] = dict()
         self.right_click_menu = rcm.RCMenu(self.widget)
@@ -278,7 +278,7 @@ class TreeEditor:
                 partial(branch.parent.remove_child,branch.name)
             )
     
-    def open_add_window(self,parent_id:str,attributes:Dict[str,Any])->None:
+    def open_add_window(self,parent_id:str,attributes:Dict[str,treemod._Attribute])->None:
         self.add_window = tk.Toplevel(self.widget)
         self.add_window.grab_set()
         self.add_window.focus_set()
@@ -286,10 +286,10 @@ class TreeEditor:
         self.add_window_entries = dict()
         entries_frame = tk.Frame(self.add_window)
         row=0
-        for key,value in attributes.items():
+        for key,attr in attributes.items():
             tk.Label(entries_frame,text=key).grid(row=row,column=0)
             entry = tk.Entry(entries_frame)
-            entry.insert(0,value)
+            entry.insert(0, attr.value)
             entry.grid(row=row,column=1)
             self.add_window_entries[key] = entry
             row += 1
@@ -306,10 +306,10 @@ class TreeEditor:
         self.disregard_add_entry_values()
 
     def confirm_add_entry_values(self,parent_id:str)->None:
-        attributes = dict()
+        attributes = self._attribute_template.copy()
         for label, entry in self.add_window_entries.items():
-            attributes[label] = entry.get()
-        name = attributes.pop("name")
+            attributes[label].set(entry.get())
+        name = attributes.pop("name").value
         self._map[parent_id].new(name,attributes=attributes)
         self.__clear_add_window_widgets()
 
@@ -335,10 +335,10 @@ class TreeEditor:
         item = self._map[item_id]
         entries_frame = tk.Frame(self.edit_window)
         row = 0
-        for key,value in item.attributes.items(): 
+        for key,attr in item.attributes.items(): 
             tk.Label(entries_frame,text=key).grid(row=row,column=0)
             entry = tk.Entry(entries_frame)
-            entry.insert(0,value)
+            entry.insert(0,attr.value)
             entry.grid(row=row,column=1)
             self.edit_entries[key] = entry
             row += 1
@@ -357,7 +357,7 @@ class TreeEditor:
     def back_to_original_edit_entry_values(self,branch_id:str)->None:
         for attribute, entry in self.edit_entries.items():
             entry.delete(0,tk.END)
-            entry.insert(0,self._map[branch_id].attributes[attribute])
+            entry.insert(0,self._map[branch_id].attributes[attribute].value)
 
     def confirm_edit_entry_values(self,item_id:str)->None:
         item = self._map[item_id]

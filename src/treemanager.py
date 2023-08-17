@@ -8,6 +8,7 @@ import enum
 from functools import partial
 import os
 import sys
+from collections import OrderedDict
 
 sys.path.insert(1,"src")
 
@@ -16,7 +17,7 @@ import src.tree_to_xml as txml
 import src.treelist as treelist
 import src.tree as treemod
 import right_click_menu as rcm
-import naming
+
 
 
 NAME_ALREADY_TAKEN_TITLE = "Name already exists"
@@ -140,7 +141,13 @@ class Tree_Manager:
         if action not in self.__on_deselection:
             self.__on_deselection.append(action)
 
-    def new(self,name:str,tag:str=treemod.DEFAULT_TAG,attributes:Dict[str,Any]={})->None: 
+    def new(
+        self,
+        name:str,
+        tag:str=treemod.DEFAULT_TAG,
+        attributes:OrderedDict[str,treemod._Attribute]=OrderedDict()
+        )->None: 
+
         tree = treemod.Tree(name,tag=tag,attributes=attributes)
         self.__treelist.append(tree)
         tree.add_data("treemanager_id",str(id(tree)))
@@ -359,12 +366,12 @@ class Tree_Manager:
     def get_tree(self,name:str)->treemod.Tree|None:
         return self.__treelist.item(name)
 
-    def _set_tree_attribute(self,name:str,key:str,value:str)->None:
+    def _set_tree_attribute(self,name:str,key:str,value:Any)->None:
         tree = self.get_tree(name)
         if tree is None: return
         if key in tree.attributes:
             if key=="name": self.__treelist.rename(tree.name, value)
-            tree._attributes[key] = value
+            tree._attributes[key].set(value)
 
     def rename(self,old_name:str,new_name:str)->None:
         renamed_tree = self.__treelist.rename(old_name,new_name)

@@ -3,7 +3,7 @@ sys.path.insert(1,"src")
 
 
 import tree_editor 
-from tree import Tree, TreeItem
+from tree import Tree, TreeItem, Positive_Int_Attr
 import unittest
 from typing import List
 import tkinter.ttk as ttk
@@ -129,7 +129,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
         # prevent all GUI elements from showing up
         self.view._messageboxes_allowed = False
         self.view.load_tree(self.tree1)
-        self.tree1.new("Branch X", attributes={"length":45})
+        self.tree1.new("Branch X", attributes={"length":Positive_Int_Attr(45)})
         self.branch_x_iid = self.view.widget.get_children(self.tree1_iid)[-1] 
         self.view._open_right_click_menu(self.branch_x_iid)
 
@@ -153,11 +153,11 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.view.edit_entries["name"].delete(0,"end")
         self.view.edit_entries["name"].insert(0,"Branch YZ")
         self.view.edit_entries["length"].delete(0,"end")
-        self.view.edit_entries["length"].insert(0,"78")
+        self.view.edit_entries["length"].insert(0,78)
 
         self.view.confirm_edit_entry_values(self.branch_x_iid)
         self.assertEqual(self.tree1.branches()[0],"Branch YZ")
-        self.assertEqual(self.tree1._children[0].attributes["length"],"78")
+        self.assertEqual(self.tree1._children[0].attributes["length"].value,78)
     
     def test_after_confirming_the_entries_the_edit_window_closes(self):
         self.view.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_EDIT)
@@ -191,9 +191,9 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
         # prevent all GUI elements from showing up
         self.view._messageboxes_allowed = False
         self.view.load_tree(self.tree1)
-        self.tree1.new("Branch X", attributes={"length":45})
-        self.tree1.new("Branch Y", attributes={"length":45})
-        self.tree1.new("Branch Z", attributes={"length":20})
+        self.tree1.new("Branch X", attributes={"length":Positive_Int_Attr(45)})
+        self.tree1.new("Branch Y", attributes={"length":Positive_Int_Attr(45)})
+        self.tree1.new("Branch Z", attributes={"length":Positive_Int_Attr(20)})
         self.tree1.new("Child of Z", "Branch Z", attributes={"length":10})
         self.small_branch_id = self.view.widget.get_children(self.tree1_iid)[0] 
         self.view._open_right_click_menu(self.small_branch_id)
@@ -401,37 +401,37 @@ class Test_Actions_On_Selection(unittest.TestCase):
 class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.tree1 = Tree("Tree 1",{"weight":50})
+        self.tree1 = Tree("Tree 1",{"weight":Positive_Int_Attr(50)})
         self.tree1_iid = str(id(self.tree1))
         self.view = tree_editor.TreeEditor()
         self.view.load_tree(self.tree1)
         self.view._messageboxes_allowed = False
 
     def test_edit_confirmation_runs_action(self)->None:
-        self.w = self.tree1.attributes["weight"]
+        self.w = self.tree1.attributes["weight"].value
         def action(item:TreeItem)->None:
-            self.w = item.attributes["weight"]
+            self.w = item.attributes["weight"].value
 
         self.view.add_action_on_edit(action)
-        self.assertEqual(self.w, "50")
+        self.assertEqual(self.w, 50)
         self.view.open_edit_window(self.tree1_iid)
         self.view.edit_entries["weight"].delete(0,"end")
-        self.view.edit_entries["weight"].insert(0,"75")
+        self.view.edit_entries["weight"].insert(0,75)
         self.view.confirm_edit_entry_values(self.tree1_iid)
-        self.assertEqual(self.w, "75")
+        self.assertEqual(self.w, 75)
 
     def test_edit_cancellation_does_not_run_action(self)->None:
-        self.w = self.tree1.attributes["weight"]
+        self.w = self.tree1.attributes["weight"].value
         def action(item:TreeItem)->None:
-            self.w = item.attributes["weight"]
+            self.w = item.attributes["weight"].value
 
         self.view.add_action_on_edit(action)
-        self.assertEqual(self.w, "50")
+        self.assertEqual(self.w, 50)
         self.view.open_edit_window(self.tree1_iid)
         self.view.edit_entries["weight"].delete(0,"end")
-        self.view.edit_entries["weight"].insert(0,"75")
+        self.view.edit_entries["weight"].insert(0,75)
         self.view.disregard_edit_entry_values()
-        self.assertEqual(self.w, "50")
+        self.assertEqual(self.w, 50)
     
 
 

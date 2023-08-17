@@ -32,13 +32,14 @@ class Properties:
                 self.displayed_item.tag
             )
 
-    def __draw_properties(self, properties:Dict[str,str], tag:str="")->None:
+    def __draw_properties(self, attributes:Dict[str,treemod._Attribute], tag:str="")->None:
         row = 0
         if tag.strip()!="": 
-            properties["name"] += f" ({tag.lower()})"
-        for name, value in properties.items():
+            curr_value = attributes["name"].value
+            attributes["name"].set(curr_value  + f" ({tag.lower()})")
+        for name, attr in attributes.items():
             label = tk.Label(self.widget,text="• "+ name+": ")
-            value_widget = tk.Label(self.widget,text=value)
+            value_widget = tk.Label(self.widget,text=str(attr.value))
             self.props[name] = value_widget
             label.grid(row=row,column=0,sticky=tk.W,padx=(15,0))
             value_widget.grid(row=row,column=1,sticky=tk.W,padx=(0,15))

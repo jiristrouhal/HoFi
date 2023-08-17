@@ -4,7 +4,7 @@ sys.path.insert(1,"src")
 
 import src.properties as pp
 import unittest
-from tree import TreeItem
+from tree import TreeItem, Positive_Int_Attr
 
 
 
@@ -12,7 +12,13 @@ class Test_Displaying_Tree_Properties(unittest.TestCase):
 
 
     def setUp(self) -> None:
-        self.tree = TreeItem("Tree 1", {"weight": 4500, "height": 12})
+        self.tree = TreeItem(
+            "Tree 1", 
+            {
+                "weight": Positive_Int_Attr(4500), 
+                "height": Positive_Int_Attr(12)
+            }
+        )
         self.prop_window = pp.Properties()
         self.prop_window.display(self.tree)
     

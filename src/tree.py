@@ -27,8 +27,7 @@ class _Attribute(abc.ABC):
 
     def set(self,value:str)->None:
         if self.valid_entry(value): self._value = str(value)
-        else: raise ValueError("The passed value is not valid for the type of attribute")
-
+        else: raise ValueError(f"The passed value ({value}) is not valid for the type of attribute.")
 
 class Positive_Int_Attr(_Attribute):
     default_value = "1"
@@ -48,8 +47,23 @@ class Name_Attr(_Attribute):
     def valid_entry(value:str)->bool: 
         if re.fullmatch("[^\W\d].*",str(value)) is None: return False
         return True
+    
 
+class Text_Attr(_Attribute):
+    default_value = "Text"
+    @property
+    def value(self)->str: return str(self._value)
+    @staticmethod
+    def valid_entry(value:str)->bool: return True
+    
 
+def create_attribute(value:Any)->_Attribute:
+    if Positive_Int_Attr.valid_entry(value):
+        return Positive_Int_Attr(value)
+    elif Name_Attr.valid_entry(value):
+        return Name_Attr(value)
+    else:
+        return Text_Attr(value)
 
 class TreeItem:
 
@@ -61,10 +75,11 @@ class TreeItem:
         type:Literal['leaf','branch']='branch'
         )->None:
 
-        self._attributes = OrderedDict()
-        self._attributes["name"] = src.naming.strip_and_join_spaces(name)
-        for attr, value in attributes.items():
-            self._attributes[attr] = str(value)
+        self._attributes:OrderedDict[str,_Attribute] = OrderedDict()
+        self._attributes["name"] = Name_Attr(src.naming.strip_and_join_spaces(name))
+        for name, attr in attributes.items():
+            self._attributes[name] = attr
+
         self._children:List[TreeItem] = list()
         self._parent:TreeItem|None = None
 
@@ -79,9 +94,9 @@ class TreeItem:
 
 
     @property
-    def name(self)->str: return self._attributes["name"]
+    def name(self)->str: return self._attributes["name"].value
     @property
-    def attributes(self)->Dict[str,str]: return self._attributes.copy()
+    def attributes(self)->Dict[str,_Attribute]: return self._attributes.copy()
     @property 
     def parent(self)->TreeItem|None: return self._parent
     @property
@@ -122,7 +137,7 @@ class TreeItem:
         self._do_on_error[on].append(action)
 
     def set_attribute(self,attr_name:str,value:str)->None:
-        if attr_name in self._attributes: self._attributes[attr_name] = value
+        if attr_name in self._attributes: self._attributes[attr_name].set(value)
 
     def _set_parent(self,new_parent:TreeItem)->None:
         if self._parent is not None: 
@@ -131,7 +146,7 @@ class TreeItem:
         name = src.naming.strip_and_join_spaces(self.name)
         while new_parent._find_child(name) is not None: 
             name = src.naming.change_name_if_already_taken(name)
-        self._attributes["name"] = name
+        self._attributes["name"].set(name)
         self._parent = new_parent
         self._parent._children.append(self)
 
@@ -142,7 +157,7 @@ class TreeItem:
             while item_with_same_name is not None and not item_with_same_name==self:
                 name = src.naming.change_name_if_already_taken(name)
                 item_with_same_name = self._parent._find_child(name)
-        self._attributes["name"] = name
+        self._attributes["name"].set(name)
 
         for owner in self._actions:
             for action in self._actions[owner]['on_self_rename']: action(self)
@@ -171,7 +186,7 @@ class TreeItem:
         name:str,
         *branches_along_the_path:str,
         tag:str = DEFAULT_TAG,
-        attributes:Dict[str,Any]=dict(),
+        attributes:OrderedDict[str,_Attribute] = OrderedDict(),
         type:Literal['branch','leaf'] = 'branch',
         )->None:
 
@@ -181,7 +196,8 @@ class TreeItem:
             # add the new branch to some sub-branch
             parent = self._find_child(*branches_along_the_path)
             if parent is None: return
-            parent.new(name,attributes={})
+            parent.new(name,attributes=attributes)
+
         else:  # add the branch directly to the current object
             child = TreeItem(name,attributes,type=type,tag=tag)
             child._set_parent(self)

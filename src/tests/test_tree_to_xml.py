@@ -23,21 +23,21 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         self.assertEqual(tree.name, "Tree 1")
 
     def test_nonempty_tree_after_saving_and_loading_is_unchanged(self):
-        self.tree1.new("Branch X",attributes={"weight":"25"})
-        self.tree1.new("Branch Y",attributes={"weight":"30"})
+        self.tree1.new("Branch X",attributes={"weight":treemod.Positive_Int_Attr(25)})
+        self.tree1.new("Branch Y",attributes={"weight":treemod.Positive_Int_Attr(25)})
         self.converter.save_tree(self.tree1)
         tree = self.converter.load_tree("Tree 1")
         self.assertListEqual(tree.branches(), ["Branch X","Branch Y"])
 
     def test_nonempty_tree_with_branches_having_child_branches_is_unchanged_after_saving_and_loading_(self):
-        sometree = treemod.Tree("SomeTreeX",attributes={"weight":100})
-        sometree.new("Branch X",attributes={"weight":25})
-        sometree.new("Small branch","Branch X",attributes={"weight":10})
-        sometree.new("Smaller branch","Branch X","Small branch",attributes={"weight":5})
+        sometree = treemod.Tree("SomeTreeX",attributes={"weight":treemod.Positive_Int_Attr(100)})
+        sometree.new("Branch X",attributes={"weight":treemod.Positive_Int_Attr(25)})
+        sometree.new("Small branch","Branch X",attributes={"weight":treemod.Positive_Int_Attr(10)})
+        sometree.new("Smaller branch","Branch X","Small branch",attributes={"weight":treemod.Positive_Int_Attr(5)})
         
         self.converter.save_tree(sometree)
         loaded_tree = self.converter.load_tree("SomeTreeX")
-        self.assertEqual(loaded_tree.attributes["weight"], '100')
+        self.assertEqual(loaded_tree.attributes["weight"].value, 100)
         self.assertListEqual(loaded_tree.branches(), ["Branch X"])
         self.assertListEqual(loaded_tree.branches("Branch X",), ["Small branch"])
         self.assertListEqual(loaded_tree.branches("Branch X","Small branch"), ["Smaller branch"])

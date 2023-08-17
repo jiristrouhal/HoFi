@@ -8,7 +8,7 @@ class Test_Creating_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
         self.tree = tree.Tree("Tree 1")
-        self.tree.new("Branch 1",attributes={"weight":50})
+        self.tree.new("Branch 1",attributes={"weight":tree.Positive_Int_Attr(50)})
 
     def test_add_branch_to_a_tree(self):
         self.assertListEqual(self.tree.branches(), ["Branch 1"])
@@ -121,7 +121,7 @@ class Test_Creating_Tree(unittest.TestCase):
         self.assertListEqual(self.tree.branches(),["Branch 1"])
 
     def test_renaming_branch_to_name_that_is_not_already_taken_can_be_done(self):
-        self.tree.new("Branch 2",attributes={"weight":25})
+        self.tree.new("Branch 2")
         self.tree.rename_child(("Branch 2",),"Branch X")
         self.assertListEqual(self.tree.branches(),["Branch 1","Branch X"])     
 
@@ -132,6 +132,9 @@ class Test_Creating_Tree(unittest.TestCase):
 
     def test_listing_children_of_nonexistent_item_yields_empty_list(self):
         self.assertListEqual(self.tree._list_children("Branch 2", "Nonexistent child of Branch 2", type='all'), [])
+
+
+
 
 
 class Test_Actions(unittest.TestCase):
@@ -238,7 +241,14 @@ class Test_Name_Attribute(unittest.TestCase):
         self.assertRaises(ValueError,self.attr.set,"6")
 
 
+class Test_Trees_And_Attributes(unittest.TestCase):
 
+    def setUp(self) -> None:
+        self.tree = tree.Tree("Tree X", attributes={"height":tree.Positive_Int_Attr(15)})
+
+    def test_modifying_attribute_value(self):
+        self.tree.attributes["height"].set(78)
+        self.assertEqual(self.tree.attributes["height"].value, 78)
 
 
 if __name__=="__main__": unittest.main()

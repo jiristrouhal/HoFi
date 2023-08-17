@@ -149,12 +149,12 @@ class Test_Editing_Trees(unittest.TestCase):
         self.assertListEqual(self.manager.trees,["Tree Y"])
 
     def test_editing_attributes_of_a_nonexistent_tree_has_no_effect(self):
-        self.manager._set_tree_attribute("Nonexistent tree", "some attribute", "123")
+        self.manager._set_tree_attribute("Nonexistent tree", "some attribute", 123)
 
     def test_editing_nonexistent_attributes_has_no_effect(self):
         self.assertTrue("Tree X" in self.manager.trees)
         NONEXISTENT_ATTR_NAME = "Attr name"
-        self.manager._set_tree_attribute("Tree X", NONEXISTENT_ATTR_NAME, "123")
+        self.manager._set_tree_attribute("Tree X", NONEXISTENT_ATTR_NAME,123)
         self.assertTrue(NONEXISTENT_ATTR_NAME not in self.manager.get_tree("Tree X").attributes)
 
 
@@ -234,11 +234,11 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
     def test_updating_existing_file(self):
         self.manager.xml_file_path = "./Tree being exported.xml"
 
-        self.manager.new("Tree being exported",attributes={"height":"25"})
+        self.manager.new("Tree being exported",attributes={"height":treemod.Positive_Int_Attr(25)})
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
 
-        self.manager._set_tree_attribute("Tree being exported","height","15")
+        self.manager._set_tree_attribute("Tree being exported","height",15)
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_UPDATE_FILE)
 
@@ -247,19 +247,19 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
         self.assertEqual(self.manager.trees, [])
         self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
 
-        self.assertEqual(self.manager.get_tree("Tree being exported").attributes["height"], "15")
+        self.assertEqual(self.manager.get_tree("Tree being exported").attributes["height"].value, 15)
 
     def test_removing_the_file_and_then_trying_to_update_it_leads_to_creating_the_file_anew_silently(self):
         self.manager.xml_file_path = "./Tree being exported.xml"
 
-        self.manager.new("Tree being exported",attributes={"height":"25"})
+        self.manager.new("Tree being exported",attributes={"height":treemod.Positive_Int_Attr(25)})
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
 
         exported_file_path = self.manager._tree_files[self.manager.get_tree("Tree being exported")]
         os.remove(exported_file_path)
 
-        self.manager._set_tree_attribute("Tree being exported","height","15")
+        self.manager._set_tree_attribute("Tree being exported","height",15)
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_UPDATE_FILE)
 
@@ -268,7 +268,7 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
         self.assertEqual(self.manager.trees, [])
         self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
 
-        self.assertEqual(self.manager.get_tree("Tree being exported").attributes["height"], "15")
+        self.assertEqual(self.manager.get_tree("Tree being exported").attributes["height"].value,15)
 
     def test_removing_one_tree_and_adding_other_with_the_same_name_cannot_update_the_old_tree_file(self):
         self.manager.xml_file_path = "./Tree being exported.xml"
