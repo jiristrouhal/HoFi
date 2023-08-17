@@ -202,7 +202,39 @@ class Test_Positive_Int_Attribute(unittest.TestCase):
         self.assertEqual(self.attr.value,"10")
         self.assertRaises(ValueError,self.attr.set,"-5")
 
-    
+
+class Test_Name_Attribute(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.attr = tree.Name_Attr()
+        self.assertEqual(self.attr.value, tree.Name_Attr.default_value)
+
+    def test_value_validation(self):
+        self.assertTrue(self.attr.valid_entry("Something"))
+        self.assertTrue(self.attr.valid_entry("Some  Thing"))
+        self.assertTrue(self.attr.valid_entry("Something     "))
+        self.assertFalse(self.attr.valid_entry("   Something"))
+
+        self.assertFalse(self.attr.valid_entry("1223456"))
+        self.assertTrue(self.attr.valid_entry("ABC1223456"))
+
+        self.assertFalse(self.attr.valid_entry(" "))
+        self.assertTrue(self.attr.valid_entry("_"))
+
+        self.assertFalse(self.attr.valid_entry("5a"))
+        self.assertTrue(self.attr.valid_entry("a5"))
+        self.assertTrue(self.attr.valid_entry("_5a"))
+
+        self.assertFalse(self.attr.valid_entry("+"))
+        self.assertFalse(self.attr.valid_entry("-"))
+
+    def test_value_setting(self):
+        self.attr.set("A")
+        self.assertEqual(self.attr.value,"A")
+        self.assertRaises(ValueError,self.attr.set,"6")
+
+
+
 
 
 if __name__=="__main__": unittest.main()

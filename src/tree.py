@@ -10,6 +10,11 @@ DEFAULT_TAG = "Item"
 
 
 class _Attribute(abc.ABC):
+    default_value = ""
+
+    def __init__(self)->None:
+        self._value = self.default_value
+
     @property
     def value(self)->str: return self._value
 
@@ -25,13 +30,18 @@ class _Attribute(abc.ABC):
 class Positive_Int_Attr(_Attribute):
     default_value = "1"
 
-    def __init__(self)->None:
-        self._value = self.default_value
-
     @staticmethod
-    def valid_entry(value:Any)->bool: 
+    def valid_entry(value:str)->bool: 
         if re.fullmatch("\d+",str(value)) is None: return False
         return int(value)>0
+
+
+class Name_Attr(_Attribute):
+    default_value = "New"
+    @staticmethod
+    def valid_entry(value:str)->bool: 
+        if re.fullmatch("[^\W\d].*",str(value)) is None: return False
+        return True
 
 
 
