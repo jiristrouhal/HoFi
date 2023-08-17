@@ -122,17 +122,8 @@ class TreeItem(abc.ABC):
         if type=='all':
             return [b.name for b in self._children]
         return [b.name for b in self._children if b.type==type]
-    
-    def add_leaf(
-        self,
-        name:str,
-        *branches_along_the_path:str,
-        attributes:Dict[str,Any]=dict()
-        )->None:
 
-        self.add_branch(name,*branches_along_the_path,attributes=attributes,type='leaf')
-
-    def add_branch(
+    def new(
         self,
         name:str,
         *branches_along_the_path:str,
@@ -147,7 +138,7 @@ class TreeItem(abc.ABC):
             # add the new branch to some sub-branch
             smallest_parent_branch = self._find_branch(*branches_along_the_path)
             if smallest_parent_branch is None: return
-            smallest_parent_branch.add_branch(name,attributes={})
+            smallest_parent_branch.new(name,attributes={})
         else:  # add the branch directly to the current object
             branch = Branch(name,attributes,type=type,tag=tag)
             branch._set_parent(self)

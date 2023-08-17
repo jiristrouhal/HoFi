@@ -310,7 +310,7 @@ class TreeEditor:
         for label, entry in self.add_window_entries.items():
             attributes[label] = entry.get()
         name = attributes.pop("name")
-        self._map[parent_id].add_branch(name,attributes=attributes)
+        self._map[parent_id].new(name,attributes=attributes)
         self.__clear_add_window_widgets()
 
     def disregard_add_entry_values(self)->None:

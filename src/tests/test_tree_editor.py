@@ -41,7 +41,7 @@ class Test_Empty_Trees(unittest.TestCase):
         self.assertRaises(ValueError,self.view.remove_tree,"Nonexistent tree")
     
     def test_adding_branch_to_tree_adds_element_to_the_treeview(self):
-        self.tree1.add_branch("Branch X")
+        self.tree1.new("Branch X")
         self.assertEqual(len(self.view.widget.get_children(self.tree1_iid)), 1)
         self.assertEqual(
             self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"],
@@ -49,15 +49,15 @@ class Test_Empty_Trees(unittest.TestCase):
         )
     
     def test_adding_branch_to_tree_branch_adds_element_to_the_treeview(self):
-        self.tree1.add_branch("Branch X")
-        self.tree1.add_branch("Small branch","Branch X",attributes={})
+        self.tree1.new("Branch X")
+        self.tree1.new("Small branch","Branch X",attributes={})
         self.assertEqual(len(self.view.widget.get_children(self.tree1_iid)), 1)
         branch_x_iid = self.view.widget.get_children(self.tree1_iid)[0]
         self.assertEqual(len(self.view.widget.get_children(branch_x_iid)), 1)
 
     def test_adding_branch_with_already_existing_name_makes_treeview_show_the_adjusted_name(self):
-        self.tree1.add_branch("Branch X")
-        self.tree1.add_branch("Branch X")
+        self.tree1.new("Branch X")
+        self.tree1.new("Branch X")
         adjusted_name = self.tree1._children[-1].name
         self.assertEqual(
             self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"],
@@ -65,17 +65,17 @@ class Test_Empty_Trees(unittest.TestCase):
         )
 
     def test_removing_branch_from_tree_removes_element_from_the_treeview(self):
-        self.tree1.add_branch("Branch X")
+        self.tree1.new("Branch X")
         self.tree1.remove_branch("Branch X")
         self.assertEqual(self.view.widget.get_children(self.tree1_iid), ())
 
     def test_removing_nonexistent_branch_does_not_alter_the_treeview(self):
-        self.tree1.add_branch("Branch X")
+        self.tree1.new("Branch X")
         self.tree1.remove_branch("Nonexistent branch")
         self.assertEqual(len(self.view.widget.get_children(self.tree1_iid)), 1)
 
     def test_renaming_branch_is_reflected_in_the_treeview(self):
-        self.tree1.add_branch("Branch X")
+        self.tree1.new("Branch X")
         self.tree1.rename_branch(("Branch X",), "Branch Y")
         self.assertEqual(
             self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"],
@@ -83,7 +83,7 @@ class Test_Empty_Trees(unittest.TestCase):
         )
 
     def test_renaming_nonexistent_branch_does_not_affect_the_treeview(self):
-        self.tree1.add_branch("Branch X")
+        self.tree1.new("Branch X")
         self.tree1.rename_branch(("Branch XXXX",), "Branch Y")
         self.assertEqual(
             self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"],
@@ -91,8 +91,8 @@ class Test_Empty_Trees(unittest.TestCase):
         )
 
     def test_moving_branch_to_other_parent_is_reflected_in_the_treeview(self):
-        self.tree1.add_branch("Branch X")
-        self.tree1.add_branch("Branch to be moved")
+        self.tree1.new("Branch X")
+        self.tree1.new("Branch to be moved")
         self.tree1.move_branch(("Branch to be moved",), ("Branch X",))
         self.assertEqual(len(self.view.widget.get_children(self.tree1_iid)), 1)
         branch_x_iid = self.view.widget.get_children(self.tree1_iid)[0]
@@ -110,13 +110,13 @@ class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
         self.view._messageboxes_allowed = False
 
     def test_accessing_the_branch_associated_with_the_treeview_item(self):
-        self.tree1.add_branch("Branch X")
+        self.tree1.new("Branch X")
         self.tree1_iid = str(id(self.tree1))
         branch_x_iid = self.view.widget.get_children(self.tree1_iid)[0]
         self.assertEqual(self.view.branch(branch_x_iid).name, "Branch X")
 
     def test_accessing_the_branch_with_nonexistent_iid_returns_none(self):
-        self.tree1.add_branch("Branch X")
+        self.tree1.new("Branch X")
         nonexistent_iid = "Nonexistent iid"
         self.assertEqual(self.view.branch(nonexistent_iid), None)
 
@@ -129,7 +129,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
         # prevent all GUI elements from showing up
         self.view._messageboxes_allowed = False
         self.view.load_tree(self.tree1)
-        self.tree1.add_branch("Branch X", attributes={"length":45})
+        self.tree1.new("Branch X", attributes={"length":45})
         self.branch_x_iid = self.view.widget.get_children(self.tree1_iid)[-1] 
         self.view._open_right_click_menu(self.branch_x_iid)
 
@@ -191,10 +191,10 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
         # prevent all GUI elements from showing up
         self.view._messageboxes_allowed = False
         self.view.load_tree(self.tree1)
-        self.tree1.add_branch("Branch X", attributes={"length":45})
-        self.tree1.add_branch("Branch Y", attributes={"length":45})
-        self.tree1.add_branch("Branch Z", attributes={"length":20})
-        self.tree1.add_branch("Child of Z", "Branch Z", attributes={"length":10})
+        self.tree1.new("Branch X", attributes={"length":45})
+        self.tree1.new("Branch Y", attributes={"length":45})
+        self.tree1.new("Branch Z", attributes={"length":20})
+        self.tree1.new("Child of Z", "Branch Z", attributes={"length":10})
         self.small_branch_id = self.view.widget.get_children(self.tree1_iid)[0] 
         self.view._open_right_click_menu(self.small_branch_id)
         self.view.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_MOVE)
@@ -262,10 +262,10 @@ class Test_Load_Existing_Tree(unittest.TestCase):
     def setUp(self) -> None:
         self.tree1 = Tree("Tree 1")
         self.tree1_iid = str(id(self.tree1))
-        self.tree1.add_branch("Branch X")
-        self.tree1.add_branch("Child of X","Branch X",attributes={})
-        self.tree1.add_branch("Branch Y")
-        self.tree1.add_branch("Grandchild of X","Branch X","Child of X",attributes={})
+        self.tree1.new("Branch X")
+        self.tree1.new("Child of X","Branch X",attributes={})
+        self.tree1.new("Branch Y")
+        self.tree1.new("Grandchild of X","Branch X","Child of X",attributes={})
 
     def test_loading_tree(self):
         view = tree_editor.TreeEditor()
@@ -319,7 +319,7 @@ class Test_Modifying_Loaded_Tree(unittest.TestCase):
     def setUp(self) -> None:
         self.tree1 = Tree("Tree 1")
         self.tree1_iid = str(id(self.tree1))
-        self.tree1.add_branch("Branch X",attributes={})
+        self.tree1.new("Branch X",attributes={})
 
         self.view = tree_editor.TreeEditor()
         self.view.load_tree(self.tree1)
@@ -341,8 +341,8 @@ class Test_Error_Message(unittest.TestCase):
     def setUp(self) -> None:
         self.tree1 = Tree("Tree 1")
         self.tree1_iid = str(id(self.tree1))
-        self.tree1.add_branch("Branch with children",attributes={})
-        self.tree1.add_branch("Child","Branch with children",attributes={})
+        self.tree1.new("Branch with children",attributes={})
+        self.tree1.new("Child","Branch with children",attributes={})
         self.view = tree_editor.TreeEditor()
         self.view.load_tree(self.tree1)
         # prevent all GUI elements from showing up

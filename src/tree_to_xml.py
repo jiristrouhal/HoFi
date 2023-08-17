@@ -58,7 +58,7 @@ class Tree_XML_Converter:
 
         for elem in xml_elem:
             branch_name = elem.attrib["name"]
-            thing_with_branches.add_branch(branch_name,attributes=elem.attrib)
+            thing_with_branches.new(branch_name,attributes=elem.attrib)
 
             child_branch = thing_with_branches._find_branch(branch_name)
             self.__load_xml_elem(elem,child_branch)

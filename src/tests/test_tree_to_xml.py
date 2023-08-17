@@ -23,17 +23,17 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         self.assertEqual(tree.name, "Tree 1")
 
     def test_nonempty_tree_after_saving_and_loading_is_unchanged(self):
-        self.tree1.add_branch("Branch X",attributes={"weight":"25"})
-        self.tree1.add_branch("Branch Y",attributes={"weight":"30"})
+        self.tree1.new("Branch X",attributes={"weight":"25"})
+        self.tree1.new("Branch Y",attributes={"weight":"30"})
         self.converter.save_tree(self.tree1)
         tree = self.converter.load_tree("Tree 1")
         self.assertListEqual(tree.branches(), ["Branch X","Branch Y"])
 
     def test_nonempty_tree_with_branches_having_child_branches_is_unchanged_after_saving_and_loading_(self):
         sometree = treemod.Tree("SomeTreeX",attributes={"weight":100})
-        sometree.add_branch("Branch X",attributes={"weight":25})
-        sometree.add_branch("Small branch","Branch X",attributes={"weight":10})
-        sometree.add_branch("Smaller branch","Branch X","Small branch",attributes={"weight":5})
+        sometree.new("Branch X",attributes={"weight":25})
+        sometree.new("Small branch","Branch X",attributes={"weight":10})
+        sometree.new("Smaller branch","Branch X","Small branch",attributes={"weight":5})
         
         self.converter.save_tree(sometree)
         loaded_tree = self.converter.load_tree("SomeTreeX")
