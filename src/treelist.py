@@ -51,11 +51,11 @@ class TreeList:
         for action in self.__on_removal: action(item)
         self.__items.remove(item)
 
-    def rename(self,old_name:str,new_name:str)->None:
+    def rename(self,old_name:str,new_name:str)->Tree|None:
         item = self.item(old_name)
-        if item is None: return
-        item.rename(new_name)
-        # for action in self.__on_renaming: action(item)
+        if item is not None: 
+            item.rename(new_name)
+        return item
 
     def add_name_warning(self,warning_action:Callable[[str],None]):
         self.__name_warnings.append(warning_action)

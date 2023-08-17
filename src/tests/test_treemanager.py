@@ -295,23 +295,6 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
         self.assertFalse(self.manager._window_rename.winfo_exists())
 
-    def test_if_tree_is_updates_after_its_renaming_the_original_file_is_deleted_and_tree_is_exported_to_new_file(self):
-        self.manager.xml_file_path = "./Tree being exported.xml"
-        self.manager.new("Tree being exported")
-        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
-        self.assertTrue(os.path.isfile("./Tree being exported.xml"))
-
-        self.manager.agree_with_renaming = True
-
-        self.manager.rename("Tree being exported", "Tree being exported 2")
-        self.assertListEqual(self.manager.trees, ["Tree being exported 2"])
-        self.manager._update_file(self.manager.get_tree("Tree being exported 2"))
-
-        self.assertFalse(os.path.isfile("./Tree being exported.xml"))
-        self.assertTrue(os.path.isfile("./Tree being exported 2.xml"))
-
-
     def tearDown(self) -> None:
         if os.path.isfile("Tree being exported.xml"):
             os.remove("Tree being exported.xml")
@@ -364,6 +347,34 @@ class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
         self.assertFalse(self.manager._window_rename.winfo_exists())
 
 
+class Test_Updating_File_After_Renaming_Tree(unittest.TestCase):
+
+    def test_after_renaming_the_tree_has_to_be_exported_to_a_new_file(self):
+        tlist = treelist.TreeList()
+        manager = Tree_Manager(tlist)
+        manager.xml_file_path = "./Tree being exported.xml"
+    
+        manager.new("Tree being exported")
+        manager._open_right_click_menu(manager._view.get_children()[0])
+        manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        manager.rename("Tree being exported", "Tree being exported 2")
+
+        manager._open_right_click_menu(manager._view.get_children()[0])
+        # the update option is not available in the right-click menu after
+        # renaming the tree
+        self.assertRaises(
+            tmg.tk.TclError,
+            manager.right_click_menu.invoke, 
+            tmg.MENU_CMD_TREE_UPDATE_FILE
+        )
+
+    def tearDown(self) -> None:
+        if os.path.isfile("Tree being exported.xml"):
+            os.remove("Tree being exported.xml")
+        if os.path.isfile("Tree being exported 2.xml"):
+            os.remove("Tree being exported 2.xml")
+
+
 class Test_Loading_of_Xml(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -389,18 +400,6 @@ class Test_Loading_of_Xml(unittest.TestCase):
             self.manager.file_already_in_use_error_msg,
             file_used_by_tree_msg(self.manager.xml_file_path,"Tree X")
         )
-
-    def test_repeated_loading_of_the_same_and_renamed_tree_is_not_allowed(self):
-        self.manager._load_tree()
-        self.assertListEqual(self.manager.trees, ["Tree X"])
-        self.manager.rename("Tree X", "Tree Y")
-        self.manager._load_tree()
-        self.assertListEqual(self.manager.trees, ["Tree Y"])
-        self.assertEqual(
-            self.manager.file_already_in_use_error_msg,
-            file_used_by_tree_msg(self.manager.xml_file_path,"Tree Y")
-        )
-
 
     def tearDown(self) -> None: # pragma: no cover
         if os.path.isfile("data/Tree X.xml"):
@@ -435,6 +434,7 @@ class Test_Actions(unittest.TestCase):
         self.manager._open_right_click_menu(self.manager._view.get_children()[1])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_DESELECT)
         self.assertListEqual(self.names,[])
+
 
 
 if __name__=="__main__": unittest.main()

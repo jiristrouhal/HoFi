@@ -316,7 +316,7 @@ class Tree_Manager:
         if self.tree_exists(new_name) and self.get_tree(new_name) is not tree: 
             self._error_if_tree_names_already_taken(new_name)
         else:
-            self.__treelist.rename(tree.name,self._entry_name.get())
+            self.rename(tree.name,self._entry_name.get())
             self.__close_rename_tree_window()
 
     def _confirm_new_tree_name(self)->None:
@@ -359,7 +359,17 @@ class Tree_Manager:
             tree._attributes[key] = value
 
     def rename(self,old_name:str,new_name:str)->None:
-        self.__treelist.rename(old_name,new_name)
+        renamed_tree = self.__treelist.rename(old_name,new_name)
+        if renamed_tree is None:
+            # renaming of a nonexistent tree has been attempted, no further action is taken
+            return 
+
+        # After renaming, the file associated with the tree cannot be simply updated
+        # and the tree is to be exported anew.
+        # This helps to prevent unwanted rewriting of some existing file having
+        # the same name as the newly named Tree that is to be updated
+        if renamed_tree in self._tree_files: 
+            self._tree_files.pop(renamed_tree)
 
     def tree_exists(self,name:str)->bool: 
         return name in self.trees
