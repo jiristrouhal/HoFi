@@ -22,9 +22,11 @@ class Properties:
             self.__draw_properties(item.attributes, item.tag)
             self.displayed_item = item
 
-    def redraw(self)->None:
+    def redraw(self, x)->None:
         if self.displayed_item is not None:
+            item = self.displayed_item
             self.clear()
+            self.displayed_item = item
             self.__draw_properties(
                 self.displayed_item.attributes, 
                 self.displayed_item.tag
