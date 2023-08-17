@@ -136,17 +136,17 @@ class TreeItem(abc.ABC):
 
         if branches_along_the_path:
             # add the new branch to some sub-branch
-            smallest_parent_branch = self._find_child(*branches_along_the_path)
-            if smallest_parent_branch is None: return
-            smallest_parent_branch.new(name,attributes={})
+            parent = self._find_child(*branches_along_the_path)
+            if parent is None: return
+            parent.new(name,attributes={})
         else:  # add the branch directly to the current object
-            branch = Branch(name,attributes,type=type,tag=tag)
-            branch._set_parent(self)
+            child = TreeItem(name,attributes,type=type,tag=tag)
+            child._set_parent(self)
             for owner_id in self._actions:
                 if not self._actions[owner_id]: 
                     self.__initialize_actions(owner_id)
                 for action in self._actions[owner_id]['add_branch']: 
-                    action(branch)
+                    action(child)
         
     def move_child(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...]=())->None:
         if self._does_path_point_to_child_of_branch_or_to_branch_itself(branch_path,new_branch_parent_path):
