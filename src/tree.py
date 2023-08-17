@@ -19,7 +19,7 @@ class TreeItem(abc.ABC):
         )->None:
 
         self._attributes = OrderedDict()
-        self._attributes["name"] = name.strip()
+        self._attributes["name"] = src.naming.strip_and_join_spaces(name)
         for attr, value in attributes.items():
             self._attributes[attr] = str(value)
         self._children:List[TreeItem] = list()
