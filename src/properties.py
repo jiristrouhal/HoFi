@@ -34,12 +34,13 @@ class Properties:
 
     def __draw_properties(self, attributes:Dict[str,treemod._Attribute], tag:str="")->None:
         row = 0
+        attr_values = {label:x.value for label,x in attributes.items()}
         if tag.strip()!="": 
             curr_value = attributes["name"].value
-            attributes["name"].set(curr_value  + f" ({tag.lower()})")
-        for name, attr in attributes.items():
+            attr_values["name"]+= f" ({tag.lower()})"
+        for name, value in attr_values.items():
             label = tk.Label(self.widget,text="• "+ name+": ")
-            value_widget = tk.Label(self.widget,text=str(attr.value))
+            value_widget = tk.Label(self.widget,text=str(value))
             self.props[name] = value_widget
             label.grid(row=row,column=0,sticky=tk.W,padx=(15,0))
             value_widget.grid(row=row,column=1,sticky=tk.W,padx=(0,15))

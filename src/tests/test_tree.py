@@ -203,7 +203,8 @@ class Test_Positive_Int_Attribute(unittest.TestCase):
         self.assertEqual(self.attr.value, 50)
         self.attr.set("10")
         self.assertEqual(self.attr.value,10)
-        self.assertRaises(ValueError,self.attr.set,"-5")
+        self.attr.set()
+        self.assertEqual(self.attr.value,10)
 
 
 class Test_Name_Attribute(unittest.TestCase):
@@ -238,7 +239,8 @@ class Test_Name_Attribute(unittest.TestCase):
     def test_value_setting(self):
         self.attr.set("A")
         self.assertEqual(self.attr.value,"A")
-        self.assertRaises(ValueError,self.attr.set,"6")
+        self.attr.set("6")
+        self.assertEqual(self.attr.value,"A")
 
 
 class Test_Trees_And_Attributes(unittest.TestCase):

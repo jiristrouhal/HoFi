@@ -25,9 +25,9 @@ class _Attribute(abc.ABC):
     @abc.abstractmethod
     def valid_entry(value:str)->bool: pass
 
-    def set(self,value:str)->None:
-        if self.valid_entry(value): self._value = str(value)
-        else: raise ValueError(f"The passed value ({value}) is not valid for the type of attribute.")
+    def set(self,value:str="")->None:
+        if self.valid_entry(value) and not str(value).strip()=="": 
+            self._value = str(value)
 
 class Positive_Int_Attr(_Attribute):
     default_value = "1"

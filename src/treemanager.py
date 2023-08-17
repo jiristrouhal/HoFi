@@ -316,7 +316,13 @@ class Tree_Manager:
         self.__cleanup_new_tree_widgets()
         self._window_new = tk.Toplevel(self.__ui)
         self._window_new.title(SET_NEW_TREE_NAME)
-        self._entry_name = tk.Entry(self._window_new,width=50)
+        vcmd = (self._window_new.register(treemod.Name_Attr.valid_entry),'%P')
+        self._entry_name = tk.Entry(
+            self._window_new,
+            width=50,
+            validate='focus', 
+            validatecommand=vcmd
+        )
         self._entry_name.insert(0,DEFAULT_TREE_NAME)
         self._entry_name.pack()
         
