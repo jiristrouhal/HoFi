@@ -28,13 +28,9 @@ class TreeList:
         self.__on_renaming.append(action)
 
     def append(self,item:Tree)->None: 
-        name = item.name
-        names = self.names
-        while name in names:
-            name = naming.change_name_if_already_taken(name)
-        item.rename(name)
         self.__items.append(item)
-
+        # adjust the tree name after appending to list
+        self.__adjust_tree_name(item) 
         for action in self.__on_renaming:
             item.add_action(self.label,'on_self_rename',action)
 
@@ -55,11 +51,19 @@ class TreeList:
         item = self.item(old_name)
         if item is not None: 
             item.rename(new_name)
+            self.__adjust_tree_name(item)
         return item
 
     def add_name_warning(self,warning_action:Callable[[str],None]):
         self.__name_warnings.append(warning_action)
 
+    def __adjust_tree_name(self,item:Tree)->None:
+        name = naming.strip_and_join_spaces(item.name)
+        names = self.names
+        names.remove(name)  # prevent item having name collision with itself
+        while name in names:
+            name = naming.change_name_if_already_taken(name)
+        item.rename(name)
 
     
 

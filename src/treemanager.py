@@ -16,6 +16,7 @@ import src.tree_to_xml as txml
 import src.treelist as treelist
 import src.tree as treemod
 import right_click_menu as rcm
+import naming
 
 
 NAME_ALREADY_TAKEN_TITLE = "Name already exists"
@@ -66,6 +67,10 @@ INFO_TREE_EXPORTED_MSG_3 = "'."
 SELECTED_TREE_CANNOT_BE_DELETED_TITLE = "Cannot deleted selected tree"
 SELECTED_TREE_CANNOT_BE_DELETED_MSG_1 = "Please unselect the '"
 SELECTED_TREE_CANNOT_BE_DELETED_MSG_2 = "' before deletion."
+
+NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_TITLE = "Cannot load file"
+NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_MSG_1 = "The tree with name '"
+NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_MSG_2 = "' already exists. Rename the file or the tree."
 
 DEFAULT_TREE_NAME = "New"
 
@@ -217,6 +222,9 @@ class Tree_Manager:
         dir = os.path.dirname(filepath)
         filename = os.path.basename(filepath)
         treename = os.path.splitext(filename)[0]
+        if self.tree_exists(treename): 
+            self._cannot_load_tree_with_already_taken_name(treename)
+            return
         if self.__file_already_in_use(filepath): 
             return 
         tree = self.__converter.load_tree(treename,dir)
@@ -355,6 +363,7 @@ class Tree_Manager:
         tree = self.get_tree(name)
         if tree is None: return
         if key in tree.attributes:
+            if key=="name": self.__treelist.rename(tree.name, value)
             tree._attributes[key] = value
 
     def rename(self,old_name:str,new_name:str)->None:
@@ -407,6 +416,13 @@ class Tree_Manager:
         tkmsg.showerror(
             NAME_ALREADY_TAKEN_TITLE, 
             NAME_ALREADY_TAKEN_MESSAGE_1+f"{name}"+NAME_ALREADY_TAKEN_MESSAGE_2
+        )
+
+    def _cannot_load_tree_with_already_taken_name(self,name:str)->None:  # pragma: no cover
+        tkmsg.showerror(
+            NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_TITLE, 
+            NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_MSG_1 +f"{name}"\
+            +NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_MSG_2
         )
                 
     def _show_error_file_already_in_use(self,filepath:str,tree_name:str)->None:  # pragma: no cover

@@ -46,6 +46,9 @@ class Tree_Manager(tmg.Tree_Manager):
     def _show_export_info(self, tree_name: str, filepath: str) -> None:
         pass
 
+    def _cannot_load_tree_with_already_taken_name(self, name: str) -> None:
+        pass
+
 class Test_Creating_New_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -396,10 +399,6 @@ class Test_Loading_of_Xml(unittest.TestCase):
         self.assertListEqual(self.manager.trees, ["Tree X"])
         self.manager._load_tree()
         self.assertListEqual(self.manager.trees, ["Tree X"])
-        self.assertEqual(
-            self.manager.file_already_in_use_error_msg,
-            file_used_by_tree_msg(self.manager.xml_file_path,"Tree X")
-        )
 
     def tearDown(self) -> None: # pragma: no cover
         if os.path.isfile("data/Tree X.xml"):
