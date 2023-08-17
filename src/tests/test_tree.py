@@ -209,6 +209,10 @@ class Test_Name_Attribute(unittest.TestCase):
         self.attr = tree.Name_Attr()
         self.assertEqual(self.attr.value, tree.Name_Attr.default_value)
 
+    def test_specify_value_on_initialization(self):
+        attr = tree.Name_Attr("SomeName")
+        self.assertEqual(attr.value, "SomeName")
+
     def test_value_validation(self):
         self.assertTrue(self.attr.valid_entry("Something"))
         self.assertTrue(self.attr.valid_entry("Some  Thing"))

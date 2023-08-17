@@ -12,8 +12,11 @@ DEFAULT_TAG = "Item"
 class _Attribute(abc.ABC):
     default_value = ""
 
-    def __init__(self)->None:
-        self._value = self.default_value
+    def __init__(self, value:Any = None)->None:
+        if value is None or not self.valid_entry(value): 
+            self._value = self.default_value
+        else:
+            self._value = value
 
     @property
     def value(self)->Any: pass
@@ -53,7 +56,7 @@ class TreeItem:
     def __init__(
         self,
         name:str,
-        attributes:Dict[str,Any]=OrderedDict(),
+        attributes:Dict[str,_Attribute]=OrderedDict(),
         tag:str = DEFAULT_TAG, 
         type:Literal['leaf','branch']='branch'
         )->None:
