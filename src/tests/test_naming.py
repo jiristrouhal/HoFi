@@ -54,4 +54,15 @@ class Test_Adjusting_Already_Taken_Name(unittest.TestCase):
             self.assertEqual(naming.change_name_if_already_taken(name), expected_name)
 
 
+class Test_Stripping_And_Joining_Spaces(unittest.TestCase):
+
+    def test_joining(self):
+        text = "a    b c"
+        self.assertEqual(naming.strip_and_join_spaces(text),"a b c")
+
+    def test_stripping(self):
+        text = "  x y "
+        self.assertEqual(naming.strip_and_join_spaces(text),"x y")
+
+
 if __name__=="__main__": unittest.main()

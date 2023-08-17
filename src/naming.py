@@ -1,6 +1,10 @@
 import re
 
 
+def strip_and_join_spaces(name:str)->str:
+    return ' '.join(name.strip().split())
+
+
 def change_name_if_already_taken(name:str)->str:
     PATTERN = "[\s\S]*\(\s*[\+\-]?\d*\s*\)?\s*" 
     if re.fullmatch(PATTERN,name):
