@@ -182,7 +182,7 @@ class Test_Positive_Int_Attribute(unittest.TestCase):
 
     def setUp(self) -> None:
         self.attr = tree.Positive_Int_Attr()
-        self.assertEqual(self.attr.value, tree.Positive_Int_Attr.default_value)
+        self.assertEqual(self.attr.value, int(tree.Positive_Int_Attr.default_value))
 
     def test_value_validation(self):
         self.assertTrue(self.attr.valid_entry("1"))
@@ -197,9 +197,9 @@ class Test_Positive_Int_Attribute(unittest.TestCase):
 
     def test_value_setting(self):
         self.attr.set("50")
-        self.assertEqual(self.attr.value,"50")
+        self.assertEqual(self.attr.value, 50)
         self.attr.set("10")
-        self.assertEqual(self.attr.value,"10")
+        self.assertEqual(self.attr.value,10)
         self.assertRaises(ValueError,self.attr.set,"-5")
 
 

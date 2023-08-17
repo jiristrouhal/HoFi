@@ -16,7 +16,7 @@ class _Attribute(abc.ABC):
         self._value = self.default_value
 
     @property
-    def value(self)->str: return self._value
+    def value(self)->Any: pass
 
     @staticmethod
     @abc.abstractmethod
@@ -29,7 +29,8 @@ class _Attribute(abc.ABC):
 
 class Positive_Int_Attr(_Attribute):
     default_value = "1"
-
+    @property
+    def value(self)->int: return int(self._value)
     @staticmethod
     def valid_entry(value:str)->bool: 
         if re.fullmatch("\d+",str(value)) is None: return False
@@ -38,6 +39,8 @@ class Positive_Int_Attr(_Attribute):
 
 class Name_Attr(_Attribute):
     default_value = "New"
+    @property
+    def value(self)->str: return str(self._value)
     @staticmethod
     def valid_entry(value:str)->bool: 
         if re.fullmatch("[^\W\d].*",str(value)) is None: return False
