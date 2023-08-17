@@ -127,7 +127,8 @@ class TreeEditor:
         item_iid = self.widget.selection()[0]
         if item_iid.strip()=="": return # cannot delete treeview root
         item = self._map[item_iid]
-        if item.parent is None: return # cannot delete tree
+        if self.is_tree(item): return # cannot delete tree
+        assert item.parent is not None
         item.parent.remove_branch(item.name)
 
 
@@ -232,7 +233,7 @@ class TreeEditor:
         item_id = self.widget.identify_row(event.y)
         if item_id.strip()=="": 
             return 
-        if self._map[item_id].parent is None: 
+        if self.is_tree(self._map[item_id]): 
             self._open_right_click_menu(item_id,root=True)
         else: self._open_right_click_menu(item_id)
         if self.right_click_menu.winfo_exists():
