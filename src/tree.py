@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import List, Tuple, Dict, Any, Callable, Literal, OrderedDict
-import abc
 import src.naming
 from collections import OrderedDict
 
@@ -8,7 +7,7 @@ from collections import OrderedDict
 DEFAULT_TAG = "Item"
 
 
-class TreeItem(abc.ABC):
+class TreeItem:
 
     def __init__(
         self,
