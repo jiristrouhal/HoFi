@@ -73,3 +73,14 @@ The widget shows the properties of an item selected in the Editor. The editor sh
 The Properties get cleared, when
 - the item is deselected,
 - the item is removed from editor
+
+
+## Defining the item types
+The App must be able to tell the Manager and Editor, what types of TreeItems to create - under which tags and with what attributes. 
+
+Attributes are subject to validation when being changed (possible types are non-negative integers, dates and strings).
+
+The tag determines also the TreeItem type, i.e. if it is a branch (assumed to contain child items) or a leaf (a data point, without children).
+
+
+

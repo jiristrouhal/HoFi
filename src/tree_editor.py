@@ -315,10 +315,13 @@ class TreeEditor:
     def disregard_add_entry_values(self)->None:
         self.__clear_add_window_widgets()
 
+    def is_tree(self,item:treemod.TreeItem)->bool:
+        return item.parent is None
+
     def open_edit_window_on_double_click(self,event:tk.Event)->None: # pragma: no cover
         iid = self.widget.identify_row(event.y)
         if iid.strip()=="": return 
-        # if self._map[iid].parent is None: return
+        if self.is_tree(self._map[iid]): return
         # prevent automatic opening/closing of the element when double-clicked
         self.widget.item(iid,open=not self.widget.item(iid)["open"])
         self.open_edit_window(iid)
@@ -380,8 +383,10 @@ class TreeEditor:
         self.move_window.grab_set()
         self.move_window.focus_set()
         self.move_window.title(MOVE_WINDOW_TITLE)
-
-        self.available_parents = ttk.Treeview(self.move_window)
+        self.available_parents = ttk.Treeview(
+            self.move_window, 
+            show='tree', # hide zeroth row, that would contain the tree columns' headings
+        )
         self.__configure_widget()
         tree_id = self.__get_tree_id(item_id)
 
