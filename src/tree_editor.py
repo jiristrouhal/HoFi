@@ -289,7 +289,7 @@ class TreeEditor:
         for key,attr in attributes.items():
             tk.Label(entries_frame,text=key).grid(row=row,column=0)
             vcmd = (entries_frame.register(attr.valid_entry),'%P')
-            entry = tk.Entry(entries_frame, validate='focus', validatecommand=vcmd)
+            entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
             entry.insert(0, attr.value)
             entry.grid(row=row,column=1)
             self.add_window_entries[key] = entry
@@ -339,7 +339,7 @@ class TreeEditor:
         for key,attr in item.attributes.items(): 
             tk.Label(entries_frame,text=key).grid(row=row,column=0)
             vcmd = (entries_frame.register(attr.valid_entry),'%P')
-            entry = tk.Entry(entries_frame, validate='focus', validatecommand=vcmd)
+            entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
             entry.insert(0,attr.value)
             entry.grid(row=row,column=1)
             self.edit_entries[key] = entry

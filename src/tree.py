@@ -35,6 +35,7 @@ class Positive_Int_Attr(_Attribute):
     def value(self)->int: return int(self._value)
     @staticmethod
     def valid_entry(value:str)->bool: 
+        if value=="": return True
         if re.fullmatch("\d+",str(value)) is None: return False
         return int(value)>0
 
@@ -45,6 +46,7 @@ class Name_Attr(_Attribute):
     def value(self)->str: return str(self._value)
     @staticmethod
     def valid_entry(value:str)->bool: 
+        if value=="": return True
         if re.fullmatch("[^\W\d].*",str(value)) is None: return False
         return True
     
