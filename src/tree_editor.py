@@ -149,7 +149,7 @@ class TreeEditor:
         self._map[iid] = tree
         tree.add_data("treeview_iid",iid)
         tree.add_action(self.label,'add_branch', partial(self._on_new_child,iid)) 
-        # tree.add_action('on_self_rename', partial(self._on_renaming,iid))
+        tree.add_action(self.label,'on_self_rename', partial(self._on_renaming,iid))
         self._load_branches(tree)
         self._open_all("")
 
@@ -174,14 +174,15 @@ class TreeEditor:
         if tree_id not in self.widget.get_children(): 
             raise ValueError("Trying to delete nonexistent tree")
         
-        self._clear_related_actions(self._map[tree_id])
+        self.__clear_related_actions(self._map[tree_id])
         self.widget.delete(tree_id)
 
-    def _clear_related_actions(self,item:treemod.TreeItem):
+    def __clear_related_actions(self,item:treemod.TreeItem):
         if self.label in item._actions: 
             item._actions[self.label].clear()
             item._actions.pop(self.label)
-        for child in item._children: self._clear_related_actions(child)
+        for child in item._children: 
+            self.__clear_related_actions(child)
 
     def _on_new_child(
         self,
@@ -285,7 +286,6 @@ class TreeEditor:
             row += 1
         entries_frame.pack()
 
-        assert(self.add_window.winfo_exists())
         self.add_window.bind("<Key-Escape>",self._disregard_add_entry_values_on_keypress)
         button_frame(
             self.add_window,
