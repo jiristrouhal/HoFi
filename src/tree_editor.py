@@ -60,8 +60,10 @@ class TreeEditor:
 
         self._last_selection:Tuple[str,...] = ()
         self._on_selection:List[Callable[[treemod.TreeItem],None]] = list()
-        self._on_deselection:List[Callable[[],None]] = list()
+        self._on_unselection:List[Callable[[],None]] = list()
         self._on_edit:List[Callable[[treemod.TreeItem],None]] = list()
+        self._on_tree_removal:List[Callable[[],None]] = list()
+
 
         self.label:str = label # an identifier used in actions of Tree Items
 
@@ -75,13 +77,17 @@ class TreeEditor:
         if action not in self._on_selection:
             self._on_selection.append(action)
 
-    def add_action_on_deselection(self,action:Callable[[],None])->None:
-        if action not in self._on_deselection:
-            self._on_deselection.append(action)
+    def add_action_on_unselection(self,action:Callable[[],None])->None:
+        if action not in self._on_unselection:
+            self._on_unselection.append(action)
     
     def add_action_on_edit(self,action:Callable[[treemod.TreeItem],None])->None:
         if action not in self._on_edit:
             self._on_edit.append(action)
+
+    def add_action_on_tree_removal(self,action:Callable[[],None])->None:
+        if action not in self._on_tree_removal:
+            self._on_tree_removal.append(action)
 
     def check_selection_changes(self,event:tk.Event|None=None)->None:
         current_selection = self.widget.selection()
@@ -95,7 +101,7 @@ class TreeEditor:
         for action in self._on_selection: action(item)
 
     def __no_item_selected(self)->None:
-        for action in self._on_deselection: action()
+        for action in self._on_unselection: action()
         
     def __configure_widget(self)->None:
         style = ttk.Style()
@@ -174,6 +180,8 @@ class TreeEditor:
         if tree_id not in self.widget.get_children(): 
             raise ValueError("Trying to delete nonexistent tree")
         
+        for action in self._on_tree_removal: 
+            action()
         self.__clear_related_actions(self._map[tree_id])
         self.widget.delete(tree_id)
 

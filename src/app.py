@@ -35,9 +35,11 @@ def remove_tree_from_editor(tree:treemod.Tree):
 
 manager.add_action_on_selection(add_tree_to_editor)
 manager.add_action_on_deselection(remove_tree_from_editor)
+
 editor.add_action_on_selection(properties.display)
-editor.add_action_on_deselection(properties.clear)
+editor.add_action_on_unselection(properties.clear)
 editor.add_action_on_edit(properties.redraw)
+editor.add_action_on_tree_removal(properties.clear)
 
 
 
