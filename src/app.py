@@ -7,6 +7,7 @@ import properties as pp
 
 
 EDIT_FRAME_LABEL = "Editor"
+MANAGER_TITLE = "Manager"
 
 
 root = tk.Tk()
@@ -14,12 +15,14 @@ root.geometry("800x600")
 
 
 edit_frame = tk.LabelFrame(root, text=EDIT_FRAME_LABEL)
-manager_frame = tk.Frame(root)
+manager_frame = tk.LabelFrame(root, text=MANAGER_TITLE)
 properties_frame = tk.Frame(root,width=50,height=50)
+
 
 manager_frame.pack(expand=1,fill=tk.BOTH)
 edit_frame.pack(expand=2,fill=tk.BOTH)
 properties_frame.pack(expand=1,fill=tk.BOTH)
+
 
 treelist = tl.TreeList(label='TreeList')
 manager = tmg.Tree_Manager(treelist, manager_frame)

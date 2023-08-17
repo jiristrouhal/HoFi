@@ -23,7 +23,6 @@ NAME_ALREADY_TAKEN_MESSAGE_1 = "A tree with the name "
 NAME_ALREADY_TAKEN_MESSAGE_2 = " already exists. Use different name."
 
 
-TREE_MANAGER_TITLE = "Tree Manager"
 SET_NEW_TREE_NAME = "Set new tree name"
 RENAME_TREE = "Rename tree"
 
@@ -95,7 +94,7 @@ class Tree_Manager:
 
     def __init__(self,treelist:treelist.TreeList,ui_master:tk.Frame|tk.Tk|None = None, )->None:
         self.__converter = txml.Tree_XML_Converter()
-        self.__ui = ttk.LabelFrame(master=ui_master,text=TREE_MANAGER_TITLE)
+        self.__ui = tk.Frame(master=ui_master)
         self._buttons:Dict[ButtonID,tk.Button] = dict()
         self._view = ttk.Treeview(self.__ui, selectmode='browse')
         self._map:Dict[str,treemod.Tree] = dict()
