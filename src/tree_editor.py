@@ -129,7 +129,7 @@ class TreeEditor:
         item = self._map[item_iid]
         if self.is_tree(item): return # cannot delete tree
         assert item.parent is not None
-        item.parent.remove_branch(item.name)
+        item.parent.remove_child(item.name)
 
 
     @property
@@ -275,7 +275,7 @@ class TreeEditor:
         elif branch.parent is not None:
             self.right_click_menu.add_single_command(
                 MENU_CMD_BRANCH_DELETE,
-                partial(branch.parent.remove_branch,branch.name)
+                partial(branch.parent.remove_child,branch.name)
             )
     
     def open_add_window(self,parent_id:str,attributes:Dict[str,Any])->None:

@@ -66,17 +66,17 @@ class Test_Empty_Trees(unittest.TestCase):
 
     def test_removing_branch_from_tree_removes_element_from_the_treeview(self):
         self.tree1.new("Branch X")
-        self.tree1.remove_branch("Branch X")
+        self.tree1.remove_child("Branch X")
         self.assertEqual(self.view.widget.get_children(self.tree1_iid), ())
 
     def test_removing_nonexistent_branch_does_not_alter_the_treeview(self):
         self.tree1.new("Branch X")
-        self.tree1.remove_branch("Nonexistent branch")
+        self.tree1.remove_child("Nonexistent branch")
         self.assertEqual(len(self.view.widget.get_children(self.tree1_iid)), 1)
 
     def test_renaming_branch_is_reflected_in_the_treeview(self):
         self.tree1.new("Branch X")
-        self.tree1.rename_branch(("Branch X",), "Branch Y")
+        self.tree1.rename_child(("Branch X",), "Branch Y")
         self.assertEqual(
             self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"],
             "Branch Y"
@@ -84,7 +84,7 @@ class Test_Empty_Trees(unittest.TestCase):
 
     def test_renaming_nonexistent_branch_does_not_affect_the_treeview(self):
         self.tree1.new("Branch X")
-        self.tree1.rename_branch(("Branch XXXX",), "Branch Y")
+        self.tree1.rename_child(("Branch XXXX",), "Branch Y")
         self.assertEqual(
             self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"],
             "Branch X"
@@ -93,7 +93,7 @@ class Test_Empty_Trees(unittest.TestCase):
     def test_moving_branch_to_other_parent_is_reflected_in_the_treeview(self):
         self.tree1.new("Branch X")
         self.tree1.new("Branch to be moved")
-        self.tree1.move_branch(("Branch to be moved",), ("Branch X",))
+        self.tree1.move_child(("Branch to be moved",), ("Branch X",))
         self.assertEqual(len(self.view.widget.get_children(self.tree1_iid)), 1)
         branch_x_iid = self.view.widget.get_children(self.tree1_iid)[0]
         self.assertEqual(len(self.view.widget.get_children(branch_x_iid)), 1)
@@ -219,7 +219,7 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
         ok_button.invoke()
         
     def test_move_branch_under_a_new_parent(self):
-        self.view.available_parents.selection_set(self.tree1._find_branch("Branch X").data["treeview_iid"])
+        self.view.available_parents.selection_set(self.tree1._find_child("Branch X").data["treeview_iid"])
         ok_button:tk.Button = self.view.move_window.winfo_children()[-1].winfo_children()[0]
         ok_button.invoke()
 
@@ -232,7 +232,7 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
 
     def test_selecting_a_new_parent_but_canceling_the_move_have_no_effect_on_the_tree(self):
         
-        self.view.available_parents.selection_set(self.tree1._find_branch("Branch X").data["treeview_iid"])
+        self.view.available_parents.selection_set(self.tree1._find_child("Branch X").data["treeview_iid"])
         cancel_button:tk.Button = self.view.move_window.winfo_children()[-1].winfo_children()[1]
         cancel_button.invoke()
 
@@ -351,11 +351,11 @@ class Test_Error_Message(unittest.TestCase):
     def test_pop_up_error_message_when_attempting_to_delete_branch_with_children(self):
         self.x = 0
         def set_x_to_one(*args): self.x=1
-        self.tree1._find_branch("Branch with children").do_if_error_occurs(
+        self.tree1._find_child("Branch with children").do_if_error_occurs(
             'cannot_remove_branch_with_children',
             set_x_to_one
         )
-        self.tree1.remove_branch("Branch with children")
+        self.tree1.remove_child("Branch with children")
         self.assertEqual(self.x,1)
 
 
