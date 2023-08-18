@@ -6,7 +6,7 @@ import src.tree as treemod
 from functools import partial
 from collections import OrderedDict
 
-import right_click_menu as rcm
+import src.right_click_menu as rcm
 
 
 MENU_CMD_BRANCH_DELETE = "Delete"

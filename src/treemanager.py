@@ -16,7 +16,7 @@ sys.path.insert(1,"src")
 import src.tree_to_xml as txml
 import src.treelist as treelist
 import src.tree as treemod
-import right_click_menu as rcm
+import src.right_click_menu as rcm
 
 
 
