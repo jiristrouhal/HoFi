@@ -24,7 +24,6 @@ __templates:Dict[str, Template] = dict()
 
 
 def add(*templates:NewTemplate)->None:
-    __check_duplicit_tags(templates)
     __detect_missing_child_templates(*templates)
     __add_templates(templates)
     
@@ -70,14 +69,6 @@ def __check_attributes_contain_name(tag:str,attributes:Dict[str,Any])->None:
     if "name" not in attributes: raise KeyError(
         f"The 'name' attribute is missing in the '{tag} template (re)definition."
     )
-
-def __check_duplicit_tags(templates:Tuple[NewTemplate,...])->None:
-    to_be_checked = list(templates).copy()
-    for t in to_be_checked:
-        to_be_checked.remove(t) # prevent repeated check of the same pair of templates
-        if t.tag in to_be_checked: raise KeyError(
-            f"Duplicity found in the added templates ('{t.tag}')."
-        )
 
 def __add_templates(templates:Tuple[NewTemplate,...])->None:
     for t in templates:
