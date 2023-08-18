@@ -16,6 +16,12 @@ class Test_Adding_Template(unittest.TestCase):
         self.assertEqual(tt.template('SomeItem').children, ())
         self.assertListEqual(tt.template_tags(), ["SomeItem"])
 
+    def test_adding_template_with_already_taken_tag_is_not_allowed(self):
+        tt.add(tt.NewTemplate('tagX', {"name":"New item", "size":15}, children=()))
+        self.assertRaises(KeyError, tt.add,
+            tt.NewTemplate('tagX', {"name":"New item", "height":4}, children=())
+        )
+
     def test_adding_a_template_of_item_with_children_of_the_same_type(self):
         tt.add(
             tt.NewTemplate('SomeItem', {"name":"New item", "size":15}, children=('SomeItem',))
