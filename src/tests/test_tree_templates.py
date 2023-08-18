@@ -21,6 +21,14 @@ class Test_Adding_Template(unittest.TestCase):
         self.assertRaises(KeyError, tt.add,
             tt.NewTemplate('tagX', {"name":"New item", "height":4}, children=())
         )
+    
+    def test_adding_templates_with_identical_tags_is_not_allowed(self):
+        self.assertRaises(
+            KeyError, 
+            tt.add, 
+            tt.NewTemplate('tagX', {"name":"New item", "size":15}, children=()),
+            tt.NewTemplate('tagX', {"name":"New item", "height":4}, children=())
+        )
 
     def test_adding_a_template_of_item_with_children_of_the_same_type(self):
         tt.add(
