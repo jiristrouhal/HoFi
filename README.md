@@ -78,9 +78,32 @@ The Properties get cleared, when
 ## Defining the item types
 The App must be able to tell the Manager and Editor, what types of TreeItems to create - under which tags and with what attributes. 
 
-Attributes are subject to validation when being changed (possible types are non-negative integers, dates and strings).
+Attributes are subject to validation when being changed (possible types are non-negative integers, dates and strings). The tag determines also the TreeItem type, i.e. if it is a branch (assumed to contain child items) or a leaf (a data point, without children).
 
-The tag determines also the TreeItem type, i.e. if it is a branch (assumed to contain child items) or a leaf (a data point, without children).
+Template has to contain the following information:
+- **name** (label) of the template;
+- names and default values of an item's **attributes** (default values serves for automatic recognition of the attributes' types),
+- of templates of the item's possible **children** (empty list denotes a 'leaf' type, meaning no children are expected).
+
+The template ought to be used as following:
+- **Name** determines the template that should be used for creating new item. It is also used as a **tag** in exported xml file. First, such a taginforms the user when viewing the xml file and second and more importantly, it determines the template when loading the xml back to the app and constructing the Tree object and its children.
+- **Attributes** are translated into a dictionary and passed to the function creating new item.
+- **Children tags** is a list of tags, that is stored in each of the created in items. When the method creating the children of this items is called, one of the method's arguments is the tag of the template used for the child's creation. These tags also determine the available options for adding new item in the Editor UI. 
+
+The templates are stored in an object inside the tree module.
+
+An example of a template dictionary:
+``` python
+{
+    'Tree':     {"name": "New tree", "weight": 1000, "age": 45, "children":('Branch','Leaf')},
+    'Branch':   {"name": "New branch", "weight": 100, "children":('Branch','Leaf')},
+    'Leaf':     {"name": "New leaf", "surface": 0.01, "children":()}
+}
+```
+
+The the dictionary is stored as a part of a template object, than allows to modify the dictionary and also check, that for example, the "name" and "children" objects are always present and that the items inside 'children' tuples are correspond to the template names.
 
 
+The process of defining the item using some kind of template starts with depicting how the app works:
+<img height=700 src=./out/uml/uml/treeitem_template_sequence_diagram.svg/>
 

@@ -167,3 +167,43 @@ skinparam Style strictuml
 
 @enduml
 
+
+
+@startuml treeitem_template_sequence_diagram
+skinparam Style strictuml
+
+    actor User order 1
+
+    group Start app
+    create participant "<u> App:</u>" as App order 0
+    User -> App: Start
+    create participant "<u> Manager:</u>" as Manager order 2
+    App -> Manager: Create, send templates
+    create participant "<u> Editor:</u>" as Editor order 3
+    App -> Editor: Create
+    Manager -> Editor: Send actions
+    end
+    |||
+
+    group Create new tree
+    User -> Manager: Ask for new tree
+    create "<u> Tree:Tree X </u>" as TreeX order 4
+    Manager -> TreeX: Create
+    end
+    |||
+    group Load tree into Editor
+        User -> Manager: Ask for tree editing
+        Manager -> Editor: Call for tree load
+        TreeX -> Editor: Load into editor
+    end
+    |||
+    group Add new branch to tree
+        User -> Editor: Ask for new branch
+        Editor -> TreeX: Create new branch
+        create "<u> Branch:Branch A </u>" as BranchA order 5
+        TreeX -> BranchA: Create
+    end
+
+
+
+@enduml
