@@ -22,7 +22,7 @@ class Tree_XML_Converter:
         if os.path.isfile(path_to_file): os.remove(path_to_file)
 
         et.indent(xml_tree,space="\t")
-        xml_tree.write(path_to_file)
+        xml_tree.write(path_to_file, encoding="UTF-8")
 
         return path_to_file
 

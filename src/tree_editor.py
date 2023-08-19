@@ -12,7 +12,7 @@ import src.right_click_menu as rcm
 MENU_CMD_BRANCH_DELETE = "Delete"
 MENU_CMD_BRANCH_EDIT = "Edit"
 MENU_CMD_BRANCH_MOVE = "Move"
-MENU_CMD_BRANCH_ADD = "Add new"
+MENU_CMD_BRANCH_ADD = "Add"
 MENU_CMD_BRANCH_OPEN_ALL = "Expand all"
 MENU_CMD_BRANCH_CLOSE_ALL = "Collapse all"
 
@@ -270,9 +270,11 @@ class TreeEditor:
                 for tag in branch.child_tags
             }
         )
+        if branch.child_tags: self.right_click_menu.add_separator()
         self.right_click_menu.add_commands(
             {
                 MENU_CMD_BRANCH_EDIT : partial(self.open_edit_window,item_id),
+             
                 MENU_CMD_BRANCH_MOVE : partial(self.open_move_window,item_id)
             }
         )
@@ -480,4 +482,4 @@ def button_frame(
     return frame
 
 def _define_add_cmd_label(tag:str)->str:
-    return MENU_CMD_BRANCH_ADD+f" – {tag.lower()}"
+    return MENU_CMD_BRANCH_ADD+f" {tag.lower()}"
