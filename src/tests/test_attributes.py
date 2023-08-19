@@ -65,3 +65,6 @@ class Test_Name_Attribute(unittest.TestCase):
         self.assertEqual(self.attr.value,"A")
         self.attr.set("6")
         self.assertEqual(self.attr.value,"A")
+
+
+if __name__=="__main__": unittest.main()

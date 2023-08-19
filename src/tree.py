@@ -3,6 +3,8 @@ from typing import List, Tuple, Dict, Any, Callable, Literal, OrderedDict
 import src.naming
 from collections import OrderedDict
 
+import tree_templates as tt
+
 
 from attributes import _Attribute, Positive_Int_Attr, Name_Attr, create_attribute
 
@@ -15,15 +17,12 @@ class TreeItem:
     def __init__(
         self,
         name:str,
-        attributes:Dict[str,_Attribute]=OrderedDict(),
-        tag:str = DEFAULT_TAG, 
-        type:Literal['leaf','branch']='branch'
+        tag:str
         )->None:
 
-        self._attributes:OrderedDict[str,_Attribute] = OrderedDict()
-        self._attributes["name"] = Name_Attr(src.naming.strip_and_join_spaces(name))
-        for name, attr in attributes.items():
-            self._attributes[name] = attr
+        self._attributes:OrderedDict[str,_Attribute] = tt.template(tag).attributes
+        self._attributes["name"].set(src.naming.strip_and_join_spaces(name))
+        self.__child_tags:Tuple[str] = tt.template(tag).children
 
         self._children:List[TreeItem] = list()
         self._parent:TreeItem|None = None
@@ -34,7 +33,7 @@ class TreeItem:
             'cannot_remove_branch_with_children':[],
         }
         self._data:Dict[str,Any] = dict()
-        self.__type = type
+        self.__type = 'leaf' if not self.__child_tags else 'branch'
         self.__tag = tag
 
 
@@ -50,6 +49,8 @@ class TreeItem:
     def type(self)->str: return self.__type
     @property
     def tag(self)->str: return self.__tag
+    @property
+    def child_tags(self)->Tuple[str,...]: return self.__child_tags
 
     def add_action(
         self,
@@ -130,9 +131,7 @@ class TreeItem:
         self,
         name:str,
         *branches_along_the_path:str,
-        tag:str = DEFAULT_TAG,
-        attributes:OrderedDict[str,_Attribute] = OrderedDict(),
-        type:Literal['branch','leaf'] = 'branch',
+        tag:str
         )->None:
 
         if self.__type=='leaf': return 
@@ -141,10 +140,18 @@ class TreeItem:
             # add the new branch to some sub-branch
             parent = self._find_child(*branches_along_the_path)
             if parent is None: return
-            parent.new(name,attributes=attributes)
+            if tag not in parent.child_tags: 
+                raise KeyError(
+                    f"The tag '{tag}' does not correspond to any of available child elements'\
+                        templates.\n"
+                    f"The available templates are {parent.child_tags}.")
+            parent.new(
+                name,
+                tag=tag
+            )
 
         else:  # add the branch directly to the current object
-            child = TreeItem(name,attributes,type=type,tag=tag)
+            child = TreeItem(name,tag)
             child._set_parent(self)
             for owner_id in self._actions:
                 if not self._actions[owner_id]: 

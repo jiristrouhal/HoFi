@@ -40,7 +40,7 @@ class Tree_XML_Converter:
 
         for branch in parent._children:
             attribs = {label:str(x.value) for label,x in branch.attributes.items()}
-            xml_elem = et.SubElement(parent_xml_elem,branch.tag, attrib=attribs)
+            xml_elem = et.SubElement(parent_xml_elem, branch.tag, attrib=attribs)
             self.__create_xml_elem(branch,xml_elem)
 
     def load_tree(self,name:str,dir:str=DEFAULT_DIRECTORY)->treemod.Tree|None:
@@ -51,12 +51,16 @@ class Tree_XML_Converter:
         xml_root = xml.getroot()
         
         xml_attributes = xml_root.attrib
+
         tree_attributes:OrderedDict[str,treemod._Attribute] = OrderedDict()
-        
         for attr_name, value in xml_attributes.items():
             tree_attributes[attr_name] = treemod.create_attribute(value)
 
-        tree = treemod.Tree(xml_root.attrib["name"],attributes=tree_attributes)
+        tree = treemod.Tree(xml_root.attrib["name"],tag=xml_root.tag)
+        for attr in tree.attributes:
+            if attr in tree_attributes:
+                tree.set_attribute(attr,tree_attributes[attr].value)
+
         self.__load_xml_elem(xml_root,tree)
         return tree
 
@@ -72,6 +76,6 @@ class Tree_XML_Converter:
             for attr_name, value in elem.attrib.items():
                 branch_attributes[attr_name] = treemod.create_attribute(value)
 
-            thing_with_branches.new(branch_name,attributes=branch_attributes)
+            thing_with_branches.new(branch_name,tag=elem.tag)
             child_branch = thing_with_branches._find_child(branch_name)
             self.__load_xml_elem(elem,child_branch)

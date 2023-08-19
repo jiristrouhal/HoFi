@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any
 
 import abc
@@ -20,6 +21,10 @@ class _Attribute(abc.ABC):
     @abc.abstractmethod
     def valid_entry(value:str)->bool: pass
 
+    @abc.abstractmethod
+    def copy(self)->_Attribute:
+        pass
+
     def set(self,value:str="")->None:
         if self.valid_entry(value) and not str(value).strip()=="": 
             self._value = str(value)
@@ -33,6 +38,9 @@ class Positive_Int_Attr(_Attribute):
         if value=="": return True
         if re.fullmatch("\d+",str(value)) is None: return False
         return int(value)>0
+    
+    def copy(self)->Positive_Int_Attr:
+        return Positive_Int_Attr(self.value)
 
 
 class Name_Attr(_Attribute):
@@ -44,6 +52,9 @@ class Name_Attr(_Attribute):
         if value=="": return True
         if re.fullmatch("[^\W\d].*",str(value)) is None: return False
         return True
+
+    def copy(self)->Name_Attr:
+        return Name_Attr(self.value)
     
 
 class Text_Attr(_Attribute):
@@ -52,6 +63,9 @@ class Text_Attr(_Attribute):
     def value(self)->str: return str(self._value)
     @staticmethod
     def valid_entry(value:str)->bool: return True
+
+    def copy(self)->Text_Attr:
+        return Text_Attr(self.value)
     
 
 def create_attribute(value:Any)->_Attribute:

@@ -24,8 +24,16 @@ edit_frame.pack(expand=2,fill=tk.BOTH)
 properties_frame.pack(expand=1,fill=tk.BOTH)
 
 
+treemod.tt.clear()
+treemod.tt.add(
+    treemod.tt.NewTemplate("Tree", {"name":"New"}, children=("Branch", "Root")),
+    treemod.tt.NewTemplate("Branch", {"name":"New", "weight":50}, children=("Branch",)),
+    treemod.tt.NewTemplate("Root", {"name":"New"}, children=("Root",)),
+)
+
+
 treelist = tl.TreeList(label='TreeList')
-manager = tmg.Tree_Manager(treelist, manager_frame)
+manager = tmg.Tree_Manager(treelist, tree_tag="Tree", ui_master=manager_frame)
 editor = te.TreeEditor(edit_frame,label='TreeEditor')
 properties = pp.Properties(properties_frame)
 

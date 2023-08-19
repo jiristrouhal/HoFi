@@ -9,6 +9,7 @@ import unittest
 class Test_Adding_Template(unittest.TestCase):
 
     def test_adding_a_template_of_item_with_no_children(self):
+        tt.clear()
         tt.add(tt.NewTemplate('SomeItem', {"name":"New item", "size":15}, children=()))
         self.assertTrue(tt.template('SomeItem') is not None)
         self.assertEqual(tt.template('SomeItem').attributes["name"].value, "New item")
@@ -17,12 +18,14 @@ class Test_Adding_Template(unittest.TestCase):
         self.assertListEqual(tt.template_tags(), ["SomeItem"])
 
     def test_adding_template_with_already_taken_tag_is_not_allowed(self):
+        tt.clear()
         tt.add(tt.NewTemplate('tagX', {"name":"New item", "size":15}, children=()))
         self.assertRaises(KeyError, tt.add,
             tt.NewTemplate('tagX', {"name":"New item", "height":4}, children=())
         )
     
     def test_adding_templates_with_identical_tags_is_not_allowed(self):
+        tt.clear()
         self.assertRaises(
             KeyError, 
             tt.add, 
@@ -31,12 +34,14 @@ class Test_Adding_Template(unittest.TestCase):
         )
 
     def test_adding_a_template_of_item_with_children_of_the_same_type(self):
+        tt.clear()
         tt.add(
             tt.NewTemplate('SomeItem', {"name":"New item", "size":15}, children=('SomeItem',))
         )
         self.assertTrue(tt.template('SomeItem') is not None)
 
     def test_adding_a_template_of_item_with_children_of_a_diffent_type(self):
+        tt.clear()
         tt.add(
             tt.NewTemplate('SomeItem', {"name":"New item", "size":15}, children=('Child',)),
             tt.NewTemplate('Child', {"name":"New item", "size":15}, children=())
@@ -44,6 +49,7 @@ class Test_Adding_Template(unittest.TestCase):
         self.assertListEqual(tt.template_tags(), ["SomeItem", "Child"])
 
     def test_not_defining_the_child_item_template_raises_error(self):
+        tt.clear()
         parent_template = tt.NewTemplate(
                 'SomeItem', 
                 {"name":"New item", "size":15}, 
@@ -122,7 +128,7 @@ class Test_Locked_Template(unittest.TestCase):
         self.assertRaises(tt.TemplateLocked, tt._modify_template, 'A')
 
     def test_templates_are_unlocked_by_default(self):
-        self.assertFalse(tt.template('B').locked)
+        self.assertFalse(tt.template('B')._locked)
 
     def tearDown(self) -> None:
         tt.clear()

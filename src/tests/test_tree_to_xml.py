@@ -10,8 +10,13 @@ import os
 class Test_Saving_And_Loading_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
+        treemod.tt.clear()
+        treemod.tt.add(
+            treemod.tt.NewTemplate('Tree',{'name':"New", "weight":123, "height":20}, children=('Branch',)),
+            treemod.tt.NewTemplate('Branch',{'name':"New", "weight":123}, children=('Branch',)),
+        )
         self.converter = tree_to_xml.Tree_XML_Converter()
-        self.tree1 = treemod.Tree("Tree 1")
+        self.tree1 = treemod.Tree("Tree 1",tag='Tree')
 
     def test_data_file_path_is_always_set_to_existing_directory(self):
         somepath = tree_to_xml.data_file_path("somefile","data/somedirectory")
@@ -23,17 +28,18 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         self.assertEqual(tree.name, "Tree 1")
 
     def test_nonempty_tree_after_saving_and_loading_is_unchanged(self):
-        self.tree1.new("Branch X",attributes={"weight":treemod.Positive_Int_Attr(25)})
-        self.tree1.new("Branch Y",attributes={"weight":treemod.Positive_Int_Attr(25)})
+        self.tree1.new("Branch X",tag='Branch')
+        self.tree1.new("Branch Y",tag='Branch')
         self.converter.save_tree(self.tree1)
         tree = self.converter.load_tree("Tree 1")
         self.assertListEqual(tree.branches(), ["Branch X","Branch Y"])
 
     def test_nonempty_tree_with_branches_having_child_branches_is_unchanged_after_saving_and_loading_(self):
-        sometree = treemod.Tree("SomeTreeX",attributes={"weight":treemod.Positive_Int_Attr(100)})
-        sometree.new("Branch X",attributes={"weight":treemod.Positive_Int_Attr(25)})
-        sometree.new("Small branch","Branch X",attributes={"weight":treemod.Positive_Int_Attr(10)})
-        sometree.new("Smaller branch","Branch X","Small branch",attributes={"weight":treemod.Positive_Int_Attr(5)})
+        sometree = treemod.Tree("SomeTreeX",tag='Tree')
+        sometree.set_attribute("weight",100)
+        sometree.new("Branch X",tag='Branch')
+        sometree.new("Small branch","Branch X",tag='Branch')
+        sometree.new("Smaller branch","Branch X","Small branch",tag='Branch')
         
         self.converter.save_tree(sometree)
         loaded_tree = self.converter.load_tree("SomeTreeX")

@@ -1,5 +1,5 @@
 import attributes as attrs
-from typing import Dict, Tuple, List, Any, Set
+from typing import Dict, Tuple, List, Any, Set, OrderedDict
 import dataclasses
 
 class TemplateLocked(Exception): pass
@@ -7,16 +7,27 @@ class TemplateLocked(Exception): pass
 @dataclasses.dataclass(frozen=True)
 class NewTemplate:
     tag:str
-    attributes:Dict[str,Any]
+    attributes:OrderedDict[str,Any]
     children:Tuple[str,...]
     locked:bool = False
 
 
 @dataclasses.dataclass
 class Template:
-    attributes:Dict[str,attrs._Attribute]
-    children:Tuple[str,...]
-    locked:bool
+    _attributes:OrderedDict[str,attrs._Attribute]
+    _children:Tuple[str,...]
+    _locked:bool
+
+    @property
+    def attributes(self)->OrderedDict[str,attrs._Attribute]:
+        instance_attributes = OrderedDict()
+        for name, attr in self._attributes.items():
+            instance_attributes[name] = attr.copy()
+        return instance_attributes
+    
+    @property
+    def children(self)->Tuple[str,...]: 
+        return tuple([c for c in self._children])
 
 
 __templates:Dict[str, Template] = dict()
@@ -31,7 +42,7 @@ def add(*templates:NewTemplate)->None:
 def remove(tag:str)->None:
     if not __template_exists(tag): raise KeyError(f"Template with tag '{tag}' was not defined.")
     __raise_if_template_is_child_of_another(tag)
-    if __templates[tag].locked:
+    if __templates[tag]._locked:
         raise TemplateLocked(f"Cannot delete locked template '{tag}'.")
     __templates.pop(tag)
 
@@ -41,22 +52,22 @@ def template(tag:str)->Template:
 
 def _modify_template(
     tag:str,
-    new_attributes:Dict[str,Any]={},
+    new_attributes:OrderedDict[str,Any]=OrderedDict(),
     new_children:Tuple[str,...]|None=None
     )->None:
 
     if not __template_exists(tag):
         raise KeyError(f"Cannot modify template '{tag}'. No such template is defined.")
 
-    if __templates[tag].locked:
+    if __templates[tag]._locked:
         raise TemplateLocked(f"Cannot modify locked template '{tag}'.")
 
     if new_attributes:
         __check_attributes_contain_name(tag,new_attributes)
-        __templates[tag].attributes = __create_attributes(new_attributes)
+        __templates[tag]._attributes = __create_attributes(new_attributes)
     if new_children is not None:
         __detect_missing_child_templates(NewTemplate(tag,new_attributes,new_children))
-        __templates[tag].children = new_children
+        __templates[tag]._children = new_children
 
 
 def template_tags()->List[str]: return list(__templates.keys())
@@ -65,7 +76,7 @@ def clear()->None:
     __templates.clear()
 
 
-def __check_attributes_contain_name(tag:str,attributes:Dict[str,Any])->None:
+def __check_attributes_contain_name(tag:str,attributes:OrderedDict[str,Any])->None:
     if "name" not in attributes: raise KeyError(
         f"The 'name' attribute is missing in the '{tag} template (re)definition."
     )
@@ -75,9 +86,9 @@ def __add_templates(templates:Tuple[NewTemplate,...])->None:
         if __template_exists(t.tag): 
             raise KeyError(f"Template with tag {t.tag} already exists.")
         __templates[t.tag] = Template(
-            attributes = {name:attrs.create_attribute(value) for name,value in t.attributes.items()},
-            children=t.children,
-            locked=t.locked
+            _attributes = __create_attributes(t.attributes),
+            _children=t.children,
+            _locked=t.locked
         )
 
 def __detect_missing_child_templates(*to_be_added:NewTemplate)->None:
@@ -100,8 +111,11 @@ def __raise_if_template_is_child_of_another(tag:str)->None:
                 f"Cannot remove template '{tag}'. It is used as a child by '{other_tag}'."
             )
         
-def __create_attributes(new_attributes:Dict[str,Any])->Dict[str,attrs._Attribute]:
-    return {name:attrs.create_attribute(value) for name,value in new_attributes.items()}
+def __create_attributes(new_attributes:OrderedDict[str,Any])->OrderedDict[str,attrs._Attribute]:
+    attributes = OrderedDict()
+    for name, value in new_attributes.items():
+        attributes[name] = attrs.create_attribute(value)
+    return attributes
 
 def __template_exists(tag:str)->bool:
     return tag in __templates

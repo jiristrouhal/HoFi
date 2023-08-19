@@ -98,7 +98,17 @@ BUTTONTEXT:Dict[ButtonID,str] = {
 
 class Tree_Manager:
 
-    def __init__(self,treelist:treelist.TreeList,ui_master:tk.Frame|tk.Tk|None = None, )->None:
+    def __init__(
+        self,
+        treelist:treelist.TreeList,
+        tree_tag:str,
+        ui_master:tk.Frame|tk.Tk|None = None
+        )->None:
+
+        if not tree_tag in treemod.tt.template_tags():
+            raise ValueError(f"The tree template '{tree_tag} does not exist.")
+        self._tree_template_tag:str = tree_tag
+
         self.__converter = txml.Tree_XML_Converter()
         self.__ui = tk.Frame(master=ui_master)
         self._buttons:Dict[ButtonID,tk.Button] = dict()
@@ -130,6 +140,7 @@ class Tree_Manager:
         self._tree_files:Dict[treemod.Tree,str] = dict()
         self._selected_trees:List[treemod.Tree] = list()
 
+
     @property
     def trees(self)->List[str]: return self.__treelist.names
 
@@ -143,12 +154,10 @@ class Tree_Manager:
 
     def new(
         self,
-        name:str,
-        tag:str=treemod.DEFAULT_TAG,
-        attributes:OrderedDict[str,treemod._Attribute]=OrderedDict()
+        name:str
         )->None: 
 
-        tree = treemod.Tree(name,tag=tag,attributes=attributes)
+        tree = treemod.Tree(name,tag=self._tree_template_tag)
         self.__treelist.append(tree)
         tree.add_data("treemanager_id",str(id(tree)))
 
@@ -309,8 +318,18 @@ class Tree_Manager:
 
         button_frame = tk.Frame(self._window_rename)
         button_frame.pack(side=tk.BOTTOM)
-        self.__add_button(button_frame,ButtonID.RENAME_TREE_OK,partial(self._confirm_rename,tree),side='left')
-        self.__add_button(button_frame,ButtonID.RENAME_TREE_CANCEL,self.__close_rename_tree_window,side='left')
+        self.__add_button(
+            button_frame,
+            ButtonID.RENAME_TREE_OK,
+            partial(self._confirm_rename,tree),
+            side='left'
+        )
+        self.__add_button(
+            button_frame,
+            ButtonID.RENAME_TREE_CANCEL,
+            self.__close_rename_tree_window,
+            side='left'
+        )
         
     def _open_new_tree_window(self)->None: # pragma: no cover
         self.__cleanup_new_tree_widgets()
@@ -328,8 +347,18 @@ class Tree_Manager:
         
         button_frame = tk.Frame(self._window_new)
         button_frame.pack(side=tk.BOTTOM)
-        self.__add_button(button_frame,ButtonID.NEW_TREE_OK,self._confirm_new_tree_name,side='left')
-        self.__add_button(button_frame,ButtonID.NEW_TREE_CANCEL,self.__close_new_tree_window,side='left')
+        self.__add_button(
+            button_frame,
+            ButtonID.NEW_TREE_OK,
+            self._confirm_new_tree_name,
+            side='left'
+        )
+        self.__add_button(
+            button_frame,
+            ButtonID.NEW_TREE_CANCEL,
+            self.__close_new_tree_window,
+            side='left'
+        )
 
     def _confirm_rename(self,tree:treemod.Tree)->None:
         new_name = self._entry_name.get()

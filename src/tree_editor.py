@@ -247,9 +247,15 @@ class TreeEditor:
         else: self.__add_commands_for_root(item_id)
 
     def __add_commands_for_root(self,root_id:str)->None:
+        tree = self._map[root_id]
         self.right_click_menu.add_commands(
             {
-                MENU_CMD_BRANCH_ADD : partial(self.open_add_window,root_id,self._attribute_template),
+                _define_add_cmd_label(tag): partial(self.open_add_window,root_id,tag) \
+                for tag in tree.child_tags
+            }
+        )
+        self.right_click_menu.add_commands(
+            {
                 MENU_CMD_BRANCH_OPEN_ALL : partial(self._open_all,root_id),
                 MENU_CMD_BRANCH_CLOSE_ALL :  partial(self._close_all,root_id)
             }
@@ -257,9 +263,15 @@ class TreeEditor:
 
     def __add_commands_for_item(self,item_id:str)->None:
         branch:treemod.TreeItem = self._map[item_id]
+
         self.right_click_menu.add_commands(
             {
-                MENU_CMD_BRANCH_ADD : partial(self.open_add_window,item_id,self._attribute_template),
+                _define_add_cmd_label(tag): partial(self.open_add_window,item_id,tag) \
+                for tag in branch.child_tags
+            }
+        )
+        self.right_click_menu.add_commands(
+            {
                 MENU_CMD_BRANCH_EDIT : partial(self.open_edit_window,item_id),
                 MENU_CMD_BRANCH_MOVE : partial(self.open_move_window,item_id)
             }
@@ -278,7 +290,7 @@ class TreeEditor:
                 partial(branch.parent.remove_child,branch.name)
             )
     
-    def open_add_window(self,parent_id:str,attributes:Dict[str,treemod._Attribute])->None:
+    def open_add_window(self,parent_id:str,tag:str)->None:
         self.add_window = tk.Toplevel(self.widget)
         self.add_window.grab_set()
         self.add_window.focus_set()
@@ -286,7 +298,7 @@ class TreeEditor:
         self.add_window_entries = dict()
         entries_frame = tk.Frame(self.add_window)
         row=0
-        for key,attr in attributes.items():
+        for key,attr in treemod.tt.template(tag).attributes.items():
             tk.Label(entries_frame,text=key).grid(row=row,column=0)
             vcmd = (entries_frame.register(attr.valid_entry),'%P')
             entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
@@ -299,19 +311,22 @@ class TreeEditor:
         self.add_window.bind("<Key-Escape>",self._disregard_add_entry_values_on_keypress)
         button_frame(
             self.add_window,
-            ok_cmd = partial(self.confirm_add_entry_values,parent_id),
+            ok_cmd = partial(self.confirm_add_entry_values,parent_id,tag),
             cancel_cmd = self.disregard_add_entry_values
         ).pack(side=tk.BOTTOM)
 
     def _disregard_add_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
         self.disregard_add_entry_values()
 
-    def confirm_add_entry_values(self,parent_id:str)->None:
-        attributes = self._attribute_template.copy()
+    def confirm_add_entry_values(self,parent_id:str,tag:str)->None:
+        attributes = treemod.tt.template(tag).attributes
         for label, entry in self.add_window_entries.items():
             attributes[label].set(entry.get())
         name = attributes.pop("name").value
-        self._map[parent_id].new(name,attributes=attributes)
+        self._map[parent_id].new(name,tag=tag)
+        new_child = self._map[parent_id]._children[-1]
+        for attr_name in attributes:
+            new_child.set_attribute(attr_name,attributes[attr_name].value)
         self.__clear_add_window_widgets()
 
     def disregard_add_entry_values(self)->None:
@@ -463,3 +478,6 @@ def button_frame(
     tk.Button(master=frame,text=BUTTON_OK,command=ok_cmd).pack(side=tk.RIGHT)
     tk.Button(master=frame,text=BUTTON_CANCEL,command=cancel_cmd).pack(side=tk.RIGHT)
     return frame
+
+def _define_add_cmd_label(tag:str)->str:
+    return MENU_CMD_BRANCH_ADD+f" – {tag.lower()}"

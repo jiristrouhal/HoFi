@@ -52,8 +52,10 @@ class Tree_Manager(tmg.Tree_Manager):
 class Test_Creating_New_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
+        treemod.tt.clear()
+        treemod.tt.add(treemod.tt.NewTemplate('Tree',{'name':'New'},children=()))
         self.treelist = treelist.TreeList()
-        self.manager = Tree_Manager(self.treelist)
+        self.manager = Tree_Manager(self.treelist,tree_tag='Tree')
 
     def test_creating_new_tree_via_manager(self):
         self.manager.new("Tree 1")
@@ -75,11 +77,16 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.assertFalse(self.manager._window_new.winfo_exists())
         self.assertFalse(self.manager._entry_name.winfo_exists())
 
+    def tearDown(self) -> None:
+        treemod.tt.clear()
+
 class Test_Editing_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
+        treemod.tt.clear()
+        treemod.tt.add(treemod.tt.NewTemplate('Tree',{'name':'New'},children=()))
         self.treelist = treelist.TreeList()
-        self.manager = Tree_Manager(self.treelist)
+        self.manager = Tree_Manager(self.treelist,tree_tag='Tree')
         self.manager.new("Tree X")
 
     def test_rename_tree(self):
@@ -157,12 +164,16 @@ class Test_Editing_Trees(unittest.TestCase):
         self.manager._set_tree_attribute("Tree X", NONEXISTENT_ATTR_NAME,123)
         self.assertTrue(NONEXISTENT_ATTR_NAME not in self.manager.get_tree("Tree X").attributes)
 
+    def tearDown(self) -> None:
+        treemod.tt.clear()
 
 class Test_Removing_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
+        treemod.tt.clear()
+        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':"New"}, children=()))
         self.treelist = treelist.TreeList()
-        self.manager = Tree_Manager(self.treelist)
+        self.manager = Tree_Manager(self.treelist,tree_tag='Tree')
 
     def test_remove_tree_using_right_click(self):
         self.manager.agree_with_removal = True
@@ -178,12 +189,16 @@ class Test_Removing_Trees(unittest.TestCase):
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_DELETE)
         self.assertListEqual(self.manager.trees, ["Tree X"])
 
+    def tearDown(self) -> None:
+        treemod.tt.clear()
 
 class Test_Right_Click_Menu(unittest.TestCase):
 
     def setUp(self) -> None:
+        treemod.tt.clear()
+        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':"New"}, children=()))
         self.treelist = treelist.TreeList()
-        self.manager = Tree_Manager(self.treelist)
+        self.manager = Tree_Manager(self.treelist, tree_tag='Tree')
 
     def test_right_click_menu_containts_options_for_creating_or_loading_tree_if_clicked_outside_of_all_items(self):
         self.manager.new("Some tree")
@@ -192,13 +207,16 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_NEW)
         self.assertTrue(self.manager._window_new is not None)
 
-
+    def tearDown(self) -> None:
+        treemod.tt.clear()
 
 class Test_Tree_and_Xml_Interaction(unittest.TestCase):
 
     def setUp(self) -> None:
+        treemod.tt.clear()
+        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':"New", "height":10}, children=()))
         self.treelist = treelist.TreeList()
-        self.manager = Tree_Manager(self.treelist)
+        self.manager = Tree_Manager(self.treelist,tree_tag='Tree')
 
     def test_export_and_load_tree(self):
         self.manager.xml_file_path = "./Tree being exported.xml"
@@ -234,7 +252,7 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
     def test_updating_existing_file(self):
         self.manager.xml_file_path = "./Tree being exported.xml"
 
-        self.manager.new("Tree being exported",attributes={"height":treemod.Positive_Int_Attr(25)})
+        self.manager.new("Tree being exported")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
 
@@ -252,7 +270,7 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
     def test_removing_the_file_and_then_trying_to_update_it_leads_to_creating_the_file_anew_silently(self):
         self.manager.xml_file_path = "./Tree being exported.xml"
 
-        self.manager.new("Tree being exported",attributes={"height":treemod.Positive_Int_Attr(25)})
+        self.manager.new("Tree being exported")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
 
@@ -303,14 +321,15 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
             os.remove("Tree being exported.xml")
         if os.path.isfile("Tree being exported 2.xml"):
             os.remove("Tree being exported 2.xml")
-
-
+        treemod.tt.clear()
 
 class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
 
     def setUp(self) -> None:
+        treemod.tt.clear()
+        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':"New"}, children=()))
         self.treelist = treelist.TreeList()
-        self.manager = Tree_Manager(self.treelist)
+        self.manager = Tree_Manager(self.treelist, tree_tag='Tree')
     
         self.manager.xml_file_path = "./Tree being exported.xml"
 
@@ -349,12 +368,16 @@ class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
         self.assertFalse(self.manager._window_rename.winfo_exists())
 
+    def tearDown(self) -> None:
+        treemod.tt.clear()
 
 class Test_Updating_File_After_Renaming_Tree(unittest.TestCase):
 
     def test_after_renaming_the_tree_has_to_be_exported_to_a_new_file(self):
+        treemod.tt.clear()
+        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':'New'}, children=()))
         tlist = treelist.TreeList()
-        manager = Tree_Manager(tlist)
+        manager = Tree_Manager(tlist,tree_tag='Tree')
         manager.xml_file_path = "./Tree being exported.xml"
     
         manager.new("Tree being exported")
@@ -377,11 +400,14 @@ class Test_Updating_File_After_Renaming_Tree(unittest.TestCase):
         if os.path.isfile("Tree being exported 2.xml"):
             os.remove("Tree being exported 2.xml")
 
+        treemod.tt.clear()
 
 class Test_Loading_of_Xml(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.manager = Tree_Manager(treelist.TreeList())
+        treemod.tt.clear()
+        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':'New'}, children=()))
+        self.manager = Tree_Manager(treelist.TreeList(), tree_tag='Tree')
         self.manager.new("Tree X")
         self.manager.xml_file_path = ("data/Tree X.xml")
         tree_x = self.manager.get_tree("Tree X")
@@ -403,13 +429,16 @@ class Test_Loading_of_Xml(unittest.TestCase):
     def tearDown(self) -> None: # pragma: no cover
         if os.path.isfile("data/Tree X.xml"):
             os.remove("data/Tree X.xml")
+        treemod.tt.clear()
 
 
 class Test_Actions(unittest.TestCase):
 
     def setUp(self) -> None:
+        treemod.tt.clear()
+        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':'New'}, children=()))
         tlist = treelist.TreeList()
-        self.manager = tmg.Tree_Manager(tlist)
+        self.manager = Tree_Manager(tlist, tree_tag='Tree')
         self.manager.new("Tree X")
         self.manager.new("Tree Y")
     
@@ -434,6 +463,7 @@ class Test_Actions(unittest.TestCase):
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_DESELECT)
         self.assertListEqual(self.names,[])
 
-
+    def tearDown(self) -> None:
+        treemod.tt.clear()
 
 if __name__=="__main__": unittest.main()
