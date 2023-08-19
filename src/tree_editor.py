@@ -443,6 +443,9 @@ class TreeEditor:
         assert(self.available_parents.winfo_exists())
         for child_id in self.widget.get_children(parent_id):
             if child_id==item_id: continue
+            # The potential parent's template must contain the tag of the moved item's template
+            if not self._map[item_id].tag in self._map[child_id].child_tags: continue
+
             child = self.widget.item(child_id)
             self.available_parents.insert(parent_id,index=0,iid=child_id,text=child["text"])
             self._collect_available_parents(child_id,item_id)
