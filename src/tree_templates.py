@@ -1,6 +1,7 @@
 import attributes as attrs
 from typing import Dict, Tuple, List, Any, Set, OrderedDict
 import dataclasses
+import os
 
 class TemplateLocked(Exception): pass
 
@@ -10,6 +11,11 @@ class NewTemplate:
     attributes:OrderedDict[str,Any]
     children:Tuple[str,...]
     locked:bool = False
+    icon_file:str|None = None # relative path to a widget icon
+
+    def __post_init__(self)->None:
+        if self.icon_file is not None and not os.path.isfile(self.icon_file):
+            raise ValueError(f"The file '{self.icon_file}' was not found.")
 
 
 @dataclasses.dataclass
@@ -17,6 +23,13 @@ class Template:
     _attributes:OrderedDict[str,attrs._Attribute]
     _children:Tuple[str,...]
     _locked:bool
+    _icon_file:str|None = None
+
+    @property
+    def locked(self)->bool: return self._locked
+
+    @property
+    def icon_file(self)->str|None: return self._icon_file
 
     @property
     def attributes(self)->OrderedDict[str,attrs._Attribute]:
@@ -88,7 +101,8 @@ def __add_templates(templates:Tuple[NewTemplate,...])->None:
         __templates[t.tag] = Template(
             _attributes = __create_attributes(t.attributes),
             _children=t.children,
-            _locked=t.locked
+            _locked=t.locked,
+            _icon_file=t.icon_file
         )
 
 def __detect_missing_child_templates(*to_be_added:NewTemplate)->None:

@@ -5,6 +5,8 @@ from typing import Tuple, Dict, Callable, Any, List
 import src.tree as treemod
 from functools import partial
 from collections import OrderedDict
+from PIL import Image, ImageTk
+
 
 import src.right_click_menu as rcm
 
@@ -254,6 +256,7 @@ class TreeEditor:
                 for tag in tree.child_tags
             }
         )
+        if tree.child_tags: self.right_click_menu.add_separator()
         self.right_click_menu.add_commands(
             {
                 MENU_CMD_BRANCH_OPEN_ALL : partial(self._open_all,root_id),
