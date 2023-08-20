@@ -50,6 +50,13 @@ class Date_Attr(_Attribute):
     default_value = datetime.date.today()
     @property
     def value(self)->str: return ""
+    
+    @staticmethod
+    def valid_entry(value:str)->bool: 
+        return True
+    
+    def copy(self)->Date_Attr:
+        return Date_Attr(self.value)
 
 
 class Name_Attr(_Attribute):
