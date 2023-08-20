@@ -5,8 +5,10 @@ import abc
 import re
 
 
+
+
 class _Attribute(abc.ABC):
-    default_value = ""
+    default_value:Any = None
 
     def __init__(self, value:Any = None)->None:
         if value is None or not self.valid_entry(value): 
@@ -41,6 +43,13 @@ class Positive_Int_Attr(_Attribute):
     
     def copy(self)->Positive_Int_Attr:
         return Positive_Int_Attr(self.value)
+    
+
+import datetime
+class Date_Attr(_Attribute):
+    default_value = datetime.date.today()
+    @property
+    def value(self)->str: return ""
 
 
 class Name_Attr(_Attribute):
