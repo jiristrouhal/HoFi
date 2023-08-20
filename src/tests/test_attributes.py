@@ -44,13 +44,13 @@ class Test_Date_Attribute(unittest.TestCase):
 
     def test_validate_date(self):
         attr = attributes.Date_Attr()
-        self.assertTrue(attr.valid_entry("1.4.2023"))
-        self.assertTrue(attr.valid_entry("21.4.2023"))
-        self.assertTrue(attr.valid_entry(""))
-        self.assertTrue(attr.valid_entry("   "))
+        self.assertTrue(attr.final_validation("1.4.2023"))
+        self.assertTrue(attr.final_validation("21.4.2023"))
+        self.assertTrue(attr.final_validation(""))
+        self.assertTrue(attr.final_validation("   "))
 
-        self.assertFalse(attr.valid_entry("31.4.2023"))
-        self.assertFalse(attr.valid_entry(".4.2023"))
+        self.assertFalse(attr.final_validation("31.4.2023"))
+        self.assertFalse(attr.final_validation(".4.2023"))
 
 
 

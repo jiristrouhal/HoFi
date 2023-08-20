@@ -62,13 +62,19 @@ class Date_Attr(_Attribute):
     @staticmethod
     def valid_entry(value:str)->bool: 
         if value.strip()=="": return True
+        if re.fullmatch("[\d\._\- ]*",value): return True
+        return False
+    
+    @staticmethod
+    def final_validation(value:str)->bool:
+        if value.strip()=="": return True
         return Date_Attr.date_formatter.validate_date(value)
     
     def copy(self)->Date_Attr:
         return Date_Attr(self.value)
     
     def set(self,value:str="")->None:
-        if self.valid_entry(value) and not str(value).strip()=="":
+        if self.final_validation(value) and not str(value).strip()=="":
             self._value = self.date_formatter.enter_date(value)
 
 
@@ -100,6 +106,8 @@ class Text_Attr(_Attribute):
 def create_attribute(value:Any)->_Attribute:
     if Positive_Int_Attr.valid_entry(value):
         return Positive_Int_Attr(value)
+    elif Date_Attr.valid_entry(value):
+        return Date_Attr(value)
     elif Name_Attr.valid_entry(value):
         return Name_Attr(value)
     else:
