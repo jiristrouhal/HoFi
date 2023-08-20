@@ -31,17 +31,26 @@ class Test_Positive_Int_Attribute(unittest.TestCase):
         self.assertEqual(self.attr.value,10)
 
 
+import dates
 class Test_Date_Attribute(unittest.TestCase):
-
+    
     def setUp(self) -> None:
+        attributes.Date_Attr.date_formatter.set("%d.%m.%Y")
         self.attr = attributes.Date_Attr()
-        self.assertEqual(self.attr.value, attributes.Date_Attr.default_value)
 
-    def _test_specify_value_on_initialization(self):
+    def test_specify_value_on_initialization(self):
         attr = attributes.Date_Attr("01.12.2005")
         self.assertEqual(attr.value, "01.12.2005")
 
-    
+    def test_validate_date(self):
+        attr = attributes.Date_Attr()
+        self.assertTrue(attr.valid_entry("1.4.2023"))
+        self.assertTrue(attr.valid_entry("21.4.2023"))
+        self.assertTrue(attr.valid_entry(""))
+        self.assertTrue(attr.valid_entry("   "))
+
+        self.assertFalse(attr.valid_entry("31.4.2023"))
+        self.assertFalse(attr.valid_entry(".4.2023"))
 
 
 

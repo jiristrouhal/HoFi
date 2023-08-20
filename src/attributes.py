@@ -4,7 +4,7 @@ from typing import Any
 import abc
 import re
 
-
+import dates
 
 
 class _Attribute(abc.ABC):
@@ -45,18 +45,31 @@ class Positive_Int_Attr(_Attribute):
         return Positive_Int_Attr(self.value)
     
 
-import datetime
+import datetime, dates
 class Date_Attr(_Attribute):
     default_value = datetime.date.today()
+    date_formatter = dates.get_date_converter("%d.%m.%Y")
+
+    def __init__(self, value:str|None=None)->None:
+        if value is None or not self.valid_entry(value): 
+            self._value = self.default_value
+        else:
+            self._value = self.date_formatter.enter_date(value)
     @property
-    def value(self)->str: return ""
+    def value(self)->str: 
+        return self.date_formatter.print_date(self._value)
     
     @staticmethod
     def valid_entry(value:str)->bool: 
-        return True
+        if value.strip()=="": return True
+        return Date_Attr.date_formatter.validate_date(value)
     
     def copy(self)->Date_Attr:
         return Date_Attr(self.value)
+    
+    def set(self,value:str="")->None:
+        if self.valid_entry(value) and not str(value).strip()=="":
+            self._value = self.date_formatter.enter_date(value)
 
 
 class Name_Attr(_Attribute):
