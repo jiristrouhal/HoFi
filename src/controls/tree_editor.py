@@ -276,24 +276,32 @@ class TreeEditor:
         if branch.child_tags: self.right_click_menu.add_separator()
         self.right_click_menu.add_commands(
             {
-                MENU_CMD_BRANCH_EDIT : partial(self.open_edit_window,item_id),
-             
+                MENU_CMD_BRANCH_EDIT : partial(self.open_edit_window,item_id),       
                 MENU_CMD_BRANCH_MOVE : partial(self.open_move_window,item_id)
             }
         )
-        self.right_click_menu.add_separator()
+        if branch.parent is not None:
+            self.right_click_menu.add_single_command(
+                MENU_CMD_BRANCH_DELETE,
+                partial(branch.parent.remove_child,branch.name)
+            )
+        if branch.user_defined_commands:
+            self.right_click_menu.add_separator()
+            self.right_click_menu.add_commands(
+                {
+                    label:command for label,command in branch.user_defined_commands.items()
+                }
+            )
         if self.widget.get_children(item_id):
+            self.right_click_menu.add_separator()
             self.right_click_menu.add_commands(
                 {
                     MENU_CMD_BRANCH_OPEN_ALL : partial(self._open_all,item_id),
                     MENU_CMD_BRANCH_CLOSE_ALL : partial(self._close_all,item_id)
                 }
             )
-        elif branch.parent is not None:
-            self.right_click_menu.add_single_command(
-                MENU_CMD_BRANCH_DELETE,
-                partial(branch.parent.remove_child,branch.name)
-            )
+        
+
     
     def open_add_window(self,parent_id:str,tag:str)->None:
         self.add_window = tk.Toplevel(self.widget)

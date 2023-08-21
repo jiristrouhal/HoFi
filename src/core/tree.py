@@ -40,6 +40,9 @@ class TreeItem:
         self._dependent_attributes:OrderedDict[str,_Attribute] = tt.template(tag).dependent_attributes
         for attr_name, attr in self._dependent_attributes.items():
             attr.set_owner(self)
+        
+        self._user_defined_commands:OrderedDict[str,Callable[[],None]] = \
+            tt.template(tag).user_def_cmds(self)
 
     @property
     def name(self)->str: return self._attributes["name"].value
@@ -59,6 +62,8 @@ class TreeItem:
     def tag(self)->str: return self.__tag
     @property
     def child_tags(self)->Tuple[str,...]: return self.__child_tags
+    @property
+    def user_defined_commands(self)->OrderedDict[str,Callable[[],None]]: return self._user_defined_commands
 
     def add_action(
         self,

@@ -38,11 +38,14 @@ def sum_incomes(item:treemod.TreeItem)->int:
             s += child.dependent_attributes["total income"].value
     return s
 
+def print_hello_world(item:treemod.TreeItem)->None:
+    print("Hello, world!!!")
+
 treemod.tt.clear()
 treemod.tt.add(
     treemod.tt.NewTemplate('Scenario',{"name":"New","total income": sum_incomes},children=("Income","Expense","Item"),icon_file="./src/icons/black_square.png"),
     treemod.tt.NewTemplate('Income',{"name":"New income","amount":1, "date":"1.1.2023"},children=()),
-    treemod.tt.NewTemplate('Expense',{"name":"New expense","amount":1},children=()),
+    treemod.tt.NewTemplate('Expense',{"name":"New expense","amount":1, "date":"1.1.2023"},children=()),
     treemod.tt.NewTemplate(
         'Item',
         {
@@ -50,7 +53,8 @@ treemod.tt.add(
             "total income": sum_incomes,
             "relative income": item_relative_income
         },
-        children=("Income","Expense","Item")),
+        children=("Income","Expense","Item"),
+        user_def_cmds={"Hello, world":print_hello_world}),
 )
 
 

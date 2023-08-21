@@ -1,7 +1,10 @@
-import core.attributes as attrs
 from typing import Dict, Tuple, List, Any, Set, OrderedDict, Callable
 import dataclasses
 import os
+from functools import partial
+
+
+import core.attributes as attrs
 
 class TemplateLocked(Exception): pass
 
@@ -12,6 +15,8 @@ class NewTemplate:
     children:Tuple[str,...]
     locked:bool = False
     icon_file:str|None = None # relative path to a widget icon
+    user_def_cmds:OrderedDict[str,Callable[[attrs.AttributesOwner],None]] = \
+        dataclasses.field(default_factory=OrderedDict)
 
     def __post_init__(self)->None:
         if self.icon_file is not None and not os.path.isfile(self.icon_file):
@@ -25,6 +30,8 @@ class Template:
     _children:Tuple[str,...]
     _locked:bool
     _icon_file:str|None = None
+    _user_def_cmds:OrderedDict[str,Callable[[attrs.AttributesOwner],None]] = \
+        dataclasses.field(default_factory=OrderedDict)
 
     @property
     def locked(self)->bool: return self._locked
@@ -45,6 +52,12 @@ class Template:
         for name, attr in self._dependent_attributes.items():
             instance_attributes[name] = attr.copy()
         return instance_attributes
+    
+    def user_def_cmds(self,obj:attrs.AttributesOwner)->OrderedDict[str,partial]:
+        obj_cmds = OrderedDict()
+        for name, cmd in self._user_def_cmds.items():
+            obj_cmds[name] = partial(cmd,obj)
+        return obj_cmds
     
     @property
     def children(self)->Tuple[str,...]: 
@@ -119,7 +132,8 @@ def __add_templates(templates:Tuple[NewTemplate,...])->None:
             _dependent_attributes = __create_attributes(dependent_attributes),
             _children=t.children,
             _locked=t.locked,
-            _icon_file=t.icon_file
+            _icon_file=t.icon_file,
+            _user_def_cmds=t.user_def_cmds
         )
 
 def __detect_missing_child_templates(*to_be_added:NewTemplate)->None:
