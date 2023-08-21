@@ -1,4 +1,39 @@
-# Treeview and XML connection
+# HoFi2
+An abbreviation for home finance. It provides a way to write down expenses, incomes and debts. 
+
+The project is licensed under the [MIT License](https://opensource.org/license/mit/), see the [license file](LICENSE).
+
+
+## How it works
+The transactions are stored in a hierachical structure in an xml file. The xml schema defines several objects:
+- debts
+- income
+- expense
+- object, that can be parent to other objects and to incomes and expenses
+
+The xml file should be edited via an user interface written in Python. 
+
+### Template
+In the **cases** folder, there is a **template** file, providing a simple example including debt, income, expense and item.
+
+### Debts
+The debts are list of all items, that are to be payed in the future (there is no hierarchy, assuming the user wants to keep the number of items here low).
+
+Each debt is described by
+- date, when the debt was created,
+- description (an arbitrarily long text),
+- amount (the money or the cost of the borrowed/lended goods)
+- due date (optional)
+
+### Temporal arrangement
+The user can enter either future (**planned**) transactions or current or past transactions (**realized**). Those are automatically distinguished by the current date. 
+
+Tommorows and later transactions are treated as the planned transactions. When the current date reaches the date of the planned transaction, the user is prompted on the nearest opening of the program to confirm (with option **Yes**), that the transaction actually happened. If he/she chooses **No**, the transaction is simply deleted from the planned transactions. In the other case, it is marked as realized. 
+
+
+# Development notes
+
+## Treeview and XML connection
 
 The xml structure is completely dictated by the application.
 No schema is required. The initially created schema is used only as an auxiliary tool for defining the rules inside the app. 
