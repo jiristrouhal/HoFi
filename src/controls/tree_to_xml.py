@@ -47,21 +47,11 @@ class Tree_XML_Converter:
     def load_tree(self,name:str,dir:str=DEFAULT_DIRECTORY)->treemod.Tree|None:
         path_to_file = data_file_path(name,dir)
         if not os.path.isfile(path_to_file): return None
-
-        xml = et.parse(path_to_file)
-        xml_root = xml.getroot()
         
-        xml_attributes = xml_root.attrib
-
-        tree_attributes:OrderedDict[str,treemod._Attribute] = OrderedDict()
-        for attr_name, value in xml_attributes.items():
-            tree_attributes[attr_name] = treemod.create_attribute(value)
-
+        xml_root = et.parse(path_to_file).getroot()
         tree = treemod.Tree(xml_root.attrib["name"],tag=xml_root.tag)
-        for attr in tree.attributes:
-            if attr in tree_attributes:
-                tree.set_attribute(attr,tree_attributes[attr].value)
-
+        for attr_name, value in xml_root.attrib.items():
+            tree.set_attribute(attr_name,value)
         self.__load_xml_elem(xml_root,tree)
         return tree
 
