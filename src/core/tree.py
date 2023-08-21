@@ -36,7 +36,6 @@ class TreeItem:
         self.__type = 'leaf' if not self.__child_tags else 'branch'
         self.__tag = tag
 
-
     @property
     def name(self)->str: return self._attributes["name"].value
     @property

@@ -14,6 +14,12 @@ root = tk.Tk()
 root.geometry("800x600")
 
 
+from PIL import Image, ImageTk
+
+
+tree_icon = ImageTk.PhotoImage(Image.open("src/icons/tree.png"))
+
+
 edit_frame = tk.LabelFrame(root, text=EDIT_FRAME_LABEL)
 manager_frame = tk.LabelFrame(root, text=MANAGER_TITLE)
 properties_frame = tk.Frame(root,width=50,height=50)
@@ -28,10 +34,10 @@ treemod.tt.attrs.Date_Attr.date_formatter.set("%d.%m.%Y")
 
 treemod.tt.clear()
 treemod.tt.add(
-    treemod.tt.NewTemplate('Scenario',{"name":"New"},children=("Income","Expense","Item"),icon_file="./src/icons/black_square.png"),
-    treemod.tt.NewTemplate('Income',{"name":"New","amount":1, "date":"1.1.2023"},children=()),
+    treemod.tt.NewTemplate('Scenario',{"name":"New"},children=("Income","Expense","Item"),icon_file=tree_icon),
+    treemod.tt.NewTemplate('Income',{"name":"New","amount":1, "date":"1.1.2023"},children=(),icon_file=tree_icon),
     treemod.tt.NewTemplate('Expense',{"name":"New","amount":1},children=()),
-    treemod.tt.NewTemplate('Item',{"name":"New"},children=("Income","Expense","Item")),
+    treemod.tt.NewTemplate('Item',{"name":"New"},children=("Income","Expense","Item"),icon_file=tree_icon),
 )
 
 

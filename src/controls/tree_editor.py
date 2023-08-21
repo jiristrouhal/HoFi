@@ -65,8 +65,7 @@ class TreeEditor:
         self._on_unselection:List[Callable[[],None]] = list()
         self._on_edit:List[Callable[[treemod.TreeItem],None]] = list()
         self._on_tree_removal:List[Callable[[],None]] = list()
-
-
+  
         self.label:str = label # an identifier used in actions of Tree Items
 
     def _bind_keys(self)->None:
@@ -154,7 +153,7 @@ class TreeEditor:
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
         # create action, that the tree object will run after it creates a new branch
         iid = str(id(tree)) 
-        self.widget.insert("",index=0,iid=iid,text=tree.name)
+        self.__load_item_into_tree(iid,tree)
         self._map[iid] = tree
         tree.add_data("treeview_iid",iid)
         tree.add_action(self.label,'add_branch', partial(self._on_new_child,iid)) 
@@ -162,9 +161,18 @@ class TreeEditor:
         self._load_branches(tree)
         self._open_all("")
 
+    def __load_item_into_tree(self,iid:str,item:treemod.TreeItem)->None:
+        parent_iid = "" if item.parent is None else item.parent.data["treeview_iid"]
+        if not treemod.tt.template(item.tag).icon_file is None:
+            image = treemod.tt.template(item.tag).icon_file
+            self.widget.insert(parent_iid,index=0,iid=iid,text=item.name, image=image)
+        else:
+            self.widget.insert(parent_iid,index=0,iid=iid,text=item.name)
+
     def _load_branches(self,parent:treemod.TreeItem)->None:
         for branch in parent._children:
-            iid = self.widget.insert(parent.data["treeview_iid"],iid=str(id(branch)),index=0,text=branch.name)
+            iid = iid=str(id(branch))
+            self.__load_item_into_tree(iid,branch)
             self._map[iid] = branch
             branch.add_action(self.label,'add_branch', partial(self._on_new_child, iid))
             branch.add_action(self.label,'on_removal', partial(self._on_removal, iid))
@@ -202,7 +210,9 @@ class TreeEditor:
         )->None:
 
         item_iid = str(id(new_branch))
-        self.widget.insert(parent_iid,iid=item_iid,index=0,text=new_branch.name)
+
+        self.__load_item_into_tree(item_iid,new_branch)
+
         self._map[item_iid] = new_branch
         new_branch.add_action(self.label,'add_branch', partial(self._on_new_child, item_iid))
         new_branch.add_action(self.label,'on_removal', partial(self._on_removal, item_iid))

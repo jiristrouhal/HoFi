@@ -3,6 +3,7 @@ from typing import Dict, Tuple, List, Any, Set, OrderedDict
 import dataclasses
 import os
 
+
 class TemplateLocked(Exception): pass
 
 @dataclasses.dataclass(frozen=True)
@@ -11,11 +12,7 @@ class NewTemplate:
     attributes:OrderedDict[str,Any]
     children:Tuple[str,...]
     locked:bool = False
-    icon_file:str|None = None # relative path to a widget icon
-
-    def __post_init__(self)->None:
-        if self.icon_file is not None and not os.path.isfile(self.icon_file):
-            raise ValueError(f"The file '{self.icon_file}' was not found.")
+    icon_file:Any = None # relative path to a widget icon
 
 
 @dataclasses.dataclass
@@ -23,13 +20,13 @@ class Template:
     _attributes:OrderedDict[str,attrs._Attribute]
     _children:Tuple[str,...]
     _locked:bool
-    _icon_file:str|None = None
+    _icon_file:Any
 
     @property
     def locked(self)->bool: return self._locked
 
     @property
-    def icon_file(self)->str|None: return self._icon_file
+    def icon_file(self)->Any: return self._icon_file
 
     @property
     def attributes(self)->OrderedDict[str,attrs._Attribute]:
