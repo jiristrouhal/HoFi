@@ -1,7 +1,7 @@
 import sys 
 sys.path.insert(1,"src")
 
-import tree_to_xml
+import controls.tree_to_xml as tree_to_xml
 import core.tree as treemod
 import unittest
 import os

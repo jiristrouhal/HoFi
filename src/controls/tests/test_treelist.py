@@ -2,7 +2,7 @@ import sys
 sys.path.insert(1,"src")
 
 
-import src.treelist as tlist
+import src.controls.treelist as tlist
 import unittest
 from core.tree import Tree, tt
 

@@ -1,13 +1,14 @@
 import sys 
 sys.path.insert(1,"src")
 
-
-import tree_editor 
-from core.tree import Tree, TreeItem, Positive_Int_Attr, tt
 import unittest
 from typing import List
 import tkinter.ttk as ttk
 import tkinter as tk
+
+
+import controls.tree_editor  as tree_editor
+from core.tree import Tree, TreeItem, Positive_Int_Attr, tt
 
 
 class Test_Empty_Trees(unittest.TestCase):

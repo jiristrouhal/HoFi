@@ -2,8 +2,8 @@ import sys
 sys.path.insert(1,"src")
 
 import unittest
-import treemanager as tmg
-import treelist
+import controls.treemanager as tmg
+import controls.treelist as treelist
 import os
 import core.tree as treemod
 

@@ -12,10 +12,10 @@ import sys
 sys.path.insert(1,"src")
 
 
-import src.tree_to_xml as txml
-import src.treelist as treelist
+import src.controls.tree_to_xml as txml
+import src.controls.treelist as treelist
 import src.core.tree as treemod
-import src.right_click_menu as rcm
+import src.controls.right_click_menu as rcm
 
 
 

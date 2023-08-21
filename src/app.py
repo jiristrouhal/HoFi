@@ -1,7 +1,7 @@
 import tkinter as tk
-import tree_editor as te
-import treemanager as tmg
-import treelist as tl
+import controls.tree_editor as te
+import controls.treemanager as tmg
+import controls.treelist as tl
 import core.tree as treemod
 import properties as pp
 

@@ -8,7 +8,7 @@ from collections import OrderedDict
 from PIL import Image, ImageTk
 
 
-import src.right_click_menu as rcm
+import src.controls.right_click_menu as rcm
 
 
 MENU_CMD_BRANCH_DELETE = "Delete"
