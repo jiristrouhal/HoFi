@@ -309,7 +309,7 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
         self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
         self.assertFalse(self.manager._window_rename.winfo_exists())
 
-    def tearDown(self) -> None:
+    def tearDown(self) -> None:  # pragma: no cover
         if os.path.isfile("Tree being exported.xml"):
             os.remove("Tree being exported.xml")
         if os.path.isfile("Tree being exported 2.xml"):
@@ -387,7 +387,7 @@ class Test_Updating_File_After_Renaming_Tree(unittest.TestCase):
             tmg.MENU_CMD_TREE_UPDATE_FILE
         )
 
-    def tearDown(self) -> None:
+    def tearDown(self) -> None:  # pragma: no cover
         if os.path.isfile("Tree being exported.xml"):
             os.remove("Tree being exported.xml")
         if os.path.isfile("Tree being exported 2.xml"):
