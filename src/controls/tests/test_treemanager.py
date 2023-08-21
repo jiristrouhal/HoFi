@@ -35,9 +35,6 @@ class Tree_Manager(tmg.Tree_Manager):
 
     def _error_if_tree_names_already_taken(self, name: str) -> None:
         pass
-
-    def _show_error_file_already_in_use(self, filepath:str, name:str)->None:
-        pass
     
     def _show_export_info(self, tree_name: str, filepath: str) -> None:
         pass
