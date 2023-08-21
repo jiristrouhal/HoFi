@@ -2,7 +2,7 @@ import sys
 sys.path.insert(1,"src")
 
 
-import src.properties as pp
+import src.reports.properties as pp
 import unittest
 from core.tree import TreeItem, Positive_Int_Attr, tt
 

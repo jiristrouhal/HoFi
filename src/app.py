@@ -3,7 +3,7 @@ import controls.tree_editor as te
 import controls.treemanager as tmg
 import controls.treelist as tl
 import core.tree as treemod
-import properties as pp
+import reports.properties as pp
 
 
 EDIT_FRAME_LABEL = "Editor"
