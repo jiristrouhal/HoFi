@@ -106,7 +106,7 @@ class TreeEditor:
         
     def __configure_widget(self)->None:
         style = ttk.Style()
-        style.configure('Treeview',indent=10)
+        style.configure('Treeview',indent=15)
         
         self.widget.pack(side=tk.RIGHT,expand=1,fill=tk.BOTH)
         scroll_y = ttk.Scrollbar(
@@ -428,14 +428,17 @@ class TreeEditor:
             self.move_window, 
             show='tree', # hide zeroth row, that would contain the tree columns' headings
         )
-        self.__configure_widget()
         tree_id = self.__get_tree_id(item_id)
 
         if not item_id==tree_id:
-            self.available_parents.insert("",index=0,iid=tree_id,text=self._map[tree_id].name)
+            self.available_parents.insert("",index=0,iid=tree_id,text=self._map[tree_id].name,open=True)
             self._collect_available_parents(tree_id,item_id)
 
         self.available_parents.pack()
+        parent = self._map[item_id].parent
+        if parent is not None:
+            self.available_parents.selection_set(parent.data["treeview_iid"])
+
         button_frame(
             self.move_window,
             ok_cmd = partial(self._confirm_parent_and_close_move_window,item_id),
@@ -465,7 +468,7 @@ class TreeEditor:
             if not self._map[item_id].tag in self._map[child_id].child_tags: continue
 
             child = self.widget.item(child_id)
-            self.available_parents.insert(parent_id,index=0,iid=child_id,text=child["text"])
+            self.available_parents.insert(parent_id,index=0,iid=child_id,text=child["text"],open=True)
             self._collect_available_parents(child_id,item_id)
 
     def __get_tree_id(self,item_id:str)->str:

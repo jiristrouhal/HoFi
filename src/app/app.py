@@ -16,8 +16,8 @@ root = tk.Tk()
 root.geometry("800x600")
 
 
-import app.set_templates
-app.set_templates.main()
+import src.app.set_templates
+src.app.set_templates.main()
 
 
 
