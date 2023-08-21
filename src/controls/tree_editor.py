@@ -32,7 +32,7 @@ MOVE_WINDOW_TITLE = "Select new parent"
 
 class TreeEditor:
 
-    def __init__(self, parent:tk.Tk|tk.Toplevel|tk.Frame|None = None, label:str = "TreeEditor")->None:
+    def __init__(self, parent:tk.Tk|tk.Toplevel|tk.Frame|ttk.LabelFrame|None = None, label:str = "TreeEditor")->None:
         self.widget = ttk.Treeview(parent)
         self._bind_keys()
         self.__configure_widget()

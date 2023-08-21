@@ -1,10 +1,9 @@
 from typing import Dict, Tuple, List, Any, Set, OrderedDict, Callable
 import dataclasses
-import os
 from functools import partial
 
 
-import core.attributes as attrs
+import src.core.attributes as attrs
 
 
 class TemplateLocked(Exception): pass
@@ -12,11 +11,11 @@ class TemplateLocked(Exception): pass
 @dataclasses.dataclass(frozen=True)
 class NewTemplate:
     tag:str
-    attributes:OrderedDict[str,Any]
+    attributes:Dict[str,Any]
     children:Tuple[str,...]
     locked:bool = False
     icon_file:Any = None # relative path to a widget icon
-    user_def_cmds:OrderedDict[str,Callable[[attrs.AttributesOwner],None]] = \
+    user_def_cmds:Dict[str,Callable[[attrs.AttributesOwner],None]] = \
         dataclasses.field(default_factory=OrderedDict)
 
 

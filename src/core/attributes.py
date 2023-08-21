@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Tuple, Callable, Protocol, Dict
+from typing import Any, Callable, Protocol, Dict
 
 import abc
 import re
@@ -71,10 +71,10 @@ class Positive_Int_Attr(_Attribute):
         return Positive_Int_Attr(self._value)
     
 
-import datetime, core.dates
+import datetime, src.core.dates
 class Date_Attr(_Attribute):
     default_value = datetime.date.today()
-    date_formatter = core.dates.get_date_converter("%d.%m.%Y")
+    date_formatter = src.core.dates.get_date_converter("%d.%m.%Y")
 
     def __init__(self, value:str|None=None)->None:
         if value is None or not self.valid_entry(value): 

@@ -3,10 +3,10 @@ from typing import List, Tuple, Dict, Any, Callable, Literal, OrderedDict
 import src.core.naming
 from collections import OrderedDict
 
-import core.tree_templates as tt
+import src.core.tree_templates as tt
 
 
-from core.attributes import _Attribute, Positive_Int_Attr, Name_Attr, create_attribute, Dependent_Attr
+from src.core.attributes import _Attribute, Positive_Int_Attr, Name_Attr, create_attribute, Dependent_Attr
 
 
 DEFAULT_TAG = "Item"
@@ -23,7 +23,7 @@ class TreeItem:
         self._attributes:OrderedDict[str,_Attribute] = tt.template(tag).attributes
         self._attributes["name"].set(src.core.naming.strip_and_join_spaces(name))
 
-        self.__child_tags:Tuple[str] = tt.template(tag).children
+        self.__child_tags:Tuple[str,...] = tt.template(tag).children
 
         self._children:List[TreeItem] = list()
         self._parent:TreeItem|None = None

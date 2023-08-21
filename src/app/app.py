@@ -1,9 +1,16 @@
+import sys 
+# sys.path.append('../src/controls')
+
+
 import tkinter as tk
-import controls.tree_editor as te
-import controls.treemanager as tmg
-import controls.treelist as tl
-import core.tree as treemod
-import reports.properties as pp
+from collections import OrderedDict
+
+
+import src.controls.tree_editor as te
+import src.controls.treemanager as tmg
+import src.controls.treelist as tl
+import src.core.tree as treemod
+import src.reports.properties as pp
 
 
 EDIT_FRAME_LABEL = "Editor"
@@ -39,7 +46,7 @@ treemod.tt.attrs.Date_Attr.date_formatter.set("%d.%m.%Y")
 
 
 def item_relative_income(item:treemod.TreeItem)->str:
-    return str(int(float(sum_incomes(item))/sum_incomes(item.parent)*100)) +' %'
+    return str(int(float(sum_incomes(item))/float(sum_incomes(item.parent))*100)) +' %'
 
 def sum_incomes(item:treemod.TreeItem)->int:
     s = 0
@@ -60,11 +67,11 @@ treemod.tt.add(
     treemod.tt.NewTemplate('Expense',{"name":"New expense","amount":1, "date":"1.1.2023"},children=(),icon_file=expense_icon),
     treemod.tt.NewTemplate(
         'Item',
-        {
+        OrderedDict({
             "name":"New item",
             "total income": sum_incomes,
             "relative income": item_relative_income
-        },
+        }),
         children=("Income","Expense","Item"),
         user_def_cmds={"Hello, world":print_hello_world},
         icon_file=item_icon),

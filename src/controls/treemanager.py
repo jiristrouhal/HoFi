@@ -101,7 +101,7 @@ class Tree_Manager:
         self,
         treelist:treelist.TreeList,
         tree_tag:str,
-        ui_master:tk.Frame|tk.Tk|None = None
+        ui_master:tk.Frame|tk.Tk|ttk.Labelframe|None = None
         )->None:
 
         if not tree_tag in treemod.tt.template_tags():
