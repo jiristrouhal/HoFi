@@ -8,10 +8,6 @@ import os
 import core.tree as treemod
 
 
-def file_used_by_tree_msg(filepath:str, tree_name:str)->str:
-    return filepath + tree_name
-
-
 class Tree_Manager(tmg.Tree_Manager):
 
     def __init__(self,*args,**kwargs)->None:
@@ -41,7 +37,7 @@ class Tree_Manager(tmg.Tree_Manager):
         pass
 
     def _show_error_file_already_in_use(self, filepath:str, name:str)->None:
-        self.file_already_in_use_error_msg = file_used_by_tree_msg(filepath,name)
+        pass
     
     def _show_export_info(self, tree_name: str, filepath: str) -> None:
         pass
