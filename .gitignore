@@ -4,6 +4,7 @@
 bin
 build
 dist
+data
 dummy*.py
 
 *.pyc
