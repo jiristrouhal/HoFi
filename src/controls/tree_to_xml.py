@@ -2,7 +2,6 @@
 import xml.etree.ElementTree as et
 import os
 from collections import OrderedDict
-from typing import List
 
 import src.core.tree as treemod
 
