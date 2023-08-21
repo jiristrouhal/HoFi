@@ -1,15 +1,20 @@
 # HoFi2
-An abbreviation for home finance. It provides a way to write down expenses, incomes and debts. 
+An abbreviation for home finance. It provides a way to write down expenses, incomes and debts, to plan them and to plan the repayment and the future transactions. 
+
+The following activities are of interest:
+- storing information on various transactions and debts;
+- planning the transaction and debt repayment;
+- displaying the significance of individual transactions, debts and their groups.
 
 The project is licensed under the [MIT License](https://opensource.org/license/mit/), see the [license file](LICENSE).
 
 
 ## How it works
 The transactions are stored in a hierachical structure in an xml file. The xml schema defines several objects:
-- debts
-- income
-- expense
-- object, that can be parent to other objects and to incomes and expenses
+- debts;
+- income;
+- expense;
+- object, that can be parent to other objects and to incomes and expenses.
 
 The xml file should be edited via an user interface written in Python. 
 
@@ -20,10 +25,10 @@ In the **cases** folder, there is a **template** file, providing a simple exampl
 The debts are list of all items, that are to be payed in the future (there is no hierarchy, assuming the user wants to keep the number of items here low).
 
 Each debt is described by
-- date, when the debt was created,
-- description (an arbitrarily long text),
-- amount (the money or the cost of the borrowed/lended goods)
-- due date (optional)
+- date, when the debt was created;
+- description (an arbitrarily long text);
+- amount (the money or the cost of the borrowed/lended goods);
+- due date (optional).
 
 ### Temporal arrangement
 The user can enter either future (**planned**) transactions or current or past transactions (**realized**). Those are automatically distinguished by the current date. 
