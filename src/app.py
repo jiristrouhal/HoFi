@@ -22,14 +22,20 @@ expense_icon = ImageTk.PhotoImage(Image.open("src/icons/expense.png"))
 item_icon = ImageTk.PhotoImage(Image.open("src/icons/item.png"))
 
 
-edit_frame = tk.LabelFrame(root, text=EDIT_FRAME_LABEL)
+
 manager_frame = tk.LabelFrame(root, text=MANAGER_TITLE)
-properties_frame = tk.Frame(root,width=50,height=50)
-
-
 manager_frame.pack(expand=1,fill=tk.BOTH)
-edit_frame.pack(expand=2,fill=tk.BOTH)
-properties_frame.pack(expand=1,fill=tk.BOTH)
+
+
+bottom_frame = tk.Frame(root)
+bottom_frame.pack(expand=1,fill=tk.BOTH,side=tk.BOTTOM)
+
+
+editor_frame = tk.LabelFrame(bottom_frame, text=EDIT_FRAME_LABEL)
+properties_frame = tk.Frame(bottom_frame)
+
+editor_frame.pack(expand=1,fill=tk.BOTH,side=tk.LEFT)
+properties_frame.pack(expand=1,fill=tk.BOTH, side=tk.RIGHT)
 
 
 treemod.tt.attrs.Date_Attr.date_formatter.set("%d.%m.%Y")
@@ -78,7 +84,7 @@ treemod.tt.add(
 
 treelist = tl.TreeList(label='TreeList')
 manager = tmg.Tree_Manager(treelist, tree_tag="Scenario", ui_master=manager_frame)
-editor = te.TreeEditor(edit_frame,label='TreeEditor')
+editor = te.TreeEditor(editor_frame,label='TreeEditor')
 properties = pp.Properties(properties_frame)
 
 
