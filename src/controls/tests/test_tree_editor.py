@@ -11,6 +11,7 @@ import controls.tree_editor  as tree_editor
 from core.tree import Tree, TreeItem, Positive_Int_Attr, tt
 
 
+
 class Test_Empty_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -493,6 +494,22 @@ class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
         self.view.edit_entries["weight"].insert(0,75)
         self.view.disregard_edit_entry_values()
         self.assertEqual(self.w, 50)
+
+
+
+from PIL import ImageTk, Image
+class Test_Loading_Item_With_Icon_Defined_By_Template(unittest.TestCase):
+
+    def test_loading_item_with_image_in_template(self) -> None:
+
+        tt.clear()
+        image = ""
+        tt.add(
+            tt.NewTemplate('Tree',{"name":"New","weight":50},children=(), icon_file=image),
+        )
+        self.tree1 = Tree("Tree 1",tag='Tree')
+        self.view = tree_editor.TreeEditor()
+        self.view.load_tree(self.tree1)
     
 
 
