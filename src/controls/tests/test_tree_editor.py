@@ -483,7 +483,7 @@ class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
 
     def test_edit_cancellation_does_not_run_action(self)->None:
         self.w = self.tree1.attributes["weight"].value
-        def action(item:TreeItem)->None:
+        def action(item:TreeItem)->None: # pragma: no cover
             self.w = item.attributes["weight"].value
 
         self.view.add_action_on_edit(action)
