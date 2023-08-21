@@ -38,6 +38,11 @@ class Test_Creating_Trees(unittest.TestCase):
     def test_removing_tree(self):
         tree2 = Tree("Tree 2",tag="Tree")
         tree2_iid = str(id(tree2))
+        tree2.new("Branch X", tag="Branch")
+        def action(x): # pragma: no cover
+            pass 
+        tree2.add_action(self.view.label,'on_removal',action)
+        tree2._children[-1].add_action(self.view.label,'on_removal',action)
         self.view.load_tree(tree2)
         self.view.remove_tree(self.tree1_iid)
         self.assertEqual(self.view.trees, ("Tree 2",))
