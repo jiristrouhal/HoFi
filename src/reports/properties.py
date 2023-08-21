@@ -13,28 +13,15 @@ class Properties:
     def __init__(self,master:tk.Tk|tk.Frame|ttk.Labelframe|None = None)->None:
         self.widget = ttk.Labelframe(master,text=PROPERTIES_TITLE)
         self.props:Dict[str,tk.Label] = OrderedDict()
-        self.displayed_item:treemod.TreeItem|None = None
         self.__configure_win()
 
     def display(self,item:treemod.TreeItem)->None:
-        if self.displayed_item != item:
-            self.clear()
-            self.__draw_properties(
-                item.attributes, 
-                item.dependent_attributes,
-                item.tag)
-            self.displayed_item = item
-
-    def redraw(self, *args)->None:
-        if self.displayed_item is not None:
-            item = self.displayed_item
-            self.clear()
-            self.displayed_item = item
-            self.__draw_properties(
-                self.displayed_item.attributes,
-                self.displayed_item.dependent_attributes, 
-                self.displayed_item.tag
-            )
+        self.clear()
+        self.__draw_properties(
+            item.attributes, 
+            item.dependent_attributes,
+            item.tag)
+        self.displayed_item = item
 
     def __draw_properties(
         self, 
@@ -67,7 +54,6 @@ class Properties:
             row += 1
 
     def clear(self)->None:
-        self.displayed_item = None
         for child in self.widget.winfo_children(): child.destroy()
         self.props.clear()
 
