@@ -1,4 +1,4 @@
-import tree as treemod
+import core.tree as treemod
 import xml.etree.ElementTree as et
 import os
 from collections import OrderedDict

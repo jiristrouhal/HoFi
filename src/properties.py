@@ -1,4 +1,4 @@
-import tree as treemod
+import core.tree as treemod
 import tkinter as tk
 import tkinter.ttk as ttk
 from typing import Dict

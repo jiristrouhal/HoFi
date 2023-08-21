@@ -3,7 +3,7 @@ sys.path.insert(1,"src")
 
 
 import tree_editor 
-from tree import Tree, TreeItem, Positive_Int_Attr, tt
+from core.tree import Tree, TreeItem, Positive_Int_Attr, tt
 import unittest
 from typing import List
 import tkinter.ttk as ttk

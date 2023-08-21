@@ -1,7 +1,7 @@
 import sys 
 sys.path.insert(1,"src")
 
-import attributes
+import core.attributes as attributes
 import unittest
 
 
@@ -31,7 +31,7 @@ class Test_Positive_Int_Attribute(unittest.TestCase):
         self.assertEqual(self.attr.value,10)
 
 
-import dates
+
 class Test_Date_Attribute(unittest.TestCase):
     
     def setUp(self) -> None:

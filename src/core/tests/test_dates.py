@@ -2,7 +2,7 @@ import sys
 sys.path.insert(0,"src")
 
 
-import dates
+import core.dates as dates
 import unittest
 
 

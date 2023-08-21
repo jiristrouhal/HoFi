@@ -1,6 +1,6 @@
 from typing import List, Callable
-import naming
-from tree import Tree
+import core.naming
+from core.tree import Tree
 
 
 class TreeList:
@@ -58,11 +58,11 @@ class TreeList:
         self.__name_warnings.append(warning_action)
 
     def __adjust_tree_name(self,item:Tree)->None:
-        name = naming.strip_and_join_spaces(item.name)
+        name = core.naming.strip_and_join_spaces(item.name)
         names = self.names
         names.remove(name)  # prevent item having name collision with itself
         while name in names:
-            name = naming.change_name_if_already_taken(name)
+            name = core.naming.change_name_if_already_taken(name)
         item.rename(name)
 
     

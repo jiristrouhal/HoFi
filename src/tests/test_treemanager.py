@@ -5,7 +5,7 @@ import unittest
 import treemanager as tmg
 import treelist
 import os
-import tree as treemod
+import core.tree as treemod
 
 
 def file_used_by_tree_msg(filepath:str, tree_name:str)->str:

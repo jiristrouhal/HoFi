@@ -1,7 +1,7 @@
 import sys
 sys.path.insert(1,"src")
 
-import naming
+import core.naming as naming
 import unittest
 
 

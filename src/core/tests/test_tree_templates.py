@@ -2,7 +2,7 @@ import sys
 sys.path.insert(1,"src")
 
 
-import tree_templates as tt
+import core.tree_templates as tt
 import unittest
 
 

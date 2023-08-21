@@ -4,8 +4,6 @@ from typing import Any
 import abc
 import re
 
-import dates
-
 
 class _Attribute(abc.ABC):
     default_value:Any = None
@@ -45,10 +43,10 @@ class Positive_Int_Attr(_Attribute):
         return Positive_Int_Attr(self.value)
     
 
-import datetime, dates
+import datetime, core.dates
 class Date_Attr(_Attribute):
     default_value = datetime.date.today()
-    date_formatter = dates.get_date_converter("%d.%m.%Y")
+    date_formatter = core.dates.get_date_converter("%d.%m.%Y")
 
     def __init__(self, value:str|None=None)->None:
         if value is None or not self.valid_entry(value): 

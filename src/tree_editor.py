@@ -2,7 +2,7 @@ import tkinter.ttk as ttk
 import tkinter as tk
 import tkinter.messagebox as tkmsg
 from typing import Tuple, Dict, Callable, Any, List
-import src.tree as treemod
+import src.core.tree as treemod
 from functools import partial
 from collections import OrderedDict
 from PIL import Image, ImageTk

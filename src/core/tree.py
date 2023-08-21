@@ -1,12 +1,12 @@
 from __future__ import annotations
 from typing import List, Tuple, Dict, Any, Callable, Literal, OrderedDict
-import src.naming
+import src.core.naming
 from collections import OrderedDict
 
-import tree_templates as tt
+import core.tree_templates as tt
 
 
-from attributes import _Attribute, Positive_Int_Attr, Name_Attr, create_attribute
+from core.attributes import _Attribute, Positive_Int_Attr, Name_Attr, create_attribute
 
 
 DEFAULT_TAG = "Item"
@@ -21,7 +21,7 @@ class TreeItem:
         )->None:
 
         self._attributes:OrderedDict[str,_Attribute] = tt.template(tag).attributes
-        self._attributes["name"].set(src.naming.strip_and_join_spaces(name))
+        self._attributes["name"].set(src.core.naming.strip_and_join_spaces(name))
         self.__child_tags:Tuple[str] = tt.template(tag).children
 
         self._children:List[TreeItem] = list()
@@ -89,19 +89,19 @@ class TreeItem:
         if self._parent is not None: 
             self._parent._children.remove(self)
         # if the name already exists under the new parent, change the current name
-        name = src.naming.strip_and_join_spaces(self.name)
+        name = src.core.naming.strip_and_join_spaces(self.name)
         while new_parent._find_child(name) is not None: 
-            name = src.naming.change_name_if_already_taken(name)
+            name = src.core.naming.change_name_if_already_taken(name)
         self._attributes["name"].set(name)
         self._parent = new_parent
         self._parent._children.append(self)
 
     def rename(self,name:str)->None:
-        name = src.naming.strip_and_join_spaces(name)
+        name = src.core.naming.strip_and_join_spaces(name)
         if self._parent is not None:
             item_with_same_name = self._parent._find_child(name)
             while item_with_same_name is not None and not item_with_same_name==self:
-                name = src.naming.change_name_if_already_taken(name)
+                name = src.core.naming.change_name_if_already_taken(name)
                 item_with_same_name = self._parent._find_child(name)
         self._attributes["name"].set(name)
 

@@ -4,7 +4,7 @@ sys.path.insert(1,"src")
 
 import src.properties as pp
 import unittest
-from tree import TreeItem, Positive_Int_Attr, tt
+from core.tree import TreeItem, Positive_Int_Attr, tt
 
 
 

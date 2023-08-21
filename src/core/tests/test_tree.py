@@ -1,7 +1,7 @@
 import sys 
 sys.path.insert(1,"src")
 
-import tree
+import core.tree as tree
 import unittest
 
 class Test_Creating_Tree(unittest.TestCase):

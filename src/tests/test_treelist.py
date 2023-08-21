@@ -4,7 +4,7 @@ sys.path.insert(1,"src")
 
 import src.treelist as tlist
 import unittest
-from tree import Tree, tt
+from core.tree import Tree, tt
 
 
 class Test_Modifying_List(unittest.TestCase):

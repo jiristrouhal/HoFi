@@ -1,4 +1,4 @@
-import attributes as attrs
+import core.attributes as attrs
 from typing import Dict, Tuple, List, Any, Set, OrderedDict
 import dataclasses
 import os
