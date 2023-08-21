@@ -11,8 +11,7 @@ import controls.tree_editor  as tree_editor
 from core.tree import Tree, TreeItem, Positive_Int_Attr, tt
 
 
-
-class Test_Empty_Trees(unittest.TestCase):
+class Test_Creating_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
         tt.clear()
@@ -31,6 +30,7 @@ class Test_Empty_Trees(unittest.TestCase):
         self.assertEqual(self.view.trees, ("Tree 1",))
         self.view.load_tree(Tree("Tree 2",tag="Tree"))
         self.assertEqual(self.view.trees, ("Tree 2", "Tree 1"))
+        self.assertTrue(self.view.is_tree(self.view._map[self.view.widget.get_children()[0]]))
 
     def test_adding_already_existing_tree_raises_exception(self):
         self.assertRaises(ValueError,self.view.load_tree,Tree("Tree 1",tag="Tree"))
@@ -138,7 +138,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
 
         tt.clear()
         tt.add(
-            tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
+            tt.NewTemplate('Tree',{"name":"New", "weight":500},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"New","length":10},children=('Branch',)),
         )
         self.view = tree_editor.TreeEditor()
@@ -496,8 +496,6 @@ class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
         self.assertEqual(self.w, 50)
 
 
-
-from PIL import ImageTk, Image
 class Test_Loading_Item_With_Icon_Defined_By_Template(unittest.TestCase):
 
     def test_loading_item_with_image_in_template(self) -> None:
