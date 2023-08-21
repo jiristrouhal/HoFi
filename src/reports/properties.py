@@ -25,7 +25,7 @@ class Properties:
                 item.tag)
             self.displayed_item = item
 
-    def redraw(self, x)->None:
+    def redraw(self, *args)->None:
         if self.displayed_item is not None:
             item = self.displayed_item
             self.clear()
