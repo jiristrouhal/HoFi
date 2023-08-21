@@ -64,9 +64,8 @@ class Tree_XML_Converter:
         for elem in xml_elem:
             branch_name = elem.attrib["name"]
             thing_with_branches.new(branch_name,tag=elem.tag)
-            child_branch = thing_with_branches._find_child(branch_name)
-            if child_branch is None: return 
-
+            child_branch = thing_with_branches._children[-1]
+            
             for attr_name in child_branch.attributes:
                 if attr_name in elem.attrib:
                     child_branch.set_attribute(attr_name, elem.attrib[attr_name])
