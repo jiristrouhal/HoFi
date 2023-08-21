@@ -19,10 +19,6 @@ class NewTemplate:
     user_def_cmds:OrderedDict[str,Callable[[attrs.AttributesOwner],None]] = \
         dataclasses.field(default_factory=OrderedDict)
 
-    def __post_init__(self)->None:
-        if self.icon_file is not None and not os.path.isfile(self.icon_file):
-            raise ValueError(f"The file '{self.icon_file}' was not found.")
-
 
 @dataclasses.dataclass
 class Template:

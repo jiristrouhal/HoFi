@@ -34,21 +34,6 @@ properties_frame.pack(expand=1,fill=tk.BOTH)
 
 treemod.tt.attrs.Date_Attr.date_formatter.set("%d.%m.%Y")
 
-def item_relative_income(item:treemod.TreeItem)->str:
-    return str(int(float(sum_incomes(item))/sum_incomes(item.parent)*100)) +' %'
-
-def sum_incomes(item:treemod.TreeItem)->int:
-    s = 0
-    for child in item._children:
-        if child.tag=="Income":
-            s += child.attributes["amount"].value
-        elif child.tag=="Item":
-            s += child.dependent_attributes["total income"].value
-    return s
-
-def print_hello_world(item:treemod.TreeItem)->None:
-    print("Hello, world!!!")
-
 
 from PIL import ImageTk, Image
 
