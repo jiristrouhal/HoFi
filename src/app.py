@@ -26,6 +26,8 @@ properties_frame.pack(expand=1,fill=tk.BOTH)
 
 treemod.tt.attrs.Date_Attr.date_formatter.set("%d.%m.%Y")
 
+def item_relative_income(item:treemod.TreeItem)->str:
+    return str(int(float(sum_incomes(item))/sum_incomes(item.parent)*100)) +' %'
 
 def sum_incomes(item:treemod.TreeItem)->int:
     s = 0
@@ -41,7 +43,14 @@ treemod.tt.add(
     treemod.tt.NewTemplate('Scenario',{"name":"New","total income": sum_incomes},children=("Income","Expense","Item"),icon_file="./src/icons/black_square.png"),
     treemod.tt.NewTemplate('Income',{"name":"New income","amount":1, "date":"1.1.2023"},children=()),
     treemod.tt.NewTemplate('Expense',{"name":"New expense","amount":1},children=()),
-    treemod.tt.NewTemplate('Item',{"name":"New item","total income": sum_incomes},children=("Income","Expense","Item")),
+    treemod.tt.NewTemplate(
+        'Item',
+        {
+            "name":"New item",
+            "total income": sum_incomes,
+            "relative income": item_relative_income
+        },
+        children=("Income","Expense","Item")),
 )
 
 

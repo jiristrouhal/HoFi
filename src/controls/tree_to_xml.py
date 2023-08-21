@@ -1,8 +1,10 @@
-import core.tree as treemod
+
 import xml.etree.ElementTree as et
 import os
 from collections import OrderedDict
 from typing import List
+
+import src.core.tree as treemod
 
 
 DEFAULT_DIRECTORY = "./data"
@@ -72,10 +74,11 @@ class Tree_XML_Converter:
 
         for elem in xml_elem:
             branch_name = elem.attrib["name"]
-            branch_attributes:OrderedDict[str,treemod._Attribute] = OrderedDict()
-            for attr_name, value in elem.attrib.items():
-                branch_attributes[attr_name] = treemod.create_attribute(value)
-
             thing_with_branches.new(branch_name,tag=elem.tag)
             child_branch = thing_with_branches._find_child(branch_name)
+            if child_branch is None: return 
+
+            for attr_name in child_branch.attributes:
+                if attr_name in elem.attrib:
+                    child_branch.set_attribute(attr_name, elem.attrib[attr_name])
             self.__load_xml_elem(elem,child_branch)
