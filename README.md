@@ -29,6 +29,7 @@ Each debt is described by
 The user can enter either future (**planned**) transactions or current or past transactions (**realized**). Those are automatically distinguished by the current date. 
 
 Tommorows and later transactions are treated as the planned transactions. When the current date reaches the date of the planned transaction, the user is prompted on the nearest opening of the program to confirm (with option **Yes**), that the transaction actually happened. If he/she chooses **No**, the transaction is simply deleted from the planned transactions. In the other case, it is marked as realized. 
+This should be done via a special list of all the transactions to be confirmed. The user gets single notification on the program start. Then, he/she may or may not proceed to confirmation of the transactions.
 
 
 # Development notes
