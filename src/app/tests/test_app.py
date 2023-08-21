@@ -2,7 +2,7 @@ import sys
 sys.path.insert(1,'src')
 
 import unittest
-import src.app
+import src.app.app
 
 
 class Test_Saving_Tree(unittest.TestCase):

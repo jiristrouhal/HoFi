@@ -17,19 +17,16 @@ root.geometry("800x600")
 from PIL import Image, ImageTk
 
 
-income_icon = ImageTk.PhotoImage(Image.open("src/icons/income.png"))
-expense_icon = ImageTk.PhotoImage(Image.open("src/icons/expense.png"))
-item_icon = ImageTk.PhotoImage(Image.open("src/icons/item.png"))
+income_icon = ImageTk.PhotoImage(Image.open("src/_icons/income.png"))
+expense_icon = ImageTk.PhotoImage(Image.open("src/_icons/expense.png"))
+item_icon = ImageTk.PhotoImage(Image.open("src/_icons/item.png"))
 
 
 
 manager_frame = tk.LabelFrame(root, text=MANAGER_TITLE)
 manager_frame.pack(expand=1,fill=tk.BOTH)
-
-
 bottom_frame = tk.Frame(root)
 bottom_frame.pack(expand=1,fill=tk.BOTH,side=tk.BOTTOM)
-
 
 editor_frame = tk.LabelFrame(bottom_frame, text=EDIT_FRAME_LABEL)
 properties_frame = tk.Frame(bottom_frame)
@@ -39,14 +36,6 @@ properties_frame.pack(expand=1,fill=tk.BOTH, side=tk.RIGHT)
 
 
 treemod.tt.attrs.Date_Attr.date_formatter.set("%d.%m.%Y")
-
-
-from PIL import ImageTk, Image
-
-
-income_icon = ImageTk.PhotoImage(Image.open("src/icons/income.png"))
-expense_icon = ImageTk.PhotoImage(Image.open("src/icons/expense.png"))
-item_icon = ImageTk.PhotoImage(Image.open("src/icons/item.png"))
 
 
 def item_relative_income(item:treemod.TreeItem)->str:
