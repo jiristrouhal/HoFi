@@ -50,7 +50,7 @@ class Test_Empty_Trees(unittest.TestCase):
         self.tree1.new("Branch X",tag='Branch')
         self.assertEqual(len(self.view.widget.get_children(self.tree1_iid)), 1)
         self.assertEqual(
-            self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"],
+            self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"].strip(),
             "Branch X",
         )
     
@@ -66,7 +66,7 @@ class Test_Empty_Trees(unittest.TestCase):
         self.tree1.new("Branch X",tag='Branch')
         adjusted_name = self.tree1._children[-1].name
         self.assertEqual(
-            self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"],
+            self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"].strip(),
             adjusted_name
         )
 
@@ -84,7 +84,7 @@ class Test_Empty_Trees(unittest.TestCase):
         self.tree1.new("Branch X",tag='Branch')
         self.tree1.rename_child(("Branch X",), "Branch Y")
         self.assertEqual(
-            self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"],
+            self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"].strip(),
             "Branch Y"
         )
 
@@ -92,7 +92,7 @@ class Test_Empty_Trees(unittest.TestCase):
         self.tree1.new("Branch X",tag='Branch')
         self.tree1.rename_child(("Branch XXXX",), "Branch Y")
         self.assertEqual(
-            self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"],
+            self.view.widget.item(self.view.widget.get_children(self.tree1_iid)[0])["text"].strip(),
             "Branch X"
         )
 

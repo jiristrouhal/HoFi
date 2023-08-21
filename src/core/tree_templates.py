@@ -6,6 +6,7 @@ from functools import partial
 
 import core.attributes as attrs
 
+
 class TemplateLocked(Exception): pass
 
 @dataclasses.dataclass(frozen=True)
@@ -14,7 +15,7 @@ class NewTemplate:
     attributes:OrderedDict[str,Any]
     children:Tuple[str,...]
     locked:bool = False
-    icon_file:str|None = None # relative path to a widget icon
+    icon_file:Any = None # relative path to a widget icon
     user_def_cmds:OrderedDict[str,Callable[[attrs.AttributesOwner],None]] = \
         dataclasses.field(default_factory=OrderedDict)
 
@@ -29,7 +30,7 @@ class Template:
     _dependent_attributes:OrderedDict[str,attrs.Dependent_Attr]
     _children:Tuple[str,...]
     _locked:bool
-    _icon_file:str|None = None
+    _icon_file:Any
     _user_def_cmds:OrderedDict[str,Callable[[attrs.AttributesOwner],None]] = \
         dataclasses.field(default_factory=OrderedDict)
 
@@ -37,7 +38,7 @@ class Template:
     def locked(self)->bool: return self._locked
 
     @property
-    def icon_file(self)->str|None: return self._icon_file
+    def icon_file(self)->Any: return self._icon_file
 
     @property
     def attributes(self)->OrderedDict[str,attrs._Attribute]:
