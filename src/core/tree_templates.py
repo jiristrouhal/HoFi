@@ -1,5 +1,5 @@
 import core.attributes as attrs
-from typing import Dict, Tuple, List, Any, Set, OrderedDict
+from typing import Dict, Tuple, List, Any, Set, OrderedDict, Callable
 import dataclasses
 import os
 
@@ -21,6 +21,7 @@ class NewTemplate:
 @dataclasses.dataclass
 class Template:
     _attributes:OrderedDict[str,attrs._Attribute]
+    _dependent_attributes:OrderedDict[str,attrs.Dependent_Attr]
     _children:Tuple[str,...]
     _locked:bool
     _icon_file:str|None = None
@@ -35,6 +36,13 @@ class Template:
     def attributes(self)->OrderedDict[str,attrs._Attribute]:
         instance_attributes = OrderedDict()
         for name, attr in self._attributes.items():
+            instance_attributes[name] = attr.copy()
+        return instance_attributes
+
+    @property
+    def dependent_attributes(self)->OrderedDict[str,attrs.Dependent_Attr]:
+        instance_attributes = OrderedDict()
+        for name, attr in self._dependent_attributes.items():
             instance_attributes[name] = attr.copy()
         return instance_attributes
     
@@ -98,8 +106,17 @@ def __add_templates(templates:Tuple[NewTemplate,...])->None:
     for t in templates:
         if __template_exists(t.tag): 
             raise KeyError(f"Template with tag {t.tag} already exists.")
+        
+        dependent_attributes:OrderedDict[str,Callable] = OrderedDict()
+        for attr_name, value in t.attributes.items():
+            if callable(value): 
+                dependent_attributes[attr_name] = value
+        for attr_name in dependent_attributes:
+            t.attributes.pop(attr_name)
+
         __templates[t.tag] = Template(
             _attributes = __create_attributes(t.attributes),
+            _dependent_attributes = __create_attributes(dependent_attributes),
             _children=t.children,
             _locked=t.locked,
             _icon_file=t.icon_file

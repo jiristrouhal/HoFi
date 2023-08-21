@@ -1,8 +1,15 @@
 from __future__ import annotations
-from typing import Any
+from typing import Any, Tuple, Callable, Protocol, Dict
 
 import abc
 import re
+
+
+class AttributesOwner(Protocol):
+
+    @property
+    def attributes(self)->Dict[str,_Attribute]: ...
+
 
 
 class _Attribute(abc.ABC):
@@ -29,6 +36,27 @@ class _Attribute(abc.ABC):
         if self.valid_entry(value) and not str(value).strip()=="": 
             self._value = str(value)
 
+
+from functools import partial
+class Dependent_Attr(_Attribute):
+    default_value = ""
+    def __init__(self, foo:Callable[[AttributesOwner],Any])->None:
+        super().__init__(foo)
+        self._owner_has_been_set = False
+    @property
+    def value(self)->Any: return self._value()
+    @staticmethod
+    def valid_entry(value: str)->bool: return True
+
+    def set_owner(self,obj:AttributesOwner)->None:
+        if not self._owner_has_been_set:
+            self._value = partial(self._value,obj)
+            self._owner_has_been_set = True
+
+    def copy(self)->Dependent_Attr:
+        return Dependent_Attr(self._value)
+    
+
 class Positive_Int_Attr(_Attribute):
     default_value = "1"
     @property
@@ -40,7 +68,7 @@ class Positive_Int_Attr(_Attribute):
         return int(value)>0
     
     def copy(self)->Positive_Int_Attr:
-        return Positive_Int_Attr(self.value)
+        return Positive_Int_Attr(self._value)
     
 
 import datetime, core.dates
@@ -87,7 +115,7 @@ class Name_Attr(_Attribute):
         return True
 
     def copy(self)->Name_Attr:
-        return Name_Attr(self.value)
+        return Name_Attr(self._value)
     
 
 class Text_Attr(_Attribute):
@@ -98,11 +126,14 @@ class Text_Attr(_Attribute):
     def valid_entry(value:str)->bool: return True
 
     def copy(self)->Text_Attr:
-        return Text_Attr(self.value)
+        return Text_Attr(self._value)
     
 
+
 def create_attribute(value:Any)->_Attribute:
-    if Positive_Int_Attr.valid_entry(value):
+    if callable(value):
+        return Dependent_Attr(value)
+    elif Positive_Int_Attr.valid_entry(value):
         return Positive_Int_Attr(value)
     elif Date_Attr.valid_entry(value):
         return Date_Attr(value)

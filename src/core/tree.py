@@ -6,7 +6,7 @@ from collections import OrderedDict
 import core.tree_templates as tt
 
 
-from core.attributes import _Attribute, Positive_Int_Attr, Name_Attr, create_attribute
+from core.attributes import _Attribute, Positive_Int_Attr, Name_Attr, create_attribute, Dependent_Attr
 
 
 DEFAULT_TAG = "Item"
@@ -22,6 +22,7 @@ class TreeItem:
 
         self._attributes:OrderedDict[str,_Attribute] = tt.template(tag).attributes
         self._attributes["name"].set(src.core.naming.strip_and_join_spaces(name))
+
         self.__child_tags:Tuple[str] = tt.template(tag).children
 
         self._children:List[TreeItem] = list()
@@ -36,11 +37,18 @@ class TreeItem:
         self.__type = 'leaf' if not self.__child_tags else 'branch'
         self.__tag = tag
 
+        self._dependent_attributes:OrderedDict[str,_Attribute] = tt.template(tag).dependent_attributes
+        for attr_name, attr in self._dependent_attributes.items():
+            attr.set_owner(self)
 
     @property
     def name(self)->str: return self._attributes["name"].value
     @property
-    def attributes(self)->Dict[str,_Attribute]: return self._attributes.copy()
+    def attributes(self)->Dict[str,_Attribute]: 
+        return self._attributes.copy()
+    @property
+    def dependent_attributes(self)->Dict[str,_Attribute]:
+        return self._dependent_attributes.copy()
     @property 
     def parent(self)->TreeItem|None: return self._parent
     @property
@@ -107,6 +115,9 @@ class TreeItem:
 
         for owner in self._actions:
             for action in self._actions[owner]['on_self_rename']: action(self)
+
+    def children(self,*branches_along_the_path:str)->List[str]:
+        return self._list_children(*branches_along_the_path,type='all')
 
     def branches(self,*branches_along_the_path:str)->List[str]:
         return self._list_children(*branches_along_the_path,type='branch')
@@ -182,7 +193,7 @@ class TreeItem:
         branch_to_be_removed = self._find_child(branch_path[-1])
         if branch_to_be_removed is None: return
 
-        if branch_to_be_removed.branches(): 
+        if branch_to_be_removed.children(): 
             for action in branch_to_be_removed._do_on_error['cannot_remove_branch_with_children']: 
                 action(branch_to_be_removed)
             return

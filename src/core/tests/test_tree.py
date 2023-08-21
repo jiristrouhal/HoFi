@@ -251,4 +251,34 @@ class Test_Adding_Children_According_To_Templates(unittest.TestCase):
         tree.tt.clear()
 
 
+class Test_Dependent_Attributes(unittest.TestCase):
+
+    def setUp(self) -> None:
+        tree.tt.clear()
+
+    def test_make_the_tree_weight_depend_on_its_height(self):
+        
+        def get_weight(t:tree.Tree): 
+            return 2*t.attributes["height"].value**3
+
+        tree.tt.add(
+            tree.tt.NewTemplate("Tree", 
+                {
+                    "name":"New", 
+                    "height":20, 
+                    "weight":get_weight
+                }, 
+                children=()
+            )
+        )
+        treeA = tree.Tree("TreeA", tag="Tree")
+        treeA.set_attribute("height",1)
+        self.assertEqual(treeA.dependent_attributes["weight"].value, 2)
+        
+
+    def tearDown(self) -> None:
+        tree.tt.clear()
+
+
+
 if __name__=="__main__": unittest.main()

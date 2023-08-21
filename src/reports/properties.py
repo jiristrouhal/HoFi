@@ -19,7 +19,10 @@ class Properties:
     def display(self,item:treemod.TreeItem)->None:
         if self.displayed_item != item:
             self.clear()
-            self.__draw_properties(item.attributes, item.tag)
+            self.__draw_properties(
+                item.attributes, 
+                item.dependent_attributes,
+                item.tag)
             self.displayed_item = item
 
     def redraw(self, x)->None:
@@ -28,17 +31,34 @@ class Properties:
             self.clear()
             self.displayed_item = item
             self.__draw_properties(
-                self.displayed_item.attributes, 
+                self.displayed_item.attributes,
+                self.displayed_item.dependent_attributes, 
                 self.displayed_item.tag
             )
 
-    def __draw_properties(self, attributes:Dict[str,treemod._Attribute], tag:str="")->None:
+    def __draw_properties(
+        self, 
+        attributes:Dict[str,treemod._Attribute], 
+        dependent_attributes:Dict[str,treemod.Dependent_Attr],
+        tag:str=""
+        )->None:
+
         row = 0
         attr_values = {label:x.value for label,x in attributes.items()}
+        dep_attr_values = {label:x.value for label,x in dependent_attributes.items()}
+
         if tag.strip()!="": 
-            curr_value = attributes["name"].value
             attr_values["name"]+= f" ({tag.lower()})"
+
         for name, value in attr_values.items():
+            label = tk.Label(self.widget,text="• "+ name+": ")
+            value_widget = tk.Label(self.widget,text=str(value))
+            self.props[name] = value_widget
+            label.grid(row=row,column=0,sticky=tk.W,padx=(15,0))
+            value_widget.grid(row=row,column=1,sticky=tk.W,padx=(0,15))
+            row += 1
+
+        for name, value in dep_attr_values.items():
             label = tk.Label(self.widget,text="• "+ name+": ")
             value_widget = tk.Label(self.widget,text=str(value))
             self.props[name] = value_widget

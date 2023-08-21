@@ -148,3 +148,10 @@ The the dictionary is stored as a part of a template object, than allows to modi
 The process of defining the item using some kind of template starts with depicting how the app works:
 <img height=700 src=./out/uml/uml/treeitem_template_sequence_diagram.svg/>
 
+
+
+## Dependent branch and tree attributes
+When entering the tree/branch template, it is possible to pass a tuple as an default value. The first elements is a callable, that denotes a function. The function's arguments are denoted by the attribute labels, which are passed as the remaining elements of the tuple. The function is allowed to have only positional arguments.
+
+This makes the program to evaluate the expression as a function of previously defined attributes of the current item, its children or its parent.
+

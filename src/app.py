@@ -26,12 +26,22 @@ properties_frame.pack(expand=1,fill=tk.BOTH)
 
 treemod.tt.attrs.Date_Attr.date_formatter.set("%d.%m.%Y")
 
+
+def sum_incomes(item:treemod.TreeItem)->int:
+    s = 0
+    for child in item._children:
+        if child.tag=="Income":
+            s += child.attributes["amount"].value
+        elif child.tag=="Item":
+            s += child.dependent_attributes["total income"].value
+    return s
+
 treemod.tt.clear()
 treemod.tt.add(
-    treemod.tt.NewTemplate('Scenario',{"name":"New"},children=("Income","Expense","Item"),icon_file="./src/icons/black_square.png"),
-    treemod.tt.NewTemplate('Income',{"name":"New","amount":1, "date":"1.1.2023"},children=()),
-    treemod.tt.NewTemplate('Expense',{"name":"New","amount":1},children=()),
-    treemod.tt.NewTemplate('Item',{"name":"New"},children=("Income","Expense","Item")),
+    treemod.tt.NewTemplate('Scenario',{"name":"New","total income": sum_incomes},children=("Income","Expense","Item"),icon_file="./src/icons/black_square.png"),
+    treemod.tt.NewTemplate('Income',{"name":"New income","amount":1, "date":"1.1.2023"},children=()),
+    treemod.tt.NewTemplate('Expense',{"name":"New expense","amount":1},children=()),
+    treemod.tt.NewTemplate('Item',{"name":"New item","total income": sum_incomes},children=("Income","Expense","Item")),
 )
 
 
