@@ -16,6 +16,7 @@ import src.controls.tree_to_xml as txml
 import src.controls.treelist as treelist
 import src.core.tree as treemod
 import src.controls.right_click_menu as rcm
+from src.core.attributes import Name_Attr
 
 
 
@@ -334,7 +335,7 @@ class Tree_Manager:
         self.__cleanup_new_tree_widgets()
         self._window_new = tk.Toplevel(self.__ui)
         self._window_new.title(SET_NEW_TREE_NAME)
-        vcmd = (self._window_new.register(treemod.Name_Attr.valid_entry),'%P')
+        vcmd = (self._window_new.register(Name_Attr.valid_entry),'%P')
         self._entry_name = tk.Entry(
             self._window_new,
             width=50,

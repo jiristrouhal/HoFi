@@ -8,7 +8,7 @@ import tkinter as tk
 
 
 import controls.tree_editor  as tree_editor
-from core.tree import Tree, TreeItem, Positive_Int_Attr, tt
+from core.tree import Tree, TreeItem, tt
 
 
 class Test_Creating_Trees(unittest.TestCase):

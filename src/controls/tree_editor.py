@@ -2,11 +2,11 @@ import tkinter.ttk as ttk
 import tkinter as tk
 import tkinter.messagebox as tkmsg
 from typing import Tuple, Dict, Callable, List
-import src.core.tree as treemod
 from functools import partial
 from collections import OrderedDict
 
 
+import src.core.tree as treemod
 import src.controls.right_click_menu as rcm
 
 
@@ -37,8 +37,6 @@ class TreeEditor:
         self.__configure_widget()
 
         self._attribute_template:OrderedDict[str,treemod._Attribute] = OrderedDict()
-        self._attribute_template["name"] = treemod.Name_Attr()
-        self._attribute_template["lenght"] = treemod.Positive_Int_Attr()
 
         self._map:Dict[str,treemod.TreeItem] = dict()
         self.right_click_menu = rcm.RCMenu(self.widget)
