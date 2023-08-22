@@ -1,11 +1,10 @@
 import tkinter.ttk as ttk
 import tkinter as tk
 import tkinter.messagebox as tkmsg
-from typing import Tuple, Dict, Callable, Any, List
+from typing import Tuple, Dict, Callable, List
 import src.core.tree as treemod
 from functools import partial
 from collections import OrderedDict
-from PIL import Image, ImageTk
 
 
 import src.controls.right_click_menu as rcm
