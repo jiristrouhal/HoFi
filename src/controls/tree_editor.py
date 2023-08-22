@@ -331,7 +331,7 @@ class TreeEditor:
         self.__configure_toplevel(self.edit_window)
         item = self._map[item_id]
         self.__create_entries(self.edit_window,item.attributes)
-        self.edit_window.bind("<Key-Escape>",self._disregard_edit_entry_values_on_keypress)
+        self.edit_window.bind("<Key-Escape>",self.disregard_edit_entry_values_on_keypress)
         button_frame(
             self.edit_window,
             ok_cmd = partial(self.confirm_edit_entry_values,item_id),
@@ -357,8 +357,8 @@ class TreeEditor:
         for action in self._on_edit:
             action(item)
     
-    def _disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
-        self.disregard_edit_entry_values()
+    def disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
+        self.__clear_edit_window_widgets()
 
     def disregard_edit_entry_values(self)->None:
         self.__clear_edit_window_widgets()
