@@ -392,12 +392,10 @@ class TreeEditor:
     def _confirm_parent_and_close_move_window(self,item_id:str)->None:
         if not self.available_parents.winfo_exists(): return
         selection = self.available_parents.selection()
-        if not selection: 
-            # no parent was selected, thus keep the current one
-            return 
-        branch = self._map[item_id]
-        branch._set_parent(self._map[selection[0]])
-        self.widget.move(item_id,selection[0],-1)
+        if selection: # no parent was selected, thus keep the current one
+            branch = self._map[item_id]
+            branch._set_parent(self._map[selection[0]])
+            self.widget.move(item_id,selection[0],-1)
         self._close_move_window()
 
     def _close_move_window(self)->None:

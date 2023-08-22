@@ -259,7 +259,7 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
         #test that available parents are deleted after clicking the ok button
         self.assertFalse(self.view.available_parents.winfo_exists())
 
-    def test_selecting_a_new_parent_but_canceling_the_move_have_no_effect_on_the_tree(self):
+    def test_selecting_a_new_parent_but_cancelling_the_move_has_no_effect_on_the_tree(self):
         
         self.view.available_parents.selection_set(self.tree1._find_child("Branch X").data["treeview_iid"])
         cancel_button:tk.Button = self.view.move_window.winfo_children()[-1].winfo_children()[1]
@@ -272,7 +272,20 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
         #test that available parents are deleted after clicking the cancel button
         self.assertFalse(self.view.available_parents.winfo_exists())
 
-    
+    def test_selecting_no_parent_has_no_effect_on_the_tree(self):
+        
+        self.view.available_parents.selection_set()
+        ok_button:tk.Button = self.view.move_window.winfo_children()[-1].winfo_children()[0]
+        ok_button.invoke()
+
+        moved_branch = self.view._map[self.small_branch_id]
+        self.assertEqual(moved_branch.parent.name,"Tree 1")
+        #test that move window closes after clicking the cancel button
+        self.assertFalse(self.view.move_window.winfo_exists())
+        #test that available parents are deleted after clicking the cancel button
+        self.assertFalse(self.view.available_parents.winfo_exists())
+
+
 class Test_Moving_Tree(unittest.TestCase):
     
     def setUp(self) -> None:
@@ -531,10 +544,8 @@ class Test_User_Defined_Command_In_Right_Click_Menu(unittest.TestCase):
         editor = tree_editor.TreeEditor()
         tree = Tree("TreeA", tag="Tree")
         editor.load_tree(tree)
-
         editor._open_right_click_menu(tree.data["treeview_iid"])
         editor.right_click_menu.invoke("Increment x")
-
         self.assertEqual(self.x, 1)
 
 
