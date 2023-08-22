@@ -139,6 +139,14 @@ class Test_Creating_Tree(unittest.TestCase):
     def test_listing_children_of_nonexistent_item_yields_empty_list(self):
         self.assertListEqual(self.tree._list_children("Branch 2", "Nonexistent child of Branch 2"), [])
 
+    def test_accessing_branches_tree(self):
+        self.tree.new("Branch X",tag="Branch")
+        branchX = self.tree._children[-1]
+        self.tree.new("Child of X", "Branch X",tag="Branch")
+        childOfX = branchX._children[-1]
+        self.assertEqual(childOfX.get_its_tree(), self.tree)
+
+    
     def tearDown(self) -> None:
         tree.tt.clear()
 
