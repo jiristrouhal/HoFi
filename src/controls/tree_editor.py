@@ -159,36 +159,19 @@ class TreeEditor:
 
     def __load_item_into_tree(self,iid:str,item:treemod.TreeItem)->None:
         parent_iid = "" if item.parent is None else item.parent.data["treeview_iid"]
-        if not treemod.tt.template(item.tag).icon_file is None:
-            image = treemod.tt.template(item.tag).icon_file
-            self.widget.insert(parent_iid,index=0,iid=iid,text=item.name, image=image)
-        else:
-            self.widget.insert(parent_iid,index=0,iid=iid,text=item.name)
+        self.widget.insert(parent_iid,index=0,iid=iid,text=item.name)
+        icon = treemod.tt.template(item.tag).icon_file
+        if icon is not None: self.widget.item(iid,image=icon)
 
     def _load_children(self,parent:treemod.TreeItem)->None:
         for branch in parent._children:
-            iid = iid=str(id(branch))
-            self.__load_item_into_tree(iid,branch)
-            self._map[iid] = branch
-            branch.add_action(self.label,'add_child', partial(self._on_new_child, iid))
-            branch.add_action(self.label,'on_removal', partial(self._on_removal, iid))
-            branch.add_action(self.label,'on_renaming', partial(self._on_renaming, iid))
-            branch.add_action(self.label,'on_moving', partial(self._on_moving, iid))
-            branch.add_data("treeview_iid",iid)
-
-            branch.do_if_error_occurs(
-                'cannot_remove_branch_with_children',
-                self._cannot_remove_branch_with_children
-            )
+            self.__insert_child_into_tree(branch)
             self._load_children(branch)
-        
 
     def remove_tree(self,tree_id:str)->None:
         if tree_id not in self.widget.get_children(): 
             raise ValueError("Trying to delete nonexistent tree")
-        
-        for action in self._on_tree_removal: 
-            action()
+        for action in self._on_tree_removal:  action()
         self.__clear_related_actions(self._map[tree_id])
         self.widget.delete(tree_id)
 
@@ -199,32 +182,28 @@ class TreeEditor:
         for child in item._children: 
             self.__clear_related_actions(child)
 
-    def _on_new_child(
-        self,
-        parent_iid:str,
-        new_branch:treemod.TreeItem
-        )->None:
-
-        item_iid = str(id(new_branch))
-
-        self.__load_item_into_tree(item_iid,new_branch)
-
-        self._map[item_iid] = new_branch
-        new_branch.add_action(self.label,'add_child', partial(self._on_new_child, item_iid))
-        new_branch.add_action(self.label,'on_removal', partial(self._on_removal, item_iid))
-        new_branch.add_action(self.label,'on_renaming', partial(self._on_renaming, item_iid))
-        new_branch.add_action(self.label,'on_moving', partial(self._on_moving, item_iid))
-        new_branch.add_data("treeview_iid",item_iid)
-
-        new_branch.do_if_error_occurs(
+    def __insert_child_into_tree(self, child:treemod.TreeItem)->None:
+        item_iid = str(id(child))
+        self._map[item_iid] = child
+        self.__load_item_into_tree(item_iid,child)
+        child.add_action(self.label,'add_child', partial(self._on_new_child, item_iid))
+        child.add_action(self.label,'on_removal', partial(self._on_removal, item_iid))
+        child.add_action(self.label,'on_renaming', partial(self._on_renaming, item_iid))
+        child.add_action(self.label,'on_moving', partial(self._on_moving, item_iid))
+        child.add_data("treeview_iid",item_iid)
+        child.do_if_error_occurs(
             'cannot_remove_branch_with_children',
             self._cannot_remove_branch_with_children
         )
+
+    def _on_new_child(self,parent_iid:str,new_branch:treemod.TreeItem)->None:
+        child_iid = str(id(new_branch))
+        self.__insert_child_into_tree(new_branch)
         # always open the item under which the new one has been added 
         self.widget.item(parent_iid,open=True)
-        self.widget.selection_set(item_iid)
+        self.widget.selection_set(child_iid)
         # scroll to the added item
-        self.widget.see(item_iid)
+        self.widget.see(child_iid)
 
     def _on_removal(self,branch_iid:str,*args)->None:
         self._map.pop(branch_iid)
@@ -307,14 +286,9 @@ class TreeEditor:
                 }
             )
         
-
     
     def open_add_window(self,parent_id:str,tag:str)->None:
-        self.add_window = tk.Toplevel(self.widget)
-        self.add_window.grab_set()
-        self.add_window.focus_set()
-
-        self.entries = dict()
+        self.__create_item_toplevel(self.add_window)
         entries_frame = tk.Frame(self.add_window)
         row=0
         for key,attr in treemod.tt.template(tag).attributes.items():
@@ -363,10 +337,7 @@ class TreeEditor:
         self.open_edit_window(iid)
 
     def open_edit_window(self,item_id:str)->None:
-        self.edit_window = tk.Toplevel(self.widget)
-        self.edit_window.grab_set()
-        self.edit_window.focus_set()
-        self.entries = dict()
+        self.__create_item_toplevel(self.edit_window)
         item = self._map[item_id]
         entries_frame = tk.Frame(self.edit_window)
         row = 0
@@ -467,13 +438,13 @@ class TreeEditor:
             self.available_parents.insert(parent_id,index=0,iid=child_id,text=child["text"],open=True)
             self._collect_available_parents(child_id,item_id)
 
-    def __get_tree_id(self,item_id:str)->str:
-        id = item_id
-        while not id=="":
-            tree_id = id
-            id = self.widget.parent(tree_id)
-        return str(tree_id)
-    
+    def _cannot_remove_branch_with_children(self,branch:treemod.TreeItem)->None: # pragma: no cover
+        if not self._messageboxes_allowed: return
+        tkmsg.showerror(
+            DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE,
+            branch.name+DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT
+        )
+
     def __clear_add_window_widgets(self)->None: # pragma: no cover
         self.add_window.destroy()
         self.entries.clear()
@@ -482,12 +453,19 @@ class TreeEditor:
         self.edit_window.destroy()
         self.entries.clear()
 
-    def _cannot_remove_branch_with_children(self,branch:treemod.TreeItem)->None: # pragma: no cover
-        if not self._messageboxes_allowed: return
-        tkmsg.showerror(
-            DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE,
-            branch.name+DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT
-        )
+    def __create_item_toplevel(self,window:tk.Toplevel)->None:
+        self.edit_window = tk.Toplevel(self.widget)
+        self.edit_window.grab_set()
+        self.edit_window.focus_set()
+        self.entries = dict()
+
+    def __get_tree_id(self,item_id:str)->str:
+        id = item_id
+        while not id=="":
+            tree_id = id
+            id = self.widget.parent(tree_id)
+        return str(tree_id)
+
 
 
 def button_frame(
