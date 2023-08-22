@@ -515,5 +515,29 @@ class Test_Loading_Item_With_Icon_Defined_By_Template(unittest.TestCase):
         self.view.load_tree(self.tree1)
     
 
+class Test_User_Defined_Command_In_Right_Click_Menu(unittest.TestCase):
+
+    def test_making_the_command_increment_some_integer(self):
+
+        self.x = 0 
+        def user_def_command(tree:Tree)->None:
+            self.x += 1
+
+        tt.clear()
+        tt.add(
+            tt.NewTemplate('Tree',{"name":"New"},children=(),user_def_cmds={"Increment x":user_def_command}),
+        )
+        
+        editor = tree_editor.TreeEditor()
+        tree = Tree("TreeA", tag="Tree")
+        editor.load_tree(tree)
+
+        editor._open_right_click_menu(tree.data["treeview_iid"])
+        editor.right_click_menu.invoke("Increment x")
+
+        self.assertEqual(self.x, 1)
+
+
+
 
 if __name__=="__main__": unittest.main()
