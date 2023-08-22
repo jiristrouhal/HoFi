@@ -3,13 +3,9 @@ from typing import List, Tuple, Dict, Any, Callable, Literal, OrderedDict
 import src.core.naming
 from collections import OrderedDict
 
+
 import src.core.tree_templates as tt
-
-
 from src.core.attributes import _Attribute, Positive_Int_Attr, Name_Attr, create_attribute, Dependent_Attr
-
-
-DEFAULT_TAG = "Item"
 
 
 class TreeItem:
