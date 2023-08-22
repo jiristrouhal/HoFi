@@ -110,7 +110,7 @@ class Tree_Manager:
         )->None:
 
         if not tree_tag in treemod.tt.template_tags():
-            raise ValueError(f"The tree template '{tree_tag} does not exist.")
+            raise KeyError(f"The tree template '{tree_tag} does not exist.")
         self._tree_template_tag:str = tree_tag
 
         self.__converter = txml.Tree_XML_Converter()

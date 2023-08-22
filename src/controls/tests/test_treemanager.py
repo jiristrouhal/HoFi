@@ -459,4 +459,15 @@ class Test_Actions(unittest.TestCase):
     def tearDown(self) -> None:
         treemod.tt.clear()
 
+
+class Test_Specifying_Nonexistent_Tree_Template(unittest.TestCase):
+
+    def test_nonexistent_tree_template_tag_raises_key_error(self)->None:
+        treemod.tt.clear()
+        treemod.tt.add(treemod.tt.NewTemplate('Tree', {"name":"New"}, children=()))
+
+        tlist = treelist.TreeList('Label')
+        self.assertRaises(KeyError, Tree_Manager, tlist, "Nonexistent template tag")
+
+
 if __name__=="__main__": unittest.main()
