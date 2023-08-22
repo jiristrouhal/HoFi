@@ -73,6 +73,10 @@ NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_TITLE = "Cannot load file"
 NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_MSG_1 = "The tree with name '"
 NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_MSG_2 = "' already exists. Rename the file or the tree."
 
+
+INVALID_XML_TITLE = "Invalid xml file"
+INVALID_XML_MSG = "The file is not a valid xml file. Check the file contents."
+
 DEFAULT_TREE_NAME = "New"
 
 
@@ -110,6 +114,7 @@ class Tree_Manager:
         self._tree_template_tag:str = tree_tag
 
         self.__converter = txml.Tree_XML_Converter()
+        self.__converter.add_action('invalid_xml', self._notify_the_user_xml_is_invalid)
         self.__ui = tk.Frame(master=ui_master)
         self._buttons:Dict[ButtonID,tk.Button] = dict()
         self._view = ttk.Treeview(self.__ui, selectmode='browse')
@@ -486,6 +491,9 @@ class Tree_Manager:
             SELECTED_TREE_CANNOT_BE_DELETED_MSG_1 + tree_name + \
             SELECTED_TREE_CANNOT_BE_DELETED_MSG_2
         )
+
+    def _notify_the_user_xml_is_invalid(self)->None:
+        tkmsg.showerror(INVALID_XML_TITLE,INVALID_XML_MSG)
 
     def __configure_ui(self)->None: # pragma: no cover
         button_frame = tk.Frame(self.__ui)
