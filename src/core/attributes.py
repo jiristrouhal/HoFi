@@ -77,10 +77,11 @@ class Date_Attr(_Attribute):
     date_formatter = src.core.dates.get_date_converter("%d.%m.%Y")
 
     def __init__(self, value:str|None=None)->None:
-        if value is None or not self.valid_entry(value): 
-            self._value = self.default_value
-        else:
+        if value is not None and self.final_validation(value):
             self._value = self.date_formatter.enter_date(value)
+        else:
+            self._value = self.default_value
+
     @property
     def value(self)->str: 
         return self.date_formatter.print_date(self._value)
@@ -136,7 +137,7 @@ def create_attribute(value:Any)->_Attribute:
     elif Positive_Int_Attr.valid_entry(value):
         return Positive_Int_Attr(value)
     elif Date_Attr.valid_entry(value):
-        return Date_Attr(value)
+        return Date_Attr(Date_Attr.date_formatter.print_date(datetime.date.today()))
     elif Name_Attr.valid_entry(value):
         return Name_Attr(value)
     else:

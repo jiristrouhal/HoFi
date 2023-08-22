@@ -106,7 +106,7 @@ class TreeEditor:
         
     def __configure_widget(self)->None:
         style = ttk.Style()
-        style.configure('Treeview',indent=15)
+        style.configure('Treeview',indent=15,rowheight=17)
         
         self.widget.pack(side=tk.RIGHT,expand=1,fill=tk.BOTH)
         scroll_y = ttk.Scrollbar(
@@ -119,8 +119,8 @@ class TreeEditor:
             selectmode='browse',
             show='tree', # hide zeroth row, that would contain the tree columns' headings
             yscrollcommand=scroll_y.set,
-
         )
+
 
     def remove_selected_item(self,event:tk.Event)->None: # pragma: no cover
         selection = self.widget.selection()
@@ -165,9 +165,9 @@ class TreeEditor:
         parent_iid = "" if item.parent is None else item.parent.data["treeview_iid"]
         if not treemod.tt.template(item.tag).icon_file is None:
             image = treemod.tt.template(item.tag).icon_file
-            self.widget.insert(parent_iid,index=0,iid=iid,text=" "+item.name, image=image)
+            self.widget.insert(parent_iid,index=0,iid=iid,text=item.name, image=image)
         else:
-            self.widget.insert(parent_iid,index=0,iid=iid,text=" "+item.name)
+            self.widget.insert(parent_iid,index=0,iid=iid,text=item.name)
 
     def _load_branches(self,parent:treemod.TreeItem)->None:
         for branch in parent._children:
@@ -235,7 +235,7 @@ class TreeEditor:
         self.widget.delete(branch_iid)
 
     def _on_renaming(self,item_iid:str,branch:treemod.TreeItem)->None:
-        self.widget.item(item_iid,text=" "+branch.name)
+        self.widget.item(item_iid,text=branch.name)
 
     def _on_moving(self,branch_iid:str,new_parent:treemod.TreeItem)->None:
         self.widget.move(branch_iid, new_parent.data["treeview_iid"], 0)
@@ -407,7 +407,7 @@ class TreeEditor:
             else:
                 item.set_attribute(attribute, entry.get())
         # rename element in the tree
-        self.widget.item(item_id,text=" "+item.name)
+        self.widget.item(item_id,text=item.name)
         self.__clear_edit_window_widgets()
         for action in self._on_edit:
             action(item)
