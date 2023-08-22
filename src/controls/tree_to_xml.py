@@ -1,12 +1,12 @@
 
 import xml.etree.ElementTree as et
 import os
-from collections import OrderedDict
+from typing import Dict, Callable, List, Literal
 
 import src.core.tree as treemod
 
 
-DEFAULT_DIRECTORY = "./data"
+DEFAULT_DIRECTORY = "."
 
 
 def data_file_path(name:str,dir:str)->str:
@@ -15,6 +15,17 @@ def data_file_path(name:str,dir:str)->str:
     return os.path.join(dir,name+FORMAT)
 
 class Tree_XML_Converter:
+    __event_label = Literal['invalid_xml']
+    def __init__(self)->None:
+        self._actions:Dict[str,List[Callable[[],None]]] = dict()
+
+    def actions(self,label:__event_label)->List[Callable[[],None]]:
+        
+        return self._actions[label]
+
+    def add_action(self, label:__event_label, action:Callable[[],None])->None:
+        if not label in self._actions: self._actions[label] = list()
+        self._actions[label].append(action)
 
     def save_tree(self,tree:treemod.Tree,dir:str=DEFAULT_DIRECTORY)->str:
         xml_tree = self.__xml_tree(tree)
@@ -46,9 +57,17 @@ class Tree_XML_Converter:
 
     def load_tree(self,name:str,dir:str=DEFAULT_DIRECTORY)->treemod.Tree|None:
         path_to_file = data_file_path(name,dir)
-        if not os.path.isfile(path_to_file): return None
-        
-        xml_root = et.parse(path_to_file).getroot()
+        if not os.path.isfile(path_to_file): 
+            return None
+    
+        try: 
+            xml_tree = et.parse(path_to_file)
+        except:
+            if 'invalid_xml' in self._actions:
+                for action in self.actions('invalid_xml'):  action()
+            return None
+
+        xml_root = xml_tree.getroot()
         tree = treemod.Tree(xml_root.attrib["name"],tag=xml_root.tag)
         for attr_name, value in xml_root.attrib.items():
             tree.set_attribute(attr_name,value)

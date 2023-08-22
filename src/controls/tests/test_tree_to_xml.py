@@ -74,6 +74,24 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         self.assertEqual(loaded_tree1.attributes["weight"].value, 314)
         # attributes missing in template are ignored
         with self.assertRaises(KeyError): loaded_tree1.attributes["height"]
+
+    def test_loading_invalid_xml_file_runs_action(self)->None:
+        self.x = 0
+        def action()->None: self.x += 1
+
+        self.converter.add_action('invalid_xml', action)
+        with open("Invalid_tree_file.xml","w") as f:
+            f.write("Some invalid content\n <Not-closed_item>\n")
+
+        self.converter.load_tree("Invalid_tree_file")
+        self.assertEqual(self.x, 1)
+        self.converter.load_tree("Invalid_tree_file")
+        self.assertEqual(self.x, 2)
+
+    def tearDown(self) -> None:
+        treemod.tt.clear()
+        if os.path.isfile("Invalid_tree_file.xml"):
+            os.remove("Invalid_tree_file.xml")
               
 
 if __name__=="__main__": unittest.main()
