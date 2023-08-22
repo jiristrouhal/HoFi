@@ -50,6 +50,30 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
 
     def test_loading_tree_from_nonexistent_path_returns_none(self):
         self.assertEqual(self.converter.load_tree("Nonexistent tree"), None)
+
+    def test_loading_tree_from_xml_sets_attributes_missing_in_xml_compared_to_template_to_default_values(self)->None:
+        # save the tree under an old template
+        self.tree1.set_attribute("weight",314)
+        self.converter.save_tree(self.tree1)
+        # modify the template to contain a new attribute with default value '5'
+        treemod.tt._modify_template('Tree', {'name':"New", "weight":123, "height":20, "new_attribute":5})
+        loaded_tree1 = self.converter.load_tree("Tree 1")
+        # attributes found in both xml and template are loaded with their saved values
+        self.assertEqual(loaded_tree1.attributes["weight"].value, 314)
+        # attributes missing in xml are created with default values
+        self.assertEqual(loaded_tree1.attributes["new_attribute"].value, 5)
+
+    def test_loading_tree_from_xml_ignores_attributes_not_present_in_the_template(self)->None:
+        # save the tree under an old template
+        self.tree1.set_attribute("weight",314)
+        self.converter.save_tree(self.tree1)
+        # remove the attribute 'height' from the 'Tree' template
+        treemod.tt._modify_template('Tree', {'name':"New", "weight":123})
+        loaded_tree1 = self.converter.load_tree("Tree 1")
+        # attributes found in both xml and template are loaded with their saved values
+        self.assertEqual(loaded_tree1.attributes["weight"].value, 314)
+        # attributes missing in template are ignored
+        with self.assertRaises(KeyError): loaded_tree1.attributes["height"]
               
 
 if __name__=="__main__": unittest.main()
