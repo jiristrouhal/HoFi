@@ -400,10 +400,12 @@ class TreeEditor:
         if not self.available_parents.winfo_exists(): return
         selection = self.available_parents.selection()
         if selection: # no parent was selected, thus keep the current one
+            new_parent = self._map[selection[0]]
             branch = self._map[item_id]
-            branch._set_parent(self._map[selection[0]])
-            self.widget.move(item_id,selection[0],-1)
-            for action in self._on_any_modification: action(branch)
+            if branch._parent is not new_parent:
+                branch._set_parent(new_parent)
+                self.widget.move(item_id,selection[0],-1)
+                for action in self._on_any_modification: action(branch)
 
         self._close_move_window()
 
