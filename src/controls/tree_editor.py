@@ -288,8 +288,7 @@ class TreeEditor:
         
     def open_add_window(self,parent_id:str,tag:str)->None:
         self.add_window = tk.Toplevel(self.widget)
-        self.add_window.grab_set()
-        self.add_window.focus_set()
+        self.__configure_toplevel(self.add_window)
         self.entries = dict()
         self.__create_entries(self.add_window, treemod.tt.template(tag).attributes)
 
@@ -330,8 +329,7 @@ class TreeEditor:
 
     def open_edit_window(self,item_id:str)->None:
         self.edit_window = tk.Toplevel(self.widget)
-        self.edit_window.grab_set()
-        self.edit_window.focus_set()
+        self.__configure_toplevel(self.edit_window)
         self.entries = dict()
         item = self._map[item_id]
         self.__create_entries(self.edit_window,item.attributes)
@@ -342,7 +340,6 @@ class TreeEditor:
             cancel_cmd = self.disregard_edit_entry_values,
             commands={REVERT_ENTRY_VALUE_CHANGES:partial(self.back_to_original_edit_entry_values,item_id)}
         ).pack(side=tk.BOTTOM)
-        
 
     def back_to_original_edit_entry_values(self,branch_id:str)->None:
         for attribute, entry in self.entries.items():
@@ -371,8 +368,7 @@ class TreeEditor:
     def open_move_window(self,item_id:str)->None:
         # copy the treeview and throw away the moved item and its children
         self.move_window = tk.Toplevel(self.widget)
-        self.move_window.grab_set()
-        self.move_window.focus_set()
+        self.__configure_toplevel(self.move_window)
         self.move_window.title(MOVE_WINDOW_TITLE)
         self.available_parents = ttk.Treeview(
             self.move_window, 
@@ -448,6 +444,10 @@ class TreeEditor:
             self.entries[key] = entry
             row += 1
         entries_frame.pack()
+
+    def __configure_toplevel(self,toplevel:tk.Toplevel)->None:
+        toplevel.grab_set()
+        toplevel.focus_set()
 
     def __get_tree_id(self,item_id:str)->str:
         id = item_id
