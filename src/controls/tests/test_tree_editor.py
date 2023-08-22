@@ -157,9 +157,9 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.view._open_right_click_menu(self.branch_x_iid)
 
     def test_deleting_branch(self):
-        self.assertListEqual(self.tree1.branches(),["Branch X"])
+        self.assertListEqual(self.tree1.children(),["Branch X"])
         self.view.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_DELETE)
-        self.assertListEqual(self.tree1.branches(),[])
+        self.assertListEqual(self.tree1.children(),[])
 
     def test_right_clicking_again_outside_any_treeview_item_does_not_create_any_menu(self):
         ID_IF_NO_ITEM_CLICKED = ""
@@ -179,7 +179,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.view.edit_entries["length"].insert(0,78)
 
         self.view.confirm_edit_entry_values(self.branch_x_iid)
-        self.assertEqual(self.tree1.branches()[0],"Branch YZ")
+        self.assertEqual(self.tree1.children()[0],"Branch YZ")
         self.assertEqual(self.tree1._children[0].attributes["length"].value,78)
     
     def test_after_confirming_the_entries_the_edit_window_closes(self):
@@ -344,7 +344,7 @@ class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
         self.view.add_window_entries["name"].insert(0,"Branch X")
         ok_button:tk.Button = self.view.add_window.winfo_children()[1].winfo_children()[0]
         ok_button.invoke()
-        self.assertListEqual(self.tree1.branches(),["Branch X"])
+        self.assertListEqual(self.tree1.children(),["Branch X"])
         # add_window and add_window_entries are destroyed
         self.assertFalse(self.view.add_window.winfo_exists())
         self.assertDictEqual(self.view.add_window_entries, {})
@@ -355,7 +355,7 @@ class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
         self.view.add_window_entries["name"].insert(0,"Branch X")
         cancel_button:tk.Button = self.view.add_window.winfo_children()[1].winfo_children()[-1]
         cancel_button.invoke()
-        self.assertListEqual(self.tree1.branches(),[])
+        self.assertListEqual(self.tree1.children(),[])
         # add_window and add_window_entries are destroyed
         self.assertFalse(self.view.add_window.winfo_exists())
         self.assertDictEqual(self.view.add_window_entries, {})

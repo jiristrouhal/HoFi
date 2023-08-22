@@ -157,7 +157,7 @@ class TreeEditor:
         tree.add_data("treeview_iid",iid)
         tree.add_action(self.label,'add_branch', partial(self._on_new_child,iid)) 
         tree.add_action(self.label,'on_self_rename', partial(self._on_renaming,iid))
-        self._load_branches(tree)
+        self._load_children(tree)
         self._open_all("")
 
     def __load_item_into_tree(self,iid:str,item:treemod.TreeItem)->None:
@@ -168,7 +168,7 @@ class TreeEditor:
         else:
             self.widget.insert(parent_iid,index=0,iid=iid,text=item.name)
 
-    def _load_branches(self,parent:treemod.TreeItem)->None:
+    def _load_children(self,parent:treemod.TreeItem)->None:
         for branch in parent._children:
             iid = iid=str(id(branch))
             self.__load_item_into_tree(iid,branch)
@@ -183,7 +183,7 @@ class TreeEditor:
                 'cannot_remove_branch_with_children',
                 self._cannot_remove_branch_with_children
             )
-            self._load_branches(branch)
+            self._load_children(branch)
         
 
     def remove_tree(self,tree_id:str)->None:

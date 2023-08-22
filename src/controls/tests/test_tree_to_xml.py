@@ -32,7 +32,7 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         self.tree1.new("Branch Y",tag='Branch')
         self.converter.save_tree(self.tree1)
         tree = self.converter.load_tree("Tree 1")
-        self.assertListEqual(tree.branches(), ["Branch X","Branch Y"])
+        self.assertListEqual(tree.children(), ["Branch X","Branch Y"])
 
     def test_nonempty_tree_with_branches_having_child_branches_is_unchanged_after_saving_and_loading_(self):
         sometree = treemod.Tree("SomeTreeX",tag='Tree')
@@ -44,9 +44,9 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         self.converter.save_tree(sometree)
         loaded_tree = self.converter.load_tree("SomeTreeX")
         self.assertEqual(loaded_tree.attributes["weight"].value, 100)
-        self.assertListEqual(loaded_tree.branches(), ["Branch X"])
-        self.assertListEqual(loaded_tree.branches("Branch X",), ["Small branch"])
-        self.assertListEqual(loaded_tree.branches("Branch X","Small branch"), ["Smaller branch"])
+        self.assertListEqual(loaded_tree.children(), ["Branch X"])
+        self.assertListEqual(loaded_tree.children("Branch X",), ["Small branch"])
+        self.assertListEqual(loaded_tree.children("Branch X","Small branch"), ["Smaller branch"])
 
     def test_loading_tree_from_nonexistent_path_returns_none(self):
         self.assertEqual(self.converter.load_tree("Nonexistent tree"), None)

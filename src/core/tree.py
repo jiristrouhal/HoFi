@@ -45,7 +45,7 @@ class TreeItem:
     def attributes(self)->Dict[str,_Attribute]: 
         return self._attributes.copy()
     @property
-    def dependent_attributes(self)->Dict[str,_Attribute]:
+    def dependent_attributes(self)->OrderedDict[str,Dependent_Attr]:
         return self._dependent_attributes.copy()
     @property 
     def parent(self)->TreeItem|None: return self._parent
@@ -117,26 +117,15 @@ class TreeItem:
             for action in self._actions[owner]['on_self_rename']: action(self)
 
     def children(self,*branches_along_the_path:str)->List[str]:
-        return self._list_children(*branches_along_the_path,type='all')
-
-    def branches(self,*branches_along_the_path:str)->List[str]:
-        return self._list_children(*branches_along_the_path,type='branch')
+        return self._list_children(*branches_along_the_path)
     
-    def leaves(self,*branches_along_the_path:str)->List[str]:
-        return self._list_children(*branches_along_the_path,type='leaf')
-    
-    def _list_children(self,*branches_along_the_path:str,type:Literal['leaf','branch','all'])->List[str]:
+    def _list_children(self,*branches_along_the_path:str)->List[str]:
         if branches_along_the_path:
             # list branches growing out of some child element of the current object
             lowest_level_branch = self._find_child(*branches_along_the_path)
-            if lowest_level_branch is not None:
-                return lowest_level_branch.branches()
-            else:
-                return []
-        # display branches growint out of the current object (branch, tree, ...)
-        if type=='all':
-            return [b.name for b in self._children]
-        return [b.name for b in self._children if b.type==type]
+            if lowest_level_branch is not None: return lowest_level_branch.children()
+            else: return []
+        return [b.name for b in self._children]
 
     def new(
         self,
@@ -156,10 +145,7 @@ class TreeItem:
                     f"The tag '{tag}' does not correspond to any of available child elements'\
                         templates.\n"
                     f"The available templates are {parent.child_tags}.")
-            parent.new(
-                name,
-                tag=tag
-            )
+            parent.new(name,tag=tag)
 
         else:  # add the branch directly to the current object
             child = TreeItem(name,tag)
@@ -233,7 +219,6 @@ class TreeItem:
                     return branch._find_child(*branch_names[1:])
                 return branch
         return None
-    
     
     
 class Tree(TreeItem): pass
