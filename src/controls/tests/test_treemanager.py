@@ -442,7 +442,7 @@ class Test_Actions(unittest.TestCase):
             self.names.append(tree.name)
         self.manager.add_action_on_selection(action)
         self.manager._open_right_click_menu(self.manager._view.get_children()[1])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_SELECT)
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EDIT)
         self.assertListEqual(self.names,["Tree X"])
 
     def test_action_on_deselection(self):
@@ -452,9 +452,9 @@ class Test_Actions(unittest.TestCase):
         self.manager.add_action_on_selection(action)
         self.manager.add_action_on_deselection(action2)
         self.manager._open_right_click_menu(self.manager._view.get_children()[1])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_SELECT)
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EDIT)
         self.manager._open_right_click_menu(self.manager._view.get_children()[1])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_DESELECT)
+        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_STOP_EDIT)
         self.assertListEqual(self.names,[])
 
     def tearDown(self) -> None:

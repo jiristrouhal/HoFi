@@ -34,8 +34,8 @@ MENU_CMD_TREE_UPDATE_FILE = "Update file"
 MENU_CMD_TREE_DELETE = "Delete"
 MENU_CMD_TREE_NEW = "New"
 MENU_CMD_TREE_LOAD = "Load"
-MENU_CMD_TREE_SELECT = "Select"
-MENU_CMD_TREE_DESELECT = "Deselect"
+MENU_CMD_TREE_EDIT = "Edit"
+MENU_CMD_TREE_STOP_EDIT = "Stop editing"
 
 FILEDIALOG_EXPORT_TITLE = "Export tree into file"
 FILEDIALOG_LOAD_TITLE = "Load tree from file"
@@ -65,8 +65,8 @@ INFO_TREE_EXPORTED_MSG_1 = "'"
 INFO_TREE_EXPORTED_MSG_2 = "' was exported into '"
 INFO_TREE_EXPORTED_MSG_3 = "'."
 
-SELECTED_TREE_CANNOT_BE_DELETED_TITLE = "Cannot deleted selected tree"
-SELECTED_TREE_CANNOT_BE_DELETED_MSG_1 = "Please unselect the '"
+SELECTED_TREE_CANNOT_BE_DELETED_TITLE = "Cannot delete tree"
+SELECTED_TREE_CANNOT_BE_DELETED_MSG_1 = "Please stop editing the '"
 SELECTED_TREE_CANNOT_BE_DELETED_MSG_2 = "' before deletion."
 
 NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_TITLE = "Cannot load file"
@@ -200,11 +200,11 @@ class Tree_Manager:
         tree = self._map[item_id]
         if tree in self._selected_trees:
             self.right_click_menu.add_single_command(
-                MENU_CMD_TREE_DESELECT, partial(self._deselect,item_id)
+                MENU_CMD_TREE_STOP_EDIT, partial(self._deselect,item_id)
             )
         else:
             self.right_click_menu.add_single_command(
-                MENU_CMD_TREE_SELECT, partial(self._select,item_id)
+                MENU_CMD_TREE_EDIT, partial(self._select,item_id)
             )
         self.right_click_menu.add_separator()
         self.right_click_menu.add_single_command(
@@ -515,8 +515,9 @@ class Tree_Manager:
         tkmsg.showerror(INVALID_XML_TITLE,INVALID_XML_MSG)
 
     def label_tree_as_modified(self,tree:treemod.TreeItem)->None:
-        self._view.item(tree.data["treemanager_id"], values=(TREE_MODIFIED,))
-        self.__treelist.add_tree_to_modified(tree)
+        if not tree in self.__treelist._modified_trees:
+            self._view.item(tree.data["treemanager_id"], values=(TREE_MODIFIED,))
+            self.__treelist.add_tree_to_modified(tree)
 
     def label_tree_as_ok(self,tree:treemod.TreeItem)->None:
         self._view.item(tree.data["treemanager_id"], values=(TREE_OK,))
@@ -529,8 +530,9 @@ class Tree_Manager:
 
     def label_items_tree_as_modified(self,item:treemod.TreeItem)->None:
         tree = item.get_its_tree()
-        self.label_tree_as_modified(tree)
-        self.__treelist.add_tree_to_modified(tree)
+        if not tree in self.__treelist._modified_trees:
+            self.label_tree_as_modified(tree)
+            self.__treelist.add_tree_to_modified(tree)
 
     def __configure_ui(self)->None: # pragma: no cover
         button_frame = tk.Frame(self.__ui)
