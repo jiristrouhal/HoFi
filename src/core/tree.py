@@ -29,8 +29,9 @@ class TreeItem:
         self._do_on_error:Dict[str,List[Callable]] = {'cannot_remove_branch_with_children':[],}
 
         self._data:Dict[str,Any] = dict()
-        self.__type = 'leaf' if not self.__child_tags else 'branch'
         self.__tag = tag
+
+        self.__children_allowed = bool(self.__child_tags)
 
         self._dependent_attributes:OrderedDict[str,Dependent_Attr] = tt.template(tag).dependent_attributes
         for attr in self._dependent_attributes.values():
@@ -51,8 +52,6 @@ class TreeItem:
     def parent(self)->TreeItem|None: return self._parent
     @property
     def data(self)->Dict[str,Any]: return self._data.copy()
-    @property
-    def type(self)->str: return self.__type
     @property
     def tag(self)->str: return self.__tag
     @property
@@ -129,7 +128,7 @@ class TreeItem:
         tag:str
         )->None:
 
-        if self.__type=='leaf': return 
+        if not self.__children_allowed: return
 
         if branches_along_the_path:
             # add the new branch to some sub-branch
