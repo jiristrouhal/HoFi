@@ -289,7 +289,6 @@ class TreeEditor:
     def open_add_window(self,parent_id:str,tag:str)->None:
         self.add_window = tk.Toplevel(self.widget)
         self.__configure_toplevel(self.add_window)
-        self.entries = dict()
         self.__create_entries(self.add_window, treemod.tt.template(tag).attributes)
 
         self.add_window.bind("<Key-Escape>",self._disregard_add_entry_values_on_keypress)
@@ -330,7 +329,6 @@ class TreeEditor:
     def open_edit_window(self,item_id:str)->None:
         self.edit_window = tk.Toplevel(self.widget)
         self.__configure_toplevel(self.edit_window)
-        self.entries = dict()
         item = self._map[item_id]
         self.__create_entries(self.edit_window,item.attributes)
         self.edit_window.bind("<Key-Escape>",self._disregard_edit_entry_values_on_keypress)
@@ -433,6 +431,7 @@ class TreeEditor:
         self.entries.clear()
 
     def __create_entries(self,window:tk.Toplevel,attributes:Dict[str,treemod._Attribute])->None:
+        self.entries = dict()
         entries_frame = tk.Frame(window)
         row=0
         for key,attr in attributes.items():
