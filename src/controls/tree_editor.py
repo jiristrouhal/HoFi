@@ -286,20 +286,12 @@ class TreeEditor:
                 }
             )
         
-    
     def open_add_window(self,parent_id:str,tag:str)->None:
-        self.__create_item_toplevel(self.add_window)
-        entries_frame = tk.Frame(self.add_window)
-        row=0
-        for key,attr in treemod.tt.template(tag).attributes.items():
-            tk.Label(entries_frame,text=key).grid(row=row,column=0)
-            vcmd = (entries_frame.register(attr.valid_entry),'%P')
-            entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
-            entry.insert(0, attr.value)
-            entry.grid(row=row,column=1)
-            self.entries[key] = entry
-            row += 1
-        entries_frame.pack()
+        self.add_window = tk.Toplevel(self.widget)
+        self.add_window.grab_set()
+        self.add_window.focus_set()
+        self.entries = dict()
+        self.__create_entries(self.add_window, treemod.tt.template(tag).attributes)
 
         self.add_window.bind("<Key-Escape>",self._disregard_add_entry_values_on_keypress)
         button_frame(
@@ -337,21 +329,12 @@ class TreeEditor:
         self.open_edit_window(iid)
 
     def open_edit_window(self,item_id:str)->None:
-        self.__create_item_toplevel(self.edit_window)
+        self.edit_window = tk.Toplevel(self.widget)
+        self.edit_window.grab_set()
+        self.edit_window.focus_set()
+        self.entries = dict()
         item = self._map[item_id]
-        entries_frame = tk.Frame(self.edit_window)
-        row = 0
-        for key,attr in item.attributes.items(): 
-            tk.Label(entries_frame,text=key).grid(row=row,column=0)
-            vcmd = (entries_frame.register(attr.valid_entry),'%P')
-            entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
-            entry.insert(0,attr.value)
-            entry.grid(row=row,column=1)
-            self.entries[key] = entry
-            row += 1
-        entries_frame.pack()
-        
-        assert(self.edit_window.winfo_exists())
+        self.__create_entries(self.edit_window,item.attributes)
         self.edit_window.bind("<Key-Escape>",self._disregard_edit_entry_values_on_keypress)
         button_frame(
             self.edit_window,
@@ -453,11 +436,18 @@ class TreeEditor:
         self.edit_window.destroy()
         self.entries.clear()
 
-    def __create_item_toplevel(self,window:tk.Toplevel)->None:
-        self.edit_window = tk.Toplevel(self.widget)
-        self.edit_window.grab_set()
-        self.edit_window.focus_set()
-        self.entries = dict()
+    def __create_entries(self,window:tk.Toplevel,attributes:Dict[str,treemod._Attribute])->None:
+        entries_frame = tk.Frame(window)
+        row=0
+        for key,attr in attributes.items():
+            tk.Label(entries_frame,text=key).grid(row=row,column=0)
+            vcmd = (entries_frame.register(attr.valid_entry),'%P')
+            entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
+            entry.insert(0, attr.value)
+            entry.grid(row=row,column=1)
+            self.entries[key] = entry
+            row += 1
+        entries_frame.pack()
 
     def __get_tree_id(self,item_id:str)->str:
         id = item_id

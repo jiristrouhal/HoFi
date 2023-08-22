@@ -49,6 +49,8 @@ editor.add_action_on_unselection(properties.clear)
 editor.add_action_on_edit(properties.display)
 editor.add_action_on_tree_removal(properties.clear)
 
+manager.new("New")
+manager._select(manager.get_tree("New").data["treemanager_id"])
 
 
 if __name__=="__main__":
