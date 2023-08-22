@@ -42,17 +42,16 @@ class TreeEditor:
         self.right_click_menu = rcm.RCMenu(self.widget)
 
         self.edit_window = tk.Toplevel(self.widget)
-        self.edit_entries:Dict[str,tk.Entry] = dict()
         self.edit_window.wm_withdraw()
 
         self.add_window = tk.Toplevel(self.widget)
-        self.add_window_entries:Dict[str,tk.Entry] = dict()
         self.add_window.wm_withdraw()
-        
+
         self.move_window = tk.Toplevel(self.widget)
         self.available_parents = ttk.Treeview(self.move_window)
         self.move_window.wm_withdraw()
 
+        self.entries:Dict[str,tk.Entry] = dict()
         # this flag will prevent some events to occur when the treeview is tested
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
         self._messageboxes_allowed:bool = True
@@ -315,7 +314,7 @@ class TreeEditor:
         self.add_window.grab_set()
         self.add_window.focus_set()
 
-        self.add_window_entries = dict()
+        self.entries = dict()
         entries_frame = tk.Frame(self.add_window)
         row=0
         for key,attr in treemod.tt.template(tag).attributes.items():
@@ -324,7 +323,7 @@ class TreeEditor:
             entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
             entry.insert(0, attr.value)
             entry.grid(row=row,column=1)
-            self.add_window_entries[key] = entry
+            self.entries[key] = entry
             row += 1
         entries_frame.pack()
 
@@ -340,7 +339,7 @@ class TreeEditor:
 
     def confirm_add_entry_values(self,parent_id:str,tag:str)->None:
         attributes = treemod.tt.template(tag).attributes
-        for label, entry in self.add_window_entries.items():
+        for label, entry in self.entries.items():
             attributes[label].set(entry.get())
         name = attributes.pop("name").value
         self._map[parent_id].new(name,tag=tag)
@@ -367,7 +366,7 @@ class TreeEditor:
         self.edit_window = tk.Toplevel(self.widget)
         self.edit_window.grab_set()
         self.edit_window.focus_set()
-        self.edit_entries = dict()
+        self.entries = dict()
         item = self._map[item_id]
         entries_frame = tk.Frame(self.edit_window)
         row = 0
@@ -377,7 +376,7 @@ class TreeEditor:
             entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
             entry.insert(0,attr.value)
             entry.grid(row=row,column=1)
-            self.edit_entries[key] = entry
+            self.entries[key] = entry
             row += 1
         entries_frame.pack()
         
@@ -392,13 +391,13 @@ class TreeEditor:
         
 
     def back_to_original_edit_entry_values(self,branch_id:str)->None:
-        for attribute, entry in self.edit_entries.items():
+        for attribute, entry in self.entries.items():
             entry.delete(0,tk.END)
             entry.insert(0,self._map[branch_id].attributes[attribute].value)
 
     def confirm_edit_entry_values(self,item_id:str)->None:
         item = self._map[item_id]
-        for attribute, entry in self.edit_entries.items():
+        for attribute, entry in self.entries.items():
             if attribute=="name": 
                 item.rename(entry.get())
             else:
@@ -477,11 +476,11 @@ class TreeEditor:
     
     def __clear_add_window_widgets(self)->None: # pragma: no cover
         self.add_window.destroy()
-        self.add_window_entries.clear()
+        self.entries.clear()
 
     def __clear_edit_window_widgets(self)->None: # pragma: no cover
         self.edit_window.destroy()
-        self.edit_entries.clear()
+        self.entries.clear()
 
     def _cannot_remove_branch_with_children(self,branch:treemod.TreeItem)->None: # pragma: no cover
         if not self._messageboxes_allowed: return

@@ -173,10 +173,10 @@ class Test_Right_Click_Menu(unittest.TestCase):
     def test_manually_changing_tkinter_entries_and_confirming_choice_rewrites_branch_attributes(self):
         self.view.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_EDIT)
 
-        self.view.edit_entries["name"].delete(0,"end")
-        self.view.edit_entries["name"].insert(0,"Branch YZ")
-        self.view.edit_entries["length"].delete(0,"end")
-        self.view.edit_entries["length"].insert(0,78)
+        self.view.entries["name"].delete(0,"end")
+        self.view.entries["name"].insert(0,"Branch YZ")
+        self.view.entries["length"].delete(0,"end")
+        self.view.entries["length"].insert(0,78)
 
         self.view.confirm_edit_entry_values(self.branch_x_iid)
         self.assertEqual(self.tree1.children()[0],"Branch YZ")
@@ -186,24 +186,24 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.view.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_EDIT)
         self.view.confirm_edit_entry_values(self.branch_x_iid)
         self.assertFalse(self.view.edit_window.winfo_exists())
-        self.assertDictEqual(self.view.edit_entries,{})
+        self.assertDictEqual(self.view.entries,{})
 
     def test_after_disregarding_the_changes_the_edit_window_closes(self):
         self.view.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_EDIT)
         self.view.disregard_edit_entry_values()
         self.assertFalse(self.view.edit_window.winfo_exists())
-        self.assertDictEqual(self.view.edit_entries,{})
+        self.assertDictEqual(self.view.entries,{})
 
     def test_bringing_back_original_entry_values_in_the_edit_window(self):
         self.view.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_EDIT)
-        self.view.edit_entries["name"].delete(0,"end")
-        self.view.edit_entries["name"].insert(0,"Branch YZ")
+        self.view.entries["name"].delete(0,"end")
+        self.view.entries["name"].insert(0,"Branch YZ")
 
-        self.assertEqual(self.view.edit_entries["name"].get(),"Branch YZ")
+        self.assertEqual(self.view.entries["name"].get(),"Branch YZ")
         button_frame = self.view.edit_window.winfo_children()[1]
         revert_button:tk.Button = button_frame.winfo_children()[0]
         revert_button.invoke()
-        self.assertEqual(self.view.edit_entries["name"].get(),"Branch X")
+        self.assertEqual(self.view.entries["name"].get(),"Branch X")
 
 class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
 
@@ -340,25 +340,25 @@ class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
 
     def test_adding_single_branch_to_the_tree(self):
         self.view.right_click_menu.invoke(tree_editor._define_add_cmd_label("Branch"))
-        self.view.add_window_entries["name"].delete(0,"end")
-        self.view.add_window_entries["name"].insert(0,"Branch X")
+        self.view.entries["name"].delete(0,"end")
+        self.view.entries["name"].insert(0,"Branch X")
         ok_button:tk.Button = self.view.add_window.winfo_children()[1].winfo_children()[0]
         ok_button.invoke()
         self.assertListEqual(self.tree1.children(),["Branch X"])
         # add_window and add_window_entries are destroyed
         self.assertFalse(self.view.add_window.winfo_exists())
-        self.assertDictEqual(self.view.add_window_entries, {})
+        self.assertDictEqual(self.view.entries, {})
     
     def test_canceling_adding_of_a_new_branch(self):
         self.view.right_click_menu.invoke(tree_editor._define_add_cmd_label("Branch"))
-        self.view.add_window_entries["name"].delete(0,"end")
-        self.view.add_window_entries["name"].insert(0,"Branch X")
+        self.view.entries["name"].delete(0,"end")
+        self.view.entries["name"].insert(0,"Branch X")
         cancel_button:tk.Button = self.view.add_window.winfo_children()[1].winfo_children()[-1]
         cancel_button.invoke()
         self.assertListEqual(self.tree1.children(),[])
         # add_window and add_window_entries are destroyed
         self.assertFalse(self.view.add_window.winfo_exists())
-        self.assertDictEqual(self.view.add_window_entries, {})
+        self.assertDictEqual(self.view.entries, {})
 
 
 class Test_Modifying_Loaded_Tree(unittest.TestCase):
@@ -382,8 +382,8 @@ class Test_Modifying_Loaded_Tree(unittest.TestCase):
         branch_x_id = self.view.widget.get_children(self.tree1_iid)[0]
         self.view._open_right_click_menu(branch_x_id)
         self.view.right_click_menu.invoke(tree_editor._define_add_cmd_label("Branch"))
-        self.view.add_window_entries["name"].delete(0,"end")
-        self.view.add_window_entries["name"].insert(0,"Child of X")
+        self.view.entries["name"].delete(0,"end")
+        self.view.entries["name"].insert(0,"Child of X")
         self.view.add_window.winfo_children()[1].winfo_children()[0].invoke()
         self.assertEqual(self.view._map[self.view.widget.get_children(branch_x_id)[0]].name,"Child of X")
 
@@ -482,8 +482,8 @@ class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
         self.view.add_action_on_edit(action)
         self.assertEqual(self.w, 50)
         self.view.open_edit_window(self.tree1_iid)
-        self.view.edit_entries["weight"].delete(0,"end")
-        self.view.edit_entries["weight"].insert(0,75)
+        self.view.entries["weight"].delete(0,"end")
+        self.view.entries["weight"].insert(0,75)
         self.view.confirm_edit_entry_values(self.tree1_iid)
         self.assertEqual(self.w, 75)
 
@@ -495,8 +495,8 @@ class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
         self.view.add_action_on_edit(action)
         self.assertEqual(self.w, 50)
         self.view.open_edit_window(self.tree1_iid)
-        self.view.edit_entries["weight"].delete(0,"end")
-        self.view.edit_entries["weight"].insert(0,75)
+        self.view.entries["weight"].delete(0,"end")
+        self.view.entries["weight"].insert(0,75)
         self.view.disregard_edit_entry_values()
         self.assertEqual(self.w, 50)
 
