@@ -11,7 +11,7 @@ class TemplateLocked(Exception): pass
 @dataclasses.dataclass(frozen=True)
 class NewTemplate:
     tag:str
-    attributes:Dict[str,Any]
+    attributes:OrderedDict[str,Any]
     children:Tuple[str,...]
     locked:bool = False
     icon_file:Any = None # relative path to a widget icon
@@ -22,7 +22,7 @@ class NewTemplate:
 @dataclasses.dataclass
 class Template:
     _attributes:OrderedDict[str,attrs._Attribute]
-    _dependent_attributes:OrderedDict[str,attrs.Dependent_Attr]
+    _dependent_attributes:OrderedDict[str,attrs._Attribute]
     _children:Tuple[str,...]
     _locked:bool
     _icon_file:Any
@@ -43,7 +43,7 @@ class Template:
         return instance_attributes
 
     @property
-    def dependent_attributes(self)->OrderedDict[str,attrs.Dependent_Attr]:
+    def dependent_attributes(self)->OrderedDict[str,attrs._Attribute]:
         instance_attributes = OrderedDict()
         for name, attr in self._dependent_attributes.items():
             instance_attributes[name] = attr.copy()
