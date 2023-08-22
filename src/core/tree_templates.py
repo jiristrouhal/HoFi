@@ -15,14 +15,14 @@ class NewTemplate:
     children:Tuple[str,...]
     locked:bool = False
     icon_file:Any = None # relative path to a widget icon
-    user_def_cmds:Dict[str,Callable[[attrs.AttributesOwner],None]] = \
+    user_def_cmds:OrderedDict[str,Callable[[attrs.AttributesOwner],None]] = \
         dataclasses.field(default_factory=OrderedDict)
 
 
 @dataclasses.dataclass
 class Template:
     _attributes:OrderedDict[str,attrs._Attribute]
-    _dependent_attributes:OrderedDict[str,attrs._Attribute]
+    _dependent_attributes:OrderedDict[str,attrs.Dependent_Attr]
     _children:Tuple[str,...]
     _locked:bool
     _icon_file:Any
@@ -43,7 +43,7 @@ class Template:
         return instance_attributes
 
     @property
-    def dependent_attributes(self)->OrderedDict[str,attrs._Attribute]:
+    def dependent_attributes(self)->OrderedDict[str,attrs.Dependent_Attr]:
         instance_attributes = OrderedDict()
         for name, attr in self._dependent_attributes.items():
             instance_attributes[name] = attr.copy()
@@ -152,7 +152,10 @@ def __raise_if_template_is_child_of_another(tag:str)->None:
                 f"Cannot remove template '{tag}'. It is used as a child by '{other_tag}'."
             )
         
-def __create_attributes(new_attributes:OrderedDict[str,Any])->OrderedDict[str,attrs._Attribute]:
+def __create_attributes(
+    new_attributes:OrderedDict[str,Any]
+    )->OrderedDict[str,Any]:
+    
     attributes = OrderedDict()
     for name, value in new_attributes.items():
         attributes[name] = attrs.create_attribute(value)

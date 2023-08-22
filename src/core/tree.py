@@ -14,13 +14,9 @@ DEFAULT_TAG = "Item"
 
 class TreeItem:
 
-    def __init__(
-        self,
-        name:str,
-        tag:str
-        )->None:
+    def __init__(self, name:str, tag:str)->None:
 
-        self._attributes:OrderedDict[str,_Attribute] = tt.template(tag).attributes
+        self._attributes = tt.template(tag).attributes
         self._attributes["name"].set(src.core.naming.strip_and_join_spaces(name))
 
         self.__child_tags:Tuple[str,...] = tt.template(tag).children
@@ -30,15 +26,14 @@ class TreeItem:
 
         self._actions:Dict[str,Dict[str,List[Callable]]] = {}
 
-        self._do_on_error:Dict[str,List[Callable]] = {
-            'cannot_remove_branch_with_children':[],
-        }
+        self._do_on_error:Dict[str,List[Callable]] = {'cannot_remove_branch_with_children':[],}
+
         self._data:Dict[str,Any] = dict()
         self.__type = 'leaf' if not self.__child_tags else 'branch'
         self.__tag = tag
 
-        self._dependent_attributes:OrderedDict[str,_Attribute] = tt.template(tag).dependent_attributes
-        for attr_name, attr in self._dependent_attributes.items():
+        self._dependent_attributes:OrderedDict[str,Dependent_Attr] = tt.template(tag).dependent_attributes
+        for attr in self._dependent_attributes.values():
             attr.set_owner(self)
         
         self._user_defined_commands:OrderedDict[str,Callable[[],None]] = \
