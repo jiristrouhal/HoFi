@@ -94,17 +94,18 @@ class TreeItem:
         if attr_name in self._attributes: self._attributes[attr_name].set(value)
 
     def _set_parent(self,new_parent:TreeItem)->None:
-        if self._parent is not None: 
-            self._parent._children.remove(self)
-        # if the name already exists under the new parent, change the current name
-        name = src.core.naming.strip_and_join_spaces(self.name)
-        while new_parent._find_child(name) is not None: 
-            name = src.core.naming.change_name_if_already_taken(name)
-        self._attributes["name"].set(name)
+        if self._parent is not None: self._parent._children.remove(self)
         self._parent = new_parent
         self._parent._children.append(self)
+        # if the name already exists under the new parent, change the current name
+        self.__rename(self.name)
 
     def rename(self,name:str)->None:
+        self.__rename(name)
+        for owner in self._actions:
+            for action in self._actions[owner]['on_self_rename']: action(self)
+
+    def __rename(self,name:str)->None:
         name = src.core.naming.strip_and_join_spaces(name)
         if self._parent is not None:
             item_with_same_name = self._parent._find_child(name)
@@ -112,9 +113,6 @@ class TreeItem:
                 name = src.core.naming.change_name_if_already_taken(name)
                 item_with_same_name = self._parent._find_child(name)
         self._attributes["name"].set(name)
-
-        for owner in self._actions:
-            for action in self._actions[owner]['on_self_rename']: action(self)
 
     def children(self,*branches_along_the_path:str)->List[str]:
         return self._list_children(*branches_along_the_path)
