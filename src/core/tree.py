@@ -60,7 +60,7 @@ class TreeItem:
     @property
     def user_defined_commands(self)->OrderedDict[str,Callable[[],None]]: return self._user_defined_commands
 
-    __tree_events =  Literal['add_branch','on_removal','on_renaming','on_moving','on_self_rename']
+    __tree_events =  Literal['add_child','on_removal','on_renaming','on_moving','on_self_rename']
 
     def add_action(
         self,
@@ -74,7 +74,7 @@ class TreeItem:
 
     def __initialize_actions(self,owner_id:str)->None:
         self._actions[owner_id] = {
-            'add_branch': [],
+            'add_child': [],
             'on_removal': [],
             'on_renaming': [],
             'on_moving': [],
@@ -148,7 +148,7 @@ class TreeItem:
             for owner_id in self._actions:
                 if not self._actions[owner_id]: 
                     self.__initialize_actions(owner_id)
-            self.run_actions('add_branch',child)
+            self.run_actions('add_child',child)
         
     def move_child(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...]=())->None:
         if self._does_path_point_to_child_of_branch_or_to_branch_itself(branch_path,new_branch_parent_path):

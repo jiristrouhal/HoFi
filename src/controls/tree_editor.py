@@ -155,7 +155,7 @@ class TreeEditor:
         self.__load_item_into_tree(iid,tree)
         self._map[iid] = tree
         tree.add_data("treeview_iid",iid)
-        tree.add_action(self.label,'add_branch', partial(self._on_new_child,iid)) 
+        tree.add_action(self.label,'add_child', partial(self._on_new_child,iid)) 
         tree.add_action(self.label,'on_self_rename', partial(self._on_renaming,iid))
         self._load_children(tree)
         self._open_all("")
@@ -173,7 +173,7 @@ class TreeEditor:
             iid = iid=str(id(branch))
             self.__load_item_into_tree(iid,branch)
             self._map[iid] = branch
-            branch.add_action(self.label,'add_branch', partial(self._on_new_child, iid))
+            branch.add_action(self.label,'add_child', partial(self._on_new_child, iid))
             branch.add_action(self.label,'on_removal', partial(self._on_removal, iid))
             branch.add_action(self.label,'on_renaming', partial(self._on_renaming, iid))
             branch.add_action(self.label,'on_moving', partial(self._on_moving, iid))
@@ -213,7 +213,7 @@ class TreeEditor:
         self.__load_item_into_tree(item_iid,new_branch)
 
         self._map[item_iid] = new_branch
-        new_branch.add_action(self.label,'add_branch', partial(self._on_new_child, item_iid))
+        new_branch.add_action(self.label,'add_child', partial(self._on_new_child, item_iid))
         new_branch.add_action(self.label,'on_removal', partial(self._on_removal, item_iid))
         new_branch.add_action(self.label,'on_renaming', partial(self._on_renaming, item_iid))
         new_branch.add_action(self.label,'on_moving', partial(self._on_moving, item_iid))

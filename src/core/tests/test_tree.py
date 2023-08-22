@@ -16,7 +16,7 @@ class Test_Creating_Tree(unittest.TestCase):
         self.tree = tree.Tree("Tree 1",tag="Tree")
         self.tree.new("Branch 1",tag="Branch")
 
-    def test_add_branch_to_a_tree(self):
+    def test_add_child_to_a_tree(self):
         self.assertListEqual(self.tree.children(), ["Branch 1"])
 
     def test_adding_a_child_branch_to_a_nonexistent_branch_has_no_effect(self):
@@ -159,7 +159,7 @@ class Test_Actions(unittest.TestCase):
         def foo(*args): self.x=1
 
         some_random_id = 132
-        self.tree.add_action(some_random_id,'add_branch',foo)
+        self.tree.add_action(some_random_id,'add_child',foo)
         self.assertEqual(self.x,0)
         self.tree.new("Branch Y",tag="Branch")
         self.assertEqual(self.x,1)
