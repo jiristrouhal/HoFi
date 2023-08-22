@@ -47,11 +47,26 @@ manager.add_action_on_deselection(remove_tree_from_editor)
 editor.add_action_on_selection(properties.display)
 editor.add_action_on_unselection(properties.clear)
 editor.add_action_on_edit(properties.display)
+editor.add_action_on_any_modification(manager.label_items_tree_as_modified)
 editor.add_action_on_tree_removal(properties.clear)
 
 manager.new("New")
 manager._select(manager.get_tree("New").data["treemanager_id"])
 
+
+import tkinter.messagebox as tkmsg
+def discard_unsaved_changes():
+    if manager.unsaved_trees:
+        if tkmsg.askokcancel(
+            "Discard changes", 
+            "Some of the loaded trees contain unsaved changes. Do you want to quit?"):
+            
+            root.destroy()
+    else:
+        root.destroy()
+
+
+root.protocol("WM_DELETE_WINDOW", discard_unsaved_changes)
 
 if __name__=="__main__":
     root.mainloop()

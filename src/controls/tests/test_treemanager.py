@@ -398,15 +398,16 @@ class Test_Updating_File_After_Renaming_Tree(unittest.TestCase):
 class Test_Loading_of_Xml(unittest.TestCase):
 
     def setUp(self) -> None:
-        treemod.tt.clear()
+        self.tearDown()
+
         treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':'New'}, children=()))
         self.manager = Tree_Manager(treelist.TreeList(), tree_tag='Tree')
         self.manager.new("Tree X")
-        self.manager.xml_file_path = ("data/Tree X.xml")
+        self.manager.xml_file_path = ("./data/Tree X.xml")
         tree_x = self.manager.get_tree("Tree X")
         # First, export the tree to a xml file and remove it from the manager
         self.manager._export_tree(tree_x)
-        self.assertTrue(os.path.isfile("data/Tree X.xml"))
+        self.assertTrue(os.path.isfile("./data/Tree X.xml"))
         self.assertTrue(tree_x in self.manager._tree_files)
         self.manager.agree_with_removal = True
         self.manager._remove_tree(self.manager.get_tree("Tree X"))
@@ -420,8 +421,8 @@ class Test_Loading_of_Xml(unittest.TestCase):
         self.assertListEqual(self.manager.trees, ["Tree X"])
 
     def tearDown(self) -> None: # pragma: no cover
-        if os.path.isfile("data/Tree X.xml"):
-            os.remove("data/Tree X.xml")
+        if os.path.isfile("./data/Tree X.xml"):
+            os.remove("./data/Tree X.xml")
         treemod.tt.clear()
 
 

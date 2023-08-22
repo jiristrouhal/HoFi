@@ -60,6 +60,7 @@ class TreeEditor:
         self._on_selection:List[Callable[[treemod.TreeItem],None]] = list()
         self._on_unselection:List[Callable[[],None]] = list()
         self._on_edit:List[Callable[[treemod.TreeItem],None]] = list()
+        self._on_any_modification:List[Callable[[treemod.TreeItem],None]] = list()
         self._on_tree_removal:List[Callable[[],None]] = list()
   
         self.label:str = label # an identifier used in actions of Tree Items
@@ -81,6 +82,10 @@ class TreeEditor:
     def add_action_on_edit(self,action:Callable[[treemod.TreeItem],None])->None:
         if action not in self._on_edit:
             self._on_edit.append(action)
+
+    def add_action_on_any_modification(self,action:Callable[[treemod.TreeItem],None])->None:
+        if action not in self._on_any_modification:
+            self._on_any_modification.append(action)
 
     def add_action_on_tree_removal(self,action:Callable[[],None])->None:
         if action not in self._on_tree_removal:
@@ -127,8 +132,7 @@ class TreeEditor:
         if self.is_tree(item): return # cannot delete tree
         assert item.parent is not None
         item.parent.remove_child(item.name)
-
-
+        
     @property
     def trees(self)->Tuple[str,...]: 
         return tuple([self._map[iid].name for iid in self.widget.get_children("")])
@@ -206,6 +210,7 @@ class TreeEditor:
         self.widget.see(child_iid)
 
     def _on_removal(self,branch_iid:str,*args)->None:
+        for action in self._on_any_modification: action(self._map[branch_iid])
         self._map.pop(branch_iid)
         self.widget.delete(branch_iid)
 
@@ -312,6 +317,8 @@ class TreeEditor:
             new_child.set_attribute(attr_name,attributes[attr_name].value)
         self.__clear_add_window_widgets()
 
+        for action in self._on_any_modification: action(new_child)
+
     def disregard_add_entry_values(self)->None:
         self.__clear_add_window_widgets()
 
@@ -354,8 +361,8 @@ class TreeEditor:
         # rename element in the tree
         self.widget.item(item_id,text=item.name)
         self.__clear_edit_window_widgets()
-        for action in self._on_edit:
-            action(item)
+        for action in self._on_edit: action(item)
+        for action in self._on_any_modification: action(item)
     
     def disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
         self.__clear_edit_window_widgets()
@@ -396,7 +403,10 @@ class TreeEditor:
             branch = self._map[item_id]
             branch._set_parent(self._map[selection[0]])
             self.widget.move(item_id,selection[0],-1)
+            for action in self._on_any_modification: action(branch)
+
         self._close_move_window()
+
 
     def _close_move_window(self)->None:
         assert(self.move_window.winfo_exists() and self.available_parents.winfo_exists())

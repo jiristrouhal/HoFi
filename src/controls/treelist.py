@@ -1,4 +1,4 @@
-from typing import List, Callable
+from typing import List, Callable, Set
 import core.naming
 from core.tree import Tree
 
@@ -14,6 +14,7 @@ class TreeList:
         self.__on_renaming:List[Callable[[Tree],None]] = list()
 
         self.label:str = str(id(self)) if label.strip()=="" else label
+        self._modified_trees:Set[Tree] = set()
 
     @property
     def names(self)->List[str]: return [i.name for i in self.__items]
@@ -46,6 +47,8 @@ class TreeList:
         if item is None: return
         for action in self.__on_removal: action(item)
         self.__items.remove(item)
+        if item in self._modified_trees:
+            self._modified_trees.remove(item)
 
     def rename(self,old_name:str,new_name:str)->Tree|None:
         item = self.item(old_name)
@@ -53,6 +56,9 @@ class TreeList:
             item.rename(new_name)
             self.__adjust_tree_name(item)
         return item
+    
+    def add_tree_to_modified(self,tree:Tree)->None:
+        self._modified_trees.add(tree)
 
     def add_name_warning(self,warning_action:Callable[[str],None]):
         self.__name_warnings.append(warning_action)

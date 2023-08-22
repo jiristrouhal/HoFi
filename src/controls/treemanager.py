@@ -80,6 +80,12 @@ INVALID_XML_MSG = "The file is not a valid xml file. Check the file contents."
 DEFAULT_TREE_NAME = "New"
 
 
+TREE_WAITING_FOR_EXPORT = "waiting for export"
+TREE_MODIFIED = "modified"
+TREE_OK = ""
+
+
+
 class ButtonID(enum.Enum):
     NEW_TREE = enum.auto()
     LOAD_TREE = enum.auto()
@@ -117,7 +123,7 @@ class Tree_Manager:
         self.__converter.add_action('invalid_xml', self._notify_the_user_xml_is_invalid)
         self.__ui = tk.Frame(master=ui_master)
         self._buttons:Dict[ButtonID,tk.Button] = dict()
-        self._view = ttk.Treeview(self.__ui, selectmode='browse')
+        self._view = ttk.Treeview(self.__ui, selectmode='browse', columns=('State',))
         self._map:Dict[str,treemod.Tree] = dict()
 
         self._window_new = tk.Toplevel(self._view)
@@ -146,8 +152,12 @@ class Tree_Manager:
         self._selected_trees:List[treemod.Tree] = list()
 
 
+
     @property
     def trees(self)->List[str]: return self.__treelist.names
+
+    @property
+    def unsaved_trees(self)->bool: return bool(self.__treelist._modified_trees)
 
     def add_action_on_selection(self,action:Callable[[treemod.Tree],None])->None:
         if action not in self.__on_selection:
@@ -165,6 +175,7 @@ class Tree_Manager:
         tree = treemod.Tree(name,tag=self._tree_template_tag)
         self.__treelist.append(tree)
         tree.add_data("treemanager_id",str(id(tree)))
+        self.label_tree_as_waiting_for_export(tree)
 
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
         item_id = self._view.identify_row(event.y)
@@ -249,9 +260,13 @@ class Tree_Manager:
         if self.__file_already_in_use(filepath): 
             return 
         tree = self.__converter.load_tree(treename,dir)
+
         if tree is None: return
+
         self._tree_files[tree] = filepath
         self.__treelist.append(tree)
+        tree.add_data("treemanager_id",str(id(tree)))
+        self.label_tree_as_ok(tree)
 
     def __file_already_in_use(self, file_to_be_loaded:str)->bool:
         for tree,filepath in self._tree_files.items():
@@ -270,6 +285,7 @@ class Tree_Manager:
             self._show_export_info(tree.name,filepath)
             self._tree_files[tree] = os.path.join(dir,tree.name)+'.xml'
             self._last_export_dir = dir
+            self.label_tree_as_ok(tree)
 
         elif self._confirm_renaming_if_exported_file_already_exists(tree.name): 
             self._open_rename_tree_window(tree)
@@ -293,6 +309,7 @@ class Tree_Manager:
                 os.remove(filepath)
         new_filepath = self.__converter.save_tree(tree,dir)
         self._tree_files[tree] = new_filepath
+        self.label_tree_as_ok(tree)
 
     def _remove_tree(self,tree:treemod.Tree)->None:
         # The user has to deselect tree to be able to delete it
@@ -423,8 +440,10 @@ class Tree_Manager:
         # and the tree is to be exported anew.
         # This helps to prevent unwanted rewriting of some existing file having
         # the same name as the newly named Tree that is to be updated
-        if renamed_tree in self._tree_files: 
-            self._tree_files.pop(renamed_tree)
+        if old_name.strip() != new_name.strip():
+            self.label_tree_as_waiting_for_export(renamed_tree)
+            if renamed_tree in self._tree_files: 
+                self._tree_files.pop(renamed_tree)
 
     def tree_exists(self,name:str)->bool: 
         return name in self.trees
@@ -494,6 +513,24 @@ class Tree_Manager:
 
     def _notify_the_user_xml_is_invalid(self)->None:
         tkmsg.showerror(INVALID_XML_TITLE,INVALID_XML_MSG)
+
+    def label_tree_as_modified(self,tree:treemod.TreeItem)->None:
+        self._view.item(tree.data["treemanager_id"], values=(TREE_MODIFIED,))
+        self.__treelist.add_tree_to_modified(tree)
+
+    def label_tree_as_ok(self,tree:treemod.TreeItem)->None:
+        self._view.item(tree.data["treemanager_id"], values=(TREE_OK,))
+        if tree in self.__treelist._modified_trees:
+            self.__treelist._modified_trees.remove(tree)
+    
+    def label_tree_as_waiting_for_export(self,tree:treemod.TreeItem)->None:
+        self._view.item(tree.data["treemanager_id"], values=(TREE_WAITING_FOR_EXPORT,))
+        self.__treelist.add_tree_to_modified(tree)
+
+    def label_items_tree_as_modified(self,item:treemod.TreeItem)->None:
+        tree = item.get_its_tree()
+        self.label_tree_as_modified(tree)
+        self.__treelist.add_tree_to_modified(tree)
 
     def __configure_ui(self)->None: # pragma: no cover
         button_frame = tk.Frame(self.__ui)
