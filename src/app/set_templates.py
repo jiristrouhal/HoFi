@@ -55,6 +55,6 @@ def main():
             user_def_cmds=OrderedDict({"Hello, world":print_hello_world}),
             icon_file=item_icon),
 
-        treemod.tt.NewTemplate('Debt',{"name":"Debt","amount":1, "date":"1.1.2023"},children=(),icon_file=debt_icon),
+        treemod.tt.NewTemplate('Debt',{"name":"Debt","amount":"1 Kč", "date":"1.1.2023"},children=(),icon_file=debt_icon),
     )
 

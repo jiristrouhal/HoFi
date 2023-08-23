@@ -201,6 +201,7 @@ class Currency_Attribute(_Attribute):
 
     @staticmethod
     def valid_entry(value:str) -> bool:
+        if str(value).strip()=="": return True
         value = str(value).replace(",",".")
         try: return float(value)>0
         except: return False
