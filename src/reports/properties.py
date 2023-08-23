@@ -31,8 +31,8 @@ class Properties:
         tag:str=""
         )->None:
 
-        attr_values = {label:x.value for label,x in attributes.items()}
-        dep_attr_values = {label:x.value for label,x in dependent_attributes.items()}
+        attr_values = {label:x.formatted_value for label,x in attributes.items()}
+        dep_attr_values = {label:x.formatted_value for label,x in dependent_attributes.items()}
         attr_values["name"]+= f" ({tag.lower()})"
 
         self.row = 0

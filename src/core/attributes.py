@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Callable, Protocol, Dict
+from typing import Any, Callable, Protocol, Dict, Literal
 
 import abc
 import re
@@ -21,8 +21,10 @@ class _Attribute(abc.ABC):
         else:
             self._value = value
 
-    @property
+    @abc.abstractproperty
     def value(self)->Any: pass
+    @abc.abstractproperty
+    def formatted_value(self)->str: pass
 
     @staticmethod
     @abc.abstractmethod
@@ -45,8 +47,11 @@ class Dependent_Attr(_Attribute):
         self._owner_has_been_set = False
     @property
     def value(self)->Any: return self._value()
+    @property
+    def formatted_value(self)->str:
+        return self.value
     @staticmethod
-    def valid_entry(value: str)->bool: return True
+    def valid_entry(value:str)->bool: return True
 
     def set_owner(self,obj:AttributesOwner)->None:
         if not self._owner_has_been_set:
@@ -61,6 +66,9 @@ class Positive_Int_Attr(_Attribute):
     default_value = "1"
     @property
     def value(self)->int: return int(self._value)
+    @property
+    def formatted_value(self)->str:
+        return str(self.value)
     @staticmethod
     def valid_entry(value:str)->bool: 
         if value=="": return True
@@ -70,6 +78,63 @@ class Positive_Int_Attr(_Attribute):
     def copy(self)->Positive_Int_Attr:
         return Positive_Int_Attr(self._value)
     
+
+import decimal
+from decimal import Decimal, Context
+import locale
+from dataclasses import dataclass
+
+
+Localization = Literal['en_US','cs_CZ']
+Curry_Symbol_Position = Literal[0,1]
+
+@dataclass
+class _Curry_Format:
+    decimals:Literal[0,1,2,3]
+    symbols:str
+
+
+Currency_Code = Literal['CZK','EUR', 'USD']
+CURRY_SYMBOL_POSITION:Dict[Localization,Curry_Symbol_Position] = {
+    'en_US':0,
+    'cs_CZ':1
+}
+CURRY_FORMATS:Dict[Currency_Code,_Curry_Format] = {
+    'CZK':_Curry_Format(2,'Kč'),
+    'EUR':_Curry_Format(2,'€'),
+    'USD': _Curry_Format(2,'$')
+}
+
+class Currency_Attribute(_Attribute):
+
+    default_value = "1"
+    rounding = decimal.ROUND_HALF_EVEN
+
+    def __init__(self, currency_code:Currency_Code, value:Any=default_value)->None:
+        super().__init__(value)
+        self._currency = currency_code
+        self._decimal_context = Context(
+            prec=CURRY_FORMATS[currency_code].decimals, 
+            rounding = Currency_Attribute.rounding
+        )
+    @property
+    def value(self)->Decimal:
+        return Decimal(self._value)
+    @property
+    def formatted_value(self)->str:
+        sval = Decimal(self._value, self._decimal_context)
+        
+        return sval
+
+    @staticmethod
+    def valid_entry(value:str) -> bool:
+        try: return float(value)>0
+        except: return False
+    
+    def copy(self)->Currency_Attribute:
+        return Currency_Attribute(self._value)
+    
+
 
 import datetime, src.core.dates
 class Date_Attr(_Attribute):
@@ -85,6 +150,9 @@ class Date_Attr(_Attribute):
     @property
     def value(self)->str: 
         return self.date_formatter.print_date(self._value)
+    @property
+    def formatted_value(self)->str:
+        return self.value
     
     @staticmethod
     def valid_entry(value:str)->bool: 
@@ -109,6 +177,9 @@ class Name_Attr(_Attribute):
     default_value = "New"
     @property
     def value(self)->str: return str(self._value)
+    @property
+    def formatted_value(self)->str:
+        return self.value
     @staticmethod
     def valid_entry(value:str)->bool: 
         if value=="": return True
@@ -123,6 +194,9 @@ class Text_Attr(_Attribute):
     default_value = "Text"
     @property
     def value(self)->str: return str(self._value)
+    @property
+    def formatted_value(self)->str:
+        return self.value
     @staticmethod
     def valid_entry(value:str)->bool: return True
 
@@ -142,3 +216,25 @@ def create_attribute(value:Any)->_Attribute:
         return Name_Attr(value)
     else:
         return Text_Attr(value)
+    
+
+CURRENCY_SYMBOLS = ["Kč","$","€","US$"]
+
+
+def is_currency(text:str)->bool:
+    text = text.strip()
+    if re.fullmatch("\d+([\.\,]\d*)?\s*\S*",text) is not None or re.fullmatch("[\.\,]\d+\s*\S*",text) is not None:
+        i = 0
+        while i<len(text) and (text[i].isdigit() or text[i] in ('.',',')):  
+            i += 1
+        text_without_number = text[i:].strip()
+        return text_without_number in CURRENCY_SYMBOLS
+    
+    elif re.fullmatch("\S*\s*\d+([\.\,]\d*)?",text) is not None:
+        i = -1
+        while  i>-len(text)-1 and (text[i].isdigit() or text[i] in ('.',',')):
+            i -= 1
+        text_without_number = text[:i+1].strip()
+        return text_without_number in CURRENCY_SYMBOLS
+    
+    return False

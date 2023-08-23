@@ -30,6 +30,52 @@ class Test_Positive_Int_Attribute(unittest.TestCase):
         self.attr.set()
         self.assertEqual(self.attr.value,10)
 
+class Test_Recognizing_Currency(unittest.TestCase):
+
+    def test_valid_currencies_with(self):
+        self.assertTrue(attributes.is_currency("10 Kč"))
+        self.assertTrue(attributes.is_currency("10 $"))
+        self.assertTrue(attributes.is_currency("10. $"))
+        self.assertTrue(attributes.is_currency("10, $"))
+        self.assertTrue(attributes.is_currency("10.0 $"))
+        self.assertTrue(attributes.is_currency("10.1234564984654651 $"))
+        self.assertTrue(attributes.is_currency("10.0       $"))
+        self.assertTrue(attributes.is_currency("10.0$"))
+        self.assertTrue(attributes.is_currency("10,0$"))
+
+        self.assertTrue(attributes.is_currency("$ 10"))
+        self.assertTrue(attributes.is_currency("$ 10.0000"))
+        self.assertTrue(attributes.is_currency("$10.0000"))
+
+    
+    def test_missing_leading_digit_is_ok(self):
+        self.assertTrue(attributes.is_currency("$.0000"))
+        self.assertTrue(attributes.is_currency(".0000$"))
+
+    def test_double_separator_is_invalid(self):
+        self.assertFalse(attributes.is_currency("10.."))
+
+    def test_missing_currency_symbol(self):
+        self.assertFalse(attributes.is_currency("10"))
+        self.assertFalse(attributes.is_currency("20"))
+        self.assertFalse(attributes.is_currency("10.00"))
+        self.assertFalse(attributes.is_currency("  10.00"))
+        self.assertFalse(attributes.is_currency("10.00   "))
+
+    def test_no_number(self):
+        self.assertFalse(attributes.is_currency(""))
+        self.assertFalse(attributes.is_currency("asdf"))
+
+    def test_invalid_currency_symbols(self):
+        self.assertFalse(attributes.is_currency("abc 20"))
+        self.assertFalse(attributes.is_currency("10abc"))
+        self.assertFalse(attributes.is_currency("123_"))
+        self.assertFalse(attributes.is_currency("50.23 crowns"))
+    
+    def test_garbage_text_near_the_currency(self):
+        self.assertFalse(attributes.is_currency("Lorem ipsum 20 $"))
+        self.assertFalse(attributes.is_currency("20 $ sit amet"))
+        
 
 
 class Test_Date_Attribute(unittest.TestCase):
