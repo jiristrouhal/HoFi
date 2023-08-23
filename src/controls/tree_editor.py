@@ -423,6 +423,7 @@ class TreeEditor:
                 branch._set_parent(new_parent)
                 self.widget.move(item_id,selection[0],-1)
                 for action in self._on_any_modification: action(branch)
+                self.widget.see(item_id)
 
         self._close_move_window()
 
