@@ -50,9 +50,6 @@ editor.add_action_on_edit(properties.display)
 editor.add_action_on_any_modification(manager.label_items_tree_as_modified)
 editor.add_action_on_tree_removal(properties.clear)
 
-manager.new("New")
-manager._select(manager.get_tree("New").data["treemanager_id"])
-
 
 import tkinter.messagebox as tkmsg
 def discard_unsaved_changes():
