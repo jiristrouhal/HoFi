@@ -31,6 +31,16 @@ class Test_Positive_Int_Attribute(unittest.TestCase):
         self.assertEqual(self.attr.value,10)
 
 
+class Test_Choice_Attribute(unittest.TestCase):
+
+    def test_storing_the_options_and_the_default_option(self):
+        options = {"Go for A":"A", "Go for B":"B"}
+        chatt = attributes.Choice_Attribute(options, "Go for A")
+        self.assertListEqual(chatt.options, list(options.keys()))
+        self.assertEqual(chatt.formatted_value, "Go for A")
+        self.assertEqual(chatt.value, "A")
+    
+
 class Test_Date_Attribute(unittest.TestCase):
     
     def setUp(self) -> None:

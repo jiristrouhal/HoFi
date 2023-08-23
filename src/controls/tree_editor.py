@@ -462,10 +462,11 @@ class TreeEditor:
         for key,attr in attributes.items():
             col=0
             tk.Label(entries_frame,text=key).grid(row=row,column=col)
+            col += 1
+            
             vcmd = (entries_frame.register(attr.valid_entry),'%P')
             entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
             entry.insert(0, attr.value)
-            col += 1
             entry.grid(row=row,column=col)
             self.entries[key] = entry
 

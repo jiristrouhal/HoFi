@@ -11,7 +11,6 @@ class AttributesOwner(Protocol):
     def attributes(self)->Dict[str,_Attribute]: ...
 
 
-
 class _Attribute(abc.ABC):
     default_value:Any = None
 
@@ -41,6 +40,29 @@ class _Attribute(abc.ABC):
     def set(self,value:str="")->None:
         if self.valid_entry(value) and not str(value).strip()=="": 
             self._value = str(value)
+
+
+class Choice_Attribute(_Attribute):
+
+    def __init__(self,options:Dict[str,Any],default:str)->None:
+        if default not in options: 
+            raise KeyError(f"Cannot initialize Choice attribute with option '{default}',"
+                           f" which not present in the options passed {tuple(options.keys())}.")
+        super().__init__(default)
+        self._options = options
+    
+    @property
+    def value(self)->Any: return self._options[self._value]
+    @property
+    def options(self)->List[str]: return list(self._options.keys())
+    @property
+    def formatted_value(self)->str:
+        return self._value
+    @staticmethod
+    def valid_entry(value:str)->bool: return True
+
+    def copy(self)->Choice_Attribute:
+        return Choice_Attribute(self._options,self._value)
 
 
 from functools import partial
