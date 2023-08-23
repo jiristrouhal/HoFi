@@ -112,17 +112,18 @@ class _Curry_Format:
     def __post_init__(self):
         self.context = Context(prec=self.decimals,rounding=decimal.ROUND_HALF_EVEN)
 
-    def add_symbol(self,value:Decimal|float|str)->str:
+    def present(self,value:Decimal|float|str)->str:
+        value =  round(Decimal(str(value),self.context), self.decimals)
         if CURRY_SYMBOL_POSITION[LOCALIZATION_CODE]==0 and self.prepend:
             return self.__prepend_symbol(value)
         else:
             return self.__append_symbol(value)
 
     def __prepend_symbol(self,value:Decimal|float|str)->str:
-        return self.symbol+str(Decimal(value,self.context))
+        return self.symbol+str(value)
 
     def __append_symbol(self,value:Decimal|float|str)->str:
-        return str(Decimal(value,self.context)) + ' ' + self.symbol
+        return str(value) + ' ' + self.symbol
         
 
 
@@ -139,7 +140,7 @@ class UndefinedCurrency(Exception): pass
 
 class Currency_Attribute(_Attribute):
 
-    default_value = CURRY_FORMATS[DEFAULT_CURRENCY_CODE].add_symbol(1)
+    default_value = "1"
     rounding = decimal.ROUND_HALF_EVEN
     localization:Curry_Symbol_Position = 0
 
@@ -155,7 +156,7 @@ class Currency_Attribute(_Attribute):
         return Decimal(self._value)
     @property
     def formatted_value(self)->str:
-        return CURRY_FORMATS[self._currency_code].add_symbol(self._value)
+        return CURRY_FORMATS[self._currency_code].present(self._value)
 
     @staticmethod
     def valid_entry(value:str) -> bool:

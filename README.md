@@ -166,6 +166,6 @@ When item is being added or edited, the currency is customary and can be selecte
 
 When conversion is applied, to estimate the exchange rate, a date has to be specified. By default, the current date is selected. The user can pass a custom date, for which the value is converted. 
 
-When adding an income or expense, the currency is by default set by the application localization. 
+When adding an income or expense, the currency is by default set by the application localization. The default currency is always passes to the 
 
 
