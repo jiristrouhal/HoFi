@@ -35,7 +35,7 @@ class Test_Choice_Attribute(unittest.TestCase):
 
     def test_storing_the_options_and_the_default_option(self):
         options = {"Go for A":"A", "Go for B":"B"}
-        chatt = attributes.Choice_Attribute(options, "Go for A")
+        chatt = attributes.Choice_Attribute("Go for A",options)
         self.assertListEqual(chatt.options, list(options.keys()))
         self.assertEqual(chatt.formatted_value, "Go for A")
         self.assertEqual(chatt.value, "A")
@@ -43,11 +43,11 @@ class Test_Choice_Attribute(unittest.TestCase):
     def test_passing_default_option_outside_those_available_raises_key_error(self):
         options = {"Go for A":"A", "Go for B":"B"}
         with self.assertRaises(KeyError):
-            attributes.Choice_Attribute(options, "Go for X")
+            attributes.Choice_Attribute("Go for X",options)
 
     def test_setting_the_option(self):
         options = {"Go for A":"A", "Go for B":"B"}
-        chatt = attributes.Choice_Attribute(options, "Go for A")
+        chatt = attributes.Choice_Attribute("Go for A",options)
         chatt.set("Go for B")
         self.assertEqual(chatt.formatted_value, "Go for B")
         self.assertEqual(chatt.value, "B")

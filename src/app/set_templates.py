@@ -37,15 +37,19 @@ def main():
 
     treemod.tt.clear()
     treemod.tt.add(
-        treemod.tt.NewTemplate('Scenario',{"name":"Scenario","total income": sum_incomes, "total expense": sum_expenses},children=("Income","Expense","Item","Debt")),
+        treemod.tt.NewTemplate(
+            'Scenario',
+            {
+                "name":"Scenario"
+            },
+            children=("Income","Expense","Item","Debt")
+        ),
         treemod.tt.NewTemplate('Income',{"name":"Income","amount": "1 Kč", "date":"1.1.2023"},children=(),icon_file=income_icon),
-        treemod.tt.NewTemplate('Expense',{"name":"Expense","amount":1, "date":"1.1.2023"},children=(),icon_file=expense_icon),
+        treemod.tt.NewTemplate('Expense',{"name":"Expense","amount": "1 Kč", "date":"1.1.2023"},children=(),icon_file=expense_icon),
         treemod.tt.NewTemplate(
             'Item',
             OrderedDict({
-                "name":"Item",
-                "total income": sum_incomes,
-                "total expense": sum_expenses,
+                "name":"Item"
             }),
             children=("Income","Expense","Item"),
             user_def_cmds=OrderedDict({"Hello, world":print_hello_world}),

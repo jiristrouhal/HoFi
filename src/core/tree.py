@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 
 import src.core.tree_templates as tt
-from src.core.attributes import _Attribute, Positive_Int_Attr, Dependent_Attr
+from src.core.attributes import _Attribute, Positive_Int_Attr, Dependent_Attr, CURRY_FORMATS
 
 
 class TreeItem:

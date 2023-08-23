@@ -158,7 +158,10 @@ def __create_attributes(
     
     attributes = OrderedDict()
     for name, value in new_attributes.items():
-        attributes[name] = attrs.create_attribute(value)
+        if isinstance(value,tuple):
+            attributes[name] = attrs.create_attribute(value[1],value[0])
+        else:
+            attributes[name] = attrs.create_attribute(value)
     return attributes
 
 def __template_exists(tag:str)->bool:

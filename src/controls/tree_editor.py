@@ -250,6 +250,7 @@ class TreeEditor:
         if tree.child_tags: self.right_click_menu.add_separator()
         self.right_click_menu.add_commands(
             {
+                MENU_CMD_BRANCH_EDIT : partial(self.open_edit_window,root_id),  
                 MENU_CMD_BRANCH_OPEN_ALL : partial(self._open_all,root_id),
                 MENU_CMD_BRANCH_CLOSE_ALL :  partial(self._close_all,root_id)
             }
@@ -296,7 +297,7 @@ class TreeEditor:
         self.add_window = tk.Toplevel(self.widget)
         self.__configure_toplevel(self.add_window)
         self.__create_entries(self.add_window, treemod.tt.template(tag).attributes)
-
+        
         self.add_window.bind("<Key-Escape>",self._disregard_add_entry_values_on_keypress)
         button_frame(
             self.add_window,
@@ -344,7 +345,10 @@ class TreeEditor:
         self.edit_window = tk.Toplevel(self.widget)
         self.__configure_toplevel(self.edit_window)
         item = self._map[item_id]
-        self.__create_entries(self.edit_window,item.attributes)
+        if item.parent is None:
+            self.__create_entries(self.edit_window, item.attributes, excluded=["name"])
+        else:
+            self.__create_entries(self.edit_window, item.attributes)
         self.edit_window.bind("<Key-Escape>",self.disregard_edit_entry_values_on_keypress)
         button_frame(
             self.edit_window,
@@ -455,20 +459,27 @@ class TreeEditor:
         self.entries.clear()
         self.entry_options.clear()
 
-    def __create_entries(self,window:tk.Toplevel,attributes:Dict[str,treemod._Attribute])->None:
+    def __create_entries(self,window:tk.Toplevel,attributes:Dict[str,treemod._Attribute],excluded:List[str]=[])->None:
         self.entries = dict()
         entries_frame = tk.Frame(window)
         row=0
         for key,attr in attributes.items():
+            if key in excluded: continue
             col=0
             tk.Label(entries_frame,text=key).grid(row=row,column=col)
             col += 1
-            
-            vcmd = (entries_frame.register(attr.valid_entry),'%P')
-            entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
-            entry.insert(0, attr.value)
-            entry.grid(row=row,column=col)
-            self.entries[key] = entry
+            if attr.options:
+                box = ttk.Combobox(entries_frame,values=attr.options)
+                box.insert(0, attr.formatted_value)
+                box.current(attr.options.index(attr.formatted_value))
+                box.grid(row=row,column=col)
+                self.entries[key] = box
+            else:
+                vcmd = (entries_frame.register(attr.valid_entry),'%P')
+                entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
+                entry.insert(0, attr.value)
+                entry.grid(row=row,column=col)
+                self.entries[key] = entry
 
             if attr.choices:
                 self.entry_options[key] = dict()

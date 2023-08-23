@@ -14,11 +14,13 @@ class AttributesOwner(Protocol):
 class _Attribute(abc.ABC):
     default_value:Any = None
 
-    def __init__(self, value:Any = None)->None:
+    def __init__(self, value:Any = None, value_options:Dict[str,Any]={})->None:
         if value is None or not self.valid_entry(value): 
             self._value = self.default_value
         else:
             self._value = value
+
+        self._value_options = value_options
 
         self.choice_actions:Dict[str,Callable[[Any],None]] = dict()
         self.choices:Dict[str,List[Any]] = dict()
@@ -28,6 +30,8 @@ class _Attribute(abc.ABC):
     def value(self)->Any: pass
     @abc.abstractproperty
     def formatted_value(self)->str: pass
+    @property
+    def options(self)->List[str]: return list(self._value_options.keys())
 
     @staticmethod
     @abc.abstractmethod
@@ -43,18 +47,18 @@ class _Attribute(abc.ABC):
 
 
 class Choice_Attribute(_Attribute):
-
-    def __init__(self,options:Dict[str,Any],default:str)->None:
+    is_choice:bool = True
+    def __init__(self, default:str, options:Dict[str,Any])->None:
         if default not in options: 
             raise KeyError(f"Cannot initialize Choice attribute with option '{default}',"
                            f" which not present in the options passed {tuple(options.keys())}.")
         super().__init__(default)
-        self._options = options
+        self._value_options = options
     
     @property
-    def value(self)->Any: return self._options[self._value]
+    def value(self)->Any: return self._value_options[self._value]
     @property
-    def options(self)->List[str]: return list(self._options.keys())
+    def options(self)->List[str]: return list(self._value_options.keys())
     @property
     def formatted_value(self)->str:
         return self._value
@@ -62,7 +66,7 @@ class Choice_Attribute(_Attribute):
     def valid_entry(value:str)->bool: return True
 
     def copy(self)->Choice_Attribute:
-        return Choice_Attribute(self._options,self._value)
+        return Choice_Attribute(self._value, self._value_options)
 
 
 from functools import partial
@@ -164,6 +168,8 @@ CURR_SYMBOLS_TO_CODE = {CURRY_FORMATS[code].symbol:code for code in CURRY_FORMAT
 
 class UndefinedCurrency(Exception): pass
 
+
+import forex_python.converter as forex_converter
 class Currency_Attribute(_Attribute):
 
     default_value = "1"
@@ -187,6 +193,10 @@ class Currency_Attribute(_Attribute):
     @property
     def formatted_value(self)->str:
         return CURRY_FORMATS[self._currency_code].present(self._value)
+
+    def converted_value(self,target_currency:Currency_Code)->str:
+        converted_value = forex_converter.convert(self._currency_code, target_currency,self._value)
+        return converted_value
 
     @staticmethod
     def valid_entry(value:str) -> bool:
@@ -281,7 +291,7 @@ def create_attribute(default_value:Any,options:Dict[str,Any]={})->_Attribute:
         return Dependent_Attr(default_value)
     
     elif options:
-        return Choice_Attribute(options,default_value)
+        return Choice_Attribute(default_value, options)
 
     elif Positive_Int_Attr.valid_entry(default_value):
         return Positive_Int_Attr(default_value)
