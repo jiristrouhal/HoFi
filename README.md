@@ -164,6 +164,8 @@ The currency is independent of the application language and it is specific for e
 
 When item is being added or edited, the currency is customary and can be selected by dropdown menu next to the value. The value can be entered as a positive float number, but after confirming the changes, the value is rounded according to the currency (e.g., to 2 decimal places for euro or US dollar or to whole number in the case of yen). 
 
-When conversion is applied, to estimate the exchange rate, a date has to be specified. By default, the transaction date is selected. The user can pass a custom date, for which the value is converted. 
+When conversion is applied, to estimate the exchange rate, a date has to be specified. By default, the current date is selected. The user can pass a custom date, for which the value is converted. 
+
+When adding an income or expense, the currency is by default set by the application localization. 
 
 

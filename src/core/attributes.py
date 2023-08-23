@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Callable, Protocol, Dict, Literal
+from typing import Any, Callable, Protocol, Dict, Literal, Tuple
 
 import abc
 import re
@@ -81,38 +81,71 @@ class Positive_Int_Attr(_Attribute):
 
 import decimal
 from decimal import Decimal, Context
-import locale
 from dataclasses import dataclass
 
 
-Localization = Literal['en_US','cs_CZ']
 Curry_Symbol_Position = Literal[0,1]
+Localization_Code = Literal['en_US', 'cs_CZ']
+CURRY_SYMBOL_POSITION:Dict[Localization_Code,Curry_Symbol_Position] = {
+    'en_US':0,
+    'cs_CZ':1
+}
+CURRY_CODE_BY_LOCALIZATION:Dict[Localization_Code,Currency_Code] = {
+    'en_US': 'USD',
+    'cs_CZ': 'CZK'
+}
+
+LOCALIZATION_CODE = 'en_US'
+DEFAULT_CURRENCY_CODE = CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
+
+def set_localization(code:Localization_Code)->None:
+    global LOCALIZATION_CODE, DEFAULT_CURRENCY_CODE
+    LOCALIZATION_CODE = code
+    DEFAULT_CURRENCY_CODE = CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
+
 
 @dataclass
 class _Curry_Format:
     decimals:Literal[0,1,2,3]
-    symbols:str
+    symbol:str
+    prepend:bool = True
+    def __post_init__(self):
+        self.context = Context(prec=self.decimals,rounding=decimal.ROUND_HALF_EVEN)
+
+    def add_symbol(self,value:Decimal|float|str)->str:
+        if CURRY_SYMBOL_POSITION[LOCALIZATION_CODE]==0 and self.prepend:
+            return self.__prepend_symbol(value)
+        else:
+            return self.__append_symbol(value)
+
+    def __prepend_symbol(self,value:Decimal|float|str)->str:
+        return self.symbol+str(Decimal(value,self.context))
+
+    def __append_symbol(self,value:Decimal|float|str)->str:
+        return str(Decimal(value,self.context)) + ' ' + self.symbol
+        
 
 
 Currency_Code = Literal['CZK','EUR', 'USD']
-CURRY_SYMBOL_POSITION:Dict[Localization,Curry_Symbol_Position] = {
-    'en_US':0,
-    'cs_CZ':1
-}
 CURRY_FORMATS:Dict[Currency_Code,_Curry_Format] = {
-    'CZK':_Curry_Format(2,'Kč'),
+    'CZK':_Curry_Format(2,'Kč',prepend=False),
     'EUR':_Curry_Format(2,'€'),
     'USD': _Curry_Format(2,'$')
 }
+CURRENCY_SYMBOLS = [CURRY_FORMATS[code].symbol for code in CURRY_FORMATS]
+CURR_SYMBOLS_TO_CODE = {CURRY_FORMATS[code].symbol:code for code in CURRY_FORMATS}
+
+class UndefinedCurrency(Exception): pass
 
 class Currency_Attribute(_Attribute):
 
-    default_value = "1"
+    default_value = CURRY_FORMATS[DEFAULT_CURRENCY_CODE].add_symbol(1)
     rounding = decimal.ROUND_HALF_EVEN
+    localization:Curry_Symbol_Position = 0
 
     def __init__(self, currency_code:Currency_Code, value:Any=default_value)->None:
         super().__init__(value)
-        self._currency = currency_code
+        self._currency_code = currency_code
         self._decimal_context = Context(
             prec=CURRY_FORMATS[currency_code].decimals, 
             rounding = Currency_Attribute.rounding
@@ -122,9 +155,7 @@ class Currency_Attribute(_Attribute):
         return Decimal(self._value)
     @property
     def formatted_value(self)->str:
-        sval = Decimal(self._value, self._decimal_context)
-        
-        return sval
+        return CURRY_FORMATS[self._currency_code].add_symbol(self._value)
 
     @staticmethod
     def valid_entry(value:str) -> bool:
@@ -133,6 +164,13 @@ class Currency_Attribute(_Attribute):
     
     def copy(self)->Currency_Attribute:
         return Currency_Attribute(self._value)
+    
+    def set_currency(self,currency_code:Currency_Code)->None:
+        if currency_code not in CURRY_FORMATS: 
+            raise UndefinedCurrency(
+                f"Cannot set currency. Code {currency_code} is not defined."
+            )
+        self._currency_code = currency_code
     
 
 
@@ -208,6 +246,11 @@ class Text_Attr(_Attribute):
 def create_attribute(value:Any)->_Attribute:
     if callable(value):
         return Dependent_Attr(value)
+    possible_currency = convert_to_currency(value)
+    if possible_currency:
+        amount = possible_currency[0]
+        symbol = possible_currency[1]
+        return Currency_Attribute(symbol,amount)
     elif Positive_Int_Attr.valid_entry(value):
         return Positive_Int_Attr(value)
     elif Date_Attr.valid_entry(value):
@@ -216,25 +259,28 @@ def create_attribute(value:Any)->_Attribute:
         return Name_Attr(value)
     else:
         return Text_Attr(value)
-    
-
-CURRENCY_SYMBOLS = ["Kč","$","€","US$"]
 
 
-def is_currency(text:str)->bool:
+def convert_to_currency(text:str)->Tuple[str,str]|Tuple:
     text = text.strip()
     if re.fullmatch("\d+([\.\,]\d*)?\s*\S*",text) is not None or re.fullmatch("[\.\,]\d+\s*\S*",text) is not None:
         i = 0
         while i<len(text) and (text[i].isdigit() or text[i] in ('.',',')):  
             i += 1
         text_without_number = text[i:].strip()
-        return text_without_number in CURRENCY_SYMBOLS
+        if text_without_number in CURRENCY_SYMBOLS:
+            currency_code = CURR_SYMBOLS_TO_CODE[text_without_number]
+            return (text[i:], currency_code)
+        return ()
     
     elif re.fullmatch("\S*\s*\d+([\.\,]\d*)?",text) is not None:
         i = -1
         while  i>-len(text)-1 and (text[i].isdigit() or text[i] in ('.',',')):
             i -= 1
         text_without_number = text[:i+1].strip()
-        return text_without_number in CURRENCY_SYMBOLS
+        if text_without_number in CURRENCY_SYMBOLS:
+            currency_code = CURR_SYMBOLS_TO_CODE[text_without_number]
+            return (text[i:], currency_code)
+        return ()
     
-    return False
+    return ()
