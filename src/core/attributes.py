@@ -84,28 +84,28 @@ from decimal import Decimal, Context
 from dataclasses import dataclass
 
 
-Curry_Symbol_Position = Literal[0,1]
-Localization_Code = Literal['en_US', 'cs_CZ']
-CURRY_SYMBOL_POSITION:Dict[Localization_Code,Curry_Symbol_Position] = {
+__Curry_Symbol_Position = Literal[0,1]
+__Localization_Code = Literal['en_US', 'cs_CZ']
+_CURRY_SYMBOL_POSITION:Dict[__Localization_Code,__Curry_Symbol_Position] = {
     'en_US':0,
     'cs_CZ':1
 }
-CURRY_CODE_BY_LOCALIZATION:Dict[Localization_Code,Currency_Code] = {
+__CURRY_CODE_BY_LOCALIZATION:Dict[__Localization_Code,Currency_Code] = {
     'en_US': 'USD',
     'cs_CZ': 'CZK'
 }
 
 LOCALIZATION_CODE = 'en_US'
-DEFAULT_CURRENCY_CODE = CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
+DEFAULT_CURRENCY_CODE = __CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
 
-def set_localization(code:Localization_Code)->None:
+def set_localization(code:__Localization_Code)->None:
     global LOCALIZATION_CODE, DEFAULT_CURRENCY_CODE
     LOCALIZATION_CODE = code
-    DEFAULT_CURRENCY_CODE = CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
+    DEFAULT_CURRENCY_CODE = __CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
 
 
 @dataclass
-class _Curry_Format:
+class __Curry_Format:
     decimals:Literal[0,1,2,3]
     symbol:str
     prepend:bool = True
@@ -114,7 +114,7 @@ class _Curry_Format:
 
     def present(self,value:Decimal|float|str)->str:
         value =  round(Decimal(str(value),self.context), self.decimals)
-        if CURRY_SYMBOL_POSITION[LOCALIZATION_CODE]==0 and self.prepend:
+        if _CURRY_SYMBOL_POSITION[LOCALIZATION_CODE]==0 and self.prepend:
             return self.__prepend_symbol(value)
         else:
             return self.__append_symbol(value)
@@ -128,10 +128,10 @@ class _Curry_Format:
 
 
 Currency_Code = Literal['CZK','EUR', 'USD']
-CURRY_FORMATS:Dict[Currency_Code,_Curry_Format] = {
-    'CZK':_Curry_Format(2,'Kč',prepend=False),
-    'EUR':_Curry_Format(2,'€'),
-    'USD': _Curry_Format(2,'$')
+CURRY_FORMATS:Dict[Currency_Code,__Curry_Format] = {
+    'CZK':__Curry_Format(2,'Kč',prepend=False),
+    'EUR':__Curry_Format(2,'€'),
+    'USD': __Curry_Format(2,'$')
 }
 CURRENCY_SYMBOLS = [CURRY_FORMATS[code].symbol for code in CURRY_FORMATS]
 CURR_SYMBOLS_TO_CODE = {CURRY_FORMATS[code].symbol:code for code in CURRY_FORMATS}
@@ -142,7 +142,7 @@ class Currency_Attribute(_Attribute):
 
     default_value = "1"
     rounding = decimal.ROUND_HALF_EVEN
-    localization:Curry_Symbol_Position = 0
+    localization:__Curry_Symbol_Position = 0
 
     def __init__(self, currency_code:Currency_Code, value:Any=default_value)->None:
         super().__init__(value)
