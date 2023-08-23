@@ -143,6 +143,7 @@ class __Curry_Format:
         self.context = Context(prec=self.decimals,rounding=decimal.ROUND_HALF_EVEN)
 
     def present(self,value:Decimal|float|str)->str:
+        value = str(value).replace(",",".")
         value =  round(Decimal(str(value),self.context), self.decimals)
         if _CURRY_SYMBOL_POSITION[LOCALIZATION_CODE]==0 and self.prepend:
             return self.__prepend_symbol(value)
@@ -189,17 +190,18 @@ class Currency_Attribute(_Attribute):
 
     @property
     def value(self)->Decimal:
-        return Decimal(self._value)
+        return Decimal(str(self._value).replace(",","."))
     @property
     def formatted_value(self)->str:
-        return CURRY_FORMATS[self._currency_code].present(self._value)
+        return CURRY_FORMATS[self._currency_code].present(str(self._value).replace(",","."))
 
     def converted_value(self,target_currency:Currency_Code)->str:
-        converted_value = forex_converter.convert(self._currency_code, target_currency,self._value)
+        converted_value = forex_converter.convert(self._currency_code, target_currency,self._value.replace(",","."))
         return converted_value
 
     @staticmethod
     def valid_entry(value:str) -> bool:
+        value = str(value).replace(",",".")
         try: return float(value)>0
         except: return False
     
