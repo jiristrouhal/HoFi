@@ -45,6 +45,17 @@ class Test_Choice_Attribute(unittest.TestCase):
         with self.assertRaises(KeyError):
             attributes.Choice_Attribute(options, "Go for X")
 
+    def test_setting_the_option(self):
+        options = {"Go for A":"A", "Go for B":"B"}
+        chatt = attributes.Choice_Attribute(options, "Go for A")
+        chatt.set("Go for B")
+        self.assertEqual(chatt.formatted_value, "Go for B")
+        self.assertEqual(chatt.value, "B")
+
+    def test_automatic_identification_of_this_type_of_attribute(self):
+        options = {"Go for A":"A", "Go for B":"B"}
+        chatt = attributes.create_attribute("Go for A", options)
+        self.assertEqual(chatt.formatted_value, "Go for A")
 
 class Test_Date_Attribute(unittest.TestCase):
     

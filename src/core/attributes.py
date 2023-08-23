@@ -276,22 +276,30 @@ class Text_Attr(_Attribute):
     
 
 
-def create_attribute(value:Any)->_Attribute:
-    if callable(value):
-        return Dependent_Attr(value)
-    elif Positive_Int_Attr.valid_entry(value):
-        return Positive_Int_Attr(value)
-    possible_currency = convert_to_currency(value)
+def create_attribute(default_value:Any,options:Dict[str,Any]={})->_Attribute:
+    if callable(default_value):
+        return Dependent_Attr(default_value)
+    
+    elif options:
+        return Choice_Attribute(options,default_value)
+
+    elif Positive_Int_Attr.valid_entry(default_value):
+        return Positive_Int_Attr(default_value)
+    
+    possible_currency = convert_to_currency(default_value)
     if possible_currency:
         amount = possible_currency[0]
         currency_code = possible_currency[1]
         return Currency_Attribute(currency_code,amount)
-    elif Date_Attr.valid_entry(value):
+    
+    elif Date_Attr.valid_entry(default_value):
         return Date_Attr(Date_Attr.date_formatter.print_date(datetime.date.today()))
-    elif Name_Attr.valid_entry(value):
-        return Name_Attr(value)
+    
+    elif Name_Attr.valid_entry(default_value):
+        return Name_Attr(default_value)
+    
     else:
-        return Text_Attr(value)
+        return Text_Attr(default_value)
 
 
 def convert_to_currency(text:str)->Tuple[str,str]|Tuple:
