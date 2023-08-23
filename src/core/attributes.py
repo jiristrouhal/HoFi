@@ -246,13 +246,13 @@ class Text_Attr(_Attribute):
 def create_attribute(value:Any)->_Attribute:
     if callable(value):
         return Dependent_Attr(value)
+    elif Positive_Int_Attr.valid_entry(value):
+        return Positive_Int_Attr(value)
     possible_currency = convert_to_currency(value)
     if possible_currency:
         amount = possible_currency[0]
         symbol = possible_currency[1]
         return Currency_Attribute(symbol,amount)
-    elif Positive_Int_Attr.valid_entry(value):
-        return Positive_Int_Attr(value)
     elif Date_Attr.valid_entry(value):
         return Date_Attr(Date_Attr.date_formatter.print_date(datetime.date.today()))
     elif Name_Attr.valid_entry(value):
@@ -262,7 +262,7 @@ def create_attribute(value:Any)->_Attribute:
 
 
 def convert_to_currency(text:str)->Tuple[str,str]|Tuple:
-    text = text.strip()
+    text = str(text).strip()
     if re.fullmatch("\d+([\.\,]\d*)?\s*\S*",text) is not None or re.fullmatch("[\.\,]\d+\s*\S*",text) is not None:
         i = 0
         while i<len(text) and (text[i].isdigit() or text[i] in ('.',',')):  
