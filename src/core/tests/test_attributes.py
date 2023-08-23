@@ -39,7 +39,12 @@ class Test_Choice_Attribute(unittest.TestCase):
         self.assertListEqual(chatt.options, list(options.keys()))
         self.assertEqual(chatt.formatted_value, "Go for A")
         self.assertEqual(chatt.value, "A")
-    
+
+    def test_passing_default_option_outside_those_available_raises_key_error(self):
+        options = {"Go for A":"A", "Go for B":"B"}
+        with self.assertRaises(KeyError):
+            attributes.Choice_Attribute(options, "Go for X")
+
 
 class Test_Date_Attribute(unittest.TestCase):
     
