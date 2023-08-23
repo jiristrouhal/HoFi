@@ -164,7 +164,7 @@ class Currency_Attribute(_Attribute):
         except: return False
     
     def copy(self)->Currency_Attribute:
-        return Currency_Attribute(self._value)
+        return Currency_Attribute(self._currency_code,self._value)
     
     def set_currency(self,currency_code:Currency_Code)->None:
         if currency_code not in CURRY_FORMATS: 
@@ -252,8 +252,8 @@ def create_attribute(value:Any)->_Attribute:
     possible_currency = convert_to_currency(value)
     if possible_currency:
         amount = possible_currency[0]
-        symbol = possible_currency[1]
-        return Currency_Attribute(symbol,amount)
+        currency_code = possible_currency[1]
+        return Currency_Attribute(currency_code,amount)
     elif Date_Attr.valid_entry(value):
         return Date_Attr(Date_Attr.date_formatter.print_date(datetime.date.today()))
     elif Name_Attr.valid_entry(value):
