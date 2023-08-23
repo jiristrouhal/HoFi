@@ -176,5 +176,10 @@ class Test_Currency_Attribute(unittest.TestCase):
         catt.set(0.123456789)
         self.assertEqual(catt.formatted_value,"0.12 Kč")
 
+    def test_attribute_keeps_its_default_currency(self):
+        attributes.set_localization('cs_CZ')
+        catt = attributes.create_attribute("1 $")
+        self.assertEqual(catt.formatted_value,"1.00 $")
+
 
 if __name__=="__main__": unittest.main()
