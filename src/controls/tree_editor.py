@@ -52,6 +52,7 @@ class TreeEditor:
         self.move_window.wm_withdraw()
 
         self.entries:Dict[str,tk.Entry] = dict()
+        self.entry_options:Dict[str,Dict[str,ttk.Combobox]] = dict()
         # this flag will prevent some events to occur when the treeview is tested
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
         self._messageboxes_allowed:bool = True
@@ -310,11 +311,17 @@ class TreeEditor:
         attributes = treemod.tt.template(tag).attributes
         for label, entry in self.entries.items():
             attributes[label].set(entry.get())
+        
         name = attributes.pop("name").value
         self._map[parent_id].new(name,tag=tag)
         new_child = self._map[parent_id]._children[-1]
+
         for attr_name in attributes:
             new_child.set_attribute(attr_name,attributes[attr_name].value)
+            if attr_name in self.entry_options:
+                for opt_label, option in self.entry_options[attr_name].items():
+                    new_child.attributes[attr_name].choice_actions[opt_label](option.get())
+
         self.__clear_add_window_widgets()
 
         for action in self._on_any_modification: action(new_child)
@@ -358,6 +365,12 @@ class TreeEditor:
                 item.rename(entry.get())
             else:
                 item.set_attribute(attribute, entry.get())
+
+            if attribute in self.entry_options:
+                for opt_label, option in self.entry_options[attribute].items():
+                    attr = item.attributes[attribute]
+                    attr.choice_actions[opt_label](option.get())
+
         # rename element in the tree
         self.widget.item(item_id,text=item.name)
         self.__clear_edit_window_widgets()
@@ -435,22 +448,42 @@ class TreeEditor:
     def __clear_add_window_widgets(self)->None: # pragma: no cover
         self.add_window.destroy()
         self.entries.clear()
+        self.entry_options.clear()
 
     def __clear_edit_window_widgets(self)->None: # pragma: no cover
         self.edit_window.destroy()
         self.entries.clear()
+        self.entry_options.clear()
 
     def __create_entries(self,window:tk.Toplevel,attributes:Dict[str,treemod._Attribute])->None:
         self.entries = dict()
         entries_frame = tk.Frame(window)
         row=0
         for key,attr in attributes.items():
-            tk.Label(entries_frame,text=key).grid(row=row,column=0)
+            col=0
+            tk.Label(entries_frame,text=key).grid(row=row,column=col)
             vcmd = (entries_frame.register(attr.valid_entry),'%P')
             entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
             entry.insert(0, attr.value)
-            entry.grid(row=row,column=1)
+            col += 1
+            entry.grid(row=row,column=col)
             self.entries[key] = entry
+
+            if attr.choices:
+                self.entry_options[key] = dict()
+                for variable in attr.choices:
+                    col += 1
+                    tk.Label(entries_frame,text=' '+variable).grid(row=row, column=col)
+                    box = ttk.Combobox(
+                        entries_frame,
+                        values=attr.choices[variable],
+                        width=5
+                    )
+                    box.current(attr.choices[variable].index(attr.selected_choices[variable]))
+                    self.entry_options[key][variable] = box
+                    col += 1
+                    box.grid(row=row, column=col)
+
             row += 1
         entries_frame.pack()
 

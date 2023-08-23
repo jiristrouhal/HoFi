@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Callable, Protocol, Dict, Literal, Tuple
+from typing import Any, Callable, Protocol, Dict, Literal, Tuple, List
 
 import abc
 import re
@@ -20,6 +20,10 @@ class _Attribute(abc.ABC):
             self._value = self.default_value
         else:
             self._value = value
+
+        self.choice_actions:Dict[str,Callable[[Any],None]] = dict()
+        self.choices:Dict[str,List[Any]] = dict()
+        self.selected_choices:Dict[str,Any] = dict()
 
     @abc.abstractproperty
     def value(self)->Any: pass
@@ -151,6 +155,10 @@ class Currency_Attribute(_Attribute):
             prec=CURRY_FORMATS[currency_code].decimals, 
             rounding = Currency_Attribute.rounding
         )
+        self.choice_actions["currency"] = self.set_currency
+        self.choices["currency"] = list(CURRY_FORMATS.keys())
+        self.selected_choices["currency"] = self._currency_code
+
     @property
     def value(self)->Decimal:
         return Decimal(self._value)
@@ -172,6 +180,7 @@ class Currency_Attribute(_Attribute):
                 f"Cannot set currency. Code {currency_code} is not defined."
             )
         self._currency_code = currency_code
+        self.selected_choices["currency"] = currency_code
     
 
 
@@ -181,6 +190,7 @@ class Date_Attr(_Attribute):
     date_formatter = src.core.dates.get_date_converter("%d.%m.%Y")
 
     def __init__(self, value:str|None=None)->None:
+        super().__init__(value)
         if value is not None and self.final_validation(value):
             self._value = self.date_formatter.enter_date(value)
         else:
