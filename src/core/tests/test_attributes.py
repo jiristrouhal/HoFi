@@ -207,5 +207,15 @@ class Test_Currency_Attribute(unittest.TestCase):
         catt = attributes.create_attribute("1 $")
         self.assertEqual(catt.formatted_value,"1.00 $")
 
+    def test_copying_attribute(self):
+        attributes.set_localization('cs_CZ')
+        catt = attributes.create_attribute("2 $")
+        self.assertEqual(catt.formatted_value,"2.00 $")
+        catt2 = catt.copy()
+        self.assertEqual(catt2.formatted_value,"2.00 $")
+        catt2.set(45)
+        self.assertEqual(catt.formatted_value,"2.00 $")
+        self.assertEqual(catt2.formatted_value,"45.00 $")
+
 
 if __name__=="__main__": unittest.main()

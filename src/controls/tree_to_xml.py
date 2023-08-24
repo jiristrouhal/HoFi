@@ -39,7 +39,7 @@ class Tree_XML_Converter:
         return path_to_file
 
     def __xml_tree(self,tree:treemod.Tree)->et.ElementTree:
-        attrib = {label:str(x.value) for label,x in tree.attributes.items()}
+        attrib = {label:str(x.formatted_value) for label,x in tree.attributes.items()}
         xml_root = et.Element(tree.tag, attrib=attrib)
         self.__create_xml_elem(tree,xml_root)
         return et.ElementTree(xml_root)
@@ -51,7 +51,7 @@ class Tree_XML_Converter:
         )->None:
 
         for branch in parent._children:
-            attribs = {label:str(x.value) for label,x in branch.attributes.items()}
+            attribs = {label:str(x.formatted_value) for label,x in branch.attributes.items()}
             xml_elem = et.SubElement(parent_xml_elem, branch.tag, attrib=attribs)
             self.__create_xml_elem(branch,xml_elem)
 

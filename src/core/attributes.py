@@ -15,7 +15,7 @@ class _Attribute(abc.ABC):
     default_value:Any = None
 
     def __init__(self, value:Any = None, value_options:Dict[str,Any]={})->None:
-        if value is None or not self.valid_entry(value): 
+        if value is None: 
             self._value = self.default_value
         else:
             self._value = value
@@ -324,7 +324,7 @@ def convert_to_currency(text:str)->Tuple[str,str]|Tuple:
         text_without_number = text[i:].strip()
         if text_without_number in CURRENCY_SYMBOLS:
             currency_code = CURR_SYMBOLS_TO_CODE[text_without_number]
-            return (text[i:], currency_code)
+            return (text[:i], currency_code)
         return ()
     
     elif re.fullmatch("\S*\s*\d+([\.\,]\d*)?",text) is not None:
@@ -334,7 +334,7 @@ def convert_to_currency(text:str)->Tuple[str,str]|Tuple:
         text_without_number = text[:i+1].strip()
         if text_without_number in CURRENCY_SYMBOLS:
             currency_code = CURR_SYMBOLS_TO_CODE[text_without_number]
-            return (text[i:], currency_code)
+            return (text[i+1:], currency_code)
         return ()
     
     return ()
