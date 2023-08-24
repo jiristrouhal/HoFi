@@ -31,8 +31,14 @@ MOVE_WINDOW_TITLE = "Select new parent"
 
 class TreeEditor:
 
-    def __init__(self, parent:tk.Tk|tk.Toplevel|tk.Frame|tk.LabelFrame|None = None, label:str = "TreeEditor")->None:
-        self.widget = ttk.Treeview(parent)
+    def __init__(
+        self, 
+        parent:tk.Tk|tk.Toplevel|tk.Frame|tk.LabelFrame|None = None, 
+        label:str = "TreeEditor", 
+        displayed_attributes:Dict[str,Tuple[str,...]] = {},
+        )->None:
+
+        self.widget = ttk.Treeview(parent, columns=tuple(displayed_attributes.keys()))
         self._bind_keys()
         self.__configure_widget()
 
@@ -53,6 +59,8 @@ class TreeEditor:
 
         self.entries:Dict[str,tk.Entry] = dict()
         self.entry_options:Dict[str,Dict[str,ttk.Combobox]] = dict()
+
+        self._displayed_attributes:Dict[str,Tuple[str,...]] = displayed_attributes
         # this flag will prevent some events to occur when the treeview is tested
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
         self._messageboxes_allowed:bool = True
@@ -162,9 +170,28 @@ class TreeEditor:
         self._load_children(tree)
         self._open_all("")
 
+    def __get_item_treeview_values(self,item:treemod.TreeItem)->List[str]:
+        values = []
+        for key, attrs in self._displayed_attributes.items():
+            values.append("")
+            for attr in attrs:
+                if attr in item.attributes:
+                    if values[-1]!="": values[-1]+="/"
+                    values[-1] += (item.attributes[attr].formatted_value)
+                elif attr in item.dependent_attributes:
+                    if values[-1]!="": values[-1]+="/"
+                    values[-1] += (item.dependent_attributes[attr].formatted_value)
+        return values
+
     def __load_item_into_tree(self,iid:str,item:treemod.TreeItem)->None:
         parent_iid = "" if item.parent is None else item.parent.data["treeview_iid"]
-        self.widget.insert(parent_iid,index=0,iid=iid,text=item.name)
+        self.widget.insert(
+            parent_iid,
+            index=0,
+            iid=iid,
+            text=item.name,
+            values=self.__get_item_treeview_values(item)
+        )
         icon = treemod.tt.template(item.tag).icon_file
         if icon is not None: self.widget.item(iid,image=icon)
 
@@ -375,7 +402,7 @@ class TreeEditor:
                     attr.choice_actions[opt_label](option.get())
 
         # rename element in the tree
-        self.widget.item(item_id,text=item.name)
+        self.widget.item(item_id,text=item.name,values=self.__get_item_treeview_values(item))
         self.__clear_edit_window_widgets()
         for action in self._on_edit: action(item)
         for action in self._on_any_modification: action(item)
@@ -509,7 +536,6 @@ class TreeEditor:
             tree_id = id
             id = self.widget.parent(tree_id)
         return str(tree_id)
-
 
 
 def button_frame(

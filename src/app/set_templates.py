@@ -17,7 +17,7 @@ def main():
 
     def extract_money_amount(assumed_money:str)->float:
         x = convert_to_currency(assumed_money)
-        if isinstance(x,tuple):
+        if isinstance(x,tuple) and len(x)>0:
             return x[0]
         else:
             return 0
@@ -28,8 +28,8 @@ def main():
             if child.tag=="Income":
                 s += child.attributes["amount"].value
             elif child.tag=="Item":
-                s += Decimal(extract_money_amount(child.dependent_attributes["total income"].value))
-        return treemod.CURRY_FORMATS[item.get_its_tree().attributes["currency"].value].present(s)
+                s += Decimal(extract_money_amount(child.dependent_attributes["incomes"].value))
+        return "+"+treemod.CURRY_FORMATS[item.get_its_tree().attributes["currency"].value].present(s)
     
     def sum_expenses(item:treemod.TreeItem)->str:
         s = Decimal(0.0)
@@ -37,14 +37,14 @@ def main():
             if child.tag=="Expense":
                 s += child.attributes["amount"].value
             elif child.tag=="Item":
-                s += Decimal(extract_money_amount(child.dependent_attributes["total expense"].value))
-        return treemod.CURRY_FORMATS[item.get_its_tree().attributes["currency"].value].present(s)
-
+                s += Decimal(extract_money_amount(child.dependent_attributes["expenses"].value))
+        return "-"+treemod.CURRY_FORMATS[item.get_its_tree().attributes["currency"].value].present(s)
+    
     def print_hello_world(item:treemod.TreeItem)->None:
         print("Hello, world!!!")
 
     def default_amount_by_tree(item:treemod.TreeItem)->str:
-        return "12" + treemod.CURRY_FORMATS[item.get_its_tree().attributes["currency"].value].symbol
+        return "1" + treemod.CURRY_FORMATS[item.get_its_tree().attributes["currency"].value].symbol
 
     treemod.tt.clear()
     treemod.tt.add(
@@ -53,8 +53,8 @@ def main():
             {
                 "name":"Scenario",
                 "currency":({"USD":"USD", 'CZK':'CZK', 'EUR':'EUR'},'USD'),
-                "total income": sum_incomes,
-                "total expense": sum_expenses
+                "incomes": sum_incomes,
+                "expenses": sum_expenses
             },
             children=("Income","Expense","Item","Debt",'Non_monetary_debt')
         ),
@@ -76,8 +76,8 @@ def main():
             'Item',
             OrderedDict({
                 "name":"Item",
-                "total income": sum_expenses,
-                "total expense": sum_incomes
+                "incomes": sum_incomes,
+                "expenses": sum_expenses
             }),
             children=("Income","Expense","Item"),
             user_def_cmds=OrderedDict({"Hello, world":print_hello_world}),
