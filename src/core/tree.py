@@ -220,7 +220,8 @@ class TreeItem:
             for action in self._actions[owner][on]: action(item)
     
     
-class Tree(TreeItem): pass
+class Tree(TreeItem): 
+    def get_its_tree(self)->Tree: return self
 class Branch(TreeItem): pass
 
 
