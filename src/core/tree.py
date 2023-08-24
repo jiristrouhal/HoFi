@@ -15,6 +15,7 @@ class TreeItem:
         self._attributes = tt.template(tag).attributes
         self._attributes["name"].set(src.core.naming.strip_and_join_spaces(name))
 
+
         self.__child_tags:Tuple[str,...] = tt.template(tag).children
 
         self._children:List[TreeItem] = list()

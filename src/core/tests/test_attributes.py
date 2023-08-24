@@ -176,18 +176,18 @@ class Test_Currency_Attribute(unittest.TestCase):
         attributes.set_localization('cs_CZ')
         catt = attributes.Currency_Attribute('USD', 5)
         self.assertEqual(catt.formatted_value, '5.00 $')
-        catt.set_currency('CZK')
+        catt._set_currency('CZK')
         self.assertEqual(catt.formatted_value, '5.00 Kč')
 
     def test_setting_to_nonexistent_currency_raises_undefined_currency_error(self):
         catt = attributes.Currency_Attribute('USD', 5)
-        self.assertRaises(attributes.UndefinedCurrency, catt.set_currency, 'NEC')
+        self.assertRaises(attributes.UndefinedCurrency, catt._set_currency, 'NEC')
 
     def test_creating_currency_attribute_from_a_general_value(self):
         attributes.set_localization('cs_CZ')
         catt = attributes.create_attribute("1.00 Kč")
         self.assertEqual(catt.formatted_value,"1.00 Kč")
-        catt.set_currency("USD")
+        catt._set_currency("USD")
         self.assertEqual(catt.formatted_value,"1.00 $")
     
     def test_setting_currency_attribute_value(self):

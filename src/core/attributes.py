@@ -170,7 +170,6 @@ CURR_SYMBOLS_TO_CODE = {CURRY_FORMATS[code].symbol:code for code in CURRY_FORMAT
 class UndefinedCurrency(Exception): pass
 
 
-import forex_python.converter as forex_converter
 class Currency_Attribute(_Attribute):
 
     default_value = "1"
@@ -184,9 +183,6 @@ class Currency_Attribute(_Attribute):
             prec=CURRY_FORMATS[currency_code].decimals, 
             rounding = Currency_Attribute.rounding
         )
-        self.choice_actions["currency"] = self.set_currency
-        self.choices["currency"] = list(CURRY_FORMATS.keys())
-        self.selected_choices["currency"] = self._currency_code
 
     @property
     def value(self)->Decimal:
@@ -194,10 +190,6 @@ class Currency_Attribute(_Attribute):
     @property
     def formatted_value(self)->str:
         return CURRY_FORMATS[self._currency_code].present(str(self._value).replace(",","."))
-
-    def converted_value(self,target_currency:Currency_Code)->str:
-        converted_value = forex_converter.convert(self._currency_code, target_currency,self._value.replace(",","."))
-        return converted_value
 
     @staticmethod
     def valid_entry(value:str) -> bool:
@@ -209,7 +201,7 @@ class Currency_Attribute(_Attribute):
     def copy(self)->Currency_Attribute:
         return Currency_Attribute(self._currency_code,self._value)
     
-    def set_currency(self,currency_code:Currency_Code)->None:
+    def _set_currency(self,currency_code:Currency_Code)->None:
         if currency_code not in CURRY_FORMATS: 
             raise UndefinedCurrency(
                 f"Cannot set currency. Code {currency_code} is not defined."
@@ -222,7 +214,7 @@ class Currency_Attribute(_Attribute):
         formatted_currency = convert_to_currency(value)
         if formatted_currency != ():
             self._value = formatted_currency[0]
-            self.set_currency(formatted_currency[1])
+            self._set_currency(formatted_currency[1])
 
         elif self.valid_entry(value) and not str(value).strip()=="": 
             self._value = str(value)

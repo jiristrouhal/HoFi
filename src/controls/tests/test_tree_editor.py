@@ -556,23 +556,5 @@ class Test_User_Defined_Command_In_Right_Click_Menu(unittest.TestCase):
         self.assertEqual(self.x, 1)
 
 
-class Test_Modifying_Tree_With_Amount_Of_Money(unittest.TestCase):
-
-    def test_changing_the_currency(self):
-        tt.clear()
-        tt.add(
-            tt.NewTemplate('Tree',{"name":"New", "cost":"1 $"},children=()),
-        )
-        tt.attrs.set_localization("cs_CZ")
-        editor = tree_editor.TreeEditor() 
-        tree = Tree("TreeA", tag="Tree")
-        tree.attributes["cost"].set(10000)
-        editor.load_tree(tree)
-        editor._open_right_click_menu(tree.data["treeview_iid"])
-        editor.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_EDIT)
-        editor.entry_options["cost"]["currency"].set("EUR")
-        editor.confirm_edit_entry_values(tree.data["treeview_iid"])
-        self.assertEqual(tree.attributes["cost"].formatted_value,"10000.00 €")
-
 
 if __name__=="__main__": unittest.main()
