@@ -216,6 +216,16 @@ class Currency_Attribute(_Attribute):
             )
         self._currency_code = currency_code
         self.selected_choices["currency"] = currency_code
+
+
+    def set(self,value:str="")->None:
+        formatted_currency = convert_to_currency(value)
+        if formatted_currency != ():
+            self._value = formatted_currency[0]
+            self.set_currency(formatted_currency[1])
+
+        elif self.valid_entry(value) and not str(value).strip()=="": 
+            self._value = str(value)
     
 
 
@@ -315,26 +325,26 @@ def create_attribute(default_value:Any,options:Dict[str,Any]={})->_Attribute:
         return Text_Attr(default_value)
 
 
-def convert_to_currency(text:str)->Tuple[str,str]|Tuple:
-    text = str(text).strip()
-    if re.fullmatch("\d+([\.\,]\d*)?\s*\S*",text) is not None or re.fullmatch("[\.\,]\d+\s*\S*",text) is not None:
+def convert_to_currency(text:str)->Tuple[Decimal,str]|Tuple:
+    text = str(text).strip().replace(",",".")
+    if re.fullmatch("\d+(\.\d*)?\s*\S*",text) is not None or re.fullmatch("\.\d+\s*\S*",text) is not None:
         i = 0
-        while i<len(text) and (text[i].isdigit() or text[i] in ('.',',')):  
+        while i<len(text) and (text[i].isdigit() or text[i]=='.'):  
             i += 1
         text_without_number = text[i:].strip()
         if text_without_number in CURRENCY_SYMBOLS:
             currency_code = CURR_SYMBOLS_TO_CODE[text_without_number]
-            return (text[:i], currency_code)
+            return (Decimal(text[:i]), currency_code)
         return ()
     
-    elif re.fullmatch("\S*\s*\d+([\.\,]\d*)?",text) is not None:
+    elif re.fullmatch("\S*\s*\d+(\.\d*)?",text) is not None:
         i = -1
-        while  i>-len(text)-1 and (text[i].isdigit() or text[i] in ('.',',')):
+        while  i>-len(text)-1 and (text[i].isdigit() or text[i]=='.'):
             i -= 1
         text_without_number = text[:i+1].strip()
         if text_without_number in CURRENCY_SYMBOLS:
             currency_code = CURR_SYMBOLS_TO_CODE[text_without_number]
-            return (text[i+1:], currency_code)
+            return (Decimal(text[i+1:]), currency_code)
         return ()
     
     return ()

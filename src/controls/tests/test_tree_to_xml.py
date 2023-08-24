@@ -92,6 +92,30 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         treemod.tt.clear()
         if os.path.isfile("Invalid_tree_file.xml"):
             os.remove("Invalid_tree_file.xml")
+
+
+class Test_Saving_And_Loading_Tree_With_Money_Attribute(unittest.TestCase):
+
+    def test_saving_and_loading_tree_with_currency_attribute_keeps_the_amount_and_currency_unchanger(self):
+        treemod.tt.clear()
+        treemod.tt.add(
+            treemod.tt.NewTemplate('Tree', {"name":"Tree","cost":"$1"},children=())
+        )
+        treemod.tt.attrs.set_localization("en_US")
+        converter = tree_to_xml.Tree_XML_Converter()
+        tree = treemod.Tree("TreeXY",'Tree')
+        tree.set_attribute("cost",10)
+        self.assertEqual(tree.attributes["cost"].formatted_value,"$10.00")
+
+        converter.save_tree(tree,".")
+        loaded_tree = converter.load_tree("TreeXY",".")
+        self.assertEqual(loaded_tree.attributes["cost"].formatted_value,"$10.00")
+
+    def tearDown(self) -> None:
+        if os.path.isfile("TreeXY.xml"):
+            os.remove("TreeXY.xml")
+        treemod.tt.clear()
+
               
 
 if __name__=="__main__": unittest.main()

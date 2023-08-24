@@ -119,8 +119,8 @@ class Tree_Manager:
             raise KeyError(f"The tree template '{tree_tag} does not exist.")
         self._tree_template_tag:str = tree_tag
 
-        self.__converter = txml.Tree_XML_Converter()
-        self.__converter.add_action('invalid_xml', self._notify_the_user_xml_is_invalid)
+        self._converter = txml.Tree_XML_Converter()
+        self._converter.add_action('invalid_xml', self._notify_the_user_xml_is_invalid)
         self.__ui = tk.Frame(master=ui_master)
         self._buttons:Dict[ButtonID,tk.Button] = dict()
         self._view = ttk.Treeview(self.__ui, selectmode='browse', columns=('State',))
@@ -259,7 +259,7 @@ class Tree_Manager:
             return
         if self.__file_already_in_use(filepath): 
             return 
-        tree = self.__converter.load_tree(treename,dir)
+        tree = self._converter.load_tree(treename,dir)
 
         if tree is None: return
 
@@ -281,7 +281,7 @@ class Tree_Manager:
             return
         
         if not self._xml_already_exists(dir,tree.name):
-            filepath = self.__converter.save_tree(tree,dir)
+            filepath = self._converter.save_tree(tree,dir)
             self._show_export_info(tree.name,filepath)
             self._tree_files[tree] = os.path.join(dir,tree.name)+'.xml'
             self._last_export_dir = dir
@@ -307,7 +307,7 @@ class Tree_Manager:
         if os.path.isfile(filepath): 
             if not tree.name==filename_without_extension:
                 os.remove(filepath)
-        new_filepath = self.__converter.save_tree(tree,dir)
+        new_filepath = self._converter.save_tree(tree,dir)
         self._tree_files[tree] = new_filepath
         self.label_tree_as_ok(tree)
 

@@ -117,7 +117,7 @@ class Test_Name_Attribute(unittest.TestCase):
 
 class Test_Recognizing_Currency(unittest.TestCase):
 
-    def test_valid_currencies_with(self):
+    def test_valid_currencies(self):
         self.assertTrue(attributes.convert_to_currency("10 Kč"))
         self.assertTrue(attributes.convert_to_currency("10 $"))
         self.assertTrue(attributes.convert_to_currency("10. $"))
