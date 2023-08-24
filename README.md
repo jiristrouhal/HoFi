@@ -169,3 +169,8 @@ When conversion is applied, to estimate the exchange rate, a date has to be spec
 When adding an income or expense, the currency is by default set by the application localization. The default currency is always passes to the 
 
 
+## Displaying item info in the Tree Editor
+As there is a lot of space, the tree editor (the treeview) could enable to display e.g., the relative significance of each of the expenses/incomes/items under its parent item.
+
+For items, which contain both incomes and expenses, two values are to be reported (total income and total expense).
+
