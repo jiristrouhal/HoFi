@@ -45,7 +45,9 @@ def main():
             'Scenario',
             {
                 "name":"Scenario",
-                "currency":({"USD":"USD", 'CZK':'CZK', 'EUR':'EUR'},'USD')
+                "currency":({"USD":"USD", 'CZK':'CZK', 'EUR':'EUR'},'USD'),
+                "total income": sum_expenses,
+                "total expense": sum_incomes
             },
             children=("Income","Expense","Item","Debt",'Non_monetary_debt')
         ),
@@ -66,7 +68,9 @@ def main():
         treemod.tt.NewTemplate(
             'Item',
             OrderedDict({
-                "name":"Item"
+                "name":"Item",
+                "total income": sum_expenses,
+                "total expense": sum_incomes
             }),
             children=("Income","Expense","Item"),
             user_def_cmds=OrderedDict({"Hello, world":print_hello_world}),
