@@ -1,7 +1,7 @@
 from typing import Dict, Tuple, List, Any, Set, OrderedDict, Callable
 import dataclasses
 from functools import partial
-
+from re import match
 
 import src.core.attributes as attrs
 
@@ -17,6 +17,19 @@ class NewTemplate:
     icon_file:Any = None # relative path to a widget icon
     user_def_cmds:OrderedDict[str,Callable[[attrs.AttributesOwner],None]] = \
         dataclasses.field(default_factory=OrderedDict)
+    variable_defaults:Dict[str,Callable[[Any],Any]] = \
+        dataclasses.field(default_factory=OrderedDict)
+    
+    def __post_init__(self)->None:
+        if match("[^\w]",self.tag.strip()) is not None: 
+            raise KeyError(f"Invalid template tag '{self.tag}'. "
+                           f"The tag must constist only of alpha-numeric "
+                            "characters (a-z, A-Z, 0-9) and the underscore '_'")
+        for key in self.variable_defaults:
+            if key not in self.attributes: 
+                raise KeyError(
+                    f"Cannot set default value.\n"
+                    f"The attribute '{key}' is not defined in the template '{self.tag}'.")
 
 
 @dataclasses.dataclass
@@ -27,6 +40,8 @@ class Template:
     _locked:bool
     _icon_file:Any
     _user_def_cmds:OrderedDict[str,Callable[[attrs.AttributesOwner],None]] = \
+        dataclasses.field(default_factory=OrderedDict)
+    variable_defaults:Dict[str,Callable[[Any],Any]] = \
         dataclasses.field(default_factory=OrderedDict)
 
     @property
@@ -129,7 +144,8 @@ def __add_templates(templates:Tuple[NewTemplate,...])->None:
             _children=t.children,
             _locked=t.locked,
             _icon_file=t.icon_file,
-            _user_def_cmds=t.user_def_cmds
+            _user_def_cmds=t.user_def_cmds,
+            variable_defaults=t.variable_defaults
         )
 
 def __detect_missing_child_templates(*to_be_added:NewTemplate)->None:

@@ -153,7 +153,13 @@ class TreeItem:
                 if not self._actions[owner_id]: 
                     self.__initialize_actions(owner_id)
             self.run_actions('add_child',child)
-        
+
+            for key, foo in tt.template(tag).variable_defaults.items():
+                if key in child.attributes:
+                    child._attributes[key].set(foo(child))
+                    print(foo(child))
+
+
     def move_child(self,branch_path:Tuple[str,...],new_branch_parent_path:Tuple[str,...]=())->None:
         if self._does_path_point_to_child_of_branch_or_to_branch_itself(branch_path,new_branch_parent_path):
             return

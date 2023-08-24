@@ -36,6 +36,9 @@ def main():
     def print_hello_world(item:treemod.TreeItem)->None:
         print("Hello, world!!!")
 
+    def default_amount_by_tree(item:treemod.TreeItem)->str:
+        return "12" + treemod.CURRY_FORMATS[item.get_its_tree().attributes["currency"].value].symbol
+
     treemod.tt.clear()
     treemod.tt.add(
         treemod.tt.NewTemplate(
@@ -44,10 +47,22 @@ def main():
                 "name":"Scenario",
                 "currency":({"USD":"USD", 'CZK':'CZK', 'EUR':'EUR'},'USD')
             },
-            children=("Income","Expense","Item","Debt",'Non-monetary debt')
+            children=("Income","Expense","Item","Debt",'Non_monetary_debt')
         ),
-        treemod.tt.NewTemplate('Income',{"name":"Income","amount": "1 Kč", "date":"1.1.2023"},children=(),icon_file=income_icon),
-        treemod.tt.NewTemplate('Expense',{"name":"Expense","amount": "1 Kč", "date":"1.1.2023"},children=(),icon_file=expense_icon),
+        treemod.tt.NewTemplate(
+            'Income',
+            {"name":"Income","amount": "1 Kč", "date":"1.1.2023"},
+            children=(),
+            icon_file=income_icon,
+            variable_defaults={"amount": default_amount_by_tree}
+        ),
+        treemod.tt.NewTemplate(
+            'Expense',
+            {"name":"Expense","amount": "1 Kč", "date":"1.1.2023"},
+            children=(),
+            icon_file=expense_icon,
+            variable_defaults={"amount": default_amount_by_tree}
+        ),
         treemod.tt.NewTemplate(
             'Item',
             OrderedDict({
@@ -65,10 +80,11 @@ def main():
                 "date":"1.1.2023"
             },
             children=(),
-            icon_file=debt_icon
+            icon_file=debt_icon,
+            variable_defaults={"amount": default_amount_by_tree}
         ),
         treemod.tt.NewTemplate(
-            'Non-monetary debt',
+            'Non_monetary_debt',
             {
                 "name":"Non-monetary debt",
                 "description":"...", 
