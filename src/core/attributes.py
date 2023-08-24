@@ -178,7 +178,7 @@ class Currency_Attribute(_Attribute):
 
     def __init__(self, currency_code:Currency_Code, value:Any=default_value)->None:
         super().__init__(value)
-        self._currency_code = currency_code
+        self.currency_code = currency_code
         self._decimal_context = Context(
             prec=CURRY_FORMATS[currency_code].decimals, 
             rounding = Currency_Attribute.rounding
@@ -189,7 +189,7 @@ class Currency_Attribute(_Attribute):
         return Decimal(str(self._value).replace(",","."))
     @property
     def formatted_value(self)->str:
-        return CURRY_FORMATS[self._currency_code].present(str(self._value).replace(",","."))
+        return CURRY_FORMATS[self.currency_code].present(str(self._value).replace(",","."))
 
     @staticmethod
     def valid_entry(value:str) -> bool:
@@ -199,14 +199,14 @@ class Currency_Attribute(_Attribute):
         except: return False
     
     def copy(self)->Currency_Attribute:
-        return Currency_Attribute(self._currency_code,self._value)
+        return Currency_Attribute(self.currency_code,self._value)
     
     def _set_currency(self,currency_code:Currency_Code)->None:
         if currency_code not in CURRY_FORMATS: 
             raise UndefinedCurrency(
                 f"Cannot set currency. Code {currency_code} is not defined."
             )
-        self._currency_code = currency_code
+        self.currency_code = currency_code
         self.selected_choices["currency"] = currency_code
 
 

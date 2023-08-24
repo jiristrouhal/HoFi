@@ -250,7 +250,6 @@ class TreeEditor:
         if tree.child_tags: self.right_click_menu.add_separator()
         self.right_click_menu.add_commands(
             {
-                MENU_CMD_BRANCH_EDIT : partial(self.open_edit_window,root_id),  
                 MENU_CMD_BRANCH_OPEN_ALL : partial(self._open_all,root_id),
                 MENU_CMD_BRANCH_CLOSE_ALL :  partial(self._close_all,root_id)
             }

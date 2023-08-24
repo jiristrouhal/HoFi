@@ -41,7 +41,8 @@ def main():
         treemod.tt.NewTemplate(
             'Scenario',
             {
-                "name":"Scenario"
+                "name":"Scenario",
+                "currency":({"USD":"USD", 'CZK':'CZK', 'EUR':'EUR'},'USD')
             },
             children=("Income","Expense","Item","Debt",'Non-monetary debt')
         ),

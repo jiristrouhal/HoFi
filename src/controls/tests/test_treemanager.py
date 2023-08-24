@@ -63,8 +63,8 @@ class Test_Creating_New_Tree(unittest.TestCase):
 
     def test_creating_new_tree_via_ui(self):
         self.manager._buttons[tmg.ButtonID.NEW_TREE].invoke()
-        self.manager._entry_name.delete(0,"end")
-        self.manager._entry_name.insert(0,"Tree XY")
+        self.manager.entries["name"].delete(0,"end")
+        self.manager.entries["name"].insert(0,"Tree XY")
         self.manager._buttons[tmg.ButtonID.NEW_TREE_OK].invoke()
         self.assertListEqual(self.manager.trees, ["Tree XY"])
         self.assertFalse(self.manager._window_new.winfo_exists())

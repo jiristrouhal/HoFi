@@ -6,7 +6,7 @@ from core.tree import Tree
 class TreeList:
 
     def __init__(self,label:str="")->None:
-        self.__items:List[Tree] = list()
+        self._items:List[Tree] = list()
         self.__name_warnings:List[Callable[[str],None]] = list()
 
         self.__on_removal:List[Callable[[Tree],None]] = list()
@@ -17,7 +17,7 @@ class TreeList:
         self._modified_trees:Set[Tree] = set()
 
     @property
-    def names(self)->List[str]: return [i.name for i in self.__items]
+    def names(self)->List[str]: return [i.name for i in self._items]
 
     def add_action_on_removal(self,action:Callable[[Tree],None])->None:
         self.__on_removal.append(action)
@@ -29,7 +29,7 @@ class TreeList:
         self.__on_renaming.append(action)
 
     def append(self,item:Tree)->None: 
-        self.__items.append(item)
+        self._items.append(item)
         # adjust the tree name after appending to list
         self.__adjust_tree_name(item) 
         for action in self.__on_renaming:
@@ -38,7 +38,7 @@ class TreeList:
         for action in self.__on_adding: action(item)
             
     def item(self,name:str)->Tree|None:
-        for item in self.__items:
+        for item in self._items:
             if name==item.name: return item
         return None
 
@@ -46,7 +46,7 @@ class TreeList:
         item = self.item(item_name)
         if item is None: return
         for action in self.__on_removal: action(item)
-        self.__items.remove(item)
+        self._items.remove(item)
         if item in self._modified_trees:
             self._modified_trees.remove(item)
 

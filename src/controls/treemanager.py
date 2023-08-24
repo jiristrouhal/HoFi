@@ -128,6 +128,7 @@ class Tree_Manager:
 
         self._window_new = tk.Toplevel(self._view)
         self._window_new.wm_withdraw()
+        self.entries:Dict[str,tk.Entry] = dict()
         self._entry_name = tk.Entry()
 
         self._window_rename = tk.Toplevel()
@@ -353,26 +354,49 @@ class Tree_Manager:
             side='left'
         )
         
+    def __create_entries(
+        self,window:tk.Toplevel,
+        attributes:Dict[str,treemod._Attribute],
+        excluded:List[str]=[]
+        )->None:  
+        
+        entries_frame = tk.Frame(window)
+        row=0
+        for key,attr in attributes.items():
+            if key in excluded: continue
+            col=0
+            tk.Label(entries_frame,text=key).grid(row=row,column=col)
+            col += 1
+            if attr.options:
+                box = ttk.Combobox(entries_frame,values=attr.options)
+                box.insert(0, attr.formatted_value)
+                box.current(attr.options.index(attr.formatted_value))
+                box.grid(row=row,column=col)
+                self.entries[key] = box
+            else:
+                vcmd = (entries_frame.register(attr.valid_entry),'%P')
+                entry = tk.Entry(entries_frame, validate='key', validatecommand=vcmd)
+                entry.insert(0, attr.value)
+                entry.grid(row=row,column=col)
+                self.entries[key] = entry
+            row += 1
+        entries_frame.pack()
+
     def _open_new_tree_window(self)->None: # pragma: no cover
         self.__cleanup_new_tree_widgets()
         self._window_new = tk.Toplevel(self.__ui)
         self._window_new.title(SET_NEW_TREE_NAME)
-        vcmd = (self._window_new.register(Name_Attr.valid_entry),'%P')
-        self._entry_name = tk.Entry(
-            self._window_new,
-            width=50,
-            validate='focus', 
-            validatecommand=vcmd
+        self.__create_entries(
+            self._window_new, 
+            treemod.tt.template(self._tree_template_tag).attributes
         )
-        self._entry_name.insert(0,DEFAULT_TREE_NAME)
-        self._entry_name.pack()
         
         button_frame = tk.Frame(self._window_new)
         button_frame.pack(side=tk.BOTTOM)
         self.__add_button(
             button_frame,
             ButtonID.NEW_TREE_OK,
-            self._confirm_new_tree_name,
+            self._confirm_new_tree,
             side='left'
         )
         self.__add_button(
@@ -390,8 +414,15 @@ class Tree_Manager:
             self.rename(tree.name,self._entry_name.get())
             self.__close_rename_tree_window()
 
-    def _confirm_new_tree_name(self)->None:
-        self.new(self._entry_name.get())
+    def _confirm_new_tree(self)->None:
+        attributes = treemod.tt.template(self._tree_template_tag).attributes
+        for label, entry in self.entries.items():
+            attributes[label].set(entry.get())
+        name = attributes.pop("name").value
+        self.new(name)
+        new_tree = self.__treelist._items[-1]
+        for attr_name in attributes:
+            new_tree.set_attribute(attr_name,attributes[attr_name].value)
         self.__close_new_tree_window()
 
     def __close_rename_tree_window(self)->None:
@@ -403,10 +434,16 @@ class Tree_Manager:
     def __cleanup_new_tree_widgets(self)->None:
         self._window_new.destroy()
         self._entry_name.destroy()
+        for item in self.entries.values():
+            item.destroy()
+        self.entries.clear()
 
     def __cleanup_rename_tree_widgets(self)->None:
         self._window_rename.destroy()
         self._entry_name.destroy()
+        for item in self.entries.values():
+            item.destroy()
+        self.entries.clear()
 
     def __add_tree_to_view(self,tree:treemod.Tree)->None:
         iid = self._view.insert("",0,text=tree.name,iid=str(id(tree)))
