@@ -71,8 +71,8 @@ class Test_Date_Attribute(unittest.TestCase):
         attr = attributes.Date_Attr()
         self.assertTrue(attr.final_validation("1.4.2023"))
         self.assertTrue(attr.final_validation("21.4.2023"))
-        self.assertTrue(attr.final_validation(""))
-        self.assertTrue(attr.final_validation("   "))
+        self.assertFalse(attr.final_validation(""))
+        self.assertFalse(attr.final_validation("   "))
 
         self.assertFalse(attr.final_validation("31.4.2023"))
         self.assertFalse(attr.final_validation(".4.2023"))

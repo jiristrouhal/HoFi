@@ -256,7 +256,6 @@ class Date_Attr(_Attribute):
     
     @staticmethod
     def final_validation(value:str)->bool:
-        if value.strip()=="": return True
         return Date_Attr.date_formatter.validate_date(value)
     
     def copy(self)->Date_Attr:
@@ -315,7 +314,7 @@ def create_attribute(default_value:Any,options:Dict[str,Any]={})->_Attribute:
         currency_code = possible_currency[1]
         return Currency_Attribute(currency_code,amount)
     
-    elif Date_Attr.valid_entry(default_value):
+    elif Date_Attr.final_validation(default_value):
         return Date_Attr(Date_Attr.date_formatter.print_date(datetime.date.today()))
     
     elif Name_Attr.valid_entry(default_value):
