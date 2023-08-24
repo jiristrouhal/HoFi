@@ -10,6 +10,7 @@ def main():
     expense_icon = ImageTk.PhotoImage(Image.open("src/_icons/expense.png"))
     item_icon = ImageTk.PhotoImage(Image.open("src/_icons/item.png"))
     debt_icon = ImageTk.PhotoImage(Image.open("src/_icons/debt.png"))
+    nonmon_debt_icon = ImageTk.PhotoImage(Image.open("src/_icons/nonmonetary_debt.png"))
 
     treemod.tt.attrs.Date_Attr.date_formatter.set("%d.%m.%Y")
 
@@ -42,7 +43,7 @@ def main():
             {
                 "name":"Scenario"
             },
-            children=("Income","Expense","Item","Debt")
+            children=("Income","Expense","Item","Debt",'Non-monetary debt')
         ),
         treemod.tt.NewTemplate('Income',{"name":"Income","amount": "1 Kč", "date":"1.1.2023"},children=(),icon_file=income_icon),
         treemod.tt.NewTemplate('Expense',{"name":"Expense","amount": "1 Kč", "date":"1.1.2023"},children=(),icon_file=expense_icon),
@@ -55,6 +56,25 @@ def main():
             user_def_cmds=OrderedDict({"Hello, world":print_hello_world}),
             icon_file=item_icon),
 
-        treemod.tt.NewTemplate('Debt',{"name":"Debt","amount":"1 Kč", "date":"1.1.2023"},children=(),icon_file=debt_icon),
+        treemod.tt.NewTemplate(
+            'Debt',
+            {
+                "name":"Debt",
+                "amount":"1 Kč", 
+                "date":"1.1.2023"
+            },
+            children=(),
+            icon_file=debt_icon
+        ),
+        treemod.tt.NewTemplate(
+            'Non-monetary debt',
+            {
+                "name":"Non-monetary debt",
+                "description":"...", 
+                "date":"1.1.2023"
+            },
+            children=(),
+            icon_file=nonmon_debt_icon
+        ),
     )
 
