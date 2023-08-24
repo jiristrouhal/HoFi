@@ -2,7 +2,8 @@ from PIL import Image, ImageTk
 from collections import OrderedDict
 
 import src.core.tree as treemod
-
+from src.core.attributes import convert_to_currency
+from decimal import Decimal
 
 
 def main():
@@ -14,24 +15,30 @@ def main():
 
     treemod.tt.attrs.Date_Attr.date_formatter.set("%d.%m.%Y")
 
+    def extract_money_amount(assumed_money:str)->float:
+        x = convert_to_currency(assumed_money)
+        if isinstance(x,tuple):
+            return x[0]
+        else:
+            return 0
 
-    def sum_incomes(item:treemod.TreeItem)->int:
-        s = 0
+    def sum_incomes(item:treemod.TreeItem)->str:
+        s = Decimal(0.0)
         for child in item._children:
             if child.tag=="Income":
                 s += child.attributes["amount"].value
             elif child.tag=="Item":
-                s += child.dependent_attributes["total income"].value
-        return s
+                s += Decimal(extract_money_amount(child.dependent_attributes["total income"].value))
+        return treemod.CURRY_FORMATS[item.get_its_tree().attributes["currency"].value].present(s)
     
-    def sum_expenses(item:treemod.TreeItem)->int:
-        s = 0
+    def sum_expenses(item:treemod.TreeItem)->str:
+        s = Decimal(0.0)
         for child in item._children:
             if child.tag=="Expense":
                 s += child.attributes["amount"].value
             elif child.tag=="Item":
-                s += child.dependent_attributes["total expense"].value
-        return s
+                s += Decimal(extract_money_amount(child.dependent_attributes["total expense"].value))
+        return treemod.CURRY_FORMATS[item.get_its_tree().attributes["currency"].value].present(s)
 
     def print_hello_world(item:treemod.TreeItem)->None:
         print("Hello, world!!!")
@@ -46,8 +53,8 @@ def main():
             {
                 "name":"Scenario",
                 "currency":({"USD":"USD", 'CZK':'CZK', 'EUR':'EUR'},'USD'),
-                "total income": sum_expenses,
-                "total expense": sum_incomes
+                "total income": sum_incomes,
+                "total expense": sum_expenses
             },
             children=("Income","Expense","Item","Debt",'Non_monetary_debt')
         ),
