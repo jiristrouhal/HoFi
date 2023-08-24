@@ -4,8 +4,7 @@ sys.path.insert(1,"src")
 
 import src.reports.properties as pp
 import unittest
-from core.tree import TreeItem, Positive_Int_Attr, tt
-
+from core.tree import TreeItem, tt
 
 
 class Test_Displaying_Tree_Properties(unittest.TestCase):

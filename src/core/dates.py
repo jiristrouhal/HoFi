@@ -1,5 +1,4 @@
 import datetime
-from re import fullmatch, match
 
 
 SEPARATORS = (".","_","-"," ")

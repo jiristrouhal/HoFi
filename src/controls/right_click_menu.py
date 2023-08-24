@@ -1,6 +1,5 @@
 from typing import Callable, Dict
 import tkinter as tk
-import tkinter.ttk as ttk
 from functools import partial
 
 
