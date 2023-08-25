@@ -568,7 +568,7 @@ class Tree_Manager:
         self.__treelist.add_tree_to_modified(tree)
 
     def label_items_tree_as_modified(self,item:treemod.TreeItem)->None:
-        tree = item.get_its_tree()
+        tree = item.its_tree()
         if not tree in self.__treelist._modified_trees:
             self.label_tree_as_modified(tree)
             self.__treelist.add_tree_to_modified(tree)

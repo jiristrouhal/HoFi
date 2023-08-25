@@ -33,6 +33,13 @@ _Action_Type = Literal['selection','deselection','edit','any_modification','tree
 class EditorCommand(Protocol):
     def run(self)->None:
         ...
+    
+    def undo(self)->None:
+        ...
+
+    def redo(self)->None:
+        ...
+
 
 
 @dataclasses.dataclass
@@ -40,23 +47,38 @@ class New:
     editor:TreeEditor
     parent:treemod.TreeItem
     tag:str
+    item:treemod.TreeItem = dataclasses.field(init=False)
+    view_index:int = dataclasses.field(init=False)
     
     def run(self)->None:
-        attributes = treemod.tt.template(self.tag).attributes
-        for label, entry in self.editor.entries.items():
-            attributes[label].set(entry.get())
-        
-        name = attributes.pop("name").value
-        self.parent.new(name,tag=self.tag)
+
+        self.parent.new(self.editor.entries.pop("name").get() ,tag=self.tag)
         new_child = self.parent._children[-1]
 
-        for attr_name in attributes:
-            new_child.set_attribute(attr_name,attributes[attr_name].value)
+        for attr_name in self.editor.entries:
+            new_child.set_attribute(attr_name,self.editor.entries[attr_name].get())
             if attr_name in self.editor.entry_options:
                 for opt_label, option in self.editor.entry_options[attr_name].items():
                     new_child.attributes[attr_name].choice_actions[opt_label](option.get())
+
         for action in self.editor._actions['any_modification'].values(): action(new_child)
         self.editor._destroy_toplevel(self.editor.add_window)
+        
+        self.item = new_child
+        self.view_index = self.editor.widget.index(self.item.data["treeview_iid"])
+
+    def undo(self)->None:
+        for action in self.editor._actions['deselection'].values(): action(self.item)
+        self.parent.remove_child(self.item.name)
+
+
+    def redo(self)->None:
+        self.parent._children.append(self.item)
+        self.editor._load_item_into_tree(
+            self.item.data["treeview_iid"],
+            self.item,
+            index=self.view_index
+        )
 
 
 @dataclasses.dataclass
@@ -82,6 +104,12 @@ class Edit:
         for action in self.editor._actions['edit'].values(): action(item)
         for action in self.editor._actions['any_modification'].values(): action(item)
 
+    def undo(self)->None:
+        pass
+
+    def redo(self)->None:
+        pass
+
 
 @dataclasses.dataclass
 class Move:
@@ -102,6 +130,12 @@ class Move:
 
         self.editor._close_move_window()
 
+    def undo(self)->None:
+        pass
+
+    def redo(self)->None:
+        pass
+
 
 @dataclasses.dataclass
 class Remove:
@@ -111,10 +145,33 @@ class Remove:
         if self.item.parent is None: return
         self.item.parent.remove_child(self.item.name)
 
+    def undo(self)->None:
+        pass
+
+    def redo(self)->None:
+        pass
+
 @dataclasses.dataclass
 class CmdController:
-    def run(cmd:EditorCommand):
+    _undo_stack:List[EditorCommand] = dataclasses.field(default_factory=list)
+    _redo_stack:List[EditorCommand] = dataclasses.field(default_factory=list)
+
+    def run(self,cmd:EditorCommand):
         cmd.run()
+        self._undo_stack.append(cmd)
+        self._redo_stack.clear()
+
+    def undo(self):
+        if self._undo_stack:
+            cmd = self._undo_stack.pop()
+            cmd.undo()
+            self._redo_stack.append(cmd)
+
+    def redo(self):
+        if self._redo_stack:
+            cmd = self._redo_stack.pop()
+            cmd.redo()
+            self._undo_stack.append(cmd)
 
 
 class TreeEditor:
@@ -133,6 +190,7 @@ class TreeEditor:
         self._attribute_template:OrderedDict[str,treemod._Attribute] = OrderedDict()
 
         self._map:Dict[str,treemod.TreeItem] = dict()
+        self._controller:Dict[treemod.TreeItem,CmdController] = dict()
         self.right_click_menu = rcm.RCMenu(self.widget)
 
         self.edit_window = tk.Toplevel(self.widget)
@@ -201,8 +259,9 @@ class TreeEditor:
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
         # create action, that the tree object will run after it creates a new branch
         iid = str(id(tree)) 
-        self.__load_item_into_tree(iid,tree)
+        self._load_item_into_tree(iid,tree)
         self._map[iid] = tree
+        self._controller[tree] = CmdController()
         tree.add_data("treeview_iid",iid)
         tree.add_action(self.label,'add_child', partial(self.__on_new_child,iid)) 
         tree.add_action(self.label,'on_self_rename', partial(self.__on_renaming,iid))
@@ -216,6 +275,7 @@ class TreeEditor:
         #command
         tree = self._map[tree_id]
         for action in self._actions["tree_removal"].values(): action(tree)
+        self._controller.pop(tree)
         self.__clear_related_actions(tree)
         self.widget.delete(tree_id)
 
@@ -232,6 +292,14 @@ class TreeEditor:
     def tree_item(self,treeview_iid:str)->treemod.TreeItem|None:
         if treeview_iid not in self._map: return None
         return self._map[treeview_iid]
+    
+    def redo(self,item_id:str)->None:
+        controller = self._controller[self._map[item_id].its_tree]
+        controller.redo()
+    
+    def undo(self,item_id:str)->None:
+        controller = self._controller[self._map[item_id].its_tree]
+        controller.undo()
     
     def open_right_click_menu(self,item_id:str,root:bool=False)->None:
         self.right_click_menu.destroy()
@@ -276,10 +344,20 @@ class TreeEditor:
         ).pack(side=tk.BOTTOM)
 
     def confirm_add_entry_values(self,parent:treemod.TreeItem,tag:str)->None:
-        CmdController.run(New(self,parent,tag))
+        controller = self._controller[parent.its_tree]
+        controller.run(New(self,parent,tag))
 
     def confirm_edit_entry_values(self,item_id:str)->None:
-        CmdController.run(Edit(self,item_id))
+        controller = self._controller[self._map[item_id].its_tree]
+        controller.run(Edit(self,item_id))
+
+    def remove_item(self,item:treemod.TreeItem)->None:
+        controller = self._controller[item.its_tree]
+        controller.run(Remove(item))
+
+    def __confirm_parent(self,item_id:str)->None:
+        controller = self._controller[self._map[item_id].its_tree]
+        controller.run(Move(self,item_id))
     
     def disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
         self._destroy_toplevel(self.edit_window)
@@ -345,7 +423,7 @@ class TreeEditor:
         if item.parent is not None:
             self.right_click_menu.add_single_command(
                 MENU_CMD_BRANCH_DELETE,
-                partial(self.__remove_item,item)
+                partial(self.remove_item,item)
             )
         if item.user_defined_commands:
             self.right_click_menu.add_separator()
@@ -368,12 +446,6 @@ class TreeEditor:
         self.widget.bind("<Double-Button-1>",self.__open_edit_window_on_double_click,add="")
         self.widget.bind("<Key-Delete>",self.remove_selected_item)
         self.widget.bind("<<TreeviewSelect>>",self.check_selection_changes)
-
-    def __remove_item(self,item:treemod.TreeItem)->None:
-        CmdController.run(Remove(item))
-
-    def __confirm_parent(self,item_id:str)->None:
-        CmdController.run(Move(self,item_id))
 
     def _close_move_window(self)->None:
         assert(self.move_window.winfo_exists() and self.available_parents.winfo_exists())
@@ -493,7 +565,7 @@ class TreeEditor:
     def __insert_child_into_tree(self, child:treemod.TreeItem)->None:
         item_iid = str(id(child))
         self._map[item_iid] = child
-        self.__load_item_into_tree(item_iid,child)
+        self._load_item_into_tree(item_iid,child)
         child.add_action(self.label,'add_child', partial(self.__on_new_child, item_iid))
         child.add_action(self.label,'on_removal', partial(self.__on_removal, item_iid))
         child.add_action(self.label,'on_renaming', partial(self.__on_renaming, item_iid))
@@ -504,11 +576,11 @@ class TreeEditor:
             self.__cannot_remove_branch_with_children
         )
 
-    def __load_item_into_tree(self,iid:str,item:treemod.TreeItem)->None:
+    def _load_item_into_tree(self,iid:str,item:treemod.TreeItem,index:int=0)->None:
         parent_iid = "" if item.parent is None else item.parent.data["treeview_iid"]
         self.widget.insert(
             parent_iid,
-            index=0,
+            index=index,
             iid=iid,
             text=item.name,
             values=self._treeview_values(item)

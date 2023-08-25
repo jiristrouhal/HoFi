@@ -29,7 +29,7 @@ def main():
                 s += child.attributes["amount"].value
             elif child.tag=="Item":
                 s += Decimal(extract_money_amount(child.dependent_attributes["incomes"].value))
-        return "+"+treemod.CURRY_FORMATS[item.get_its_tree().attributes["currency"].value].present(s)
+        return "+"+treemod.CURRY_FORMATS[item.its_tree().attributes["currency"].value].present(s)
     
     def sum_expenses(item:treemod.TreeItem)->str:
         s = Decimal(0.0)
@@ -38,13 +38,13 @@ def main():
                 s += child.attributes["amount"].value
             elif child.tag=="Item":
                 s += Decimal(extract_money_amount(child.dependent_attributes["expenses"].value))
-        return "-"+treemod.CURRY_FORMATS[item.get_its_tree().attributes["currency"].value].present(s)
+        return "-"+treemod.CURRY_FORMATS[item.its_tree().attributes["currency"].value].present(s)
     
     def print_hello_world(item:treemod.TreeItem)->None:
         print("Hello, world!!!")
 
     def default_amount_by_tree(item:treemod.TreeItem)->str:
-        return "1" + treemod.CURRY_FORMATS[item.get_its_tree().attributes["currency"].value].symbol
+        return "1" + treemod.CURRY_FORMATS[item.its_tree().attributes["currency"].value].symbol
 
     treemod.tt.clear()
     treemod.tt.add(

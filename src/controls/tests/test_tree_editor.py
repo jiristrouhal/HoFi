@@ -557,5 +557,36 @@ class Test_User_Defined_Command_In_Right_Click_Menu(unittest.TestCase):
         self.assertEqual(self.x, 1)
 
 
+class Test_Undo_Redo(unittest.TestCase):
+
+    def setUp(self) -> None:
+        tt.clear()
+        tt.add(
+            tt.NewTemplate('Tree',{"name":"Tree"},children=('Branch',)),
+            tt.NewTemplate('Branch',{"name":"Branch XYZ"},children=('Branch',)),
+        )
+        self.editor = tree_editor.TreeEditor()
+        self.treeA = Tree("TreeA",tag="Tree")
+        self.editor.load_tree(self.treeA)
+
+
+    def test_undo_command(self)->None:
+        self.editor.open_right_click_menu(self.treeA.data["treeview_iid"])
+        self.editor.right_click_menu.invoke(tree_editor._define_add_cmd_label("Branch"))
+        self.editor.confirm_add_entry_values(self.treeA,tag = "Branch")
+        self.assertEqual(self.treeA.children()[0],"Branch XYZ")
+        branch_iid = self.treeA._children[0].data["treeview_iid"]
+        index = self.editor.widget.index(branch_iid)
+
+        self.editor.undo(self.treeA.data["treeview_iid"])
+        self.assertListEqual(self.treeA.children(), [])
+
+        self.editor.redo(self.treeA.data["treeview_iid"])
+        branch_iid_after_redo = self.treeA._children[0].data["treeview_iid"]
+        index_after_redo = self.editor.widget.index(branch_iid_after_redo)
+        self.assertListEqual(self.treeA.children(), ["Branch XYZ"])
+        self.assertEqual(branch_iid, branch_iid_after_redo)
+        self.assertEqual(index,index_after_redo)
+
 
 if __name__=="__main__": unittest.main()

@@ -144,7 +144,7 @@ class Test_Creating_Tree(unittest.TestCase):
         branchX = self.tree._children[-1]
         self.tree.new("Child of X", "Branch X",tag="Branch")
         childOfX = branchX._children[-1]
-        self.assertEqual(childOfX.get_its_tree(), self.tree)
+        self.assertEqual(childOfX.its_tree, self.tree)
 
     
     def tearDown(self) -> None:

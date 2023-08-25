@@ -37,9 +37,10 @@ class TreeItem:
         self._user_defined_commands:OrderedDict[str,Callable[[],None]] = \
             tt.template(tag).user_def_cmds(self)
         
-        self._tree = self.get_its_tree()
+        self._tree = self.its_tree
 
-    def get_its_tree(self)->TreeItem:
+    @property
+    def its_tree(self)->TreeItem:
         item = self
         while not item.parent is None:
             item = item.parent
@@ -225,8 +226,7 @@ class TreeItem:
             for action in self._actions[owner][on]: action(item)
     
     
-class Tree(TreeItem): 
-    def get_its_tree(self)->Tree: return self
+class Tree(TreeItem): pass
 class Branch(TreeItem): pass
 
 
