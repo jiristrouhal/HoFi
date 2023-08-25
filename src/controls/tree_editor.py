@@ -146,7 +146,7 @@ class TreeEditor:
     def trees(self)->Tuple[str,...]: 
         return tuple([self._map[iid].name for iid in self.widget.get_children("")])
 
-    def branch(self,treeview_iid:str)->treemod.TreeItem|None:
+    def item(self,treeview_iid:str)->treemod.TreeItem|None:
         if treeview_iid not in self._map: return None
         return self._map[treeview_iid]
     

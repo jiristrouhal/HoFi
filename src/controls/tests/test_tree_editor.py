@@ -130,12 +130,12 @@ class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
         self.tree1.new("Branch X",tag='Branch')
         self.tree1_iid = str(id(self.tree1))
         branch_x_iid = self.view.widget.get_children(self.tree1_iid)[0]
-        self.assertEqual(self.view.branch(branch_x_iid).name, "Branch X")
+        self.assertEqual(self.view.item(branch_x_iid).name, "Branch X")
 
     def test_accessing_the_branch_with_nonexistent_iid_returns_none(self):
         self.tree1.new("Branch X",tag='Branch')
         nonexistent_iid = "Nonexistent iid"
-        self.assertEqual(self.view.branch(nonexistent_iid), None)
+        self.assertEqual(self.view.item(nonexistent_iid), None)
 
 class Test_Right_Click_Menu(unittest.TestCase):
 
@@ -336,9 +336,9 @@ class Test_Load_Existing_Tree(unittest.TestCase):
         )
         branch_x_id = self.tree1._children[0].data["treeview_iid"]
         child_of_x_id = view.widget.get_children(branch_x_id)[0]
-        self.assertEqual(view.branch(child_of_x_id).name,"Child of X")
+        self.assertEqual(view.item(child_of_x_id).name,"Child of X")
         grandchild_of_x_id = view.widget.get_children(child_of_x_id)[0]
-        self.assertEqual(view.branch(grandchild_of_x_id).name,"Grandchild of X")
+        self.assertEqual(view.item(grandchild_of_x_id).name,"Grandchild of X")
 
 
 class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
