@@ -140,11 +140,15 @@ class __Curry_Format:
     symbol:str
     prepend:bool = True
     def __post_init__(self):
-        self.context = Context(prec=self.decimals,rounding=decimal.ROUND_HALF_EVEN)
+        if self.decimals>0:
+            self.context = Context(prec=self.decimals,rounding=decimal.ROUND_HALF_EVEN)
 
     def present(self,value:Decimal|float|str)->str:
         value = str(value).replace(",",".")
-        value =  round(Decimal(str(value),self.context), self.decimals)
+        if self.decimals==0:
+            value = int(value)
+        else:
+            value =  round(Decimal(str(value),self.context), self.decimals)
         if _CURRY_SYMBOL_POSITION[LOCALIZATION_CODE]==0 and self.prepend:
             return self.__prepend_symbol(value)
         else:
@@ -158,12 +162,14 @@ class __Curry_Format:
         
 
 
-Currency_Code = Literal['CZK','EUR', 'USD']
+Currency_Code = Literal['CZK','EUR', 'USD','JPY']
 CURRY_FORMATS:Dict[Currency_Code,__Curry_Format] = {
     'CZK':__Curry_Format(2,'Kč',prepend=False),
     'EUR':__Curry_Format(2,'€'),
-    'USD': __Curry_Format(2,'$')
+    'USD': __Curry_Format(2,'$'),
+    'JPY': __Curry_Format(0,'¥')
 }
+CURRY_CODES = [code for code in CURRY_FORMATS]
 CURRENCY_SYMBOLS = [CURRY_FORMATS[code].symbol for code in CURRY_FORMATS]
 CURR_SYMBOLS_TO_CODE = {CURRY_FORMATS[code].symbol:code for code in CURRY_FORMATS}
 

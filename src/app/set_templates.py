@@ -52,7 +52,7 @@ def main():
             'Scenario',
             {
                 "name":"Scenario",
-                "currency":({"USD":"USD", 'CZK':'CZK', 'EUR':'EUR'},'USD'),
+                "currency":({code:code for code in treemod.tt.attrs.CURRY_CODES},'USD'),
                 "incomes": sum_incomes,
                 "expenses": sum_expenses
             },
