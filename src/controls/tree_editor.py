@@ -219,9 +219,6 @@ class TreeEditor:
             cancel_cmd = partial(self.__destroy_toplevel,self.add_window),
         ).pack(side=tk.BOTTOM)
 
-    def __confirm_add_entry_values_on_keypress(self,item:treemod.TreeItem,tag:str,event:tk.Event)->None:
-        self.confirm_add_entry_values(item,tag)
-
     def confirm_add_entry_values(self,item:treemod.TreeItem,tag:str)->None:
         attributes = treemod.tt.template(tag).attributes
         for label, entry in self.entries.items():
@@ -242,23 +239,6 @@ class TreeEditor:
 
     def is_tree(self,item:treemod.TreeItem)->bool:
         return item.parent is None
-
-    def __open_edit_window_on_double_click(self,event:tk.Event)->None: # pragma: no cover
-        iid = self.widget.identify_row(event.y)
-        if iid.strip()=="": return 
-        if self.is_tree(self._map[iid]): return
-        # prevent automatic opening/closing of the element when double-clicked
-        self.widget.item(iid,open=not self.widget.item(iid)["open"])
-        self.open_edit_window(iid)
-
-    def __open_edit_window_on_enter(self,event:tk.Event)->None: # pragma: no cover
-        if self.widget.selection()==(): return
-        iid = self.widget.selection()[0]
-        if iid.strip()=="": return 
-        if self.is_tree(self._map[iid]): return
-        # prevent automatic opening/closing of the element when double-clicked
-        self.widget.item(iid,open=not self.widget.item(iid)["open"])
-        self.open_edit_window(iid)
 
     def open_edit_window(self,item_id:str)->None:
         self.edit_window = tk.Toplevel(self.widget)
@@ -281,9 +261,6 @@ class TreeEditor:
         for attribute, entry in self.entries.items():
             entry.delete(0,tk.END)
             entry.insert(0,self._map[branch_id].attributes[attribute].value)
-
-    def __confirm_edit_entry_values_on_keypress(self,item_id:str,event:tk.Event)->None:
-        self.confirm_edit_entry_values(item_id)
 
     def confirm_edit_entry_values(self,item_id:str)->None:
         item = self._map[item_id]
@@ -476,9 +453,19 @@ class TreeEditor:
         for child in item._children: 
             self.__clear_related_actions(child)
 
+    def __close_all(self,item_id:str)->None: # pragma: no cover
+        self.widget.item(item_id,open=False)
+        for child_id in self.widget.get_children(item_id): self.__close_all(child_id)
+
     def __configure_toplevel(self,toplevel:tk.Toplevel)->None:
         toplevel.grab_set()
         toplevel.focus_set()
+    
+    def __confirm_add_entry_values_on_keypress(self,item:treemod.TreeItem,tag:str,event:tk.Event)->None:
+        self.confirm_add_entry_values(item,tag)
+
+    def __confirm_edit_entry_values_on_keypress(self,item_id:str,event:tk.Event)->None:
+        self.confirm_edit_entry_values(item_id)
 
     def __destroy_toplevel(self,item_toplevel:tk.Toplevel)->None: # pragma: no cover
         item_toplevel.destroy()
@@ -526,13 +513,26 @@ class TreeEditor:
             self.__insert_child_into_tree(branch)
             self.__load_children(branch)
 
+    def __open_edit_window_on_double_click(self,event:tk.Event)->None: # pragma: no cover
+        iid = self.widget.identify_row(event.y)
+        if iid.strip()=="": return 
+        if self.is_tree(self._map[iid]): return
+        # prevent automatic opening/closing of the element when double-clicked
+        self.widget.item(iid,open=not self.widget.item(iid)["open"])
+        self.open_edit_window(iid)
+
+    def __open_edit_window_on_enter(self,event:tk.Event)->None: # pragma: no cover
+        if self.widget.selection()==(): return
+        iid = self.widget.selection()[0]
+        if iid.strip()=="": return 
+        if self.is_tree(self._map[iid]): return
+        # prevent automatic opening/closing of the element when double-clicked
+        self.widget.item(iid,open=not self.widget.item(iid)["open"])
+        self.open_edit_window(iid)
+
     def __open_all(self,item_id:str)->None: # pragma: no cover
         self.widget.item(item_id,open=True)
         for child_id in self.widget.get_children(item_id): self.__open_all(child_id)
-    
-    def __close_all(self,item_id:str)->None: # pragma: no cover
-        self.widget.item(item_id,open=False)
-        for child_id in self.widget.get_children(item_id): self.__close_all(child_id)
 
     def __treeview_values(self,item:treemod.TreeItem)->List[str]:
         values = []
