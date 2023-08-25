@@ -167,38 +167,8 @@ class TreeEditor:
         tree.add_data("treeview_iid",iid)
         tree.add_action(self.label,'add_child', partial(self._on_new_child,iid)) 
         tree.add_action(self.label,'on_self_rename', partial(self._on_renaming,iid))
-        self._load_children(tree)
+        self.__load_children(tree)
         self._open_all("")
-
-    def __get_item_treeview_values(self,item:treemod.TreeItem)->List[str]:
-        values = []
-        for key, attrs in self._displayed_attributes.items():
-            values.append("")
-            for attr in attrs:
-                if attr in item.attributes:
-                    if values[-1]!="": values[-1]+="/"
-                    values[-1] += (item.attributes[attr].formatted_value)
-                elif attr in item.dependent_attributes:
-                    if values[-1]!="": values[-1]+="/"
-                    values[-1] += (item.dependent_attributes[attr].formatted_value)
-        return values
-
-    def __load_item_into_tree(self,iid:str,item:treemod.TreeItem)->None:
-        parent_iid = "" if item.parent is None else item.parent.data["treeview_iid"]
-        self.widget.insert(
-            parent_iid,
-            index=0,
-            iid=iid,
-            text=item.name,
-            values=self.__get_item_treeview_values(item)
-        )
-        icon = treemod.tt.template(item.tag).icon_file
-        if icon is not None: self.widget.item(iid,image=icon)
-
-    def _load_children(self,parent:treemod.TreeItem)->None:
-        for branch in parent._children:
-            self.__insert_child_into_tree(branch)
-            self._load_children(branch)
 
     def remove_tree(self,tree_id:str)->None:
         if tree_id not in self.widget.get_children(): 
@@ -349,12 +319,11 @@ class TreeEditor:
                 for opt_label, option in self.entry_options[attr_name].items():
                     new_child.attributes[attr_name].choice_actions[opt_label](option.get())
 
-        self.__clear_add_window_widgets()
-
+        self.__destroy_toplevel(self.add_window)
         for action in self._on_any_modification: action(new_child)
 
     def disregard_add_entry_values(self)->None:
-        self.__clear_add_window_widgets()
+        self.__destroy_toplevel(self.add_window)
 
     def is_tree(self,item:treemod.TreeItem)->bool:
         return item.parent is None
@@ -403,15 +372,15 @@ class TreeEditor:
 
         # rename element in the tree
         self.widget.item(item_id,text=item.name,values=self.__get_item_treeview_values(item))
-        self.__clear_edit_window_widgets()
+        self.__destroy_toplevel(self.edit_window)
         for action in self._on_edit: action(item)
         for action in self._on_any_modification: action(item)
     
     def disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
-        self.__clear_edit_window_widgets()
+        self.__destroy_toplevel(self.edit_window)
 
     def disregard_edit_entry_values(self)->None:
-        self.__clear_edit_window_widgets()
+        self.__destroy_toplevel(self.edit_window)
 
     def open_move_window(self,item_id:str)->None:
         # copy the treeview and throw away the moved item and its children
@@ -476,13 +445,8 @@ class TreeEditor:
             branch.name+DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT
         )
 
-    def __clear_add_window_widgets(self)->None: # pragma: no cover
-        self.add_window.destroy()
-        self.entries.clear()
-        self.entry_options.clear()
-
-    def __clear_edit_window_widgets(self)->None: # pragma: no cover
-        self.edit_window.destroy()
+    def __destroy_toplevel(self,item_toplevel:tk.Toplevel)->None: # pragma: no cover
+        item_toplevel.destroy()
         self.entries.clear()
         self.entry_options.clear()
 
@@ -536,6 +500,36 @@ class TreeEditor:
             tree_id = id
             id = self.widget.parent(tree_id)
         return str(tree_id)
+    
+    def __get_item_treeview_values(self,item:treemod.TreeItem)->List[str]:
+        values = []
+        for key, attrs in self._displayed_attributes.items():
+            values.append("")
+            for attr in attrs:
+                if attr in item.attributes:
+                    if values[-1]!="": values[-1]+="/"
+                    values[-1] += (item.attributes[attr].formatted_value)
+                elif attr in item.dependent_attributes:
+                    if values[-1]!="": values[-1]+="/"
+                    values[-1] += (item.dependent_attributes[attr].formatted_value)
+        return values
+
+    def __load_item_into_tree(self,iid:str,item:treemod.TreeItem)->None:
+        parent_iid = "" if item.parent is None else item.parent.data["treeview_iid"]
+        self.widget.insert(
+            parent_iid,
+            index=0,
+            iid=iid,
+            text=item.name,
+            values=self.__get_item_treeview_values(item)
+        )
+        icon = treemod.tt.template(item.tag).icon_file
+        if icon is not None: self.widget.item(iid,image=icon)
+
+    def __load_children(self,parent:treemod.TreeItem)->None:
+        for branch in parent._children:
+            self.__insert_child_into_tree(branch)
+            self.__load_children(branch)
 
 
 def button_frame(
