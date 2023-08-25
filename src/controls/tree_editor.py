@@ -3,7 +3,7 @@ from __future__ import annotations
 import tkinter.ttk as ttk
 import tkinter as tk
 import tkinter.messagebox as tkmsg
-from typing import Tuple, Dict, Callable, List, Literal, Protocol
+from typing import Tuple, Dict, Callable, List, Literal, Protocol, Any
 from functools import partial
 from collections import OrderedDict
 import dataclasses
@@ -85,6 +85,8 @@ class New:
 class Edit:
     editor:TreeEditor
     item_id:str
+    stored_attributes:Dict[str,Any] = dataclasses.field(default_factory=dict)
+    stored_options:Dict[str,Dict[str,Any]] = dataclasses.field(default_factory=dict)
 
     def run(self)->None:
         item = self.editor._map[self.item_id]
@@ -104,8 +106,11 @@ class Edit:
         for action in self.editor._actions['edit'].values(): action(item)
         for action in self.editor._actions['any_modification'].values(): action(item)
 
+
     def undo(self)->None:
-        pass
+        item = self.editor._map[self.item_id]
+
+
 
     def redo(self)->None:
         pass
