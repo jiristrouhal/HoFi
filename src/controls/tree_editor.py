@@ -101,31 +101,6 @@ class TreeEditor:
         if not current_selection: self.__no_item_selected()
         else: self.__new_item_selected(current_selection[0])
 
-    def __new_item_selected(self,item_id:str)->None:
-        item = self._map[item_id]
-        for action in self._on_selection: action(item)
-
-    def __no_item_selected(self)->None:
-        for action in self._on_unselection: action()
-        
-    def __configure_widget(self)->None:
-        style = ttk.Style()
-        style.configure('Treeview',indent=15,rowheight=17)
-        
-        self.widget.pack(side=tk.RIGHT,expand=1,fill=tk.BOTH)
-        scroll_y = ttk.Scrollbar(
-            self.widget.master,
-            orient=tk.VERTICAL,
-            command=self.widget.yview)
-        scroll_y.pack(side=tk.LEFT,fill=tk.Y)
-
-        self.widget.config(
-            selectmode='browse',
-            show='tree', # hide zeroth row, that would contain the tree columns' headings
-            yscrollcommand=scroll_y.set,
-        )
-
-
     def remove_selected_item(self,event:tk.Event)->None: # pragma: no cover
         #validation
         selection = self.widget.selection()
@@ -166,27 +141,6 @@ class TreeEditor:
         for action in self._on_tree_removal:  action()
         self.__clear_related_actions(self._map[tree_id])
         self.widget.delete(tree_id)
-
-    def __on_new_child(self,parent_iid:str,new_branch:treemod.TreeItem)->None:
-        child_iid = str(id(new_branch))
-        self.__insert_child_into_tree(new_branch)
-        # always open the item under which the new one has been added 
-        self.widget.item(parent_iid,open=True)
-        self.widget.selection_set(child_iid)
-        # scroll to the added item
-        self.widget.see(child_iid)
-
-    def __on_removal(self,branch_iid:str,*args)->None:
-        for action in self._on_any_modification: action(self._map[branch_iid])
-        self._map.pop(branch_iid)
-        self.widget.delete(branch_iid)
-
-    def __on_renaming(self,item_iid:str,branch:treemod.TreeItem)->None:
-        self.widget.item(item_iid,text=branch.name)
-
-    def __on_moving(self,branch_iid:str,new_parent:treemod.TreeItem)->None:
-        self.widget.move(branch_iid, new_parent.data["treeview_iid"], 0)
-
 
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
         item_id = self.widget.identify_row(event.y)
@@ -406,6 +360,23 @@ class TreeEditor:
             branch.name+DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT
         )
 
+    def __configure_widget(self)->None:
+        style = ttk.Style()
+        style.configure('Treeview',indent=15,rowheight=17)
+        
+        self.widget.pack(side=tk.RIGHT,expand=1,fill=tk.BOTH)
+        scroll_y = ttk.Scrollbar(
+            self.widget.master,
+            orient=tk.VERTICAL,
+            command=self.widget.yview)
+        scroll_y.pack(side=tk.LEFT,fill=tk.Y)
+
+        self.widget.config(
+            selectmode='browse',
+            show='tree', # hide zeroth row, that would contain the tree columns' headings
+            yscrollcommand=scroll_y.set,
+        )
+
     def __create_entries(self,window:tk.Toplevel,attributes:Dict[str,treemod._Attribute],excluded:List[str]=[])->None:
         self.entries = dict()
         entries_frame = tk.Frame(window)
@@ -512,6 +483,35 @@ class TreeEditor:
         for branch in parent._children:
             self.__insert_child_into_tree(branch)
             self.__load_children(branch)
+
+    def __new_item_selected(self,item_id:str)->None:
+        item = self._map[item_id]
+        for action in self._on_selection: action(item)
+
+    def __no_item_selected(self)->None:
+        for action in self._on_unselection: action()
+
+
+    def __on_new_child(self,parent_iid:str,new_branch:treemod.TreeItem)->None:
+        child_iid = str(id(new_branch))
+        self.__insert_child_into_tree(new_branch)
+        # always open the item under which the new one has been added 
+        self.widget.item(parent_iid,open=True)
+        self.widget.selection_set(child_iid)
+        # scroll to the added item
+        self.widget.see(child_iid)
+
+    def __on_removal(self,branch_iid:str,*args)->None:
+        for action in self._on_any_modification: action(self._map[branch_iid])
+        self._map.pop(branch_iid)
+        self.widget.delete(branch_iid)
+
+    def __on_renaming(self,item_iid:str,branch:treemod.TreeItem)->None:
+        self.widget.item(item_iid,text=branch.name)
+
+    def __on_moving(self,branch_iid:str,new_parent:treemod.TreeItem)->None:
+        self.widget.move(branch_iid, new_parent.data["treeview_iid"], 0)
+
 
     def __open_edit_window_on_double_click(self,event:tk.Event)->None: # pragma: no cover
         iid = self.widget.identify_row(event.y)
