@@ -112,13 +112,15 @@ class Tree_Manager:
         self,
         treelist:treelist.TreeList,
         tree_tag:str,
-        ui_master:tk.Frame|tk.Tk|tk.LabelFrame|None = None
+        ui_master:tk.Frame|tk.Tk|tk.LabelFrame|None = None,
+        label:str = "Manager"
         )->None:
 
         if not tree_tag in treemod.tt.template_tags():
             raise KeyError(f"The tree template '{tree_tag} does not exist.")
         self._tree_template_tag:str = tree_tag
 
+        self.__label = label
         self._converter = txml.Tree_XML_Converter()
         self._converter.add_action('invalid_xml', self._notify_the_user_xml_is_invalid)
         self.__ui = tk.Frame(master=ui_master)
@@ -153,10 +155,10 @@ class Tree_Manager:
         self._selected_trees:List[treemod.Tree] = list()
 
 
-
+    @property
+    def label(self)->str: return self.__label
     @property
     def trees(self)->List[str]: return self.__treelist.names
-
     @property
     def unsaved_trees(self)->bool: return bool(self.__treelist._modified_trees)
 

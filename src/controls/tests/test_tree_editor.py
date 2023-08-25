@@ -130,12 +130,12 @@ class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
         self.tree1.new("Branch X",tag='Branch')
         self.tree1_iid = str(id(self.tree1))
         branch_x_iid = self.view.widget.get_children(self.tree1_iid)[0]
-        self.assertEqual(self.view.item(branch_x_iid).name, "Branch X")
+        self.assertEqual(self.view.tree_item(branch_x_iid).name, "Branch X")
 
     def test_accessing_the_branch_with_nonexistent_iid_returns_none(self):
         self.tree1.new("Branch X",tag='Branch')
         nonexistent_iid = "Nonexistent iid"
-        self.assertEqual(self.view.item(nonexistent_iid), None)
+        self.assertEqual(self.view.tree_item(nonexistent_iid), None)
 
 class Test_Right_Click_Menu(unittest.TestCase):
 
@@ -155,7 +155,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.tree1.new("Branch X",tag='Branch')
         self.branch_x_iid = self.view.widget.get_children(self.tree1_iid)[-1] 
         self.branchx = self.view._map[self.branch_x_iid ]
-        self.view._open_right_click_menu(self.branch_x_iid)
+        self.view.open_right_click_menu(self.branch_x_iid)
 
     def test_adding_branch_via_right_click_menu(self):
         self.view.right_click_menu.invoke(tree_editor._define_add_cmd_label('Branch'))
@@ -171,7 +171,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
 
     def test_right_clicking_again_outside_any_treeview_item_does_not_create_any_menu(self):
         ID_IF_NO_ITEM_CLICKED = ""
-        self.view._open_right_click_menu(ID_IF_NO_ITEM_CLICKED)
+        self.view.open_right_click_menu(ID_IF_NO_ITEM_CLICKED)
         self.assertFalse(self.view.right_click_menu.winfo_exists())
     
     def test_menu_is_destroyed_after_running_its_command(self):
@@ -233,7 +233,7 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
         self.tree1.new("Branch Z",tag='Branch')
         self.tree1.new("Child of Z","Branch Z", tag='Branch')
         self.small_branch_id = self.view.widget.get_children(self.tree1_iid)[0] 
-        self.view._open_right_click_menu(self.small_branch_id)
+        self.view.open_right_click_menu(self.small_branch_id)
         self.view.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_MOVE)
         
     def test_available_parents_do_not_include_branch_itself_nor_its_children(self):
@@ -337,9 +337,9 @@ class Test_Load_Existing_Tree(unittest.TestCase):
         )
         branch_x_id = self.tree1._children[0].data["treeview_iid"]
         child_of_x_id = view.widget.get_children(branch_x_id)[0]
-        self.assertEqual(view.item(child_of_x_id).name,"Child of X")
+        self.assertEqual(view.tree_item(child_of_x_id).name,"Child of X")
         grandchild_of_x_id = view.widget.get_children(child_of_x_id)[0]
-        self.assertEqual(view.item(grandchild_of_x_id).name,"Grandchild of X")
+        self.assertEqual(view.tree_item(grandchild_of_x_id).name,"Grandchild of X")
 
 
 class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
@@ -354,7 +354,7 @@ class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
         self.tree1_iid = str(id(self.tree1))
         self.view = tree_editor.TreeEditor()
         self.view.load_tree(self.tree1)
-        self.view._open_right_click_menu(self.tree1_iid, root=True)
+        self.view.open_right_click_menu(self.tree1_iid, root=True)
         self.assertTrue(self.view.right_click_menu.winfo_exists())
         # prevent all GUI elements from showing up
         self.view._messageboxes_allowed = False
@@ -401,7 +401,7 @@ class Test_Modifying_Loaded_Tree(unittest.TestCase):
     
     def test_adding_child_to_branch_x(self):
         branch_x_id = self.view.widget.get_children(self.tree1_iid)[0]
-        self.view._open_right_click_menu(branch_x_id)
+        self.view.open_right_click_menu(branch_x_id)
         self.view.right_click_menu.invoke(tree_editor._define_add_cmd_label("Branch"))
         self.view.entries["name"].delete(0,"end")
         self.view.entries["name"].insert(0,"Child of X")
@@ -455,7 +455,7 @@ class Test_Actions_On_Selection(unittest.TestCase):
         self.selection = ""
         def action(item:TreeItem)->None:
             self.selection = item.name
-        self.view.add_action_on_selection(action)
+        self.view.add_action('Test','selection',action)
         self.view.widget.selection_set(self.tree1_iid)
         self.view.check_selection_changes()
         self.assertEqual(self.selection, "Tree 1")
@@ -465,7 +465,7 @@ class Test_Actions_On_Selection(unittest.TestCase):
         def action(item:TreeItem)->None:
             self.i += 1
 
-        self.view.add_action_on_selection(action)
+        self.view.add_action('Test','selection',action)
 
         self.view.widget.selection_set(self.tree1_iid)
         # this function is automatically run when user click in Treeview
@@ -500,7 +500,7 @@ class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
         def action(item:TreeItem)->None:
             self.w = item.attributes["weight"].value
 
-        self.view.add_action_on_edit(action)
+        self.view.add_action('Test','edit',action)
         self.assertEqual(self.w, 50)
         self.view.open_edit_window(self.tree1_iid)
         self.view.entries["weight"].delete(0,"end")
@@ -513,7 +513,7 @@ class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
         def action(item:TreeItem)->None: # pragma: no cover
             self.w = item.attributes["weight"].value
 
-        self.view.add_action_on_edit(action)
+        self.view.add_action('Test','edit',action)
         self.assertEqual(self.w, 50)
         self.view.open_edit_window(self.tree1_iid)
         self.view.entries["weight"].delete(0,"end")
@@ -552,7 +552,7 @@ class Test_User_Defined_Command_In_Right_Click_Menu(unittest.TestCase):
         editor = tree_editor.TreeEditor()
         tree = Tree("TreeA", tag="Tree")
         editor.load_tree(tree)
-        editor._open_right_click_menu(tree.data["treeview_iid"])
+        editor.open_right_click_menu(tree.data["treeview_iid"])
         editor.right_click_menu.invoke("Increment x")
         self.assertEqual(self.x, 1)
 

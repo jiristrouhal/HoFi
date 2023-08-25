@@ -41,16 +41,18 @@ manager = tmg.Tree_Manager(treelist, tree_tag="Scenario", ui_master=manager_fram
 editor = te.TreeEditor(editor_frame,label='TreeEditor', displayed_attributes={AMOUNT_TITLE:("amount",)})
 properties = pp.Properties(properties_frame)
 
+
+def clear_properties(*args): properties.clear()
 # connect (initially independent) Editor and Manager
 def add_tree_to_editor(tree:treemod.Tree): editor.load_tree(tree)
 def remove_tree_from_editor(tree:treemod.Tree): editor.remove_tree(str(id(tree)))
 manager.add_action_on_selection(add_tree_to_editor)
 manager.add_action_on_deselection(remove_tree_from_editor)
-editor.add_action_on_selection(properties.display)
-editor.add_action_on_unselection(properties.clear)
-editor.add_action_on_edit(properties.display)
-editor.add_action_on_any_modification(manager.label_items_tree_as_modified)
-editor.add_action_on_tree_removal(properties.clear)
+editor.add_action(properties.label,'selection',properties.display)
+editor.add_action(properties.label,'deselection',clear_properties)
+editor.add_action(properties.label,'edit',properties.display)
+editor.add_action(manager.label,'any_modification',manager.label_items_tree_as_modified)
+editor.add_action(manager.label,'tree_removal',clear_properties)
 
 
 import tkinter.messagebox as tkmsg

@@ -1,7 +1,7 @@
 import tkinter.ttk as ttk
 import tkinter as tk
 import tkinter.messagebox as tkmsg
-from typing import Tuple, Dict, Callable, List
+from typing import Tuple, Dict, Callable, List, Literal, Any
 from functools import partial
 from collections import OrderedDict
 
@@ -29,6 +29,7 @@ DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT = ": Cannot delete item with children.
 MOVE_WINDOW_TITLE = "Select new parent"
 
 
+_Action_Type = Literal['selection','deselection','edit','any_modification','tree_removal']
 class TreeEditor:
 
     def __init__(
@@ -66,33 +67,25 @@ class TreeEditor:
         self._messageboxes_allowed:bool = True
 
         self._last_selection:Tuple[str,...] = ()
-        self._on_selection:List[Callable[[treemod.TreeItem],None]] = list()
-        self._on_unselection:List[Callable[[],None]] = list()
-        self._on_edit:List[Callable[[treemod.TreeItem],None]] = list()
-        self._on_any_modification:List[Callable[[treemod.TreeItem],None]] = list()
-        self._on_tree_removal:List[Callable[[],None]] = list()
+
+        self._actions:Dict[_Action_Type,Dict[str,Callable[[treemod.TreeItem|None],None]]] = {
+            'selection':{},
+            'deselection':{},
+            'edit':{},
+            'any_modification':{},
+            'tree_removal':{}
+        }
   
         self.label:str = label # an identifier used in actions of Tree Item
 
-    def add_action_on_selection(self,action:Callable[[treemod.TreeItem],None])->None:
-        if action not in self._on_selection:
-            self._on_selection.append(action)
+    def add_action(
+        self,
+        owner:str,
+        on:_Action_Type,
+        action:Callable[[treemod.TreeItem|None],None]
+        )->None:
 
-    def add_action_on_unselection(self,action:Callable[[],None])->None:
-        if action not in self._on_unselection:
-            self._on_unselection.append(action)
-    
-    def add_action_on_edit(self,action:Callable[[treemod.TreeItem],None])->None:
-        if action not in self._on_edit:
-            self._on_edit.append(action)
-
-    def add_action_on_any_modification(self,action:Callable[[treemod.TreeItem],None])->None:
-        if action not in self._on_any_modification:
-            self._on_any_modification.append(action)
-
-    def add_action_on_tree_removal(self,action:Callable[[],None])->None:
-        if action not in self._on_tree_removal:
-            self._on_tree_removal.append(action)
+        self._actions[on][owner] = action
 
     def check_selection_changes(self,event:tk.Event|None=None)->None:
         current_selection = self.widget.selection()
@@ -116,10 +109,6 @@ class TreeEditor:
     @property
     def trees(self)->Tuple[str,...]: 
         return tuple([self._map[iid].name for iid in self.widget.get_children("")])
-
-    def item(self,treeview_iid:str)->treemod.TreeItem|None:
-        if treeview_iid not in self._map: return None
-        return self._map[treeview_iid]
     
     def load_tree(self,tree:treemod.Tree)->None: 
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
@@ -138,8 +127,9 @@ class TreeEditor:
         if tree_id not in self.widget.get_children(): 
             raise ValueError("Trying to delete nonexistent tree")
         #command
-        for action in self._on_tree_removal:  action()
-        self.__clear_related_actions(self._map[tree_id])
+        tree = self._map[tree_id]
+        for action in self._actions["tree_removal"].values(): action(tree)
+        self.__clear_related_actions(tree)
         self.widget.delete(tree_id)
 
     def right_click_item(self,event:tk.Event)->None: # pragma: no cover
@@ -147,12 +137,16 @@ class TreeEditor:
         if item_id.strip()=="": 
             return 
         if self.is_tree(self._map[item_id]): 
-            self._open_right_click_menu(item_id,root=True)
-        else: self._open_right_click_menu(item_id)
+            self.open_right_click_menu(item_id,root=True)
+        else: self.open_right_click_menu(item_id)
         if self.right_click_menu.winfo_exists():
             self.right_click_menu.tk_popup(x=event.x_root,y=event.y_root)
+
+    def tree_item(self,treeview_iid:str)->treemod.TreeItem|None:
+        if treeview_iid not in self._map: return None
+        return self._map[treeview_iid]
     
-    def _open_right_click_menu(self,item_id:str,root:bool=False)->None:
+    def open_right_click_menu(self,item_id:str,root:bool=False)->None:
         self.right_click_menu.destroy()
         if item_id.strip()=="": return
         self.right_click_menu = rcm.RCMenu(master=self.widget, tearoff=False)
@@ -189,7 +183,7 @@ class TreeEditor:
                     new_child.attributes[attr_name].choice_actions[opt_label](option.get())
 
         self.__destroy_toplevel(self.add_window)
-        for action in self._on_any_modification: action(new_child)
+        for action in self._actions['any_modification'].values(): action(new_child)
 
     def is_tree(self,item:treemod.TreeItem)->bool:
         return item.parent is None
@@ -218,6 +212,8 @@ class TreeEditor:
 
     def confirm_edit_entry_values(self,item_id:str)->None:
         item = self._map[item_id]
+        
+        # command
         for attribute, entry in self.entries.items():
             if attribute=="name": 
                 item.rename(entry.get())
@@ -232,8 +228,8 @@ class TreeEditor:
         # rename element in the tree
         self.widget.item(item_id,text=item.name,values=self.__treeview_values(item))
         self.__destroy_toplevel(self.edit_window)
-        for action in self._on_edit: action(item)
-        for action in self._on_any_modification: action(item)
+        for action in self._actions['edit'].values(): action(item)
+        for action in self._actions['any_modification'].values(): action(item)
     
     def disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
         self.__destroy_toplevel(self.edit_window)
@@ -333,7 +329,7 @@ class TreeEditor:
             if branch._parent is not new_parent:
                 branch._set_parent(new_parent)
                 self.widget.move(item_id,selection[0],-1)
-                for action in self._on_any_modification: action(branch)
+                for action in self._actions['any_modification'].values(): action(branch)
                 self.widget.see(item_id)
 
         self.__close_move_window()
@@ -486,11 +482,10 @@ class TreeEditor:
 
     def __new_item_selected(self,item_id:str)->None:
         item = self._map[item_id]
-        for action in self._on_selection: action(item)
+        for action in self._actions["selection"].values(): action(item)
 
     def __no_item_selected(self)->None:
-        for action in self._on_unselection: action()
-
+        for action in self._actions['deselection'].values(): action(None)
 
     def __on_new_child(self,parent_iid:str,new_branch:treemod.TreeItem)->None:
         child_iid = str(id(new_branch))
@@ -502,7 +497,7 @@ class TreeEditor:
         self.widget.see(child_iid)
 
     def __on_removal(self,branch_iid:str,*args)->None:
-        for action in self._on_any_modification: action(self._map[branch_iid])
+        for action in self._actions['any_modification'].values(): action(self._map[branch_iid])
         self._map.pop(branch_iid)
         self.widget.delete(branch_iid)
 

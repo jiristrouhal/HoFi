@@ -10,11 +10,14 @@ PROPERTIES_TITLE = "Properties"
 
 class Properties:
 
-    def __init__(self,master:tk.Tk|tk.Frame|ttk.Labelframe|None = None)->None:
+    def __init__(self,master:tk.Tk|tk.Frame|ttk.Labelframe|None = None, label:str='Properties')->None:
         self.widget = ttk.Labelframe(master,text=PROPERTIES_TITLE)
         self.props:Dict[str,tk.Label] = OrderedDict()
         self.__configure_win()
         self.row = 0
+        self.__label = label
+    @property
+    def label(self)->str: return self.__label
 
     def display(self,item:treemod.TreeItem)->None:
         self.clear()
