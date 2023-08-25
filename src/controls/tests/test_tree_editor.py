@@ -154,6 +154,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.view.load_tree(self.tree1)
         self.tree1.new("Branch X",tag='Branch')
         self.branch_x_iid = self.view.widget.get_children(self.tree1_iid)[-1] 
+        self.branchx = self.view._map[self.branch_x_iid ]
         self.view._open_right_click_menu(self.branch_x_iid)
 
     def test_adding_branch_via_right_click_menu(self):
@@ -161,7 +162,7 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.assertTrue(self.view.add_window.winfo_exists())
         self.view.entries["name"].delete(0,"end")
         self.view.entries["name"].insert(0,"Child of X")
-        self.view.confirm_add_entry_values(self.branch_x_iid, tag="Branch")
+        self.view.confirm_add_entry_values(self.branchx, tag="Branch")
 
     def test_deleting_branch(self):
         self.assertListEqual(self.tree1.children(),["Branch X"])

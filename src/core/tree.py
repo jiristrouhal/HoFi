@@ -56,7 +56,7 @@ class TreeItem:
     @property 
     def parent(self)->TreeItem|None: return self._parent
     @property
-    def data(self)->Dict[str,Any]: return self._data.copy()
+    def data(self)->Dict[str,Any]: return self._data
     @property
     def tag(self)->str: return self.__tag
     @property
