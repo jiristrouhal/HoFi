@@ -2,7 +2,7 @@
 
 
 <xs:complexType name="item"> 
-    <xs:attribute name="Text" type="xs:string"/> 
+    <xs:attribute name="Text" type="xs:string" use="required"/> 
 </xs:complexType>
 
 

@@ -5,3 +5,13 @@
     type="application/xml" 
     schematypens="http://www.w3.org/2001/XMLSchema"
 ?>
+
+<Right_Click_Menu>
+    <Add Text="Add " />
+    <Edit Text="Edit" />
+    <Move Text="Move" />
+    <Delete Text="Delete" />
+
+    <Collapse_All Text="Collapse all" />
+    <Expand_All Text="Expand all" />
+</Right_Click_Menu>
