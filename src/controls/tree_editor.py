@@ -186,17 +186,27 @@ class Move:
 
 @dataclasses.dataclass
 class Remove:
+    editor:TreeEditor
     item:treemod.TreeItem
+    index:int
 
     def run(self)->None:
         if self.item.parent is None: return
         self.item.parent.remove_child(self.item.name)
 
     def undo(self)->None:
-        pass
-
+        assert(self.item.parent is not None)
+        self.item._set_parent(self.item.parent)
+        self.editor._map[self.item.data["treeview_iid"]] = self.item
+        self.editor._load_item_into_tree(
+            self.item.data["treeview_iid"],
+            self.item,
+            self.index
+        )
+        
     def redo(self)->None:
-        pass
+        assert(self.item.parent is not None)
+        self.item.parent.remove_child(self.item.name)
 
 @dataclasses.dataclass
 class CmdController:
@@ -400,7 +410,7 @@ class TreeEditor:
 
     def remove_item(self,item:treemod.TreeItem)->None:
         controller = self._controller[item.its_tree]
-        controller.run(Remove(item))
+        controller.run(Remove(self,item,self.widget.index(item.data["treeview_iid"])))
 
     def confirm_parent(self,item_id:str)->None:
         controller = self._controller[self._map[item_id].its_tree]

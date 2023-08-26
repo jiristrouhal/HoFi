@@ -101,7 +101,8 @@ class TreeItem:
         if attr_name in self._attributes: self._attributes[attr_name].set(value)
 
     def _set_parent(self,new_parent:TreeItem)->None:
-        if self._parent is not None: self._parent._children.remove(self)
+        if self._parent is not None and self in self._parent._children: 
+            self._parent._children.remove(self)
         self._parent = new_parent
         self._parent._children.append(self)
         # if the name already exists under the new parent, change the current name

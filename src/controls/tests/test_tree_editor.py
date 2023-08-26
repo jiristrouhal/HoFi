@@ -573,6 +573,8 @@ class Test_Undo_Redo(unittest.TestCase):
         self.branchB.new("Child of B", tag='Branch')
         self.childOfB = self.branchB._children[0]
 
+        self.treeA_iid = self.treeA.data["treeview_iid"]
+
     def test_undo_and_redo_adding_new_item(self)->None:
         self.editor.open_right_click_menu(self.treeA.data["treeview_iid"])
         self.editor.right_click_menu.invoke(tree_editor._define_add_cmd_label("Branch"))
@@ -622,22 +624,57 @@ class Test_Undo_Redo(unittest.TestCase):
         self.editor.confirm_parent(self.childOfB.data["treeview_iid"])
 
         new_parent = self.childOfB.parent.name
-
-        self.editor.undo(self.childOfB.data["treeview_iid"])       
-
+        self.editor.undo(self.treeA_iid)       
         parent_after_undo = self.childOfB.parent.name
-
-        self.editor.redo(self.childOfB.data["treeview_iid"])
-        
+        self.editor.redo(self.treeA_iid)
         parent_after_redo = self.childOfB.parent.name
+        self.editor.undo(self.treeA_iid)       
+        parent_after_second_undo = self.childOfB.parent.name
 
         self.assertEqual(new_parent,"TreeA")
         self.assertEqual(parent_after_undo,"Branch B")
         self.assertEqual(parent_after_redo,"TreeA")
+        self.assertEqual(parent_after_second_undo,"Branch B")
 
     def test_undo_and_redo_removing_item(self)->None:
         self.editor.open_right_click_menu(self.childOfB.data["treeview_iid"])
+        self.editor.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_DELETE)
         
+        children = self.branchB.children()
+        self.editor.undo(self.treeA_iid)
+        children_after_undo = self.branchB.children()
+        self.editor.redo(self.treeA_iid)
+        children_after_redo = self.branchB.children()
+        self.editor.undo(self.treeA_iid)
+        children_after_second_undo = self.branchB.children()
+
+        self.assertListEqual(children, [])
+        self.assertListEqual(children_after_undo, ["Child of B"])
+        self.assertListEqual(children_after_redo, [])
+        self.assertListEqual(children_after_second_undo, ["Child of B"])
+
+    def test_undo_and_redo_renaming_and_removal(self)->None:
+        self.editor.open_right_click_menu(self.childOfB.data["treeview_iid"])
+        self.editor.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_EDIT)
+        self.editor.entries["name"].delete(0,"end")
+        self.editor.entries["name"].insert(0,"New name for Child of B")
+        self.editor.confirm_edit_entry_values(self.childOfB.data["treeview_iid"])
+        
+        self.editor.open_right_click_menu(self.childOfB.data["treeview_iid"])
+        self.editor.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_DELETE)
+
+        self.assertListEqual(self.branchB.children(),[])
+        self.editor.undo(self.treeA_iid)
+        self.assertListEqual(self.branchB.children(),["New name for Child of B"])
+        self.editor.undo(self.treeA_iid)
+        self.assertListEqual(self.branchB.children(),["Child of B"])
+        # the undo stack is now empty and so, further undo's have no effect
+        self.editor.undo(self.treeA_iid)
+        self.assertListEqual(self.branchB.children(),["Child of B"])
+
+        self.editor.redo(self.treeA_iid)
+        self.editor.redo(self.treeA_iid)
+        self.assertListEqual(self.branchB.children(),[])
 
 
 
