@@ -6,12 +6,25 @@
     schematypens="http://www.w3.org/2001/XMLSchema"
 ?>
 
-<Right_Click_Menu>
-    <Add Text="Add " />
-    <Edit Text="Edit" />
-    <Move Text="Move" />
-    <Delete Text="Delete" />
+<Language Id="en_US" Name="English">
 
-    <Collapse_All Text="Collapse all" />
-    <Expand_All Text="Expand all" />
-</Right_Click_Menu>
+    <Editor>
+        <Right_Click_Menu>
+            <Add Text="Add " />
+            <Edit Text="Edit" />
+            <Move Text="Move" />
+            <Delete Text="Delete" />
+    
+            <Collapse_All Text="Collapse all" />
+            <Expand_All Text="Expand all" />
+        </Right_Click_Menu>
+    </Editor>
+
+    <Manager>
+        <Right_Click_Menu>
+            <Load Text="Load" />
+            <New Text="New" />
+        </Right_Click_Menu>
+    </Manager>
+
+</Language>

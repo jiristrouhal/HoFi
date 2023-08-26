@@ -1,28 +1,57 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
 
-<xs:complexType name="item"> 
-    <xs:attribute name="Text" type="xs:string" use="required"/> 
-</xs:complexType>
-
-
-<xs:element name="Right_Click_Menu">
+<xs:element name="Language">
     <xs:complexType>
         <xs:sequence>
-
-            <xs:element name="Add" type="item"/>
-            <xs:element name="Edit" type="item"/>
-            <xs:element name="Move" type="item"/>
-            <xs:element name="Delete" type="item"/>
-
-            <xs:element name="Collapse_All" type="item"/>
-            <xs:element name="Expand_All" type="item"/>
-
+            <xs:element name="Editor" type="Editor"/>
+            <xs:element name="Manager" type="Manager"/>
         </xs:sequence>
         <xs:attribute name="Id" type="xs:string"/>
         <xs:attribute name="Name" type="xs:string"/>
     </xs:complexType>
 </xs:element>
+
+
+<xs:complexType name="Editor">
+    <xs:sequence>
+        <xs:element name="Right_Click_Menu" type="Editor_Right_Click_Menu"/>
+    </xs:sequence>
+</xs:complexType>
+
+
+<xs:complexType name="Editor_Right_Click_Menu">
+    <xs:sequence>
+        <xs:element name="Add" type="item"/>
+        <xs:element name="Edit" type="item"/>
+        <xs:element name="Move" type="item"/>
+        <xs:element name="Delete" type="item"/>
+
+        <xs:element name="Collapse_All" type="item"/>
+        <xs:element name="Expand_All" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+
+<xs:complexType name="Manager">
+    <xs:sequence>
+        <xs:element name="Right_Click_Menu" type="Manager_Right_Click_Menu"/>
+    </xs:sequence>
+</xs:complexType>
+
+
+<xs:complexType name="Manager_Right_Click_Menu">
+    <xs:sequence>
+        <xs:element name="Load" type="item"/>
+        <xs:element name="New" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+
+<xs:complexType name="item"> 
+    <xs:attribute name="Text" type="xs:string" use="required"/> 
+</xs:complexType>
+
 
 
 </xs:schema>
