@@ -576,23 +576,42 @@ class Test_Undo_Redo(unittest.TestCase):
         self.treeA_iid = self.treeA.data["treeview_iid"]
 
     def test_undo_and_redo_adding_new_item(self)->None:
-        self.editor.open_right_click_menu(self.treeA.data["treeview_iid"])
+        orig_map = self.editor._map.copy()
+
+        self.editor.open_right_click_menu(self.treeA_iid)
         self.editor.right_click_menu.invoke(tree_editor._define_add_cmd_label("Branch"))
-        self.editor.confirm_add_entry_values(self.treeA,tag = "Branch")
-        self.assertListEqual(self.treeA.children(),["Branch B", "Branch XYZ"])
-        branch_iid = self.treeA._children[0].data["treeview_iid"]
-        index = self.editor.widget.index(branch_iid)
+        self.editor.confirm_add_entry_values(self.treeA, tag = "Branch")
+        self.editor.open_right_click_menu(self.treeA_iid)
 
-        self.editor.undo(self.treeA.data["treeview_iid"])
-        self.assertListEqual(self.treeA.children(), ["Branch B"])
+        self.editor.right_click_menu.invoke(tree_editor._define_add_cmd_label("Branch"))
+        self.editor.entries["name"].delete(0,"end")
+        self.editor.entries["name"].insert(0,"Branch UVW")
+        self.editor.confirm_add_entry_values(self.treeA, tag = "Branch")
 
-        self.editor.redo(self.treeA.data["treeview_iid"])
-        branch_iid_after_redo = self.treeA._children[0].data["treeview_iid"]
-        index_after_redo = self.editor.widget.index(branch_iid_after_redo)
-        self.assertListEqual(self.treeA.children(), ["Branch B", "Branch XYZ"])
-        self.assertEqual(branch_iid, branch_iid_after_redo)
-        self.assertEqual(index,index_after_redo)
+        map_after_additions = self.editor._map.copy()
 
+        branches = self.treeA.children()
+        self.editor.undo(self.treeA_iid)
+        self.editor.undo(self.treeA_iid)
+        map_after_undos = self.editor._map.copy()
+        branches_after_two_undos = self.treeA.children()
+        self.editor.redo(self.treeA_iid)
+        self.editor.redo(self.treeA_iid)
+        map_after_redos = self.editor._map.copy()
+        branches_after_two_redos = self.treeA.children()
+        self.editor.undo(self.treeA_iid)
+        self.editor.undo(self.treeA_iid)
+        branches_after_two_repeated_undos = self.treeA.children()
+
+        self.assertDictEqual(orig_map, map_after_undos)
+        self.assertDictEqual(map_after_additions, map_after_redos)
+
+        self.assertListEqual(branches, ["Branch B", "Branch XYZ", "Branch UVW"])
+        self.assertListEqual(branches_after_two_undos, ["Branch B"])
+        self.assertListEqual(branches_after_two_redos, ["Branch B", "Branch XYZ", "Branch UVW"])
+        self.assertListEqual(branches_after_two_repeated_undos, ["Branch B"])
+        
+        
     def test_undo_and_redo_editing_item(self):
         self.editor.open_right_click_menu(self.branchB.data["treeview_iid"])
         self.editor.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_EDIT)

@@ -73,10 +73,11 @@ class New:
 
     def redo(self)->None:
         self.parent._children.append(self.item)
+        self.editor._map[self.item.data["treeview_iid"]] = self.item
         self.editor._load_item_into_tree(
             self.item.data["treeview_iid"],
             self.item,
-            index=self.view_index
+            self.view_index,
         )
 
 
@@ -247,6 +248,7 @@ class TreeEditor:
         self._attribute_template:OrderedDict[str,treemod._Attribute] = OrderedDict()
 
         self._map:Dict[str,treemod.TreeItem] = dict()
+        self._lastly_edited_tree_iid:str = ""
         self._controller:Dict[treemod.TreeItem,CmdController] = dict()
         self.right_click_menu = rcm.RCMenu(self.widget)
 
@@ -324,6 +326,8 @@ class TreeEditor:
         tree.add_action(self.label,'on_self_rename', partial(self.__on_renaming,iid))
         self.__load_children(tree)
         self.__open_all("")
+        if self._lastly_edited_tree_iid == "":
+            self._lastly_edited_tree_iid = iid
 
     def remove_tree(self,tree_id:str)->None:
         #validation
@@ -503,6 +507,24 @@ class TreeEditor:
         self.widget.bind("<Double-Button-1>",self.__open_edit_window_on_double_click,add="")
         self.widget.bind("<Key-Delete>",self.remove_selected_item)
         self.widget.bind("<<TreeviewSelect>>",self.check_selection_changes)
+        self.widget.bind("<Control-z>",self._undo_on_key_stroke)
+        self.widget.bind("<Control-y>",self._redo_on_key_stroke)
+
+    def _undo_on_key_stroke(self,event:tk.Event)->None:
+        if self.widget.selection():
+            iid = self.widget.selection()[0]
+            self._lastly_edited_tree_iid = self._map[iid].its_tree.data["treeview_iid"]
+            self.undo(iid)
+        else:
+            self.undo(self._lastly_edited_tree_iid)
+
+    def _redo_on_key_stroke(self,event:tk.Event)->None:
+        if self.widget.selection():
+            iid = self.widget.selection()[0]
+            self._lastly_edited_tree_iid = self._map[iid].its_tree.data["treeview_iid"]
+            self.redo(self.widget.selection()[0])
+        else:
+            self.redo(self._lastly_edited_tree_iid)
 
     def _close_move_window(self)->None:
         assert(self.move_window.winfo_exists() and self.available_parents.winfo_exists())
@@ -619,8 +641,7 @@ class TreeEditor:
             id = self.widget.parent(tree_id)
         return str(tree_id)
     
-    def __insert_child_into_tree(self, child:treemod.TreeItem)->None:
-        item_iid = str(id(child))
+    def _insert_child_into_tree(self, item_iid:str, child:treemod.TreeItem)->None:
         self._map[item_iid] = child
         self._load_item_into_tree(item_iid,child)
         child.add_action(self.label,'add_child', partial(self.__on_new_child, item_iid))
@@ -647,7 +668,8 @@ class TreeEditor:
 
     def __load_children(self,parent:treemod.TreeItem)->None:
         for branch in parent._children:
-            self.__insert_child_into_tree(branch)
+            iid = str(id(branch))
+            self._insert_child_into_tree(iid,branch)
             self.__load_children(branch)
 
     def __new_item_selected(self,item_id:str)->None:
@@ -659,7 +681,7 @@ class TreeEditor:
 
     def __on_new_child(self,parent_iid:str,new_branch:treemod.TreeItem)->None:
         child_iid = str(id(new_branch))
-        self.__insert_child_into_tree(new_branch)
+        self._insert_child_into_tree(child_iid,new_branch)
         # always open the item under which the new one has been added 
         self.widget.item(parent_iid,open=True)
         self.widget.selection_set(child_iid)
