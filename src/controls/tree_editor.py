@@ -209,6 +209,7 @@ class Remove:
         assert(self.item.parent is not None)
         self.item.parent.remove_child(self.item.name)
 
+
 @dataclasses.dataclass
 class CmdController:
     _undo_stack:List[EditorCommand] = dataclasses.field(default_factory=list)
@@ -249,7 +250,6 @@ class TreeEditor:
 
         self._map:Dict[str,treemod.TreeItem] = dict()
         self._lastly_edited_tree_iid:str = ""
-        self._controller:Dict[treemod.TreeItem,CmdController] = dict()
         self.right_click_menu = rcm.RCMenu(self.widget)
 
         self.edit_window = tk.Toplevel(self.widget)
@@ -320,7 +320,8 @@ class TreeEditor:
         iid = str(id(tree)) 
         self._load_item_into_tree(iid,tree)
         self._map[iid] = tree
-        self._controller[tree] = CmdController()
+        if "editor_cmd_controller" not in tree.data:
+            tree.add_data("editor_cmd_controller",CmdController())
         tree.add_data("treeview_iid",iid)
         tree.add_action(self.label,'add_child', partial(self.__on_new_child,iid)) 
         tree.add_action(self.label,'on_self_rename', partial(self.__on_renaming,iid))
@@ -336,7 +337,6 @@ class TreeEditor:
         #command
         tree = self._map[tree_id]
         for action in self._actions["tree_removal"].values(): action(tree)
-        self._controller.pop(tree)
         self.__clear_related_actions(tree)
         self.widget.delete(tree_id)
 
@@ -355,12 +355,10 @@ class TreeEditor:
         return self._map[treeview_iid]
     
     def redo(self,item_id:str)->None:
-        controller = self._controller[self._map[item_id].its_tree]
-        controller.redo()
+        self._map[item_id].its_tree.data["editor_cmd_controller"].redo()
     
     def undo(self,item_id:str)->None:
-        controller = self._controller[self._map[item_id].its_tree]
-        controller.undo()
+        self._map[item_id].its_tree.data["editor_cmd_controller"].undo()
     
     def open_right_click_menu(self,item_id:str,root:bool=False)->None:
         self.right_click_menu.destroy()
@@ -405,20 +403,18 @@ class TreeEditor:
         ).pack(side=tk.BOTTOM)
 
     def confirm_add_entry_values(self,parent:treemod.TreeItem,tag:str)->None:
-        controller = self._controller[parent.its_tree]
-        controller.run(New(self,parent,tag))
+        parent.its_tree.data["editor_cmd_controller"].run(New(self,parent,tag))
 
     def confirm_edit_entry_values(self,item_id:str)->None:
-        controller = self._controller[self._map[item_id].its_tree]
-        controller.run(Edit(self,item_id))
+        self._map[item_id].its_tree.data["editor_cmd_controller"].run(Edit(self,item_id))
 
     def remove_item(self,item:treemod.TreeItem)->None:
-        controller = self._controller[item.its_tree]
-        controller.run(Remove(self,item,self.widget.index(item.data["treeview_iid"])))
+        item.its_tree.data["editor_cmd_controller"].run(
+            Remove(self,item,self.widget.index(item.data["treeview_iid"]))
+        )
 
     def confirm_parent(self,item_id:str)->None:
-        controller = self._controller[self._map[item_id].its_tree]
-        controller.run(Move(self,item_id))
+        self._map[item_id].its_tree.data["editor_cmd_controller"].run(Move(self,item_id))
     
     def disregard_edit_entry_values_on_keypress(self,event:tk.Event)->None: # pragma: no cover
         self._destroy_toplevel(self.edit_window)
