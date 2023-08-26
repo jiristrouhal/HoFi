@@ -300,7 +300,7 @@ class TreeEditor:
         if self.is_tree(item): return # cannot delete tree
         assert item.parent is not None
         #command
-        item.parent.remove_child(item.name)
+        self.remove_item(item)
     
     def load_tree(self,tree:treemod.Tree)->None: 
         if tree.name in self.trees: raise ValueError(f"The tree with {tree.name} is already present in the treeview.\n")
@@ -666,7 +666,6 @@ class TreeEditor:
 
     def __on_moving(self,branch_iid:str,new_parent:treemod.TreeItem)->None:
         self.widget.move(branch_iid, new_parent.data["treeview_iid"], 0)
-
 
     def __open_edit_window_on_double_click(self,event:tk.Event)->None: # pragma: no cover
         iid = self.widget.identify_row(event.y)
