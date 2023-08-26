@@ -71,7 +71,6 @@ class New:
         for action in self.editor._actions['deselection'].values(): action(self.item)
         self.parent.remove_child(self.item.name)
 
-
     def redo(self)->None:
         self.parent._children.append(self.item)
         self.editor._load_item_into_tree(
@@ -85,41 +84,60 @@ class New:
 class Edit:
     editor:TreeEditor
     item_id:str
-    stored_attributes:Dict[str,Any] = dataclasses.field(default_factory=dict)
-    stored_options:Dict[str,Dict[str,Any]] = dataclasses.field(default_factory=dict)
+    item:treemod.TreeItem = dataclasses.field(init=False)
+    old_attributes:Dict[str,treemod._Attribute] = dataclasses.field(default_factory=dict)
+    new_attributes:Dict[str,treemod._Attribute] = dataclasses.field(default_factory=dict)
 
     def run(self)->None:
-        item = self.editor._map[self.item_id]
+        self.item = self.editor._map[self.item_id]
+
+        for attr_name in self.item.attributes:
+            self.old_attributes[attr_name] = self.item.attributes[attr_name].copy()
+
         for attribute, entry in self.editor.entries.items():
             if attribute=="name": 
-                item.rename(entry.get())
+                self.item.rename(entry.get())
             else:
-                item.set_attribute(attribute, entry.get())
+                self.item.set_attribute(attribute, entry.get())
 
             if attribute in self.editor.entry_options:
                 for opt_label, option in self.editor.entry_options[attribute].items():
-                    attr = item.attributes[attribute]
+                    attr = self.item.attributes[attribute]
                     attr.choice_actions[opt_label](option.get())
 
-        self.editor.widget.item(self.item_id,text=item.name,values=self.editor._treeview_values(item))
+        self.__update_widget_item()
         self.editor._destroy_toplevel(self.editor.edit_window)
-        for action in self.editor._actions['edit'].values(): action(item)
-        for action in self.editor._actions['any_modification'].values(): action(item)
-
+        for action in self.editor._actions['edit'].values(): action(self.item)
+        for action in self.editor._actions['any_modification'].values(): action(self.item)
 
     def undo(self)->None:
-        item = self.editor._map[self.item_id]
-
-
+        for attr_name in self.item.attributes:
+            self.new_attributes[attr_name] = self.item.attributes[attr_name].copy()
+            self.item._attributes[attr_name] = self.old_attributes[attr_name].copy()
+        self.__update_widget_item()
 
     def redo(self)->None:
-        pass
+        for attr_name in self.item.attributes:
+            self.old_attributes[attr_name] = self.item.attributes[attr_name].copy()
+            self.item._attributes[attr_name] = self.new_attributes[attr_name].copy()
+        self.__update_widget_item()
+
+    def __update_widget_item(self):
+        self.editor.widget.item(
+            self.item_id,
+            text=self.item.name,
+            values=self.editor._treeview_values(self.item)
+        )
 
 
 @dataclasses.dataclass
 class Move:
     editor:TreeEditor
     item_id:str
+    prev_parent:treemod.TreeItem = dataclasses.field(init=False)
+    new_parent:treemod.TreeItem = dataclasses.field(init=False)
+    prev_index:int = dataclasses.field(init=False)
+    new_index:int = dataclasses.field(init=False)
 
     def run(self)->None:
         if not self.editor.available_parents.winfo_exists(): return
@@ -127,19 +145,43 @@ class Move:
         if selection: # no parent was selected, thus keep the current one
             new_parent = self.editor._map[selection[0]]
             branch = self.editor._map[self.item_id]
-            if branch._parent is not new_parent:
+            if branch._parent is not new_parent and branch._parent is not None:
+
+                self.prev_parent = branch._parent
+                self.new_parent = new_parent
+
                 branch._set_parent(new_parent)
-                self.editor.widget.move(self.item_id,selection[0],-1)
+
+                self.prev_index = self.editor.widget.index(self.item_id)
+                self.new_index = -1
+
+                self.editor.widget.move(self.item_id,selection[0], self.new_index)
+
                 for action in self.editor._actions['any_modification'].values(): action(branch)
                 self.editor.widget.see(self.item_id)
+
 
         self.editor._close_move_window()
 
     def undo(self)->None:
-        pass
+        self.editor.widget.move(
+            self.item_id, 
+            self.prev_parent.data["treeview_iid"], 
+            self.prev_index
+        )
+        self.editor._map[self.item_id]._set_parent(self.prev_parent)
+        for action in self.editor._actions['any_modification'].values(): 
+            action(self.editor._map[self.item_id])
 
     def redo(self)->None:
-        pass
+        self.editor.widget.move(
+            self.item_id, 
+            self.new_parent.data["treeview_iid"], 
+            self.new_index
+        )
+        self.editor._map[self.item_id]._set_parent(self.new_parent)
+        for action in self.editor._actions['any_modification'].values(): 
+            action(self.editor._map[self.item_id])
 
 
 @dataclasses.dataclass
@@ -360,7 +402,7 @@ class TreeEditor:
         controller = self._controller[item.its_tree]
         controller.run(Remove(item))
 
-    def __confirm_parent(self,item_id:str)->None:
+    def confirm_parent(self,item_id:str)->None:
         controller = self._controller[self._map[item_id].its_tree]
         controller.run(Move(self,item_id))
     
@@ -392,7 +434,7 @@ class TreeEditor:
 
         button_frame(
             self.move_window,
-            ok_cmd = partial(self.__confirm_parent,item_id),
+            ok_cmd = partial(self.confirm_parent,item_id),
             cancel_cmd = self._close_move_window
         ).pack(side=tk.BOTTOM)
 

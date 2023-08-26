@@ -570,6 +570,8 @@ class Test_Undo_Redo(unittest.TestCase):
         self.editor.load_tree(self.treeA)
         self.treeA.new("Branch B",tag="Branch")
         self.branchB = self.treeA._children[0]
+        self.branchB.new("Child of B", tag='Branch')
+        self.childOfB = self.branchB._children[0]
 
     def test_undo_and_redo_adding_new_item(self)->None:
         self.editor.open_right_click_menu(self.treeA.data["treeview_iid"])
@@ -589,7 +591,7 @@ class Test_Undo_Redo(unittest.TestCase):
         self.assertEqual(branch_iid, branch_iid_after_redo)
         self.assertEqual(index,index_after_redo)
 
-    def __test_undo_and_redo_editing_item(self):
+    def test_undo_and_redo_editing_item(self):
         self.editor.open_right_click_menu(self.branchB.data["treeview_iid"])
         self.editor.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_EDIT)
 
@@ -600,19 +602,39 @@ class Test_Undo_Redo(unittest.TestCase):
         self.editor.confirm_edit_entry_values(self.branchB.data["treeview_iid"])
 
         new_name = self.branchB.name
-
         self.editor.undo(self.branchB.data["treeview_iid"])
-
         name_after_undo = self.branchB.name
-
         self.editor.redo(self.branchB.data["treeview_iid"])
-
         name_after_redo = self.branchB.name
+        self.editor.undo(self.branchB.data["treeview_iid"])
+        name_after_second_undo = self.branchB.name
 
         self.assertEqual(orig_name,"Branch B")
         self.assertEqual(new_name,"Branch BB")
         self.assertEqual(name_after_undo,"Branch B")
         self.assertEqual(name_after_redo, "Branch BB")
+        self.assertEqual(name_after_second_undo, "Branch B")
+
+    def test_undo_and_redo_moving_item(self):
+        self.editor.open_right_click_menu(self.childOfB.data["treeview_iid"])
+        self.editor.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_MOVE)
+        self.editor.available_parents.selection_set(self.treeA.data["treeview_iid"])
+        self.editor.confirm_parent(self.childOfB.data["treeview_iid"])
+
+        new_parent = self.childOfB.parent.name
+
+        self.editor.undo(self.childOfB.data["treeview_iid"])       
+
+        parent_after_undo = self.childOfB.parent.name
+
+        self.editor.redo(self.childOfB.data["treeview_iid"])
         
+        parent_after_redo = self.childOfB.parent.name
+
+        self.assertEqual(new_parent,"TreeA")
+        self.assertEqual(parent_after_undo,"Branch B")
+        self.assertEqual(parent_after_redo,"TreeA")
+
+
 
 if __name__=="__main__": unittest.main()
