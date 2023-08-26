@@ -13,19 +13,6 @@ import src.core.tree as treemod
 import src.controls.right_click_menu as rcm
 
 
-MENU_CMD_BRANCH_DELETE = "Delete"
-MENU_CMD_BRANCH_EDIT = "Edit"
-MENU_CMD_BRANCH_MOVE = "Move"
-MENU_CMD_BRANCH_ADD = "Add"
-MENU_CMD_BRANCH_OPEN_ALL = "Expand all"
-MENU_CMD_BRANCH_CLOSE_ALL = "Collapse all"
-BUTTON_OK = "OK"
-BUTTON_CANCEL = "Cancel"
-REVERT_ENTRY_VALUE_CHANGES = "Revert"
-DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE = "Cannot delete item"
-DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT = ": Cannot delete item with children."
-MOVE_WINDOW_TITLE = "Select new parent"
-
 
 _Action_Type = Literal['selection','deselection','edit','any_modification','tree_removal']
 
@@ -233,6 +220,17 @@ class CmdController:
             self._undo_stack.append(cmd)
 
 
+BUTTON_OK = "OK"
+BUTTON_CANCEL = "Cancel"
+REVERT_ENTRY_VALUE_CHANGES = "Revert"
+DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE = "Cannot delete item"
+DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT = ": Cannot delete item with children."
+MOVE_WINDOW_TITLE = "Select new parent"
+
+
+import src.controls.loc.lang as lang
+
+
 class TreeEditor:
 
     def __init__(
@@ -240,6 +238,7 @@ class TreeEditor:
         parent:tk.Tk|tk.Toplevel|tk.Frame|tk.LabelFrame|None = None, 
         label:str = "TreeEditor", 
         displayed_attributes:Dict[str,Tuple[str,...]] = {},
+        language_code:lang._Language_Code = "en_us"
         )->None:
 
         self.widget = ttk.Treeview(parent, columns=tuple(displayed_attributes.keys()))
@@ -281,6 +280,8 @@ class TreeEditor:
         }
   
         self.label:str = label # an identifier used in actions of Tree Item
+
+        self._vocabulary = lang.Vocabulary(language_code)
 
     @property
     def trees(self)->Tuple[str,...]: 
@@ -449,37 +450,39 @@ class TreeEditor:
         ).pack(side=tk.BOTTOM)
 
     def __add_commands_for_tree(self,tree:treemod.TreeItem)->None:
+        command_label = self._vocabulary.subvocabulary("Editor","Right_Click_Menu")
         self.right_click_menu.add_commands(
             {
-                _define_add_cmd_label(tag): partial(self.open_add_window,tree,tag) \
+                _define_add_cmd_label(tag,command_label("Add")): partial(self.open_add_window,tree,tag) \
                 for tag in tree.child_tags
             }
         )
         if tree.child_tags: self.right_click_menu.add_separator()
         self.right_click_menu.add_commands(
             {
-                MENU_CMD_BRANCH_OPEN_ALL : partial(self.__open_all,tree.data["treeview_iid"]),
-                MENU_CMD_BRANCH_CLOSE_ALL :  partial(self.__close_all,tree.data["treeview_iid"])
+                command_label("Expand_All") : partial(self.__open_all,tree.data["treeview_iid"]),
+                command_label("Collapse_All") :  partial(self.__close_all,tree.data["treeview_iid"])
             }
         )  
 
     def __add_commands_for_item(self,item:treemod.TreeItem)->None:
+        command_label = self._vocabulary.subvocabulary("Editor","Right_Click_Menu")
         self.right_click_menu.add_commands(
             {
-                _define_add_cmd_label(tag): partial(self.open_add_window,item,tag) \
+                _define_add_cmd_label(tag,command_label("Add")): partial(self.open_add_window,item,tag) \
                 for tag in item.child_tags
             }
         )
         if item.child_tags: self.right_click_menu.add_separator()
         self.right_click_menu.add_commands(
             {
-                MENU_CMD_BRANCH_EDIT : partial(self.open_edit_window,item.data["treeview_iid"]),       
-                MENU_CMD_BRANCH_MOVE : partial(self.open_move_window,item.data["treeview_iid"])
+                command_label("Edit") : partial(self.open_edit_window,item.data["treeview_iid"]),       
+                command_label("Move") : partial(self.open_move_window,item.data["treeview_iid"])
             }
         )
         if item.parent is not None:
             self.right_click_menu.add_single_command(
-                MENU_CMD_BRANCH_DELETE,
+                command_label("Delete"),
                 partial(self.remove_item,item)
             )
         if item.user_defined_commands:
@@ -493,8 +496,8 @@ class TreeEditor:
             self.right_click_menu.add_separator()
             self.right_click_menu.add_commands(
                 {
-                    MENU_CMD_BRANCH_OPEN_ALL : partial(self.__open_all,item.data["treeview_iid"]),
-                    MENU_CMD_BRANCH_CLOSE_ALL : partial(self.__close_all,item.data["treeview_iid"])
+                    command_label("Expand_All") : partial(self.__open_all,item.data["treeview_iid"]),
+                    command_label("Collapse_All") : partial(self.__close_all,item.data["treeview_iid"])
                 }
             )
     
@@ -741,5 +744,5 @@ def button_frame(
     tk.Button(master=frame,text=BUTTON_CANCEL,command=cancel_cmd).pack(side=tk.RIGHT)
     return frame
 
-def _define_add_cmd_label(tag:str)->str:
-    return MENU_CMD_BRANCH_ADD+f" {tag.lower()}"
+def _define_add_cmd_label(tag:str,add_text:str="Add")->str:
+    return add_text+f" {tag.lower()}"

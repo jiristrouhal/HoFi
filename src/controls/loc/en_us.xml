@@ -10,7 +10,7 @@
 
     <Editor>
         <Right_Click_Menu>
-            <Add Text="Add " />
+            <Add Text="Add" />
             <Edit Text="Edit" />
             <Move Text="Move" />
             <Delete Text="Delete" />

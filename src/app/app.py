@@ -38,7 +38,7 @@ editor_frame.pack(expand=1,fill=tk.BOTH,side=tk.RIGHT)
 # create app parts and place their widgets into their respective places in the GUI
 treelist = tl.TreeList(label='TreeList')
 manager = tmg.Tree_Manager(treelist, tree_tag="Scenario", ui_master=manager_frame)
-editor = te.TreeEditor(editor_frame,label='TreeEditor', displayed_attributes={AMOUNT_TITLE:("amount",)})
+editor = te.TreeEditor(editor_frame,label='TreeEditor', displayed_attributes={AMOUNT_TITLE:("amount",)}, language_code='cs_cz')
 properties = pp.Properties(properties_frame)
 
 

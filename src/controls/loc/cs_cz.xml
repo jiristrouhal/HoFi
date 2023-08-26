@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?xml-model 
+    href="lang.xsd" 
+    type="application/xml" 
+    schematypens="http://www.w3.org/2001/XMLSchema"
+?>
+
+<Language Id="cs_CZ" Name="Čeština">
+
+    <Editor>
+        <Right_Click_Menu>
+            <Add Text="Přidat" />
+            <Edit Text="Upravit" />
+            <Move Text="Přesunout" />
+            <Delete Text="Smazat" />
+    
+            <Collapse_All Text="Sbalit vše" />
+            <Expand_All Text="Rozbalit vše" />
+        </Right_Click_Menu>
+    </Editor>
+
+    <Manager>
+        <Right_Click_Menu>
+            <Load Text="Načíst" />
+            <New Text="Nový" />
+        </Right_Click_Menu>
+    </Manager>
+
+</Language>
