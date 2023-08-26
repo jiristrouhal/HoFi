@@ -116,12 +116,16 @@ class Edit:
             self.new_attributes[attr_name] = self.item.attributes[attr_name].copy()
             self.item._attributes[attr_name] = self.old_attributes[attr_name].copy()
         self.__update_widget_item()
+        for action in self.editor._actions['edit'].values(): action(self.item)
+        for action in self.editor._actions['any_modification'].values(): action(self.item)
 
     def redo(self)->None:
         for attr_name in self.item.attributes:
             self.old_attributes[attr_name] = self.item.attributes[attr_name].copy()
             self.item._attributes[attr_name] = self.new_attributes[attr_name].copy()
         self.__update_widget_item()
+        for action in self.editor._actions['edit'].values(): action(self.item)
+        for action in self.editor._actions['any_modification'].values(): action(self.item)
 
     def __update_widget_item(self):
         self.editor.widget.item(
