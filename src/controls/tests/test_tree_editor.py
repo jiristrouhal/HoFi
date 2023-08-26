@@ -695,6 +695,21 @@ class Test_Undo_Redo(unittest.TestCase):
         self.editor.redo(self.treeA_iid)
         self.assertListEqual(self.branchB.children(),[])
 
+    def __test_undo_can_be_done_even_after_unloading_the_tree_and_loading_it_again(self):
+        self.editor.open_right_click_menu(self.childOfB.data["treeview_iid"])
+        self.editor.right_click_menu.invoke(tree_editor.MENU_CMD_BRANCH_DELETE)
+        self.editor.remove_tree(self.treeA.data["treeview_iid"])
+
+        self.editor.load_tree(self.treeA)
+        children_of_B_after_loading = self.branchB.children()
+        self.editor.undo(self.treeA_iid)
+        children_of_B_after_undo = self.branchB.children()
+
+        self.assertListEqual(children_of_B_after_loading, [])
+        self.assertListEqual(children_of_B_after_undo, ["Child of B"])
+
+
+
 
 
 if __name__=="__main__": unittest.main()
