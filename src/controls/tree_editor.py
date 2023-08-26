@@ -676,15 +676,6 @@ class TreeEditor:
         self.widget.item(iid,open=not self.widget.item(iid)["open"])
         self.open_edit_window(iid)
 
-    def __open_edit_window_on_enter(self,event:tk.Event)->None: # pragma: no cover
-        if self.widget.selection()==(): return
-        iid = self.widget.selection()[0]
-        if iid.strip()=="": return 
-        if self.is_tree(self._map[iid]): return
-        # prevent automatic opening/closing of the element when double-clicked
-        self.widget.item(iid,open=not self.widget.item(iid)["open"])
-        self.open_edit_window(iid)
-
     def __open_all(self,item_id:str)->None: # pragma: no cover
         self.widget.item(item_id,open=True)
         for child_id in self.widget.get_children(item_id): self.__open_all(child_id)

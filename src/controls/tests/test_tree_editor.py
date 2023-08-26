@@ -635,6 +635,10 @@ class Test_Undo_Redo(unittest.TestCase):
         self.assertEqual(parent_after_undo,"Branch B")
         self.assertEqual(parent_after_redo,"TreeA")
 
+    def test_undo_and_redo_removing_item(self)->None:
+        self.editor.open_right_click_menu(self.childOfB.data["treeview_iid"])
+        
+
 
 
 if __name__=="__main__": unittest.main()
