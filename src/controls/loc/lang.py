@@ -22,8 +22,8 @@ class Vocabulary:
         try:
             self._xml_root = et.parse(path).getroot()
         except:
-            raise ValueError(f"Cannot find file for localization code {language_code} \
-                             on path {os.path.dirname(path)}.")
+            raise ValueError(f"Cannot find file for localization code {language_code} "
+                             f"on path {os.path.dirname(path)}.")
 
     def set_data(self,data:et.Element)->None:
         self._xml_root = data

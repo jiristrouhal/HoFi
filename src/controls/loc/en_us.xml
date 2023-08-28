@@ -53,7 +53,91 @@
         <Right_Click_Menu>
             <Load Text="Load" />
             <New Text="New" />
+
+            <Edit Text="Edit" />
+            <Stop_Editing Text="Stop editing" />
+            <Rename Text="Rename" />
+            <Delete Text="Delete" />
+            <Update_File Text="Save changes" />
+            <Export Text="Export" />
+    
         </Right_Click_Menu>
+
+        <Buttons>
+            <Load Text="Load" />
+            <New Text="New" />
+        </Buttons>
+
+        <Rename_Window>
+            <Title Text="Rename" />
+            <OK_Button Text="OK" />
+            <Cancel_Button Text="Cancel" />
+        </Rename_Window>
+
+        <New_Tree_Window>
+            <Title Text="New" />
+            <OK_Button Text="OK" />
+            <Cancel_Button Text="Cancel" />
+        </New_Tree_Window>
+
+        <Error_Name_Already_Taken>
+            <Title Text="Name already exists" />
+            <Content Text=" already exists. Use a different name." />
+        </Error_Name_Already_Taken>
+
+        <Confirm_Renaming_If_Exported_File_Exists>
+            <Title Text="File already exists" />
+            <Message Text="The file already exists in the directory. Click 'OK' to specify other name for the saved tree or 'Cancel' to cancel the export." />
+        </Confirm_Renaming_If_Exported_File_Exists>
+
+        <Confirm_Removal>
+            <Title Text="Confirm removal" />
+            <Message Text="Do you really want to delete the object?" />
+        </Confirm_Removal>
+
+        <Cannot_Load_If_Name_Already_Taken>
+            <Title Text="Cannot load from file" />
+            <Message Text="The name of the file is already used by other object in the Manager. Rename the object or the loaded file." />
+        </Cannot_Load_If_Name_Already_Taken>
+
+        <Cannot_Be_Deleted>
+            <Title Text="Cannot delete" />
+            <Message Text="Stop editing the object and then choose 'Delete' again." />
+        </Cannot_Be_Deleted>
+
+        <File_Already_In_Use>
+            <Title Text="File in use" />
+            <Message_part_1 Text="The file '" />
+            <Message_part_2 Text="' is already used by the object '" />
+            <Message_part_3 Text="'. You can manually create a copy of the file and load it under a new name." />
+        </File_Already_In_Use>
+
+        <Export_Info>
+            <Title Text="Export to XMl file" />
+            <Message_part_1 Text="'" />
+            <Message_part_2 Text="' was successfully exported to '" />
+            <Message_part_3 Text="'." />
+        </Export_Info>
+
+        <Not_Yet_Exported>
+            <Title Text="Export required" />
+            <Content Text="Export the object into XML file." />
+        </Not_Yet_Exported>
+
+        <Invalid_XML>
+            <Title Text="Invalid XML file" />
+            <Content Text="The content of the XML file is invalid. Open the file externally and check its contents." />
+        </Invalid_XML>  
+
+        <Tree_Status_Labels>
+            <Waiting_For_Export Text="waiting for export" />
+            <Modified Text="modified" />
+            <OK Text="" />
+        </Tree_Status_Labels>
+
+        <Export_File_Dialog_Title Text="Export as XML file" />
+        <Load_From_File Text="Load from file" />
+    
     </Manager>
 
 </Language>

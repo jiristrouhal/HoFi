@@ -50,10 +50,98 @@
 
     <Manager>
         <Title Text="Title" />
+
         <Right_Click_Menu>
             <Load Text="Načíst" />
             <New Text="Nový" />
+
+            <Edit Text="Zahájit úpravy" />
+            <Stop_Editing Text="Ukončit úpravy" />
+            <Rename Text="Přejmenovat" />
+            <Delete Text="Odstranit" />
+            <Update_File Text="Uložit změny" />
+            <Export Text="Exportovat" />
+    
         </Right_Click_Menu>
+
+        <Buttons>
+            <Load Text="Načíst" />
+            <New Text="Nový" />
+        </Buttons>
+
+        <Rename_Window>
+            <Title Text="Přejmenovat" />
+            <OK_Button Text="OK" />
+            <Cancel_Button Text="Zrušit" />
+        </Rename_Window>
+
+        <New_Tree_Window>
+            <Title Text="Nový" />
+            <OK_Button Text="OK" />
+            <Cancel_Button Text="Zrušit" />
+        </New_Tree_Window>
+
+        <Error_Name_Already_Taken>
+            <Title Text="Název už existuje" />
+            <Content Text=" už existuje. Zvolte jiný." />
+        </Error_Name_Already_Taken>
+
+        <Confirm_Renaming_If_Exported_File_Exists>
+            <Title Text="Soubor už existuje" />
+            <Message Text="Soubor s tímto názvem už ve zvolené složce existuje. Zvolte 'OK' a zadejte jiný název souboru \
+            nebo 'Zrušit' pro zrušení exportu." />
+        </Confirm_Renaming_If_Exported_File_Exists>
+
+        <Confirm_Removal>
+            <Title Text="Potvrdit odstranění" />
+            <Message Text="Opravu si přejete odstranění?" />
+        </Confirm_Removal>
+
+        <Cannot_Load_If_Name_Already_Taken>
+            <Title Text="Nelze načíst" />
+            <Message Text="Název načítaného souboru už v Manažeru existuje. Přejmenujte soubor nebo existující objekt v Manažeru." />
+        </Cannot_Load_If_Name_Already_Taken>
+
+        <Cannot_Be_Deleted>
+            <Title Text="Nelze odstranit" />
+            <Message Text="Pro odstranění z Manažeru nejprve ukončete úpravy." />
+        </Cannot_Be_Deleted>
+
+        <File_Already_In_Use>
+            <Title Text="Nelze načíst" />
+            <Message_part_1 Text="Soubor"/>
+            <Message_part_2 Text="už je propojen s jiným objektem ("/>
+            <Message_part_3 Text=") v Manažeru. Pro pokračování můžete ručně vytvořit a načíst kopii tohoto souboru." />
+        </File_Already_In_Use>
+
+        <Export_Info>
+            <Title Text="Export do XML souboru" />
+            <Message_part_1 Text="'" />
+            <Message_part_2 Text="' byl exportován do '" />
+            <Message_part_3 Text="'." />
+        </Export_Info>
+
+        <Not_Yet_Exported>
+            <Title Text="Vyžadován export" />
+            <Content Text="Nejprve proveďte export do souboru." />
+        </Not_Yet_Exported>
+
+        <Invalid_XML>
+            <Title Text="Neplatný obsah souboru XML" />
+            <Content Text="Soubor XML má neplatný obsah. Proveďte kontrolu a opravu souboru." />
+        </Invalid_XML>
+
+        <Tree_Status_Labels>
+            <Waiting_For_Export Text="čeká na export" />
+            <Modified Text="neuložené změny" />
+            <OK Text="" />
+        </Tree_Status_Labels>
+
+        <Export_File_Dialog_Title Text="Exportovat objekt jako XML" />
+        <Load_From_File Text="Načíst ze souboru" />
+
+
+
     </Manager>
 
 </Language>
