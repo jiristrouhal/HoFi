@@ -221,7 +221,7 @@ class CmdController:
             self._undo_stack.append(cmd)
 
 
-import src.controls.loc.lang as lang
+import src.lang.lang as lang
 
 
 class TreeEditor:

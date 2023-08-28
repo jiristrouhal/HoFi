@@ -15,7 +15,7 @@ import src.controls.tree_to_xml as txml
 import src.controls.treelist as treelist
 import src.core.tree as treemod
 import src.controls.right_click_menu as rcm
-import src.controls.loc.lang as lang
+import src.lang.lang as lang
 
 
 class Tree_Manager:
@@ -34,7 +34,7 @@ class Tree_Manager:
         self._tree_template_tag:str = tree_tag
 
         voc = lang.Vocabulary()
-        voc.load_xml(".",language_code)
+        voc.load_xml(os.path.join(os.path.dirname(__file__), 'loc'), language_code)
         self.vocabulary = voc.subvocabulary("Manager")
 
 

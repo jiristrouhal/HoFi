@@ -1,5 +1,8 @@
+import sys
+sys.path.insert(1,"src/lang") 
+
 import unittest
-import src.controls.loc.lang as lang
+import lang
 
 
 class Test_Language(unittest.TestCase):
