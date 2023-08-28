@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?xml-model 
+    href="lang.xsd" 
+    type="application/xml" 
+    schematypens="http://www.w3.org/2001/XMLSchema"
+?>
+
+
+<Language Id="en_us" Name="English">
+    <Edit_Frame_Label Text="Editor" />
+    <Manager_Title Text="Manager" />
+    <Amount_Title Text="Cost" />
+    <Properties Text="Properties" />
+
+    <Discard_Changes>
+        <Title Text="Quit without saving" />
+        <Content Text="Some of the objects in the manager contain non-saved changes and will be lost. Do you want to close the application?" />
+    </Discard_Changes>
+</Language>
