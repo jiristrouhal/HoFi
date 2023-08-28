@@ -62,10 +62,10 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.assertListEqual(self.manager.trees, ["Tree X", "Tree X (1)", "Tree X (2)"])
 
     def test_creating_new_tree_via_ui(self):
-        self.manager._buttons[tmg.ButtonID.NEW_TREE].invoke()
+        self.manager._open_new_tree_window()
         self.manager.entries["name"].delete(0,"end")
         self.manager.entries["name"].insert(0,"Tree XY")
-        self.manager._buttons[tmg.ButtonID.NEW_TREE_OK].invoke()
+        self.manager._confirm_new_tree()
         self.assertListEqual(self.manager.trees, ["Tree XY"])
         self.assertFalse(self.manager._window_new.winfo_exists())
         self.assertFalse(self.manager._entry_name.winfo_exists())
@@ -92,60 +92,77 @@ class Test_Editing_Trees(unittest.TestCase):
         self.assertListEqual(self.manager.trees, ["Tree X"])
 
     def test_rename_tree_via_ui(self):
-        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
+        tree_iid = self.manager._view.get_children()[0]
+        tree = self.manager._map[tree_iid]
+        self.manager._open_right_click_menu(tree_iid)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Rename")
+        )
         self.assertEqual(self.manager._entry_name.get(),"Tree X")
         self.manager._entry_name.delete(0,"end")
         self.manager._entry_name.insert(0,"Tree Y")
-        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
+        self.manager._confirm_rename(tree)
         self.assertFalse(self.manager._window_rename.winfo_exists())
         self.assertListEqual(self.manager.trees, ["Tree Y"])
 
     def test_cancelling_the_renaming_in_ui(self):
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Rename")
+        )
         self.assertEqual(self.manager._entry_name.get(),"Tree X")
         self.manager._entry_name.delete(0,"end")
         self.manager._entry_name.insert(0,"Tree Y")
-        self.manager._buttons[tmg.ButtonID.RENAME_TREE_CANCEL].invoke()
+        self.manager._close_rename_tree_window()
         self.assertFalse(self.manager._window_rename.winfo_exists())
         self.assertListEqual(self.manager.trees, ["Tree X"])
 
     def test_renaming_tree_to_existing_name_has_no_effect_and_the_rename_window_remains_opened(self):
         self.manager.agree_with_renaming = True
         self.manager.new("Tree Y")
-        self.manager._open_right_click_menu(self.manager._view.get_children()[1])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
-        self.assertEqual(self.manager._entry_name.get(),"Tree X")
+        treeY = self.manager.get_tree("Tree Y")
+        self.manager._open_right_click_menu(treeY.data["treemanager_id"])
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Rename")
+        )
+        self.assertEqual(self.manager._entry_name.get(),"Tree Y")
 
         # renaming to already taken name will not be succesfull and the window stays opened
         self.manager._entry_name.delete(0,"end")
-        self.manager._entry_name.insert(0,"Tree Y")
-        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
+        self.manager._entry_name.insert(0,"Tree X")
+        self.manager._confirm_rename(treeY)
         self.assertTrue(self.manager._window_rename.winfo_exists())
         self.assertListEqual(self.manager.trees, ["Tree X", "Tree Y"])
 
         # renaming to some not already take name will take effect and the window closes
         self.manager._entry_name.delete(0,"end")
         self.manager._entry_name.insert(0,"Tree Z")
-        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
+        self.manager._confirm_rename(treeY)
         self.assertFalse(self.manager._window_rename.winfo_exists())
-        self.assertListEqual(self.manager.trees, ["Tree Z", "Tree Y"])
+        self.assertListEqual(self.manager.trees, ["Tree X", "Tree Z"])
 
     def test_renaming_tree_to_its_original_name_is_allowed(self):
-        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
+        tree_iid = self.manager._view.get_children()[0]
+        tree = self.manager._map[tree_iid]
+        self.manager._open_right_click_menu(tree_iid)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Rename")
+        )
         # the name is kept unchanged
-        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
+        self.manager._confirm_rename(tree)
         self.assertFalse(self.manager._window_rename.winfo_exists())
         self.assertListEqual(self.manager.trees, ["Tree X"])
 
     def test_renaming_tree_using_right_click(self):
-        self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
+        tree_iid = self.manager._view.get_children()[0]
+        tree = self.manager._map[tree_iid]
+        self.manager._open_right_click_menu(tree_iid)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Rename")
+        )
         self.manager._entry_name.delete(0,"end")
         self.manager._entry_name.insert(0,"Tree Y")
-        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
+        self.manager._confirm_rename(tree)
         self.assertListEqual(self.manager.trees,["Tree Y"])
 
     def test_editing_attributes_of_a_nonexistent_tree_has_no_effect(self):
@@ -172,14 +189,18 @@ class Test_Removing_Trees(unittest.TestCase):
         self.manager.agree_with_removal = True
         self.manager.new("Tree X")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_DELETE)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Delete")
+        )
         self.assertListEqual(self.manager.trees, [])
 
     def test_canceling_the_tree_removal(self):
         self.manager.agree_with_removal = False
         self.manager.new("Tree X")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_DELETE)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Delete")
+        )
         self.assertListEqual(self.manager.trees, ["Tree X"])
 
     def tearDown(self) -> None:
@@ -197,7 +218,9 @@ class Test_Right_Click_Menu(unittest.TestCase):
         self.manager.new("Some tree")
         self.manager._open_right_click_menu("")
         self.assertTrue(self.manager.right_click_menu is not None)
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_NEW)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","New")
+        )
         self.assertTrue(self.manager._window_new is not None)
 
     def tearDown(self) -> None:
@@ -216,30 +239,34 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
 
         self.manager.new("Tree being exported")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Export")
+        )
 
         self.manager.agree_with_removal = True
         self.manager._remove_tree(self.manager.get_tree("Tree being exported"))
 
         self.assertEqual(self.manager.trees, [])
-        self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
+        self.manager._load_tree()
         self.assertEqual(self.manager.trees, ["Tree being exported"])
 
     def test_canceling_directory_selection_when_exporting_file(self):
         self.manager.xml_file_path = " " #empty path signifies cancelled file selection
         self.manager.new("Tree to be exported")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Export")
+        )
         self.assertEqual(self.manager._tree_files, {})
 
     def test_canceling_file_selection_when_loading_file(self):
         self.manager.xml_file_path = " " #empty path signifies cancelled file selection
-        self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
+        self.manager._load_tree()
         self.assertEqual(self.manager.trees, [])
 
     def test_loading_from_nonexistent_file_has_no_effect(self):
         self.manager.xml_file_path = "./Nonexistent_file.xml"
-        self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
+        self.manager._load_tree()
         self.assertTrue(self.manager.xml_file_path not in self.manager._tree_files)
 
     def test_updating_existing_file(self):
@@ -247,16 +274,20 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
 
         self.manager.new("Tree being exported")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Export")
+        )
 
         self.manager._set_tree_attribute("Tree being exported","height",15)
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_UPDATE_FILE)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Update_File")
+        )
 
         self.manager.agree_with_removal = True
         self.manager._remove_tree(self.manager.get_tree("Tree being exported"))
         self.assertEqual(self.manager.trees, [])
-        self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
+        self.manager._load_tree()
 
         self.assertEqual(self.manager.get_tree("Tree being exported").attributes["height"].value, 15)
 
@@ -265,19 +296,21 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
 
         self.manager.new("Tree being exported")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.manager.right_click_menu.invoke(self.manager.vocabulary("Right_Click_Menu","Export"))
 
         exported_file_path = self.manager._tree_files[self.manager.get_tree("Tree being exported")]
         os.remove(exported_file_path)
 
         self.manager._set_tree_attribute("Tree being exported","height",15)
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_UPDATE_FILE)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Update_File")
+        )
 
         self.manager.agree_with_removal = True
         self.manager._remove_tree(self.manager.get_tree("Tree being exported"))
         self.assertEqual(self.manager.trees, [])
-        self.manager._buttons[tmg.ButtonID.LOAD_TREE].invoke()
+        self.manager._load_tree()
 
         self.assertEqual(self.manager.get_tree("Tree being exported").attributes["height"].value,15)
 
@@ -286,7 +319,9 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
     
         self.manager.new("Tree being exported")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Export")
+        )
         self.manager.agree_with_removal = True
         self.manager._remove_tree(self.manager.get_tree("Tree being exported"))
         self.assertListEqual(self.manager.trees,[])
@@ -296,6 +331,7 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
         self.manager.new("Tree being exported")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
 
+        tree = self.manager.get_tree("Tree being exported")
         self.manager._update_file(self.manager.get_tree("Tree being exported"))
         # The user is prompted to choose a different name 
         self.assertTrue(self.manager._window_rename is not None)
@@ -303,10 +339,12 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
         # After choosing different name, the export might be repeated
         self.manager.xml_file_path = "./Tree being exported 2.xml"
         self.manager._entry_name.insert("end", " 2")
-        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
+        self.manager._confirm_rename(tree)
         self.assertListEqual(self.manager.trees, ["Tree being exported 2"])
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Export")
+        )
         self.assertFalse(self.manager._window_rename.winfo_exists())
 
     def tearDown(self) -> None:  # pragma: no cover
@@ -328,7 +366,9 @@ class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
 
         self.manager.new("Tree being exported")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Export")
+        )
 
         self.manager.agree_with_removal = True
         self.manager._remove_tree(self.manager.get_tree("Tree being exported"))
@@ -336,11 +376,14 @@ class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
 
         # to the same name as the previously exported and deleted tree
         self.manager.new("Some tree")
+        tree = self.manager.get_tree("Some tree")
         self.manager._open_right_click_menu(self.manager._view.get_children()[0])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_RENAME)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Rename")
+        )
         self.manager._entry_name.delete(0,"end")
         self.manager._entry_name.insert(0,"Tree being exported")
-        self.manager._buttons[tmg.ButtonID.RENAME_TREE_OK].invoke()
+        self.manager._confirm_rename(tree)
         self.assertFalse(self.manager._window_rename.winfo_exists())
 
         # Try to export the new tree with the same name as the old one
@@ -352,13 +395,17 @@ class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
         # After the user is notified that a file with the tree name already exists in
         # the directory and after he/she clicks OK, the window_rename opens up automatically
         self.manager.agree_with_renaming = True
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Export")
+        )
         self.assertTrue(self.manager._window_rename.winfo_exists())
 
     def test_exporting_to_existing_file_and_denying_to_rename_the_tree_aborts_the_export(self):
         # The user chooses to cancel the export
         self.manager.agree_with_renaming = False
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Export")
+        )
         self.assertFalse(self.manager._window_rename.winfo_exists())
 
     def tearDown(self) -> None:
@@ -375,7 +422,7 @@ class Test_Updating_File_After_Renaming_Tree(unittest.TestCase):
     
         manager.new("Tree being exported")
         manager._open_right_click_menu(manager._view.get_children()[0])
-        manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EXPORT)
+        manager.right_click_menu.invoke(manager.vocabulary("Right_Click_Menu","Export"))
         manager.rename("Tree being exported", "Tree being exported 2")
 
         manager._open_right_click_menu(manager._view.get_children()[0])
@@ -384,7 +431,7 @@ class Test_Updating_File_After_Renaming_Tree(unittest.TestCase):
         self.assertRaises(
             tmg.tk.TclError,
             manager.right_click_menu.invoke, 
-            tmg.MENU_CMD_TREE_UPDATE_FILE
+            manager.vocabulary("Right_Click_Menu","Update_File")
         )
 
     def tearDown(self) -> None:  # pragma: no cover
@@ -442,7 +489,9 @@ class Test_Actions(unittest.TestCase):
             self.names.append(tree.name)
         self.manager.add_action_on_selection(action)
         self.manager._open_right_click_menu(self.manager._view.get_children()[1])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EDIT)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Edit")
+        )
         self.assertListEqual(self.names,["Tree X"])
 
     def test_action_on_deselection(self):
@@ -452,9 +501,13 @@ class Test_Actions(unittest.TestCase):
         self.manager.add_action_on_selection(action)
         self.manager.add_action_on_deselection(action2)
         self.manager._open_right_click_menu(self.manager._view.get_children()[1])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_EDIT)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Edit")
+        )
         self.manager._open_right_click_menu(self.manager._view.get_children()[1])
-        self.manager.right_click_menu.invoke(tmg.MENU_CMD_TREE_STOP_EDIT)
+        self.manager.right_click_menu.invoke(
+            self.manager.vocabulary("Right_Click_Menu","Stop_Editing")
+        )
         self.assertListEqual(self.names,[])
 
     def tearDown(self) -> None:

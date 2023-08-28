@@ -1,0 +1,33 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+
+<xs:element name="Language">
+    <xs:complexType>
+        <xs:sequence>
+            <xs:element name="Edit_Frame_Label" type="item"/>
+            <xs:element name="Manager_Title" type="item"/>
+            <xs:element name="Amount_Title" type="item"/>
+            <xs:element name="Properties" type="item" />
+
+            <xs:element name="Discard_Changes" type="Simple_Message_Box" />
+        </xs:sequence>
+        <xs:attribute name="Id" type="xs:string" use="required"/>
+        <xs:attribute name="Name" type="xs:string" use="required"/>
+    </xs:complexType>
+</xs:element>
+
+
+
+<xs:complexType name="Simple_Message_Box">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="Content" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="item"> 
+    <xs:attribute name="Text" type="xs:string" use="required"/> 
+</xs:complexType>
+
+
+</xs:schema>

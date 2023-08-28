@@ -13,3 +13,5 @@ dummy*.py
 
 .coverage
 coverage_reports
+
+!**/loc/*.xml

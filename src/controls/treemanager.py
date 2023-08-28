@@ -4,7 +4,6 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.messagebox as tkmsg
 import tkinter.filedialog as filedialog
-import enum
 from functools import partial
 import os
 import sys
@@ -16,94 +15,7 @@ import src.controls.tree_to_xml as txml
 import src.controls.treelist as treelist
 import src.core.tree as treemod
 import src.controls.right_click_menu as rcm
-from src.core.attributes import Name_Attr
-
-
-
-NAME_ALREADY_TAKEN_TITLE = "Name already exists"
-NAME_ALREADY_TAKEN_MESSAGE_1 = "A tree with the name "
-NAME_ALREADY_TAKEN_MESSAGE_2 = " already exists. Use different name."
-
-
-SET_NEW_TREE_NAME = "Set new tree name"
-RENAME_TREE = "Rename tree"
-
-MENU_CMD_TREE_RENAME = "Rename"
-MENU_CMD_TREE_EXPORT = "Export"
-MENU_CMD_TREE_UPDATE_FILE = "Update file"
-MENU_CMD_TREE_DELETE = "Delete"
-MENU_CMD_TREE_NEW = "New"
-MENU_CMD_TREE_LOAD = "Load"
-MENU_CMD_TREE_EDIT = "Edit"
-MENU_CMD_TREE_STOP_EDIT = "Stop editing"
-
-FILEDIALOG_EXPORT_TITLE = "Export tree into file"
-FILEDIALOG_LOAD_TITLE = "Load tree from file"
-
-MSGBOX_ASK_TO_DELETE_TREE_TITLE = "Delete tree"
-MSGBOX_ASK_TO_DELETE_TREE_MSG_1 = "Do you really want to delete '"
-MSGBOX_ASK_TO_DELETE_TREE_MSG_2 = "?"
-
-MSGBOX_ASK_TO_RENAME_TREE_TITLE = "File already exists"
-MSGBOX_ASK_TO_RENAME_TREE_MSG_1 = "The file with name '"
-MSGBOX_ASK_TO_RENAME_TREE_MSG_2 = \
-"' already exists in the directory. Click 'OK' to specify other name for the saved tree \
-or 'Cancel' to cancel the export."
-
-
-MSGBOX_TREE_WAS_NOT_YET_EXPORTED_TITLE = "Export required"
-MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_1 = "No file is yet connected to the '"
-MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_2 = "'. Export is required first."
-
-MSGBOX_FILE_ALREADY_USED_TITLE = "File already used by tree"
-MSGBOX_FILE_ALREADY_USED_MSG_1 = "The file '"
-MSGBOX_FILE_ALREADY_USED_MSG_2 = "' is already used by '"
-MSGBOX_FILE_ALREADY_USED_MSG_3 = "'. To proceed, use a copy of the file you want to load."
-
-INFO_TREE_EXPORTED_TITLE = "Tree export"
-INFO_TREE_EXPORTED_MSG_1 = "'"
-INFO_TREE_EXPORTED_MSG_2 = "' was exported into '"
-INFO_TREE_EXPORTED_MSG_3 = "'."
-
-SELECTED_TREE_CANNOT_BE_DELETED_TITLE = "Cannot delete tree"
-SELECTED_TREE_CANNOT_BE_DELETED_MSG_1 = "Please stop editing the '"
-SELECTED_TREE_CANNOT_BE_DELETED_MSG_2 = "' before deletion."
-
-NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_TITLE = "Cannot load file"
-NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_MSG_1 = "The tree with name '"
-NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_MSG_2 = "' already exists. Rename the file or the tree."
-
-
-INVALID_XML_TITLE = "Invalid xml file"
-INVALID_XML_MSG = "The file is not a valid xml file. Check the file contents."
-
-DEFAULT_TREE_NAME = "New"
-
-
-TREE_WAITING_FOR_EXPORT = "waiting for export"
-TREE_MODIFIED = "modified"
-TREE_OK = ""
-
-
-
-class ButtonID(enum.Enum):
-    NEW_TREE = enum.auto()
-    LOAD_TREE = enum.auto()
-    NEW_TREE_OK = enum.auto()
-    NEW_TREE_CANCEL = enum.auto()
-    RENAME_TREE_OK = enum.auto()
-    RENAME_TREE_CANCEL = enum.auto()
-
-
-
-BUTTONTEXT:Dict[ButtonID,str] = {
-    ButtonID.NEW_TREE: "New",
-    ButtonID.LOAD_TREE: "Load",
-    ButtonID.NEW_TREE_OK: "OK",
-    ButtonID.NEW_TREE_CANCEL: "Cancel",
-    ButtonID.RENAME_TREE_OK: "OK",
-    ButtonID.RENAME_TREE_CANCEL: "Cancel",
-}
+import src.lang.lang as lang
 
 
 class Tree_Manager:
@@ -113,18 +25,23 @@ class Tree_Manager:
         treelist:treelist.TreeList,
         tree_tag:str,
         ui_master:tk.Frame|tk.Tk|tk.LabelFrame|None = None,
-        label:str = "Manager"
+        label:str = "Manager",
+        language_code:lang._Language_Code = "en_us"
         )->None:
 
         if not tree_tag in treemod.tt.template_tags():
             raise KeyError(f"The tree template '{tree_tag} does not exist.")
         self._tree_template_tag:str = tree_tag
 
+        voc = lang.Vocabulary()
+        voc.load_xml(os.path.join(os.path.dirname(__file__), 'loc'), language_code)
+        self.vocabulary = voc.subvocabulary("Manager")
+
+
         self.__label = label
         self._converter = txml.Tree_XML_Converter()
         self._converter.add_action('invalid_xml', self._notify_the_user_xml_is_invalid)
         self.__ui = tk.Frame(master=ui_master)
-        self._buttons:Dict[ButtonID,tk.Button] = dict()
         self._view = ttk.Treeview(self.__ui, selectmode='browse', columns=('State',))
         self._map:Dict[str,treemod.Tree] = dict()
 
@@ -153,7 +70,6 @@ class Tree_Manager:
 
         self._tree_files:Dict[treemod.Tree,str] = dict()
         self._selected_trees:List[treemod.Tree] = list()
-
 
     @property
     def label(self)->str: return self.__label
@@ -193,42 +109,43 @@ class Tree_Manager:
         self.right_click_menu = rcm.RCMenu(master=self._view, tearoff=False)
         self.right_click_menu.add_commands(
             {
-                MENU_CMD_TREE_NEW : self._open_new_tree_window,
-                MENU_CMD_TREE_LOAD: self._load_tree
+                self.vocabulary("Right_Click_Menu","New") : self._open_new_tree_window,
+                self.vocabulary("Right_Click_Menu","Load"): self._load_tree
             }
         )
 
     def _open_right_click_menu_for_item(self,item_id:str)->None:
+        labels = self.vocabulary.subvocabulary("Right_Click_Menu")
         self.right_click_menu = rcm.RCMenu(master=self._view, tearoff=False)
         tree = self._map[item_id]
         if tree in self._selected_trees:
             self.right_click_menu.add_single_command(
-                MENU_CMD_TREE_STOP_EDIT, partial(self._deselect,item_id)
+                labels("Stop_Editing"), partial(self._deselect,item_id)
             )
         else:
             self.right_click_menu.add_single_command(
-                MENU_CMD_TREE_EDIT, partial(self._select,item_id)
+                labels("Edit"), partial(self._select,item_id)
             )
         self.right_click_menu.add_separator()
         self.right_click_menu.add_single_command(
-            MENU_CMD_TREE_RENAME,partial(self._open_rename_tree_window,tree)
+            labels("Rename"),partial(self._open_rename_tree_window,tree)
         )
         if tree in self._tree_files:
             self.right_click_menu.add_single_command(
-                MENU_CMD_TREE_UPDATE_FILE, partial(self._update_file,tree)
+                labels("Update_File"), partial(self._update_file,tree)
             )
 
         self.right_click_menu.add_single_command(
-            MENU_CMD_TREE_EXPORT,partial(self._export_tree,tree)
+            labels("Export"),partial(self._export_tree,tree)
         )
         self.right_click_menu.add_separator()
         self.right_click_menu.add_single_command(
-            MENU_CMD_TREE_DELETE, partial(self._remove_tree,tree)
+            labels("Delete"), partial(self._remove_tree,tree)
         )
 
     def _get_filepath(self)->str:
         return filedialog.askopenfilename(   # pragma: no cover
-            title=FILEDIALOG_LOAD_TITLE,
+            title=self.vocabulary("Load_from_File"),
             filetypes=(('XML file','.xml'),),
             defaultextension='.xml',
             initialdir=self._last_export_dir,
@@ -325,18 +242,18 @@ class Tree_Manager:
     def __add_button(
         self, 
         master: tk.Frame, 
-        id:ButtonID, 
+        label:str,
         command:Callable[[],None], 
         side:Literal['left','right','top','bottom']
         )->None:
         
-        self._buttons[id] = tk.Button(master,text=BUTTONTEXT[id],command=command)
-        self._buttons[id].pack(side=side)
+        tk.Button(master,text=label,command=command).pack(side=side)
 
     def _open_rename_tree_window(self,tree:treemod.Tree)->None: # pragma: no cover
+        labels = self.vocabulary.subvocabulary("Rename_Window")
         self.__cleanup_rename_tree_widgets()
         self._window_rename = tk.Toplevel(self.__ui)
-        self._window_rename.title(RENAME_TREE)
+        self._window_rename.title(labels("Title"))
         self._entry_name = tk.Entry(self._window_rename,width=50)
         self._entry_name.pack()
         self._entry_name.insert(0,tree.name)
@@ -345,14 +262,14 @@ class Tree_Manager:
         button_frame.pack(side=tk.BOTTOM)
         self.__add_button(
             button_frame,
-            ButtonID.RENAME_TREE_OK,
+            labels("OK_Button"),
             partial(self._confirm_rename,tree),
             side='left'
         )
         self.__add_button(
             button_frame,
-            ButtonID.RENAME_TREE_CANCEL,
-            self.__close_rename_tree_window,
+            labels("Cancel_Button"),
+            self._close_rename_tree_window,
             side='left'
         )
         
@@ -387,7 +304,7 @@ class Tree_Manager:
     def _open_new_tree_window(self)->None: # pragma: no cover
         self.__cleanup_new_tree_widgets()
         self._window_new = tk.Toplevel(self.__ui)
-        self._window_new.title(SET_NEW_TREE_NAME)
+        self._window_new.title(self.vocabulary("New_Tree_Window","Title")+' '+self._tree_template_tag)
         self.__create_entries(
             self._window_new, 
             treemod.tt.template(self._tree_template_tag).attributes
@@ -397,13 +314,13 @@ class Tree_Manager:
         button_frame.pack(side=tk.BOTTOM)
         self.__add_button(
             button_frame,
-            ButtonID.NEW_TREE_OK,
+            self.vocabulary("New_Tree_Window","OK_Button"),
             self._confirm_new_tree,
             side='left'
         )
         self.__add_button(
             button_frame,
-            ButtonID.NEW_TREE_CANCEL,
+            self.vocabulary("New_Tree_Window","Cancel_Button"),
             self.__close_new_tree_window,
             side='left'
         )
@@ -414,7 +331,7 @@ class Tree_Manager:
             self._error_if_tree_names_already_taken(new_name)
         else:
             self.rename(tree.name,self._entry_name.get())
-            self.__close_rename_tree_window()
+            self._close_rename_tree_window()
 
     def _confirm_new_tree(self)->None:
         attributes = treemod.tt.template(self._tree_template_tag).attributes
@@ -427,7 +344,7 @@ class Tree_Manager:
             new_tree.set_attribute(attr_name,attributes[attr_name].value)
         self.__close_new_tree_window()
 
-    def __close_rename_tree_window(self)->None:
+    def _close_rename_tree_window(self)->None:
         self.__cleanup_rename_tree_widgets()
 
     def __close_new_tree_window(self)->None:
@@ -491,80 +408,85 @@ class Tree_Manager:
     def _ask_for_directory(self)->str:  # pragma: no cover
         return filedialog.askdirectory(
                 initialdir=self._last_export_dir,
-                title = FILEDIALOG_EXPORT_TITLE
+                title = self.vocabulary("Export_File_Dialog_Title")
         )
 
     def _confirm_renaming_if_exported_file_already_exists(self,name:str)->bool: # pragma: no cover
+        msg_labels = self.vocabulary.subvocabulary("Confirm_Renaming_If_Exported_File_Exists")
         return tkmsg.askokcancel(
-            MSGBOX_ASK_TO_RENAME_TREE_TITLE,
-            MSGBOX_ASK_TO_RENAME_TREE_MSG_1 + 
-            name +
-            MSGBOX_ASK_TO_RENAME_TREE_MSG_2
+            msg_labels("Title"),
+            name + ": "+msg_labels("Message")
         )
     
     def _removal_confirmed(self,name:str)->bool:
-        return tkmsg.askokcancel(   # pragma: no cover
-            MSGBOX_ASK_TO_DELETE_TREE_TITLE, 
-            MSGBOX_ASK_TO_DELETE_TREE_MSG_1 + 
-            name + 
-            MSGBOX_ASK_TO_DELETE_TREE_MSG_2
+        msg_labels = self.vocabulary.subvocabulary("Confirm_Removal")
+        return tkmsg.askokcancel(
+            msg_labels("Title"),
+            name + ": "+msg_labels("Message")
         )
 
     def _notify_tree_has_not_been_exported(self,name:str)->None:  # pragma: no cover
-        tkmsg.showinfo(
-            MSGBOX_TREE_WAS_NOT_YET_EXPORTED_TITLE,
-            MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_1 + name +
-            MSGBOX_TREE_WAS_NOT_YET_EXPORTED_MSG_2
-        )
+        msg_labels = self.vocabulary.subvocabulary("Not_Yet_Exported")
+        tkmsg.showinfo(msg_labels("Title"), name+": "+msg_labels("Message"))
     
     def _error_if_tree_names_already_taken(self,name:str)->None:  # pragma: no cover
         tkmsg.showerror(
-            NAME_ALREADY_TAKEN_TITLE, 
-            NAME_ALREADY_TAKEN_MESSAGE_1+f"{name}"+NAME_ALREADY_TAKEN_MESSAGE_2
+            self.vocabulary("Error_Name_Already_Taken","Title"), 
+            name+self.vocabulary("Error_Name_Already_Taken","Content")
         )
 
     def _cannot_load_tree_with_already_taken_name(self,name:str)->None:  # pragma: no cover
-        tkmsg.showerror(
-            NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_TITLE, 
-            NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_MSG_1 +f"{name}"\
-            +NAME_OF_TREE_TO_BE_LOADED_ALREADY_TAKEN_MSG_2
-        )
+        msg_labels = self.vocabulary.subvocabulary("Cannot_Load_If_Name_Already_Taken")
+        tkmsg.showerror(msg_labels("Title"), name+": "+msg_labels("Message"))
                 
     def _show_error_file_already_in_use(self,filepath:str,tree_name:str)->None:  # pragma: no cover
-        tkmsg.showerror(MSGBOX_FILE_ALREADY_USED_TITLE, 
-            MSGBOX_FILE_ALREADY_USED_MSG_1 + filepath + \
-            MSGBOX_FILE_ALREADY_USED_MSG_2 + tree_name + \
-            MSGBOX_FILE_ALREADY_USED_MSG_3
+        msg_labels = self.vocabulary.subvocabulary("File_Already_In_Use")
+        tkmsg.showerror(msg_labels("Title"), 
+            msg_labels("Message_part_1") + filepath + \
+            msg_labels("Message_part_2") + tree_name + \
+            msg_labels("Message_part_3")
         )
 
     def _show_export_info(self,tree_name:str,filepath:str)->None: # pragma: no cover
-        tkmsg.showinfo(INFO_TREE_EXPORTED_TITLE, 
-            INFO_TREE_EXPORTED_MSG_1 + tree_name + \
-            INFO_TREE_EXPORTED_MSG_2 + filepath + \
-            INFO_TREE_EXPORTED_MSG_3
+        msg_labels = self.vocabulary.subvocabulary("Export_Info")
+        tkmsg.showinfo(msg_labels("Title"), 
+            msg_labels("Message_part_1") + tree_name + \
+            msg_labels("Message_part_2") + filepath + \
+            msg_labels("Message_part_3")
         )
 
     def _notify_the_user_selected_tree_cannot_be_deleted(self,tree_name:str)->None:
-        tkmsg.showerror(SELECTED_TREE_CANNOT_BE_DELETED_TITLE, 
-            SELECTED_TREE_CANNOT_BE_DELETED_MSG_1 + tree_name + \
-            SELECTED_TREE_CANNOT_BE_DELETED_MSG_2
+        msg_labels = self.vocabulary.subvocabulary("Cannot_Be_Deleted")
+        tkmsg.showerror(
+            msg_labels("Title"), 
+            tree_name + ": " + msg_labels("Message")
         )
 
     def _notify_the_user_xml_is_invalid(self)->None:
-        tkmsg.showerror(INVALID_XML_TITLE,INVALID_XML_MSG)
-
+        msg = self.vocabulary.subvocabulary("Invalid_XML")
+        tkmsg.showerror(msg("Title"), msg("Content"))
+                        
     def label_tree_as_modified(self,tree:treemod.TreeItem)->None:
         if not tree in self.__treelist._modified_trees:
-            self._view.item(tree.data["treemanager_id"], values=(TREE_MODIFIED,))
+            self._view.item(
+                tree.data["treemanager_id"], 
+                values=(self.vocabulary("Tree_Status_Labels","Modified"),)
+            )
             self.__treelist.add_tree_to_modified(tree)
 
     def label_tree_as_ok(self,tree:treemod.TreeItem)->None:
-        self._view.item(tree.data["treemanager_id"], values=(TREE_OK,))
+        self._view.item(
+            tree.data["treemanager_id"], 
+            values=(self.vocabulary("Tree_Status_Labels","OK"),)
+        )
         if tree in self.__treelist._modified_trees:
             self.__treelist._modified_trees.remove(tree)
     
     def label_tree_as_waiting_for_export(self,tree:treemod.TreeItem)->None:
-        self._view.item(tree.data["treemanager_id"], values=(TREE_WAITING_FOR_EXPORT,))
+        self._view.item(
+            tree.data["treemanager_id"], 
+            values=(self.vocabulary("Tree_Status_Labels","Waiting_For_Export"),)
+        )
         self.__treelist.add_tree_to_modified(tree)
 
     def label_items_tree_as_modified(self,item:treemod.TreeItem)->None:
@@ -577,13 +499,13 @@ class Tree_Manager:
         button_frame = tk.Frame(self.__ui)
         self.__add_button(
             button_frame,
-            ButtonID.NEW_TREE,
+            self.vocabulary("Buttons","New"),
             command=self._open_new_tree_window,
             side='left'
         )
         self.__add_button(
             button_frame,
-            ButtonID.LOAD_TREE,
+            self.vocabulary("Buttons","Load"),
             command=self._load_tree,
             side='left'
         )

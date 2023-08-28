@@ -1,17 +1,12 @@
 import tkinter as tk
-
-
 import src.controls.tree_editor as te
 import src.controls.treemanager as tmg
 import src.controls.treelist as tl
 import src.core.tree as treemod
 import src.reports.properties as pp
+import src.lang.lang as lang
+import os
 
-
-EDIT_FRAME_LABEL = "Editor"
-MANAGER_TITLE = "Manager"
-
-AMOUNT_TITLE = "Amount"
 
 
 root = tk.Tk()
@@ -22,24 +17,38 @@ import src.app.set_templates
 src.app.set_templates.main()
 
 
+vocabulary = lang.Vocabulary()
+vocabulary.load_xml(os.path.dirname(os.path.abspath(__file__))+'/loc', 'cs_cz')
+
+
 left_frame = tk.Frame(root)
 left_frame.pack(expand=1,fill=tk.BOTH,side=tk.LEFT)
-
-manager_frame = tk.LabelFrame(left_frame, text=MANAGER_TITLE)
+manager_frame = tk.LabelFrame(left_frame, text=vocabulary("Manager_Title"))
 manager_frame.pack(expand=1,fill=tk.BOTH)
-
 properties_frame = tk.Frame(left_frame)
 properties_frame.pack(expand=2,fill=tk.BOTH, side=tk.BOTTOM)
-
-editor_frame = tk.LabelFrame(root, text=EDIT_FRAME_LABEL)
+editor_frame = tk.LabelFrame(root, text=vocabulary("Edit_Frame_Label"))
 editor_frame.pack(expand=1,fill=tk.BOTH,side=tk.RIGHT)
 
 
 # create app parts and place their widgets into their respective places in the GUI
 treelist = tl.TreeList(label='TreeList')
-manager = tmg.Tree_Manager(treelist, tree_tag="Scenario", ui_master=manager_frame)
-editor = te.TreeEditor(editor_frame,label='TreeEditor', displayed_attributes={AMOUNT_TITLE:("amount",)})
-properties = pp.Properties(properties_frame)
+
+manager = tmg.Tree_Manager(
+    treelist, 
+    tree_tag="Scenario", 
+    ui_master=manager_frame, 
+    language_code='cs_cz'
+)
+
+editor = te.TreeEditor(
+    editor_frame,
+    label='TreeEditor', 
+    displayed_attributes={vocabulary("Amount_Title"):("amount",)}, 
+    language_code='cs_cz'
+)
+
+properties = pp.Properties(properties_frame,title=vocabulary("Properties"))
 
 
 def clear_properties(*args): properties.clear()
@@ -59,8 +68,8 @@ import tkinter.messagebox as tkmsg
 def discard_unsaved_changes():
     if manager.unsaved_trees:
         if tkmsg.askokcancel(
-            "Discard changes", 
-            "Some of the loaded trees contain unsaved changes. Do you want to quit?"):
+            vocabulary("Discard_Changes","Title"), 
+            vocabulary("Discard_Changes","Content")):
             
             root.destroy()
     else:

@@ -1,0 +1,209 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+
+<xs:element name="Language">
+    <xs:complexType>
+        <xs:sequence>
+            <xs:element name="Editor" type="Editor"/>
+            <xs:element name="Manager" type="Manager"/>
+        </xs:sequence>
+        <xs:attribute name="Id" type="xs:string"/>
+        <xs:attribute name="Name" type="xs:string"/>
+    </xs:complexType>
+</xs:element>
+
+
+<xs:complexType name="Editor">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        
+        <xs:element name="Right_Click_Menu" type="Editor_Right_Click_Menu"/>
+        <xs:element name="Add_Window" type="Editor_Add_Window"/>
+        <xs:element name="Edit_Window" type="Editor_Edit_Window"/>
+        <xs:element name="Move_Window" type="Editor_Move_Window"/>
+
+        <xs:element name="Cannot_Delete_Item_With_Children" type="Simple_Message_Box"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Editor_Right_Click_Menu">
+    <xs:sequence>
+        <xs:element name="Add" type="item"/>
+        <xs:element name="Edit" type="item"/>
+        <xs:element name="Move" type="item"/>
+        <xs:element name="Delete" type="item"/>
+
+        <xs:element name="Collapse_All" type="item"/>
+        <xs:element name="Expand_All" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Editor_Add_Window">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="OK_Button" type="item"/>
+        <xs:element name="Cancel_Button" type="item"/>
+        <xs:element name="Revert_Button" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Editor_Edit_Window">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="OK_Button" type="item"/>
+        <xs:element name="Cancel_Button" type="item"/>
+        <xs:element name="Revert_Button" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Editor_Move_Window">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="OK_Button" type="item"/>
+        <xs:element name="Cancel_Button" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+
+
+
+<xs:complexType name="Manager">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+
+        <xs:element name="Right_Click_Menu" type="Manager_Right_Click_Menu"/>
+        <xs:element name="Buttons" type="Manager_Buttons" />
+        <xs:element name="Rename_Window" type="Manager_Rename_Window"/>
+        <xs:element name="New_Tree_Window" type="Manager_New_Tree_Window"/>
+
+        <xs:element name="Error_Name_Already_Taken" type="Simple_Message_Box"/>
+        <xs:element name="Confirm_Renaming_If_Exported_File_Exists" type="Manager_Confirm_Renaming_If_Exported_File_Exists"/>
+        <xs:element name="Confirm_Removal" type="Manager_Confirm_Removal"/>
+        <xs:element name="Cannot_Load_If_Name_Already_Taken" type="Cannot_Load_If_Name_Already_Taken"/>
+        <xs:element name="Cannot_Be_Deleted" type="Cannot_Be_Deleted"/>
+        <xs:element name="File_Already_In_Use" type="File_Already_In_Use"/>
+        <xs:element name="Export_Info" type="Export_Info"/>
+        <xs:element name="Not_Yet_Exported" type="Simple_Message_Box"/>
+        <xs:element name="Invalid_XML" type="Invalid_XML_Error"/>
+
+        <xs:element name="Tree_Status_Labels" type="Manager_Tree_Status_Labels"/>
+
+        <xs:element name="Export_File_Dialog_Title" type="item"/>
+        <xs:element name="Load_From_File" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Manager_Right_Click_Menu">
+    <xs:sequence>
+        <xs:element name="Load" type="item"/>
+        <xs:element name="New" type="item"/>
+        <xs:element name="Edit" type="item"/>
+        <xs:element name="Stop_Editing" type="item"/>
+        <xs:element name="Rename" type="item"/>
+        <xs:element name="Delete" type="item" />
+        
+        <xs:element name="Update_File" type="item"/>
+        <xs:element name="Export" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Manager_Buttons">
+    <xs:sequence>
+        <xs:element name="Load" type="item"/>
+        <xs:element name="New" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Manager_Rename_Window">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="OK_Button" type="item"/>
+        <xs:element name="Cancel_Button" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Manager_New_Tree_Window">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="OK_Button" type="item"/>
+        <xs:element name="Cancel_Button" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Manager_Confirm_Removal">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="Message" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Manager_Confirm_Renaming_If_Exported_File_Exists">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="Message" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Cannot_Load_If_Name_Already_Taken">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="Message" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Cannot_Be_Deleted">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="Message" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="File_Already_In_Use">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="Message_part_1" type="item"/>
+        <xs:element name="Message_part_2" type="item"/>
+        <xs:element name="Message_part_3" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Export_Info">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="Message_part_1" type="item"/>
+        <xs:element name="Message_part_2" type="item"/>
+        <xs:element name="Message_part_3" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Invalid_XML_Error">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="Content" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Manager_Tree_Status_Labels">
+    <xs:sequence>
+        <xs:element name="Waiting_For_Export" type="item"/>
+        <xs:element name="Modified" type="item"/>
+        <xs:element name="OK" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+
+<xs:complexType name="Simple_Message_Box">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="Content" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="item"> 
+    <xs:attribute name="Text" type="xs:string" use="required"/> 
+</xs:complexType>
+
+
+
+
+</xs:schema>
