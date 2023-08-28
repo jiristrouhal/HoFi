@@ -9,8 +9,10 @@
 <Language Id="en_US" Name="English">
 
     <Editor>
+        <Title Text="Editor" />
+
         <Right_Click_Menu>
-            <Add Text="Add" />
+            <Add Text="Create" />
             <Edit Text="Edit" />
             <Move Text="Move" />
             <Delete Text="Delete" />
@@ -18,9 +20,36 @@
             <Collapse_All Text="Collapse all" />
             <Expand_All Text="Expand all" />
         </Right_Click_Menu>
+
+        <Add_Window>
+            <Title Text="Create" />
+            <OK_Button Text="OK" />
+            <Cancel_Button Text="Cancel" />
+            <Revert_Button Text="Revert" />
+        </Add_Window>
+
+        <Edit_Window>
+            <Title Text="Edit" />
+            <OK_Button Text="OK" />
+            <Cancel_Button Text="Cancel" />
+            <Revert_Button Text="Revert" />
+        </Edit_Window>
+
+        <Move_Window>
+            <Title Text="Move" />
+            <OK_Button Text="OK" />
+            <Cancel_Button Text="Cancel"/>
+        </Move_Window>
+
+        <Cannot_Delete_Item_With_Children>
+            <Title Text="Cannot delete item"/>
+            <Content Text="Cannot delete item containing any incomes, expenses, items or other." />
+        </Cannot_Delete_Item_With_Children>
     </Editor>
 
+
     <Manager>
+        <Title Text="" />
         <Right_Click_Menu>
             <Load Text="Load" />
             <New Text="New" />

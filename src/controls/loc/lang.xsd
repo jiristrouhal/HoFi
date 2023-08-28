@@ -15,7 +15,21 @@
 
 <xs:complexType name="Editor">
     <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        
         <xs:element name="Right_Click_Menu" type="Editor_Right_Click_Menu"/>
+        <xs:element name="Add_Window" type="Editor_Add_Window"/>
+        <xs:element name="Edit_Window" type="Editor_Edit_Window"/>
+        <xs:element name="Move_Window" type="Editor_Move_Window"/>
+
+        <xs:element name="Cannot_Delete_Item_With_Children" type="Simple_Error_Message_Box"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Simple_Error_Message_Box">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="Content" type="item"/>
     </xs:sequence>
 </xs:complexType>
 
@@ -32,9 +46,36 @@
     </xs:sequence>
 </xs:complexType>
 
+<xs:complexType name="Editor_Add_Window">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="OK_Button" type="item"/>
+        <xs:element name="Cancel_Button" type="item"/>
+        <xs:element name="Revert_Button" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Editor_Edit_Window">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="OK_Button" type="item"/>
+        <xs:element name="Cancel_Button" type="item"/>
+        <xs:element name="Revert_Button" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Editor_Move_Window">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="OK_Button" type="item"/>
+        <xs:element name="Cancel_Button" type="item"/>
+    </xs:sequence>
+</xs:complexType>
 
 <xs:complexType name="Manager">
     <xs:sequence>
+        <xs:element name="Title" type="item"/>
+
         <xs:element name="Right_Click_Menu" type="Manager_Right_Click_Menu"/>
     </xs:sequence>
 </xs:complexType>
@@ -51,6 +92,7 @@
 <xs:complexType name="item"> 
     <xs:attribute name="Text" type="xs:string" use="required"/> 
 </xs:complexType>
+
 
 
 

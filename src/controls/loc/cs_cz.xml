@@ -9,18 +9,47 @@
 <Language Id="cs_CZ" Name="Čeština">
 
     <Editor>
+        <Title Text="Editor" />
+
         <Right_Click_Menu>
-            <Add Text="Přidat" />
+            <Add Text="Vytvořit" />
             <Edit Text="Upravit" />
             <Move Text="Přesunout" />
-            <Delete Text="Smazat" />
+            <Delete Text="Odstranit" />
     
             <Collapse_All Text="Sbalit vše" />
             <Expand_All Text="Rozbalit vše" />
         </Right_Click_Menu>
+
+        <Add_Window>
+            <Title Text="Vytvořit" />
+            <OK_Button Text="OK" />
+            <Cancel_Button Text="Zrušit" />
+            <Revert_Button Text="Vrátit" />
+        </Add_Window>
+
+        <Edit_Window>
+            <Title Text="Upravit" />
+            <OK_Button Text="OK" />
+            <Cancel_Button Text="Zrušit" />
+            <Revert_Button Text="Vrátit" />
+        </Edit_Window>
+
+        <Move_Window>
+            <Title Text="Přesunout" />
+            <OK_Button Text="OK" />
+            <Cancel_Button Text="Zrušit"/>
+        </Move_Window>
+
+        <Cannot_Delete_Item_With_Children>
+            <Title Text="Nelze odstranit"/>
+            <Content Text="Nelze odstranit předmět s podřazenými příjmy/výdaji/předměty." />
+        </Cannot_Delete_Item_With_Children>
+
     </Editor>
 
     <Manager>
+        <Title Text="Title" />
         <Right_Click_Menu>
             <Load Text="Načíst" />
             <New Text="Nový" />

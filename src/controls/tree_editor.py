@@ -7,6 +7,7 @@ from typing import Tuple, Dict, Callable, List, Literal, Protocol, Any
 from functools import partial
 from collections import OrderedDict
 import dataclasses
+import os
 
 
 import src.core.tree as treemod
@@ -220,14 +221,6 @@ class CmdController:
             self._undo_stack.append(cmd)
 
 
-BUTTON_OK = "OK"
-BUTTON_CANCEL = "Cancel"
-REVERT_ENTRY_VALUE_CHANGES = "Revert"
-DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE = "Cannot delete item"
-DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT = ": Cannot delete item with children."
-MOVE_WINDOW_TITLE = "Select new parent"
-
-
 import src.controls.loc.lang as lang
 
 
@@ -281,7 +274,9 @@ class TreeEditor:
   
         self.label:str = label # an identifier used in actions of Tree Item
 
-        self._vocabulary = lang.Vocabulary(language_code)
+        main_voc = lang.Vocabulary()
+        main_voc.load_xml(os.path.join(os.path.dirname(__file__), 'loc'), language_code)
+        self._vocabulary = main_voc.subvocabulary("Editor")
 
     @property
     def trees(self)->Tuple[str,...]: 
@@ -370,7 +365,10 @@ class TreeEditor:
         else: self.__add_commands_for_tree(item)
         
     def open_add_window(self,item:treemod.TreeItem,tag:str)->None:
+        labels = self._vocabulary.subvocabulary("Add_Window")
+
         self.add_window = tk.Toplevel(self.widget)
+        self.add_window.title(labels("Title"))
         self.__configure_toplevel(self.add_window)
         self.__create_entries(self.add_window, treemod.tt.template(tag).attributes)
         
@@ -379,14 +377,18 @@ class TreeEditor:
         button_frame(
             self.add_window,
             ok_cmd = partial(self.confirm_add_entry_values,item,tag),
+            ok_label=labels("OK_Button"),
             cancel_cmd = partial(self._destroy_toplevel,self.add_window),
+            cancel_label=labels("Cancel_Button")
         ).pack(side=tk.BOTTOM)
 
     def is_tree(self,item:treemod.TreeItem)->bool:
         return item.parent is None
 
     def open_edit_window(self,item_id:str)->None:
+        labels = self._vocabulary.subvocabulary("Edit_Window")
         self.edit_window = tk.Toplevel(self.widget)
+        self.edit_window.title(labels("Title"))
         self.widget.item(self.widget.parent(item_id),open=True)
         self.__configure_toplevel(self.edit_window)
         item = self._map[item_id]
@@ -400,7 +402,9 @@ class TreeEditor:
             self.edit_window,
             ok_cmd = partial(self.confirm_edit_entry_values,item_id),
             cancel_cmd = self.disregard_edit_entry_values,
-            commands={REVERT_ENTRY_VALUE_CHANGES:partial(self.__revert_edit_entry_changes,item_id)}
+            ok_label=labels("OK_Button"),
+            cancel_label=labels("Cancel_Button"),
+            commands={labels("Revert_Button"):partial(self.__revert_edit_entry_changes,item_id)}
         ).pack(side=tk.BOTTOM)
 
     def confirm_add_entry_values(self,parent:treemod.TreeItem,tag:str)->None:
@@ -425,9 +429,10 @@ class TreeEditor:
 
     def open_move_window(self,item_id:str)->None:
         # copy the treeview and throw away the moved item and its children
+        labels = self._vocabulary.subvocabulary("Move_Window")
         self.move_window = tk.Toplevel(self.widget)
         self.__configure_toplevel(self.move_window)
-        self.move_window.title(MOVE_WINDOW_TITLE)
+        self.move_window.title(labels("Title"))
         self.available_parents = ttk.Treeview(
             self.move_window, 
             show='tree', # hide zeroth row, that would contain the tree columns' headings
@@ -446,43 +451,45 @@ class TreeEditor:
         button_frame(
             self.move_window,
             ok_cmd = partial(self.confirm_parent,item_id),
-            cancel_cmd = self._close_move_window
+            ok_label = labels("OK_Button"),
+            cancel_cmd = self._close_move_window,
+            cancel_label = labels("Cancel_Button")
         ).pack(side=tk.BOTTOM)
 
     def __add_commands_for_tree(self,tree:treemod.TreeItem)->None:
-        command_label = self._vocabulary.subvocabulary("Editor","Right_Click_Menu")
+        labels = self._vocabulary.subvocabulary("Right_Click_Menu")
         self.right_click_menu.add_commands(
             {
-                _define_add_cmd_label(tag,command_label("Add")): partial(self.open_add_window,tree,tag) \
+                self._define_add_cmd_label(tag): partial(self.open_add_window,tree,tag) \
                 for tag in tree.child_tags
             }
         )
         if tree.child_tags: self.right_click_menu.add_separator()
         self.right_click_menu.add_commands(
             {
-                command_label("Expand_All") : partial(self.__open_all,tree.data["treeview_iid"]),
-                command_label("Collapse_All") :  partial(self.__close_all,tree.data["treeview_iid"])
+                labels("Expand_All") : partial(self.__open_all,tree.data["treeview_iid"]),
+                labels("Collapse_All") :  partial(self.__close_all,tree.data["treeview_iid"])
             }
         )  
 
     def __add_commands_for_item(self,item:treemod.TreeItem)->None:
-        command_label = self._vocabulary.subvocabulary("Editor","Right_Click_Menu")
+        labels = self._vocabulary.subvocabulary("Right_Click_Menu")
         self.right_click_menu.add_commands(
             {
-                _define_add_cmd_label(tag,command_label("Add")): partial(self.open_add_window,item,tag) \
+                self._define_add_cmd_label(tag): partial(self.open_add_window,item,tag) \
                 for tag in item.child_tags
             }
         )
         if item.child_tags: self.right_click_menu.add_separator()
         self.right_click_menu.add_commands(
             {
-                command_label("Edit") : partial(self.open_edit_window,item.data["treeview_iid"]),       
-                command_label("Move") : partial(self.open_move_window,item.data["treeview_iid"])
+                labels("Edit") : partial(self.open_edit_window,item.data["treeview_iid"]),       
+                labels("Move") : partial(self.open_move_window,item.data["treeview_iid"])
             }
         )
         if item.parent is not None:
             self.right_click_menu.add_single_command(
-                command_label("Delete"),
+                labels("Delete"),
                 partial(self.remove_item,item)
             )
         if item.user_defined_commands:
@@ -496,8 +503,8 @@ class TreeEditor:
             self.right_click_menu.add_separator()
             self.right_click_menu.add_commands(
                 {
-                    command_label("Expand_All") : partial(self.__open_all,item.data["treeview_iid"]),
-                    command_label("Collapse_All") : partial(self.__close_all,item.data["treeview_iid"])
+                    labels("Expand_All") : partial(self.__open_all,item.data["treeview_iid"]),
+                    labels("Collapse_All") : partial(self.__close_all,item.data["treeview_iid"])
                 }
             )
     
@@ -542,9 +549,10 @@ class TreeEditor:
 
     def __cannot_remove_branch_with_children(self,branch:treemod.TreeItem)->None: # pragma: no cover
         if not self._messageboxes_allowed: return
+        msgbox_contents = self._vocabulary.subvocabulary("Cannot_Delete_Item_With_Children")
         tkmsg.showerror(
-            DELETE_BRANCH_WITH_CHILDREN_ERROR_TITLE,
-            branch.name+DELETE_BRANCH_WITH_CHILDREN_ERROR_CONTENT
+            msgbox_contents("Title"),
+            msgbox_contents("Content")
         )
 
     def __configure_widget(self)->None:
@@ -727,6 +735,9 @@ class TreeEditor:
                     if values[-1]!="": values[-1]+="/"
                     values[-1] += (item.dependent_attributes[attr].formatted_value)
         return values
+    
+    def _define_add_cmd_label(self,tag:str)->str:
+        return self._vocabulary("Right_Click_Menu","Add")+f" {tag.lower()}"
 
 
 
@@ -734,15 +745,14 @@ def button_frame(
     master:tk.Toplevel|tk.Tk,
     ok_cmd:Callable[[],None],
     cancel_cmd:Callable[[],None],
+    ok_label:str = "OK",
+    cancel_label:str = "Cancel",
     commands:Dict[str,Callable[[],None]] = {}
     )->tk.Frame:
 
     frame = tk.Frame(master)
     for name,cmd in commands.items():
         tk.Button(master=frame,text=name,command=cmd).pack(side=tk.RIGHT)
-    tk.Button(master=frame,text=BUTTON_OK,command=ok_cmd).pack(side=tk.RIGHT)
-    tk.Button(master=frame,text=BUTTON_CANCEL,command=cancel_cmd).pack(side=tk.RIGHT)
+    tk.Button(master=frame,text=ok_label,command=ok_cmd).pack(side=tk.RIGHT)
+    tk.Button(master=frame,text=cancel_label,command=cancel_cmd).pack(side=tk.RIGHT)
     return frame
-
-def _define_add_cmd_label(tag:str,add_text:str="Add")->str:
-    return add_text+f" {tag.lower()}"

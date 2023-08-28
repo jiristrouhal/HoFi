@@ -1,34 +1,40 @@
 
 
-from typing import Literal, Dict, Tuple, Callable
-from functools import partial
+from __future__ import annotations
+from typing import Literal, Dict, Tuple
 import xml.etree.ElementTree as et
 import dataclasses
+import os
 
 
-LANG_XML_PATH_RELATIVE_TO_PROJECT_FOLDER = "src/controls/loc/"
+class UninitiallizedVocabulary(Exception): pass
 
 
-_Language_Code = Literal['en_us','cs_cz']
+_Language_Code = Literal['en_us','cs_cz','']
 @dataclasses.dataclass
 class Vocabulary:
-    language_code:_Language_Code
     vocabulary:Dict[Tuple[str,...],str] = dataclasses.field(default_factory=dict, init=False)
-    _language:et.Element = dataclasses.field(init=False)
+    _xml_root:et.Element|None = None
 
-    def __post_init__(self)->None:
-        self._language = et.parse(LANG_XML_PATH_RELATIVE_TO_PROJECT_FOLDER+self.language_code+".xml").getroot()
+    def load_xml(self,folder:str,language_code:_Language_Code)->None:
+        self.vocabulary.clear()
+        path = os.path.join(os.path.dirname(__file__),folder,(language_code+".xml")).replace("\\","/")
+        try:
+            self._xml_root = et.parse(path).getroot()
+        except:
+            raise ValueError(f"Cannot find file for localization code {language_code} \
+                             on path {os.path.dirname(path)}.")
 
-    def subvocabulary(self,*xml_elem_path:str)->Callable[[str],str]:
-        # validate the entered path
-        assert (self._language is not None)
-        parent = self._language
-        for elem in xml_elem_path[:-1]:
-            assert(parent is not None)
-            next_item = parent.find(elem)
-            if next_item is None: raise ValueError
-            else: parent = next_item
-        return partial(self.text,*xml_elem_path)
+    def set_data(self,data:et.Element)->None:
+        self._xml_root = data
+    
+    def __call__(self,*xml_tree_path:str)->str:
+        return self.text(*xml_tree_path)
+
+    def subvocabulary(self,*xml_elem_path:str)->Vocabulary:
+        subvoc = Vocabulary()
+        subvoc.set_data(self.__find_xml_elem(*xml_elem_path))
+        return subvoc
     
     def text(self,*xml_tree_path:str)->str:
         if xml_tree_path not in self.vocabulary:
@@ -36,15 +42,17 @@ class Vocabulary:
         return self.vocabulary[xml_tree_path]
     
     def __find_new_text_and_add_to_vocabulary(self,*xml_tree_path:str)->None:
-        assert (self._language is not None)
-        parent = self._language
-
-        for elem in xml_tree_path[:-1]:
-            assert(parent is not None)
+        elem = self.__find_xml_elem(*xml_tree_path)
+        self.vocabulary[xml_tree_path] = elem.attrib["Text"]
+    
+    def __find_xml_elem(self,*elem_path:str):
+        if self._xml_root is None:
+            raise UninitiallizedVocabulary("The vocabulary xml source was not propertly loaded. Use 'load_xml' method.")
+        parent = self._xml_root
+        for elem in elem_path:
             next_item = parent.find(elem)
-            if next_item is None: raise ValueError
+            if next_item is None: 
+                raise ValueError(f"The xml element '{parent}' does not containg element '{elem}'.\n"
+                                 f"Available elements are {parent}")
             else: parent = next_item
-
-        text_item = parent.find(xml_tree_path[-1])
-        if text_item is None: raise ValueError
-        else: self.vocabulary[xml_tree_path] = text_item.attrib["Text"]
+        return parent
