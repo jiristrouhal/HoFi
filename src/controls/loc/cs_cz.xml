@@ -6,7 +6,7 @@
     schematypens="http://www.w3.org/2001/XMLSchema"
 ?>
 
-<Language Id="cs_CZ" Name="Čeština">
+<Language Id="cs_cz" Name="Čeština">
 
     <Editor>
         <Title Text="Editor" />

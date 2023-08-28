@@ -4,17 +4,46 @@
 <xs:element name="Language">
     <xs:complexType>
         <xs:sequence>
+
             <xs:element name="Edit_Frame_Label" type="item"/>
             <xs:element name="Manager_Title" type="item"/>
             <xs:element name="Amount_Title" type="item"/>
             <xs:element name="Properties" type="item" />
-
+            
             <xs:element name="Discard_Changes" type="Simple_Message_Box" />
+
+            <xs:element name="Templates" type="Templates" />
+
         </xs:sequence>
         <xs:attribute name="Id" type="xs:string" use="required"/>
         <xs:attribute name="Name" type="xs:string" use="required"/>
     </xs:complexType>
 </xs:element>
+
+<xs:complexType name="Templates">
+    <xs:sequence>
+        <xs:element name="Date_Format" type="item"/>
+
+        <xs:element name="Scenario" type="item"/>
+        <xs:element name="Income" type="item"/>
+        <xs:element name="Expense" type="item"/>
+        <xs:element name="Item" type="item"/>
+        <xs:element name="Debt" type="item"/>
+        <xs:element name="Non_Monetary_Debt" type="item"/>
+
+        <xs:element name="incomes" type="item"/>
+        <xs:element name="expenses" type="item"/>
+
+        <xs:element name="currency" type="item"/>
+        <xs:element name="amount" type="item"/>
+        <xs:element name="name" type="item"/>
+        <xs:element name="date" type="item"/>
+        <xs:element name="description" type="item"/>
+
+    </xs:sequence>
+</xs:complexType>
+
+
 
 
 

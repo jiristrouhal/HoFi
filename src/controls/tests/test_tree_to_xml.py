@@ -101,7 +101,7 @@ class Test_Saving_And_Loading_Tree_With_Money_Attribute(unittest.TestCase):
         treemod.tt.add(
             treemod.tt.NewTemplate('Tree', {"name":"Tree","cost":"$1"},children=())
         )
-        treemod.tt.attrs.set_localization("en_US")
+        treemod.tt.attrs.set_localization("en_us")
         converter = tree_to_xml.Tree_XML_Converter()
         tree = treemod.Tree("TreeXY",'Tree')
         tree.set_attribute("cost",10)

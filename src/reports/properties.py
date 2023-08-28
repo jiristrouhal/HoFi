@@ -7,12 +7,20 @@ from collections import OrderedDict
 
 class Properties:
 
-    def __init__(self,master:tk.Tk|tk.Frame|ttk.Labelframe|None = None, label:str='Properties', title:str='Properties')->None:
+    def __init__(
+        self,
+        master:tk.Tk|tk.Frame|ttk.Labelframe|None = None, 
+        label:str='Properties', 
+        title:str='Properties',
+        name_attr:str = "name"
+        )->None:
+
         self.widget = ttk.Labelframe(master,text=title)
         self.props:Dict[str,tk.Label] = OrderedDict()
         self.__configure_win()
         self.row = 0
         self.__label = label
+        self.name_attr = name_attr
     @property
     def label(self)->str: return self.__label
 
@@ -33,7 +41,7 @@ class Properties:
 
         attr_values = {label:x.formatted_value for label,x in attributes.items()}
         dep_attr_values = {label:x.formatted_value for label,x in dependent_attributes.items()}
-        attr_values["name"]+= f" ({tag.lower()})"
+        attr_values[self.name_attr]+= f" ({tag.lower()})"
 
         self.row = 0
         self.__draw_attributes(attr_values)

@@ -10,7 +10,7 @@ import os
 class UninitiallizedVocabulary(Exception): pass
 
 
-_Language_Code = Literal['en_us','cs_cz','']
+_Language_Code = Literal['en_us','cs_cz']
 @dataclasses.dataclass
 class Vocabulary:
     vocabulary:Dict[Tuple[str,...],str] = dataclasses.field(default_factory=dict, init=False)

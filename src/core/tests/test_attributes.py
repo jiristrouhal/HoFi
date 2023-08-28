@@ -165,15 +165,15 @@ class Test_Recognizing_Currency(unittest.TestCase):
 class Test_Currency_Attribute(unittest.TestCase):
 
     def test_defining_attribute(self):
-        attributes.set_localization('cs_CZ')
+        attributes.set_localization('cs_cz')
         catt = attributes.Currency_Attribute('USD', 5)
         self.assertEqual(catt.value, 5)
         self.assertEqual(catt.formatted_value, '5.00 $')
-        attributes.set_localization('en_US')
+        attributes.set_localization('en_us')
         self.assertEqual(catt.formatted_value, '$5.00')
 
     def test_setting_currency(self):
-        attributes.set_localization('cs_CZ')
+        attributes.set_localization('cs_cz')
         catt = attributes.Currency_Attribute('USD', 5)
         self.assertEqual(catt.formatted_value, '5.00 $')
         catt._set_currency('CZK')
@@ -184,31 +184,31 @@ class Test_Currency_Attribute(unittest.TestCase):
         self.assertRaises(attributes.UndefinedCurrency, catt._set_currency, 'NEC')
 
     def test_creating_currency_attribute_from_a_general_value(self):
-        attributes.set_localization('cs_CZ')
+        attributes.set_localization('cs_cz')
         catt = attributes.create_attribute("1.00 Kč")
         self.assertEqual(catt.formatted_value,"1.00 Kč")
         catt._set_currency("USD")
         self.assertEqual(catt.formatted_value,"1.00 $")
     
     def test_setting_currency_attribute_value(self):
-        attributes.set_localization('cs_CZ')
+        attributes.set_localization('cs_cz')
         catt = attributes.create_attribute("1 Kč")
         catt.set(5)
         self.assertEqual(catt.formatted_value,"5.00 Kč")
 
     def test_formatted_value_has_precision_limited_by_the_currency(self):
-        attributes.set_localization('cs_CZ')
+        attributes.set_localization('cs_cz')
         catt = attributes.create_attribute("1 Kč")
         catt.set(0.123456789)
         self.assertEqual(catt.formatted_value,"0.12 Kč")
 
     def test_attribute_keeps_its_default_currency(self):
-        attributes.set_localization('cs_CZ')
+        attributes.set_localization('cs_cz')
         catt = attributes.create_attribute("1 $")
         self.assertEqual(catt.formatted_value,"1.00 $")
 
     def test_copying_attribute(self):
-        attributes.set_localization('cs_CZ')
+        attributes.set_localization('cs_cz')
         catt = attributes.create_attribute("2 $")
         self.assertEqual(catt.formatted_value,"2.00 $")
         catt2 = catt.copy()

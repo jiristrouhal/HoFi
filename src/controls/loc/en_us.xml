@@ -6,7 +6,7 @@
     schematypens="http://www.w3.org/2001/XMLSchema"
 ?>
 
-<Language Id="en_US" Name="English">
+<Language Id="en_us" Name="English">
 
     <Editor>
         <Title Text="Editor" />

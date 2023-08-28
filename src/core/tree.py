@@ -10,11 +10,12 @@ from src.core.attributes import _Attribute, Dependent_Attr, CURRY_FORMATS
 
 class TreeItem:
 
-    def __init__(self, name:str, tag:str)->None:
+    def __init__(self, name:str, tag:str, name_attr:str="name")->None:
+
+        self.name_attr = name_attr
 
         self._attributes = tt.template(tag).attributes
-        self._attributes["name"].set(src.core.naming.strip_and_join_spaces(name))
-
+        self._attributes[name_attr].set(src.core.naming.strip_and_join_spaces(name))
 
         self.__child_tags:Tuple[str,...] = tt.template(tag).children
 
@@ -47,7 +48,7 @@ class TreeItem:
         return item
 
     @property
-    def name(self)->str: return self._attributes["name"].value
+    def name(self)->str: return self._attributes[self.name_attr].value
     @property
     def attributes(self)->Dict[str,_Attribute]: 
         return self._attributes.copy()
@@ -63,7 +64,8 @@ class TreeItem:
     @property
     def child_tags(self)->Tuple[str,...]: return self.__child_tags
     @property
-    def user_defined_commands(self)->OrderedDict[str,Callable[[],None]]: return self._user_defined_commands
+    def user_defined_commands(self)->OrderedDict[str,Callable[[],None]]: 
+        return self._user_defined_commands
 
     __tree_events =  Literal['add_child','on_removal','on_renaming','on_moving','on_self_rename']
 
@@ -115,7 +117,7 @@ class TreeItem:
             while item_with_same_name is not None and not item_with_same_name==self:
                 name = src.core.naming.change_name_if_already_taken(name)
                 item_with_same_name = self._parent._find_child(name)
-        self._attributes["name"].set(name)
+        self._attributes[self.name_attr].set(name)
 
     def children(self,*branches_along_the_path:str)->List[str]:
         return self._list_children(*branches_along_the_path)
@@ -149,7 +151,7 @@ class TreeItem:
             parent.new(name,tag=tag)
 
         else:  # add the branch directly to the current object
-            child = TreeItem(name,tag)
+            child = TreeItem(name,tag,name_attr=self.name_attr)
             child._set_parent(self)
             for owner_id in self._actions:
                 if not self._actions[owner_id]: 

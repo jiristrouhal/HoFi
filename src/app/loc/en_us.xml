@@ -17,4 +17,21 @@
         <Title Text="Quit without saving" />
         <Content Text="Some of the objects in the manager contain non-saved changes and will be lost. Do you want to close the application?" />
     </Discard_Changes>
+
+    <Templates>
+        <Date_Format Text="%Y-%m-%d" />
+        <Scenario Text="Scenario" />
+        <Income Text="Income" />
+        <Expense Text="Expense" />
+        <Item Text="Item" />
+        <Debt Text="Debt" />
+        <Non_Monetary_Debt Text="Debt (non-finacial)" />
+        <incomes Text="incomes" />
+        <expenses Text="expenses" />
+        <currency Text="currency" />
+        <amount Text="amount" />
+        <name Text="name" />
+        <date Text="date" />
+        <description Text="description" />
+    </Templates>
 </Language>

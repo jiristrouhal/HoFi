@@ -4,16 +4,36 @@ from collections import OrderedDict
 import src.core.tree as treemod
 from src.core.attributes import convert_to_currency
 from decimal import Decimal
+import src.lang.lang as lang
 
 
-def main():
+def main(vocabulary:lang.Vocabulary):
+    tvoc = vocabulary.subvocabulary("Templates")
+    DATE_FORMAT = tvoc("Date_Format")
+    SCENARIO = tvoc("Scenario")
+    INCOME = tvoc("Income")
+    EXPENSE = tvoc("Expense")
+    ITEM = tvoc("Item")
+    DEBT = tvoc("Debt")
+    NONFINANCIAL_DEBT = tvoc("Non_Monetary_Debt")
+
+    INCOMES = tvoc("incomes")
+    EXPENSES = tvoc("expenses")
+    CURRENCY = tvoc("currency")
+    AMOUNT = tvoc("amount")
+    NAME =  tvoc("name")
+    DATE = tvoc("date")
+    DESCRIPTION = tvoc("description")
+
     income_icon = ImageTk.PhotoImage(Image.open("src/_icons/income.png"))
     expense_icon = ImageTk.PhotoImage(Image.open("src/_icons/expense.png"))
     item_icon = ImageTk.PhotoImage(Image.open("src/_icons/item.png"))
     debt_icon = ImageTk.PhotoImage(Image.open("src/_icons/debt.png"))
     nonmon_debt_icon = ImageTk.PhotoImage(Image.open("src/_icons/nonmonetary_debt.png"))
 
-    treemod.tt.attrs.Date_Attr.date_formatter.set("%d.%m.%Y")
+
+    treemod.tt.attrs.Date_Attr.date_formatter.set(DATE_FORMAT)
+
 
     def extract_money_amount(assumed_money:str)->float:
         x = convert_to_currency(assumed_money)
@@ -25,82 +45,82 @@ def main():
     def sum_incomes(item:treemod.TreeItem)->str:
         s = Decimal(0.0)
         for child in item._children:
-            if child.tag=="Income":
-                s += child.attributes["amount"].value
-            elif child.tag=="Item":
-                s += Decimal(extract_money_amount(child.dependent_attributes["incomes"].value))
-        return "+"+treemod.CURRY_FORMATS[item.its_tree.attributes["currency"].value].present(s)
+            if child.tag==INCOME:
+                s += child.attributes[AMOUNT].value
+            elif child.tag==ITEM:
+                s += Decimal(extract_money_amount(child.dependent_attributes[INCOMES].value))
+        return "+"+treemod.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].present(s)
     
     def sum_expenses(item:treemod.TreeItem)->str:
         s = Decimal(0.0)
         for child in item._children:
-            if child.tag=="Expense":
-                s += child.attributes["amount"].value
-            elif child.tag=="Item":
-                s += Decimal(extract_money_amount(child.dependent_attributes["expenses"].value))
-        return "-"+treemod.CURRY_FORMATS[item.its_tree.attributes["currency"].value].present(s)
+            if child.tag==EXPENSE:
+                s += child.attributes[AMOUNT].value
+            elif child.tag==ITEM:
+                s += Decimal(extract_money_amount(child.dependent_attributes[EXPENSES].value))
+        return "-"+treemod.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].present(s)
     
     def print_hello_world(item:treemod.TreeItem)->None:
         print("Hello, world!!!")
 
     def default_amount_by_tree(item:treemod.TreeItem)->str:
-        return "1" + treemod.CURRY_FORMATS[item.its_tree.attributes["currency"].value].symbol
+        return "1" + treemod.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].symbol
 
     treemod.tt.clear()
     treemod.tt.add(
         treemod.tt.NewTemplate(
-            'Scenario',
-            {
-                "name":"Scenario",
-                "currency":({code:code for code in treemod.tt.attrs.CURRY_CODES},'USD'),
-                "incomes": sum_incomes,
-                "expenses": sum_expenses
-            },
-            children=("Income","Expense","Item","Debt",'Non_monetary_debt')
+            SCENARIO,
+            OrderedDict({
+                NAME:SCENARIO,
+                CURRENCY:({code:code for code in treemod.tt.attrs.CURRY_CODES}, treemod.tt.attrs.DEFAULT_CURRENCY_CODE),
+                INCOMES: sum_incomes,
+                EXPENSES: sum_expenses
+            }),
+            children=(INCOME, EXPENSE, ITEM, DEBT, NONFINANCIAL_DEBT)
         ),
         treemod.tt.NewTemplate(
-            'Income',
-            {"name":"Income","amount": "1 Kč", "date":"1.1.2023"},
+            INCOME,
+            OrderedDict({NAME:INCOME, AMOUNT: "1 Kč", DATE:"1.1.2023"}),
             children=(),
             icon_file=income_icon,
-            variable_defaults={"amount": default_amount_by_tree}
+            variable_defaults={AMOUNT: default_amount_by_tree}
         ),
         treemod.tt.NewTemplate(
-            'Expense',
-            {"name":"Expense","amount": "1 Kč", "date":"1.1.2023"},
+            EXPENSE,
+            OrderedDict({NAME:EXPENSE,AMOUNT: "1 Kč", DATE:"1.1.2023"}),
             children=(),
             icon_file=expense_icon,
-            variable_defaults={"amount": default_amount_by_tree}
+            variable_defaults={AMOUNT: default_amount_by_tree}
         ),
         treemod.tt.NewTemplate(
-            'Item',
+            ITEM,
             OrderedDict({
-                "name":"Item",
-                "incomes": sum_incomes,
-                "expenses": sum_expenses
+                NAME:ITEM,
+                INCOMES: sum_incomes,
+                EXPENSES: sum_expenses
             }),
-            children=("Income","Expense","Item"),
-            user_def_cmds=OrderedDict({"Hello, world":print_hello_world}),
+            children=(INCOME,EXPENSE,ITEM),
+            user_def_cmds=OrderedDict({"Hello, world": print_hello_world}),
             icon_file=item_icon),
 
         treemod.tt.NewTemplate(
-            'Debt',
-            {
-                "name":"Debt",
-                "amount":"1 Kč", 
-                "date":"1.1.2023"
-            },
+            DEBT,
+            OrderedDict({
+                NAME:DEBT,
+                AMOUNT:"1 Kč", 
+                DATE:"1.1.2023"
+            }),
             children=(),
             icon_file=debt_icon,
-            variable_defaults={"amount": default_amount_by_tree}
+            variable_defaults={AMOUNT: default_amount_by_tree}
         ),
         treemod.tt.NewTemplate(
-            'Non_monetary_debt',
-            {
-                "name":"Non-monetary debt",
-                "description":"...", 
-                "date":"1.1.2023"
-            },
+            NONFINANCIAL_DEBT,
+            OrderedDict({
+                NAME:NONFINANCIAL_DEBT,
+                DESCRIPTION:"...", 
+                DATE:"1.1.2023"
+            }),
             children=(),
             icon_file=nonmon_debt_icon
         ),

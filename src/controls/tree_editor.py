@@ -40,7 +40,7 @@ class New:
     
     def run(self)->None:
 
-        self.parent.new(self.editor.entries.pop("name").get() ,tag=self.tag)
+        self.parent.new(self.editor.entries.pop(self.editor.name_attr).get() ,tag=self.tag)
         new_child = self.parent._children[-1]
 
         for attr_name in self.editor.entries:
@@ -84,7 +84,7 @@ class Edit:
             self.old_attributes[attr_name] = self.item.attributes[attr_name].copy()
 
         for attribute, entry in self.editor.entries.items():
-            if attribute=="name": 
+            if attribute==self.editor.name_attr: 
                 self.item.rename(entry.get())
             else:
                 self.item.set_attribute(attribute, entry.get())
@@ -235,7 +235,8 @@ class TreeEditor:
         parent:tk.Tk|tk.Toplevel|tk.Frame|tk.LabelFrame|None = None, 
         label:str = "TreeEditor", 
         displayed_attributes:Dict[str,Tuple[str,...]] = {},
-        language_code:lang._Language_Code = "en_us"
+        language_code:lang._Language_Code = "en_us",
+        name_attr:str = "name"
         )->None:
 
         self.widget = ttk.Treeview(parent, columns=tuple(displayed_attributes.keys()))
@@ -281,6 +282,7 @@ class TreeEditor:
         main_voc = lang.Vocabulary()
         main_voc.load_xml(os.path.join(os.path.dirname(__file__), 'loc'), language_code)
         self._vocabulary = main_voc.subvocabulary("Editor")
+        self.name_attr = name_attr
 
     @property
     def trees(self)->Tuple[str,...]: 
@@ -397,7 +399,7 @@ class TreeEditor:
         self.__configure_toplevel(self.edit_window)
         item = self._map[item_id]
         if item.parent is None:
-            self.__create_entries(self.edit_window, item.attributes, excluded=["name"])
+            self.__create_entries(self.edit_window, item.attributes, excluded=[self.name_attr])
         else:
             self.__create_entries(self.edit_window, item.attributes)
         self.edit_window.bind("<Key-Escape>",self.disregard_edit_entry_values_on_keypress)

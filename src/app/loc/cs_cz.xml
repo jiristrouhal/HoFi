@@ -8,7 +8,7 @@
 
 
 <Language Id="cs_cz" Name="Čeština">
-    
+
     <Edit_Frame_Label Text="Editor" />
     <Manager_Title Text="Manažer" />
     <Amount_Title Text="Částka" />
@@ -18,5 +18,24 @@
         <Title Text="Zavřít bez uložení" />
         <Content Text="Některé z objektů v manažeru obsahují neuložené změny, které budou ztraceny. Opravu chcete ukončit aplikaci?" />
     </Discard_Changes>
+
+    <Templates>
+        <Date_Format Text="%d.%m.%Y" />
+        <Scenario Text="Scénář" />
+        <Income Text="Příjem" />
+        <Expense Text="Výdaj" />
+        <Item Text="Předmět" />
+        <Debt Text="Dluh" />
+        <Non_Monetary_Debt Text="Dluh (nefinanční)" />
+
+        <incomes Text="příjmy" />
+        <expenses Text="výdaje" />
+        <currency Text="měna" />
+        <amount Text="částka" />
+        <name Text="název" />
+        <date Text="datum" />
+        <description Text="popis" />
+        
+    </Templates>
 
 </Language>

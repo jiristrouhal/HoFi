@@ -26,7 +26,8 @@ class Tree_Manager:
         tree_tag:str,
         ui_master:tk.Frame|tk.Tk|tk.LabelFrame|None = None,
         label:str = "Manager",
-        language_code:lang._Language_Code = "en_us"
+        language_code:lang._Language_Code = "en_us",
+        name_attr:str = "name"
         )->None:
 
         if not tree_tag in treemod.tt.template_tags():
@@ -37,7 +38,7 @@ class Tree_Manager:
         voc.load_xml(os.path.join(os.path.dirname(__file__), 'loc'), language_code)
         self.vocabulary = voc.subvocabulary("Manager")
 
-
+        self.name_attr = name_attr
         self.__label = label
         self._converter = txml.Tree_XML_Converter()
         self._converter.add_action('invalid_xml', self._notify_the_user_xml_is_invalid)
@@ -91,7 +92,7 @@ class Tree_Manager:
         name:str
         )->None: 
 
-        tree = treemod.Tree(name,tag=self._tree_template_tag)
+        tree = treemod.Tree(name,tag=self._tree_template_tag,name_attr=self.name_attr)
         self.__treelist.append(tree)
         tree.add_data("treemanager_id",str(id(tree)))
         self.label_tree_as_waiting_for_export(tree)
@@ -145,7 +146,7 @@ class Tree_Manager:
 
     def _get_filepath(self)->str:
         return filedialog.askopenfilename(   # pragma: no cover
-            title=self.vocabulary("Load_from_File"),
+            title=self.vocabulary("Load_From_File"),
             filetypes=(('XML file','.xml'),),
             defaultextension='.xml',
             initialdir=self._last_export_dir,
@@ -337,7 +338,7 @@ class Tree_Manager:
         attributes = treemod.tt.template(self._tree_template_tag).attributes
         for label, entry in self.entries.items():
             attributes[label].set(entry.get())
-        name = attributes.pop("name").value
+        name = attributes.pop(self.name_attr).value
         self.new(name)
         new_tree = self.__treelist._items[-1]
         for attr_name in attributes:
@@ -383,8 +384,8 @@ class Tree_Manager:
         tree = self.get_tree(name)
         if tree is None: return
         if key in tree.attributes:
-            if key=="name": self.__treelist.rename(tree.name, value)
-            tree._attributes[key].set(value)
+            if key==self.name_attr: self.__treelist.rename(tree.name, value)
+            else: tree._attributes[key].set(value)
 
     def rename(self,old_name:str,new_name:str)->None:
         renamed_tree = self.__treelist.rename(old_name,new_name)

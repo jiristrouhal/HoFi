@@ -28,7 +28,7 @@ class NewTemplate:
         for key in self.variable_defaults:
             if key not in self.attributes: 
                 raise KeyError(
-                    f"Cannot set default value.\n"
+                    f"Cannot set default value. \n"
                     f"The attribute '{key}' is not defined in the template '{self.tag}'.")
 
 
