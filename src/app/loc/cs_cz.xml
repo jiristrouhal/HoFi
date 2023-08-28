@@ -16,7 +16,7 @@
 
     <Discard_Changes>
         <Title Text="Zavřít bez uložení" />
-        <Content Text="Některé z objektů v manažeru obsahují neuložené změny, které budou ztraceny. Opravu chcete ukončit aplikaci?" />
+        <Content Text="Některé z objektů v manažeru obsahují neuložené změny, &#xA;které budou ztraceny. Opravu chcete ukončit aplikaci?" />
     </Discard_Changes>
 
     <Templates>
