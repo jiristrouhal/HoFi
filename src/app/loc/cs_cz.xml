@@ -20,7 +20,6 @@
     </Discard_Changes>
 
     <Templates>
-        <Date_Format Text="%d.%m.%Y" />
         <Scenario Text="Scénář" />
         <Income Text="Příjem" />
         <Expense Text="Výdaj" />

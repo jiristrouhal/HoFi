@@ -16,7 +16,6 @@ def main(vocabulary:lang.Vocabulary, locale_code:Locale_Code):
     set_localization(locale_code)
 
     tvoc = vocabulary.subvocabulary("Templates")
-    DATE_FORMAT = tvoc("Date_Format")
     SCENARIO = tvoc("Scenario")
     INCOME = tvoc("Income")
     EXPENSE = tvoc("Expense")
@@ -37,9 +36,6 @@ def main(vocabulary:lang.Vocabulary, locale_code:Locale_Code):
     item_icon = ImageTk.PhotoImage(Image.open("src/_icons/item.png"))
     debt_icon = ImageTk.PhotoImage(Image.open("src/_icons/debt.png"))
     nonmon_debt_icon = ImageTk.PhotoImage(Image.open("src/_icons/nonmonetary_debt.png"))
-
-
-    treemod.tt.attrs.Date_Attr.date_formatter.set(DATE_FORMAT)
 
 
     def extract_money_amount(assumed_money:str)->float:

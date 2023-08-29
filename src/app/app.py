@@ -90,4 +90,4 @@ def build_app(language_code:lang.Locale_Code):
 
 
 if __name__=="__main__":
-    build_app('en_us').mainloop()
+    build_app('cs_cz').mainloop()

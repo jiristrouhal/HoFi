@@ -233,7 +233,7 @@ class Currency_Attribute(_Attribute):
 import datetime, src.core.dates
 class Date_Attr(_Attribute):
     default_value = datetime.date.today()
-    date_formatter = src.core.dates.get_date_converter("%d.%m.%Y")
+    date_formatter = src.core.dates.Date_Converter(LOCALIZATION_CODE)
 
     def __init__(self, value:str|None=None)->None:
         super().__init__(value)

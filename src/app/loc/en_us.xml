@@ -19,7 +19,6 @@
     </Discard_Changes>
 
     <Templates>
-        <Date_Format Text="%Y-%m-%d" />
         <Scenario Text="Scenario" />
         <Income Text="Income" />
         <Expense Text="Expense" />

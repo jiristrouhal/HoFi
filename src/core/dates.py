@@ -9,8 +9,10 @@ SEPARATORS = (".","_","-"," ")
 
 class Date_Converter:
 
-    def __init__(self,user_format:str)->None:
-        self.__format = user_format
+    def __init__(self,locale_code:Locale_Code)->None:
+        format = self.DATE_FORMATS[locale_code]
+        self._validate_format(format)
+        self.__format = format
 
     def enter_date(self,readable_date:str)->datetime.date|None:
         return datetime.datetime.strptime(readable_date, self.__format)
@@ -86,8 +88,3 @@ def default_date(locale_code:Locale_Code)->str:
         Date_Converter.DATE_FORMATS[locale_code]
     )
         
-
-def get_date_converter(user_def_format:str)->Date_Converter:
-    Date_Converter._validate_format(user_def_format)
-    return Date_Converter(user_def_format)
-

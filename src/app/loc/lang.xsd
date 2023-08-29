@@ -22,8 +22,6 @@
 
 <xs:complexType name="Templates">
     <xs:sequence>
-        <xs:element name="Date_Format" type="item"/>
-
         <xs:element name="Scenario" type="item"/>
         <xs:element name="Income" type="item"/>
         <xs:element name="Expense" type="item"/>
