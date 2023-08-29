@@ -117,24 +117,14 @@ from dataclasses import dataclass
 import src.core.currency as cur
 
 
-
-_CURRY_SYMBOL_POSITION:Dict[Locale_Code, cur.Curry_Symbol_Position] = {
-    'en_us':0,
-    'cs_cz':1
-}
-__CURRY_CODE_BY_LOCALIZATION:Dict[Locale_Code,cur.Currency_Code] = {
-    'en_us': 'USD',
-    'cs_cz': 'CZK'
-}
-
 LOCALIZATION_CODE = 'en_us'
-DEFAULT_CURRENCY_CODE = __CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
+DEFAULT_CURRENCY_CODE = cur.CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
 
 
 def set_localization(code:Locale_Code)->None:
     global LOCALIZATION_CODE, DEFAULT_CURRENCY_CODE
     LOCALIZATION_CODE = code
-    DEFAULT_CURRENCY_CODE = __CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
+    DEFAULT_CURRENCY_CODE = cur.CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
 
 
 @dataclass
@@ -152,7 +142,7 @@ class __Curry_Format:
             value = int(value)
         else:
             value =  round(Decimal(str(value),self.context), self.decimals)
-        if _CURRY_SYMBOL_POSITION[LOCALIZATION_CODE]==0 and self.prepend:
+        if cur.CURRY_SYMBOL_POSITION[LOCALIZATION_CODE]==0 and self.prepend:
             return self.__prepend_symbol(value)
         else:
             return self.__append_symbol(value)
