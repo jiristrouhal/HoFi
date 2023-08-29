@@ -236,7 +236,6 @@ class TreeEditor:
         parent:tk.Tk|tk.Toplevel|tk.Frame|tk.LabelFrame|None = None, 
         label:str = "TreeEditor", 
         displayed_attributes:Dict[str,Tuple[str,...]] = {},
-        name_attr:str = "name"
         )->None:
 
         self.app_template = app_template
@@ -284,7 +283,7 @@ class TreeEditor:
         main_voc = lang.Vocabulary()
         main_voc.load_xml(os.path.join(os.path.dirname(__file__), 'loc'), self.app_template.locale_code)
         self._vocabulary = main_voc.subvocabulary("Editor")
-        self.name_attr = name_attr
+        self.name_attr = app_template.name_attr
 
     @property
     def trees(self)->Tuple[str,...]: 

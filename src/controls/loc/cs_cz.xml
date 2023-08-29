@@ -88,7 +88,7 @@
 
         <Confirm_Renaming_If_Exported_File_Exists>
             <Title Text="Soubor už existuje" />
-            <Message Text="Soubor s tímto názvem už ve zvolené složce existuje. Zvolte 'OK' a zadejte jiný název souboru \
+            <Message Text="Soubor s tímto názvem už ve zvolené složce existuje. Zvolte 'OK' a zadejte jiný název souboru 
             nebo 'Zrušit' pro zrušení exportu." />
         </Confirm_Renaming_If_Exported_File_Exists>
 

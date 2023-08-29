@@ -16,13 +16,14 @@ import src.app.set_templates
 
 def build_app(locale_code:lang.Locale_Code):
 
-    app_template = temp.AppTemplate(locale_code)
-    
     root = tk.Tk()
     root.geometry("800x600")
     vocabulary = lang.Vocabulary()
     vocabulary.load_xml(os.path.dirname(os.path.abspath(__file__))+'/loc', locale_code)
 
+
+    app_template = temp.AppTemplate(locale_code,name_attr=vocabulary("Templates","name"))
+    
 
     src.app.set_templates.main(vocabulary, app_template)
 
@@ -44,7 +45,6 @@ def build_app(locale_code:lang.Locale_Code):
         treelist, 
         tree_tag=vocabulary("Templates", "Scenario"), 
         ui_master=manager_frame, 
-        name_attr = vocabulary("Templates","name"),
         app_template=app_template
     )
 
@@ -53,7 +53,6 @@ def build_app(locale_code:lang.Locale_Code):
         editor_frame,
         label='TreeEditor', 
         displayed_attributes={vocabulary("Amount_Title"):(vocabulary("Templates","amount"),)}, 
-        name_attr = vocabulary("Templates","name")
     )
 
     properties = pp.Properties(

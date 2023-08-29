@@ -26,8 +26,7 @@ class Tree_Manager:
         app_template:treemod.AppTemplate,
         tree_tag:str,
         ui_master:tk.Frame|tk.Tk|tk.LabelFrame|None = None,
-        label:str = "Manager",
-        name_attr:str = "name"
+        label:str = "Manager"
         )->None:
 
         if not tree_tag in app_template.template_tags():
@@ -39,7 +38,7 @@ class Tree_Manager:
         voc.load_xml(os.path.join(os.path.dirname(__file__), 'loc'), app_template.locale_code)
         self.vocabulary = voc.subvocabulary("Manager")
 
-        self.name_attr = name_attr
+        self.name_attr = app_template.name_attr
         self.__label = label
         self._converter = txml.Tree_XML_Converter(app_template)
         self._converter.add_action('invalid_xml', self._notify_the_user_xml_is_invalid)
@@ -96,8 +95,7 @@ class Tree_Manager:
         tree = treemod.Tree(
             name, 
             tag=self._tree_template_tag, 
-            app_template=self._app_template, 
-            name_attr=self.name_attr
+            app_template=self._app_template
         )
 
         self.__treelist.append(tree)

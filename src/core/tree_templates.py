@@ -14,13 +14,17 @@ class TemplateLocked(Exception): pass
 
 class AppTemplate:
 
-    def __init__(self, locale_code:Locale_Code="en_us")->None:
+    def __init__(self, locale_code:Locale_Code="en_us", name_attr:str="name")->None:
         self.__locale_code = locale_code
+        if name_attr.strip()=="":  name_attr="name"
+        self.__name_attr = name_attr
         self.__templates:Dict[str, Template] = dict()
         self.__attribute_factory = attrs.Attribute_Factory(locale_code)
 
     @property
     def locale_code(self)->Locale_Code: return self.__locale_code
+    @property
+    def name_attr(self)->str: return self.__name_attr
     
     def add(self,*templates:NewTemplate)->None:
         self.__detect_missing_child_templates(*templates)

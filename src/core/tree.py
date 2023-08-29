@@ -10,14 +10,14 @@ from src.core.tree_templates import AppTemplate, NewTemplate
 
 class TreeItem:
 
-    def __init__(self, name:str, tag:str, app_template:AppTemplate, name_attr:str="name")->None:
+    def __init__(self, name:str, tag:str, app_template:AppTemplate)->None:
 
-        self.name_attr = name_attr
+        self.name_attr = app_template.name_attr
 
         self.app_template = app_template
 
         self._attributes = app_template(tag).attributes
-        self._attributes[name_attr].set(src.core.naming.strip_and_join_spaces(name))
+        self._attributes[self.name_attr].set(src.core.naming.strip_and_join_spaces(name))
 
         self.__child_tags:Tuple[str,...] = app_template(tag).children
 
@@ -154,7 +154,7 @@ class TreeItem:
             parent.new(name,tag=tag)
 
         else:  # add the branch directly to the current object
-            child = TreeItem(name,tag,self.app_template,name_attr=self.name_attr)
+            child = TreeItem(name,tag,self.app_template)
             child._set_parent(self)
             for owner_id in self._actions:
                 if not self._actions[owner_id]: 

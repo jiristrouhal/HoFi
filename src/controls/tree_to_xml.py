@@ -23,7 +23,7 @@ def data_file_path(name:str,dir:str)->str:
 
 class Tree_XML_Converter:
     __event_label = Literal['invalid_xml']
-    def __init__(self, app_template:treemod.AppTemplate)->None:
+    def __init__(self, app_template:treemod.AppTemplate,name_attr:str="name")->None:
         self._actions:Dict[str,List[Callable[[],None]]] = dict()
         self._app_template = app_template
 
@@ -84,7 +84,11 @@ class Tree_XML_Converter:
                 xml_root.tag
             )
 
-        tree = treemod.Tree(xml_root.attrib["name"],tag=xml_root.tag,app_template=self._app_template)
+        tree = treemod.Tree(
+            xml_root.attrib[self._app_template.name_attr],
+            tag=xml_root.tag,
+            app_template=self._app_template
+        )
         for attr_name, value in xml_root.attrib.items():
             tree.set_attribute(attr_name,value)
         self.__load_xml_elem(xml_root,tree)
