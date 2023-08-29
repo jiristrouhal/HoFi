@@ -122,7 +122,7 @@ _CURRY_SYMBOL_POSITION:Dict[Locale_Code, cur.Curry_Symbol_Position] = {
     'en_us':0,
     'cs_cz':1
 }
-__CURRY_CODE_BY_LOCALIZATION:Dict[Locale_Code,Currency_Code] = {
+__CURRY_CODE_BY_LOCALIZATION:Dict[Locale_Code,cur.Currency_Code] = {
     'en_us': 'USD',
     'cs_cz': 'CZK'
 }
@@ -165,8 +165,7 @@ class __Curry_Format:
         
 
 
-Currency_Code = Literal['CZK','EUR', 'USD','JPY']
-CURRY_FORMATS:Dict[Currency_Code,__Curry_Format] = {
+CURRY_FORMATS:Dict[cur.Currency_Code,__Curry_Format] = {
     'CZK':__Curry_Format(2,'Kč',prepend=False),
     'EUR':__Curry_Format(2,'€'),
     'USD': __Curry_Format(2,'$'),
@@ -185,7 +184,7 @@ class Currency_Attribute(_Attribute):
     rounding = decimal.ROUND_HALF_EVEN
     localization:cur.Curry_Symbol_Position = 0
 
-    def __init__(self, currency_code:Currency_Code, value:Any=default_value)->None:
+    def __init__(self, currency_code:cur.Currency_Code, value:Any=default_value)->None:
         super().__init__(value)
         self.currency_code = currency_code
         self._decimal_context = Context(
@@ -210,7 +209,7 @@ class Currency_Attribute(_Attribute):
     def copy(self)->Currency_Attribute:
         return Currency_Attribute(self.currency_code,self._value)
     
-    def _set_currency(self,currency_code:Currency_Code)->None:
+    def _set_currency(self,currency_code:cur.Currency_Code)->None:
         if currency_code not in CURRY_FORMATS: 
             raise UndefinedCurrency(
                 f"Cannot set currency. Code {currency_code} is not defined."
