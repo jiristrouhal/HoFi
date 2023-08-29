@@ -2,12 +2,15 @@ from PIL import Image, ImageTk
 from collections import OrderedDict
 
 import src.core.tree as treemod
-from src.core.attributes import convert_to_currency
+from src.core.attributes import convert_to_currency, set_localization, Locale_Code
 from decimal import Decimal
 import src.lang.lang as lang
 
 
-def main(vocabulary:lang.Vocabulary):
+def main(vocabulary:lang.Vocabulary, locale_code:Locale_Code):
+
+    set_localization(locale_code)
+
     tvoc = vocabulary.subvocabulary("Templates")
     DATE_FORMAT = tvoc("Date_Format")
     SCENARIO = tvoc("Scenario")

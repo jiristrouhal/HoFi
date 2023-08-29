@@ -5,6 +5,9 @@ import abc
 import re
 
 
+Locale_Code = Literal['en_us', 'cs_cz']
+
+
 class AttributesOwner(Protocol):
 
     @property
@@ -115,14 +118,13 @@ from dataclasses import dataclass
 
 
 __Curry_Symbol_Position = Literal[0,1]
-__Localization_Code = Literal['en_us', 'cs_cz']
 
 
-_CURRY_SYMBOL_POSITION:Dict[__Localization_Code,__Curry_Symbol_Position] = {
+_CURRY_SYMBOL_POSITION:Dict[Locale_Code,__Curry_Symbol_Position] = {
     'en_us':0,
     'cs_cz':1
 }
-__CURRY_CODE_BY_LOCALIZATION:Dict[__Localization_Code,Currency_Code] = {
+__CURRY_CODE_BY_LOCALIZATION:Dict[Locale_Code,Currency_Code] = {
     'en_us': 'USD',
     'cs_cz': 'CZK'
 }
@@ -131,7 +133,7 @@ LOCALIZATION_CODE = 'en_us'
 DEFAULT_CURRENCY_CODE = __CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
 
 
-def set_localization(code:__Localization_Code)->None:
+def set_localization(code:Locale_Code)->None:
     global LOCALIZATION_CODE, DEFAULT_CURRENCY_CODE
     LOCALIZATION_CODE = code
     DEFAULT_CURRENCY_CODE = __CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]

@@ -6,21 +6,22 @@ import src.core.tree as treemod
 import src.reports.properties as pp
 import src.lang.lang as lang
 import os
-from src.core.attributes import set_localization
+
+
 import src.app.set_templates
 
 
 
 def build_app(language_code:lang._Language_Code):
 
-    set_localization(language_code)
+    
     root = tk.Tk()
     root.geometry("800x600")
     vocabulary = lang.Vocabulary()
     vocabulary.load_xml(os.path.dirname(os.path.abspath(__file__))+'/loc', language_code)
 
 
-    src.app.set_templates.main(vocabulary)
+    src.app.set_templates.main(vocabulary, language_code)
 
 
     left_frame = tk.Frame(root)
