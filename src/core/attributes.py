@@ -114,11 +114,11 @@ import decimal
 from decimal import Decimal, Context
 from dataclasses import dataclass
 
+import src.core.currency as cur
 
-__Curry_Symbol_Position = Literal[0,1]
 
 
-_CURRY_SYMBOL_POSITION:Dict[Locale_Code,__Curry_Symbol_Position] = {
+_CURRY_SYMBOL_POSITION:Dict[Locale_Code, cur.Curry_Symbol_Position] = {
     'en_us':0,
     'cs_cz':1
 }
@@ -183,7 +183,7 @@ class Currency_Attribute(_Attribute):
 
     default_value = "1"
     rounding = decimal.ROUND_HALF_EVEN
-    localization:__Curry_Symbol_Position = 0
+    localization:cur.Curry_Symbol_Position = 0
 
     def __init__(self, currency_code:Currency_Code, value:Any=default_value)->None:
         super().__init__(value)
