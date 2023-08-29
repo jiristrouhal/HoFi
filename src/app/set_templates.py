@@ -2,9 +2,10 @@ from PIL import Image, ImageTk
 from collections import OrderedDict
 
 import src.core.tree as treemod
-from src.core.attributes import convert_to_currency, set_localization, Locale_Code
+from src.core.attributes import convert_to_currency, set_localization
 from decimal import Decimal
 import src.lang.lang as lang
+from src.lang.lang import Locale_Code
 
 
 def main(vocabulary:lang.Vocabulary, locale_code:Locale_Code):

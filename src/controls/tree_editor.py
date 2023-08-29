@@ -235,7 +235,7 @@ class TreeEditor:
         parent:tk.Tk|tk.Toplevel|tk.Frame|tk.LabelFrame|None = None, 
         label:str = "TreeEditor", 
         displayed_attributes:Dict[str,Tuple[str,...]] = {},
-        language_code:lang._Language_Code = "en_us",
+        language_code:lang.Locale_Code = "en_us",
         name_attr:str = "name"
         )->None:
 

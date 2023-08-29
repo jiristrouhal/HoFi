@@ -10,13 +10,14 @@ import os
 class UninitiallizedVocabulary(Exception): pass
 
 
-_Language_Code = Literal['en_us','cs_cz']
+Locale_Code = Literal['en_us','cs_cz']
+
 @dataclasses.dataclass
 class Vocabulary:
     vocabulary:Dict[Tuple[str,...],str] = dataclasses.field(default_factory=dict, init=False)
     _xml_root:et.Element|None = None
 
-    def load_xml(self,folder:str,language_code:_Language_Code)->None:
+    def load_xml(self,folder:str,language_code:Locale_Code)->None:
         self.vocabulary.clear()
         path = os.path.join(os.path.dirname(__file__),folder,(language_code+".xml")).replace("\\","/")
         try:

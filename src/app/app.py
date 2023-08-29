@@ -12,7 +12,7 @@ import src.app.set_templates
 
 
 
-def build_app(language_code:lang._Language_Code):
+def build_app(language_code:lang.Locale_Code):
 
     
     root = tk.Tk()

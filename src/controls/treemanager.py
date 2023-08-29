@@ -26,7 +26,7 @@ class Tree_Manager:
         tree_tag:str,
         ui_master:tk.Frame|tk.Tk|tk.LabelFrame|None = None,
         label:str = "Manager",
-        language_code:lang._Language_Code = "en_us",
+        language_code:lang.Locale_Code = "en_us",
         name_attr:str = "name"
         )->None:
 

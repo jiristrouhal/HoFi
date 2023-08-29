@@ -3,9 +3,7 @@ from typing import Any, Callable, Protocol, Dict, Literal, Tuple, List
 
 import abc
 import re
-
-
-Locale_Code = Literal['en_us', 'cs_cz']
+from src.lang.lang import Locale_Code
 
 
 class AttributesOwner(Protocol):
