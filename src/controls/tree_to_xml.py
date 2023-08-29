@@ -23,9 +23,10 @@ def data_file_path(name:str,dir:str)->str:
 
 class Tree_XML_Converter:
     __event_label = Literal['invalid_xml']
-    def __init__(self, app_template:treemod.AppTemplate,name_attr:str="name")->None:
+    def __init__(self, app_template:treemod.AppTemplate)->None:
         self._actions:Dict[str,List[Callable[[],None]]] = dict()
         self._app_template = app_template
+        self.__name_attr = app_template.name_attr
 
     def actions(self,label:__event_label)->List[Callable[[],None]]:
         return self._actions[label]
@@ -101,7 +102,7 @@ class Tree_XML_Converter:
         )->None:
 
         for elem in xml_elem:
-            branch_name = elem.attrib["name"]
+            branch_name = elem.attrib[self.__name_attr]
             if elem.tag not in self._app_template.template_tags():
                 raise No_Template_For_Loaded_Element(
                     f"The loaded xml element (child of {xml_elem.tag}) has a tag {elem.tag}." 

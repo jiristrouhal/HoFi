@@ -54,7 +54,7 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate):
                 s += child.attributes[AMOUNT].value
             elif child.tag==ITEM:
                 s += Decimal(extract_money_amount(child.dependent_attributes[INCOMES].value))
-        return "+"+ cur.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].present(s,locale_code)
+        return cur.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].present(s,locale_code)
     
     def sum_expenses(item:treemod.TreeItem)->str:
         s = Decimal(0.0)
@@ -63,7 +63,7 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate):
                 s += child.attributes[AMOUNT].value
             elif child.tag==ITEM:
                 s += Decimal(extract_money_amount(child.dependent_attributes[EXPENSES].value))
-        return "-"+ cur.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].present(s,locale_code)
+        return cur.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].present(s,locale_code)
     
     def print_hello_world(item:treemod.TreeItem)->None:
         print("Hello, world!!!")
