@@ -5,15 +5,13 @@ import src.core.tree as treemod
 from src.core.attributes import convert_to_currency, set_localization
 from decimal import Decimal
 import src.lang.lang as lang
-from src.lang.lang import Locale_Code
 
 
 from src.core.dates import default_date
 
 
-def main(vocabulary:lang.Vocabulary, locale_code:Locale_Code):
+def main(vocabulary:lang.Vocabulary, app_template:treemod.tt.AppTemplate):
 
-    set_localization(locale_code)
 
     tvoc = vocabulary.subvocabulary("Templates")
     SCENARIO = tvoc("Scenario")
@@ -69,8 +67,8 @@ def main(vocabulary:lang.Vocabulary, locale_code:Locale_Code):
     def default_amount_by_tree(item:treemod.TreeItem)->str:
         return "1" + treemod.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].symbol
 
-    treemod.tt.clear()
-    treemod.tt.add(
+
+    app_template.add(
         treemod.tt.NewTemplate(
             SCENARIO,
             OrderedDict({
@@ -83,14 +81,14 @@ def main(vocabulary:lang.Vocabulary, locale_code:Locale_Code):
         ),
         treemod.tt.NewTemplate(
             INCOME,
-            OrderedDict({NAME:INCOME, AMOUNT: "1 Kč", DATE: default_date(locale_code)}),
+            OrderedDict({NAME:INCOME, AMOUNT: "1 Kč", DATE: default_date(app_template.locale_code)}),
             children=(),
             icon_file=income_icon,
             variable_defaults={AMOUNT: default_amount_by_tree}
         ),
         treemod.tt.NewTemplate(
             EXPENSE,
-            OrderedDict({NAME:EXPENSE,AMOUNT: "1 Kč", DATE: default_date(locale_code)}),
+            OrderedDict({NAME:EXPENSE,AMOUNT: "1 Kč", DATE: default_date(app_template.locale_code)}),
             children=(),
             icon_file=expense_icon,
             variable_defaults={AMOUNT: default_amount_by_tree}
@@ -111,7 +109,7 @@ def main(vocabulary:lang.Vocabulary, locale_code:Locale_Code):
             OrderedDict({
                 NAME:DEBT,
                 AMOUNT:"1 Kč", 
-                DATE: default_date(locale_code)
+                DATE: default_date(app_template.locale_code)
             }),
             children=(),
             icon_file=debt_icon,
@@ -122,7 +120,7 @@ def main(vocabulary:lang.Vocabulary, locale_code:Locale_Code):
             OrderedDict({
                 NAME:NONFINANCIAL_DEBT,
                 DESCRIPTION:"...", 
-                DATE: default_date(locale_code)
+                DATE: default_date(app_template.locale_code)
             }),
             children=(),
             icon_file=nonmon_debt_icon

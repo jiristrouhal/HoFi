@@ -23,24 +23,25 @@ class Tree_Manager:
     def __init__(
         self,
         treelist:treelist.TreeList,
+        app_template:treemod.tt.AppTemplate,
         tree_tag:str,
         ui_master:tk.Frame|tk.Tk|tk.LabelFrame|None = None,
         label:str = "Manager",
-        language_code:lang.Locale_Code = "en_us",
         name_attr:str = "name"
         )->None:
 
-        if not tree_tag in treemod.tt.template_tags():
+        if not tree_tag in app_template.template_tags():
             raise KeyError(f"The tree template '{tree_tag} does not exist.")
         self._tree_template_tag:str = tree_tag
+        self._app_template = app_template
 
         voc = lang.Vocabulary()
-        voc.load_xml(os.path.join(os.path.dirname(__file__), 'loc'), language_code)
+        voc.load_xml(os.path.join(os.path.dirname(__file__), 'loc'), app_template.locale_code)
         self.vocabulary = voc.subvocabulary("Manager")
 
         self.name_attr = name_attr
         self.__label = label
-        self._converter = txml.Tree_XML_Converter()
+        self._converter = txml.Tree_XML_Converter(app_template)
         self._converter.add_action('invalid_xml', self._notify_the_user_xml_is_invalid)
         self.__ui = tk.Frame(master=ui_master)
         self._view = ttk.Treeview(self.__ui, selectmode='browse', columns=('State',))
@@ -92,7 +93,13 @@ class Tree_Manager:
         name:str
         )->None: 
 
-        tree = treemod.Tree(name,tag=self._tree_template_tag,name_attr=self.name_attr)
+        tree = treemod.Tree(
+            name, 
+            tag=self._tree_template_tag, 
+            app_template=self._app_template, 
+            name_attr=self.name_attr
+        )
+
         self.__treelist.append(tree)
         tree.add_data("treemanager_id",str(id(tree)))
         self.label_tree_as_waiting_for_export(tree)
@@ -308,7 +315,7 @@ class Tree_Manager:
         self._window_new.title(self.vocabulary("New_Tree_Window","Title")+' '+self._tree_template_tag)
         self.__create_entries(
             self._window_new, 
-            treemod.tt.template(self._tree_template_tag).attributes
+            self._app_template(self._tree_template_tag).attributes
         )
         
         button_frame = tk.Frame(self._window_new)
@@ -335,7 +342,7 @@ class Tree_Manager:
             self._close_rename_tree_window()
 
     def _confirm_new_tree(self)->None:
-        attributes = treemod.tt.template(self._tree_template_tag).attributes
+        attributes = self._app_template(self._tree_template_tag).attributes
         for label, entry in self.entries.items():
             attributes[label].set(entry.get())
         name = attributes.pop(self.name_attr).value

@@ -5,6 +5,7 @@ import src.controls.treelist as tl
 import src.core.tree as treemod
 import src.reports.properties as pp
 import src.lang.lang as lang
+import src.core.tree_templates as temp
 import os
 
 
@@ -12,16 +13,18 @@ import src.app.set_templates
 
 
 
-def build_app(language_code:lang.Locale_Code):
 
+def build_app(locale_code:lang.Locale_Code):
+
+    app_template = temp.AppTemplate(locale_code)
     
     root = tk.Tk()
     root.geometry("800x600")
     vocabulary = lang.Vocabulary()
-    vocabulary.load_xml(os.path.dirname(os.path.abspath(__file__))+'/loc', language_code)
+    vocabulary.load_xml(os.path.dirname(os.path.abspath(__file__))+'/loc', locale_code)
 
 
-    src.app.set_templates.main(vocabulary, language_code)
+    src.app.set_templates.main(vocabulary, app_template)
 
 
     left_frame = tk.Frame(root)
@@ -41,15 +44,15 @@ def build_app(language_code:lang.Locale_Code):
         treelist, 
         tree_tag=vocabulary("Templates", "Scenario"), 
         ui_master=manager_frame, 
-        language_code=language_code,
-        name_attr = vocabulary("Templates","name")
+        name_attr = vocabulary("Templates","name"),
+        app_template=app_template
     )
 
     editor = te.TreeEditor(
+        app_template,
         editor_frame,
         label='TreeEditor', 
         displayed_attributes={vocabulary("Amount_Title"):(vocabulary("Templates","amount"),)}, 
-        language_code=language_code,
         name_attr = vocabulary("Templates","name")
     )
 

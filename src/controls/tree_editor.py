@@ -232,12 +232,14 @@ class TreeEditor:
 
     def __init__(
         self, 
+        app_template:treemod.tt.AppTemplate,
         parent:tk.Tk|tk.Toplevel|tk.Frame|tk.LabelFrame|None = None, 
         label:str = "TreeEditor", 
         displayed_attributes:Dict[str,Tuple[str,...]] = {},
-        language_code:lang.Locale_Code = "en_us",
         name_attr:str = "name"
         )->None:
+
+        self.app_template = app_template
 
         self.widget = ttk.Treeview(parent, columns=tuple(displayed_attributes.keys()))
         self.__bind_keys()
@@ -280,7 +282,7 @@ class TreeEditor:
         self.label:str = label # an identifier used in actions of Tree Item
 
         main_voc = lang.Vocabulary()
-        main_voc.load_xml(os.path.join(os.path.dirname(__file__), 'loc'), language_code)
+        main_voc.load_xml(os.path.join(os.path.dirname(__file__), 'loc'), self.app_template.locale_code)
         self._vocabulary = main_voc.subvocabulary("Editor")
         self.name_attr = name_attr
 
@@ -376,7 +378,7 @@ class TreeEditor:
         self.add_window = tk.Toplevel(self.widget)
         self.add_window.title(labels("Title"))
         self.__configure_toplevel(self.add_window)
-        self.__create_entries(self.add_window, treemod.tt.template(tag).attributes)
+        self.__create_entries(self.add_window, self.app_template(tag).attributes)
         
         self.add_window.bind("<Key-Escape>",self.__disregard_add_entry_values_on_keypress)
         self.add_window.bind("<Return>",partial(self.__confirm_add_entry_values_on_keypress,item,tag))
@@ -676,7 +678,7 @@ class TreeEditor:
             text=item.name,
             values=self._treeview_values(item)
         )
-        icon = treemod.tt.template(item.tag).icon_file
+        icon = self.app_template(item.tag).icon_file
         if icon is not None: self.widget.item(iid,image=icon)
 
     def __load_children(self,parent:treemod.TreeItem)->None:

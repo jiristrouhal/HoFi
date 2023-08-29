@@ -10,13 +10,13 @@ import os
 class Test_Saving_And_Loading_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
-        treemod.tt.clear()
-        treemod.tt.add(
+        self.app_template = treemod.tt.AppTemplate()
+        self.app_template.add(
             treemod.tt.NewTemplate('Tree',{'name':"New", "weight":123, "height":20}, children=('Branch',)),
             treemod.tt.NewTemplate('Branch',{'name':"New", "weight":123}, children=('Branch',)),
         )
-        self.converter = tree_to_xml.Tree_XML_Converter()
-        self.tree1 = treemod.Tree("Tree 1",tag='Tree')
+        self.converter = tree_to_xml.Tree_XML_Converter(self.app_template)
+        self.tree1 = treemod.Tree("Tree 1",tag='Tree',app_template=self.app_template)
 
     def test_data_file_path_is_always_set_to_existing_directory(self):
         somepath = tree_to_xml.data_file_path("somefile","data/somedirectory")
@@ -35,7 +35,7 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         self.assertListEqual(tree.children(), ["Branch X","Branch Y"])
 
     def test_nonempty_tree_with_branches_having_child_branches_is_unchanged_after_saving_and_loading_(self):
-        sometree = treemod.Tree("SomeTreeX",tag='Tree')
+        sometree = treemod.Tree("SomeTreeX",tag='Tree',app_template=self.app_template)
         sometree.set_attribute("weight",100)
         sometree.new("Branch X",tag='Branch')
         sometree.new("Small branch","Branch X",tag='Branch')
@@ -56,7 +56,7 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         self.tree1.set_attribute("weight",314)
         self.converter.save_tree(self.tree1)
         # modify the template to contain a new attribute with default value '5'
-        treemod.tt._modify_template('Tree', {'name':"New", "weight":123, "height":20, "new_attribute":5})
+        self.app_template._modify_template('Tree', {'name':"New", "weight":123, "height":20, "new_attribute":5})
         loaded_tree1 = self.converter.load_tree("Tree 1")
         # attributes found in both xml and template are loaded with their saved values
         self.assertEqual(loaded_tree1.attributes["weight"].value, 314)
@@ -68,7 +68,7 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         self.tree1.set_attribute("weight",314)
         self.converter.save_tree(self.tree1)
         # remove the attribute 'height' from the 'Tree' template
-        treemod.tt._modify_template('Tree', {'name':"New", "weight":123})
+        self.app_template._modify_template('Tree', {'name':"New", "weight":123})
         loaded_tree1 = self.converter.load_tree("Tree 1")
         # attributes found in both xml and template are loaded with their saved values
         self.assertEqual(loaded_tree1.attributes["weight"].value, 314)
@@ -89,7 +89,6 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
         self.assertEqual(self.x, 2)
 
     def tearDown(self) -> None:
-        treemod.tt.clear()
         if os.path.isfile("Invalid_tree_file.xml"):
             os.remove("Invalid_tree_file.xml")
 
@@ -97,13 +96,13 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
 class Test_Saving_And_Loading_Tree_With_Money_Attribute(unittest.TestCase):
 
     def test_saving_and_loading_tree_with_currency_attribute_keeps_the_amount_and_currency_unchanger(self):
-        treemod.tt.clear()
-        treemod.tt.add(
+        self.app_template = treemod.tt.AppTemplate()
+        self.app_template.add(
             treemod.tt.NewTemplate('Tree', {"name":"Tree","cost":"$1"},children=())
         )
         treemod.tt.attrs.set_localization("en_us")
-        converter = tree_to_xml.Tree_XML_Converter()
-        tree = treemod.Tree("TreeXY",'Tree')
+        converter = tree_to_xml.Tree_XML_Converter(self.app_template)
+        tree = treemod.Tree("TreeXY",'Tree',app_template=self.app_template)
         tree.set_attribute("cost",10)
         self.assertEqual(tree.attributes["cost"].formatted_value,"$10.00")
 
@@ -114,7 +113,6 @@ class Test_Saving_And_Loading_Tree_With_Money_Attribute(unittest.TestCase):
     def tearDown(self) -> None:
         if os.path.isfile("TreeXY.xml"):
             os.remove("TreeXY.xml")
-        treemod.tt.clear()
 
               
 

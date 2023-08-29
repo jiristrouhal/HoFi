@@ -14,13 +14,13 @@ from core.tree import Tree, TreeItem, tt
 class Test_Creating_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
-        self.editor = tree_editor.TreeEditor()
-        self.tree1 = Tree("Tree 1",tag="Tree")
+        self.editor = tree_editor.TreeEditor(app_template=self.app_template)
+        self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
         self.editor.load_tree(self.tree1)
         # prevent all GUI elements from showing up
@@ -28,15 +28,15 @@ class Test_Creating_Trees(unittest.TestCase):
 
     def test_adding_single_tree(self):
         self.assertEqual(self.editor.trees, ("Tree 1",))
-        self.editor.load_tree(Tree("Tree 2",tag="Tree"))
+        self.editor.load_tree(Tree("Tree 2",tag="Tree",app_template=self.app_template))
         self.assertEqual(self.editor.trees, ("Tree 2", "Tree 1"))
         self.assertTrue(self.editor.is_tree(self.editor._map[self.editor.widget.get_children()[0]]))
 
     def test_adding_already_existing_tree_raises_exception(self):
-        self.assertRaises(ValueError,self.editor.load_tree,Tree("Tree 1",tag="Tree"))
+        self.assertRaises(ValueError,self.editor.load_tree,Tree("Tree 1",tag="Tree",app_template=self.app_template))
 
     def test_removing_tree(self):
-        tree2 = Tree("Tree 2",tag="Tree")
+        tree2 = Tree("Tree 2",tag="Tree",app_template=self.app_template)
         tree2_iid = str(id(tree2))
         tree2.new("Branch X", tag="Branch")
         def action(x): # pragma: no cover
@@ -115,13 +115,13 @@ class Test_Creating_Trees(unittest.TestCase):
 class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
 
     def setUp(self) -> None:
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
-        self.editor = tree_editor.TreeEditor()
-        self.tree1 = Tree("Tree 1",tag='Tree')
+        self.editor = tree_editor.TreeEditor(app_template=self.app_template)
+        self.tree1 = Tree("Tree 1",tag='Tree',app_template=self.app_template)
         self.editor.load_tree(self.tree1)
         # prevent all GUI elements from showing up
         self.editor._messageboxes_allowed = False
@@ -141,13 +141,13 @@ class Test_Right_Click_Menu(unittest.TestCase):
 
     def setUp(self) -> None:
 
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"New", "weight":500},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"New","length":10},children=('Branch',)),
         )
-        self.editor = tree_editor.TreeEditor()
-        self.tree1 = Tree("Tree 1",tag='Branch')
+        self.editor = tree_editor.TreeEditor(app_template=self.app_template)
+        self.tree1 = Tree("Tree 1",tag='Branch',app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
         # prevent all GUI elements from showing up
         self.editor._messageboxes_allowed = False
@@ -216,14 +216,14 @@ class Test_Right_Click_Menu(unittest.TestCase):
 class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
 
     def setUp(self) -> None:
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
 
-        self.editor = tree_editor.TreeEditor()
-        self.tree1 = Tree("Tree 1",tag="Tree")
+        self.editor = tree_editor.TreeEditor(app_template=self.app_template)
+        self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
         # prevent all GUI elements from showing up
         self.editor._messageboxes_allowed = False
@@ -297,14 +297,14 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
 class Test_Moving_Tree(unittest.TestCase):
     
     def setUp(self) -> None:
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
-        self.tree1 = Tree("Tree 1",tag="Tree")
+        self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
-        self.editor = tree_editor.TreeEditor()
+        self.editor = tree_editor.TreeEditor(app_template=self.app_template)
         self.editor.load_tree(self.tree1)
     
     def test_available_parents_for_tree_are_always_none(self):
@@ -315,12 +315,12 @@ class Test_Moving_Tree(unittest.TestCase):
 class Test_Load_Existing_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
-        self.tree1 = Tree("Tree 1",tag="Tree")
+        self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
         self.tree1.new("Branch X",tag='Branch')
         self.tree1.new("Child of X","Branch X",tag='Branch')
@@ -328,7 +328,7 @@ class Test_Load_Existing_Tree(unittest.TestCase):
         self.tree1.new("Grandchild of X","Branch X","Child of X",tag='Branch')
 
     def test_loading_tree(self):
-        view = tree_editor.TreeEditor()
+        view = tree_editor.TreeEditor(app_template=self.app_template)
         view.load_tree(self.tree1)
         main_branches_ids = view.widget.get_children(self.tree1_iid)
         self.assertListEqual(
@@ -345,14 +345,14 @@ class Test_Load_Existing_Tree(unittest.TestCase):
 class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
 
     def setUp(self) -> None:
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
-        self.tree1 = Tree("Tree 1",tag="Tree")
+        self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
-        self.editor = tree_editor.TreeEditor()
+        self.editor = tree_editor.TreeEditor(app_template=self.app_template)
         self.editor.load_tree(self.tree1)
         self.editor.open_right_click_menu(self.tree1_iid, root=True)
         self.assertTrue(self.editor.right_click_menu.winfo_exists())
@@ -385,16 +385,16 @@ class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
 class Test_Modifying_Loaded_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
-        self.tree1 = Tree("Tree 1",tag="Tree")
+        self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
         self.tree1.new("Branch X",tag='Branch')
 
-        self.editor = tree_editor.TreeEditor()
+        self.editor = tree_editor.TreeEditor(app_template=self.app_template)
         self.editor.load_tree(self.tree1)
         # prevent all GUI elements from showing up
         self.editor._messageboxes_allowed = False
@@ -412,16 +412,16 @@ class Test_Modifying_Loaded_Tree(unittest.TestCase):
 class Test_Error_Message(unittest.TestCase):
 
     def setUp(self) -> None:
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
-        self.tree1 = Tree("Tree 1",tag="Tree")
+        self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
         self.tree1.new("Branch with children",tag='Branch')
         self.tree1.new("Child","Branch with children",tag='Branch')
-        self.editor = tree_editor.TreeEditor()
+        self.editor = tree_editor.TreeEditor(app_template=self.app_template)
         self.editor.load_tree(self.tree1)
         # prevent all GUI elements from showing up
         self.editor._messageboxes_allowed = False
@@ -440,14 +440,14 @@ class Test_Error_Message(unittest.TestCase):
 class Test_Actions_On_Selection(unittest.TestCase):
 
     def setUp(self) -> None:
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
-        self.tree1 = Tree("Tree 1", tag="Tree")
+        self.tree1 = Tree("Tree 1", tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
-        self.editor = tree_editor.TreeEditor()
+        self.editor = tree_editor.TreeEditor(app_template=self.app_template)
         self.editor.load_tree(self.tree1)
         self.editor._messageboxes_allowed = False
 
@@ -484,14 +484,14 @@ class Test_Actions_On_Selection(unittest.TestCase):
 class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
 
     def setUp(self) -> None:
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"New","weight":50},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
-        self.tree1 = Tree("Tree 1",tag='Tree')
+        self.tree1 = Tree("Tree 1",tag='Tree',app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
-        self.editor = tree_editor.TreeEditor()
+        self.editor = tree_editor.TreeEditor(app_template=self.app_template)
         self.editor.load_tree(self.tree1)
         self.editor._messageboxes_allowed = False
 
@@ -526,13 +526,12 @@ class Test_Loading_Item_With_Icon_Defined_By_Template(unittest.TestCase):
 
     def test_loading_item_with_image_in_template(self) -> None:
 
-        tt.clear()
-        image = ""
-        tt.add(
-            tt.NewTemplate('Tree',{"name":"New","weight":50},children=(), icon_file=image),
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
+            tt.NewTemplate('Tree',{"name":"New","weight":50},children=(), icon_file=""),
         )
-        self.tree1 = Tree("Tree 1",tag='Tree')
-        self.editor = tree_editor.TreeEditor()
+        self.tree1 = Tree("Tree 1",tag='Tree',app_template=self.app_template)
+        self.editor = tree_editor.TreeEditor(app_template=self.app_template)
         self.editor.load_tree(self.tree1)
     
 
@@ -544,13 +543,13 @@ class Test_User_Defined_Command_In_Right_Click_Menu(unittest.TestCase):
         def user_def_command(tree:Tree)->None:
             self.x += 1
 
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"New"},children=(),user_def_cmds={"Increment x":user_def_command}),
         )
         
-        editor = tree_editor.TreeEditor()
-        tree = Tree("TreeA", tag="Tree")
+        editor = tree_editor.TreeEditor(app_template=self.app_template)
+        tree = Tree("TreeA", tag="Tree", app_template=self.app_template)
         editor.load_tree(tree)
         editor.open_right_click_menu(tree.data["treeview_iid"])
         editor.right_click_menu.invoke("Increment x")
@@ -560,13 +559,13 @@ class Test_User_Defined_Command_In_Right_Click_Menu(unittest.TestCase):
 class Test_Undo_Redo(unittest.TestCase):
 
     def setUp(self) -> None:
-        tt.clear()
-        tt.add(
+        self.app_template = tt.AppTemplate()
+        self.app_template.add(
             tt.NewTemplate('Tree',{"name":"Tree"},children=('Branch',)),
             tt.NewTemplate('Branch',{"name":"Branch XYZ"},children=('Branch',)),
         )
-        self.editor = tree_editor.TreeEditor()
-        self.treeA = Tree("TreeA",tag="Tree")
+        self.editor = tree_editor.TreeEditor(app_template=self.app_template)
+        self.treeA = Tree("TreeA",tag="Tree",app_template=self.app_template)
         self.editor.load_tree(self.treeA)
         self.treeA.new("Branch B",tag="Branch")
         self.branchB = self.treeA._children[0]

@@ -7,13 +7,13 @@ import unittest
 class Test_Creating_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
-        tree.tt.clear()
         # add a tree template
-        tree.tt.add(
+        self.template = tree.tt.AppTemplate()
+        self.template.add(
             tree.tt.NewTemplate("Tree",{"name":"New"}, children=("Branch",)),
             tree.tt.NewTemplate("Branch",{"name":"New","weight":10}, children=("Branch",))
         )
-        self.tree = tree.Tree("Tree 1",tag="Tree")
+        self.tree = tree.Tree("Tree 1",tag="Tree",app_template=self.template)
         self.tree.new("Branch 1",tag="Branch")
 
     def test_add_child_to_a_tree(self):
@@ -146,20 +146,17 @@ class Test_Creating_Tree(unittest.TestCase):
         childOfX = branchX._children[-1]
         self.assertEqual(childOfX.its_tree, self.tree)
 
-    
-    def tearDown(self) -> None:
-        tree.tt.clear()
 
 
 class Test_Actions(unittest.TestCase):
 
     def setUp(self) -> None:
-        tree.tt.clear()
-        tree.tt.add(
+        self.template = tree.tt.AppTemplate()
+        self.template.add(
             tree.tt.NewTemplate("Tree",{"name":"New"},children=("Branch",)),
             tree.tt.NewTemplate("Branch",{"name":"New"},children=("Branch",))
         )
-        self.tree = tree.Tree("Tree 1",tag="Tree")
+        self.tree = tree.Tree("Tree 1",tag="Tree",app_template=self.template)
         self.tree.new("Branch X",tag="Branch")
         self.x = 0
     
@@ -176,20 +173,17 @@ class Test_Actions(unittest.TestCase):
         self.tree._children[0].add_data("key1", 123)
         self.assertEqual(self.tree._children[0].data["key1"], 123)
 
-    def tearDown(self) -> None:
-        tree.tt.clear()
-
 
 class Test_Adding_Leaf_Type_Item(unittest.TestCase):
 
     def setUp(self) -> None:
-        tree.tt.clear()
-        tree.tt.add(
+        self.template = tree.tt.AppTemplate()
+        self.template.add(
             tree.tt.NewTemplate("Tree",{"name":"New"},children=("Branch","Leaf")),
             tree.tt.NewTemplate("Branch",{"name":"New"},children=("Branch","Leaf")),
             tree.tt.NewTemplate("Leaf",{"name":"New"},children=())
         )
-        self.tree = tree.Tree("Tree 1",tag="Tree")
+        self.tree = tree.Tree("Tree 1",tag="Tree",app_template=self.template)
         self.tree.new("Branch X",tag="Branch")
         self.tree.new("Leaf X",tag="Leaf")
 
@@ -201,33 +195,26 @@ class Test_Adding_Leaf_Type_Item(unittest.TestCase):
         leaf.new("Leaf's branch",tag="Branch")
         self.assertListEqual(leaf._list_children(),[])
 
-    def tearDown(self) -> None:
-        tree.tt.clear()
-
 
 class Test_Trees_And_Attributes(unittest.TestCase):
 
     def setUp(self) -> None:
-        tree.tt.clear()
-        tree.tt.add(
+        template = tree.tt.AppTemplate()
+        template.add(
             tree.tt.NewTemplate("Tree",{"name":"New", "height":20},children=()),
         )
-        self.tree = tree.Tree("Tree X", tag="Tree")
+        self.tree = tree.Tree("Tree X", tag="Tree", app_template=template)
 
     def test_modifying_attribute_value(self):
         self.tree.attributes["height"].set(28)
         self.assertEqual(self.tree.attributes["height"].value, 28)
 
-    def tearDown(self) -> None:
-        tree.tt.clear()
-
-
 
 class Test_Adding_Children_According_To_Templates(unittest.TestCase):
 
     def setUp(self) -> None:
-        tree.tt.clear()
-        tree.tt.add(
+        self.template = tree.tt.AppTemplate()
+        self.template.add(
             tree.tt.NewTemplate('Tree',{"name":"New"},children=("Branch","Root")),
             tree.tt.NewTemplate('Branch',{"name":"New"},children=("Branch","Leaf")),
             tree.tt.NewTemplate('Leaf',{"name":"New"},children=()),
@@ -235,34 +222,30 @@ class Test_Adding_Children_According_To_Templates(unittest.TestCase):
         )
 
     def test_accessing_available_child_element_tags(self)->None:
-        treeA = tree.Tree("Tree A", tag="Tree")
+        treeA = tree.Tree("Tree A", tag="Tree",app_template=self.template)
         self.assertEqual(treeA.child_tags, ("Branch","Root"))
 
     def test_adding_the_new_children_using_the_tags(self)->None:
-        treeA = tree.Tree("Tree A", tag="Tree")
+        treeA = tree.Tree("Tree A", tag="Tree",app_template=self.template)
         treeA.new("Branch B", tag="Branch")
         treeA.new("Leaf X", "Branch", tag='Leaf')
         
     def test_trying_to_add_child_with_template_not_assigned_to_the_parent_template_raises_error(self):
-        treeA = tree.Tree("Tree A", tag="Tree")
+        treeA = tree.Tree("Tree A", tag="Tree", app_template=self.template)
         treeA.new("Branch B", tag="Branch")
         self.assertRaises(KeyError, treeA.new, "Root R", "Branch B", tag="Root")
 
-    def tearDown(self) -> None:
-        tree.tt.clear()
 
 
 class Test_Dependent_Attributes(unittest.TestCase):
-
-    def setUp(self) -> None:
-        tree.tt.clear()
 
     def test_make_the_tree_weight_depend_on_its_height(self):
         
         def get_weight(t:tree.Tree): 
             return 2*t.attributes["height"].value**3
 
-        tree.tt.add(
+        self.template = tree.tt.AppTemplate()
+        self.template.add(
             tree.tt.NewTemplate("Tree", 
                 {
                     "name":"New", 
@@ -272,13 +255,9 @@ class Test_Dependent_Attributes(unittest.TestCase):
                 children=()
             )
         )
-        treeA = tree.Tree("TreeA", tag="Tree")
+        treeA = tree.Tree("TreeA", tag="Tree", app_template=self.template)
         treeA.set_attribute("height",1)
         self.assertEqual(treeA.dependent_attributes["weight"].value, 2)
-        
-
-    def tearDown(self) -> None:
-        tree.tt.clear()
 
 
 

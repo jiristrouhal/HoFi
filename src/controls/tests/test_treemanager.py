@@ -45,10 +45,10 @@ class Tree_Manager(tmg.Tree_Manager):
 class Test_Creating_New_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
-        treemod.tt.clear()
-        treemod.tt.add(treemod.tt.NewTemplate('Tree',{'name':'New'},children=()))
+        self.app_template = treemod.tt.AppTemplate()
+        self.app_template.add(treemod.tt.NewTemplate('Tree',{'name':'New'},children=()))
         self.treelist = treelist.TreeList()
-        self.manager = Tree_Manager(self.treelist,tree_tag='Tree')
+        self.manager = Tree_Manager(self.treelist,tree_tag='Tree',app_template=self.app_template)
 
     def test_creating_new_tree_via_manager(self):
         self.manager.new("Tree 1")
@@ -71,15 +71,15 @@ class Test_Creating_New_Tree(unittest.TestCase):
         self.assertFalse(self.manager._entry_name.winfo_exists())
 
     def tearDown(self) -> None:
-        treemod.tt.clear()
+        self.app_template = treemod.tt.AppTemplate()
 
 class Test_Editing_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
-        treemod.tt.clear()
-        treemod.tt.add(treemod.tt.NewTemplate('Tree',{'name':'New'},children=()))
+        self.app_template = treemod.tt.AppTemplate()
+        self.app_template.add(treemod.tt.NewTemplate('Tree',{'name':'New'},children=()))
         self.treelist = treelist.TreeList()
-        self.manager = Tree_Manager(self.treelist,tree_tag='Tree')
+        self.manager = Tree_Manager(self.treelist,tree_tag='Tree',app_template=self.app_template)
         self.manager.new("Tree X")
 
     def test_rename_tree(self):
@@ -174,16 +174,14 @@ class Test_Editing_Trees(unittest.TestCase):
         self.manager._set_tree_attribute("Tree X", NONEXISTENT_ATTR_NAME,123)
         self.assertTrue(NONEXISTENT_ATTR_NAME not in self.manager.get_tree("Tree X").attributes)
 
-    def tearDown(self) -> None:
-        treemod.tt.clear()
 
 class Test_Removing_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
-        treemod.tt.clear()
-        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':"New"}, children=()))
+        self.app_template = treemod.tt.AppTemplate()
+        self.app_template.add(treemod.tt.NewTemplate('Tree', {'name':"New"}, children=()))
         self.treelist = treelist.TreeList()
-        self.manager = Tree_Manager(self.treelist,tree_tag='Tree')
+        self.manager = Tree_Manager(self.treelist,tree_tag='Tree',app_template=self.app_template)
 
     def test_remove_tree_using_right_click(self):
         self.manager.agree_with_removal = True
@@ -203,16 +201,14 @@ class Test_Removing_Trees(unittest.TestCase):
         )
         self.assertListEqual(self.manager.trees, ["Tree X"])
 
-    def tearDown(self) -> None:
-        treemod.tt.clear()
 
 class Test_Right_Click_Menu(unittest.TestCase):
 
     def setUp(self) -> None:
-        treemod.tt.clear()
-        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':"New"}, children=()))
+        self.app_template = treemod.tt.AppTemplate()
+        self.app_template.add(treemod.tt.NewTemplate('Tree', {'name':"New"}, children=()))
         self.treelist = treelist.TreeList()
-        self.manager = Tree_Manager(self.treelist, tree_tag='Tree')
+        self.manager = Tree_Manager(self.treelist, tree_tag='Tree',app_template=self.app_template)
 
     def test_right_click_menu_containts_options_for_creating_or_loading_tree_if_clicked_outside_of_all_items(self):
         self.manager.new("Some tree")
@@ -223,16 +219,14 @@ class Test_Right_Click_Menu(unittest.TestCase):
         )
         self.assertTrue(self.manager._window_new is not None)
 
-    def tearDown(self) -> None:
-        treemod.tt.clear()
 
 class Test_Tree_and_Xml_Interaction(unittest.TestCase):
 
     def setUp(self) -> None:
-        treemod.tt.clear()
-        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':"New", "height":10}, children=()))
+        self.app_template = treemod.tt.AppTemplate()
+        self.app_template.add(treemod.tt.NewTemplate('Tree', {'name':"New", "height":10}, children=()))
         self.treelist = treelist.TreeList()
-        self.manager = Tree_Manager(self.treelist,tree_tag='Tree')
+        self.manager = Tree_Manager(self.treelist,tree_tag='Tree',app_template=self.app_template)
 
     def test_export_and_load_tree(self):
         self.manager.xml_file_path = "./Tree being exported.xml"
@@ -352,15 +346,14 @@ class Test_Tree_and_Xml_Interaction(unittest.TestCase):
             os.remove("Tree being exported.xml")
         if os.path.isfile("Tree being exported 2.xml"):
             os.remove("Tree being exported 2.xml")
-        treemod.tt.clear()
 
 class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
 
     def setUp(self) -> None:
-        treemod.tt.clear()
-        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':"New"}, children=()))
+        self.app_template = treemod.tt.AppTemplate()
+        self.app_template.add(treemod.tt.NewTemplate('Tree', {'name':"New"}, children=()))
         self.treelist = treelist.TreeList()
-        self.manager = Tree_Manager(self.treelist, tree_tag='Tree')
+        self.manager = Tree_Manager(self.treelist, tree_tag='Tree',app_template=self.app_template)
     
         self.manager.xml_file_path = "./Tree being exported.xml"
 
@@ -408,16 +401,14 @@ class Test_Exporting_To_Already_Existing_File(unittest.TestCase):
         )
         self.assertFalse(self.manager._window_rename.winfo_exists())
 
-    def tearDown(self) -> None:
-        treemod.tt.clear()
 
 class Test_Updating_File_After_Renaming_Tree(unittest.TestCase):
 
     def test_after_renaming_the_tree_has_to_be_exported_to_a_new_file(self):
-        treemod.tt.clear()
-        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':'New'}, children=()))
+        self.app_template = treemod.tt.AppTemplate()
+        self.app_template.add(treemod.tt.NewTemplate('Tree', {'name':'New'}, children=()))
         tlist = treelist.TreeList()
-        manager = Tree_Manager(tlist,tree_tag='Tree')
+        manager = Tree_Manager(tlist,tree_tag='Tree',app_template=self.app_template)
         manager.xml_file_path = "./Tree being exported.xml"
     
         manager.new("Tree being exported")
@@ -440,15 +431,13 @@ class Test_Updating_File_After_Renaming_Tree(unittest.TestCase):
         if os.path.isfile("Tree being exported 2.xml"):
             os.remove("Tree being exported 2.xml")
 
-        treemod.tt.clear()
-
 class Test_Loading_of_Xml(unittest.TestCase):
 
     def setUp(self) -> None:
         self.tearDown()
-
-        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':'New'}, children=()))
-        self.manager = Tree_Manager(treelist.TreeList(), tree_tag='Tree')
+        self.app_template = treemod.tt.AppTemplate()
+        self.app_template.add(treemod.tt.NewTemplate('Tree', {'name':'New'}, children=()))
+        self.manager = Tree_Manager(treelist.TreeList(), tree_tag='Tree',app_template=self.app_template)
         self.manager.new("Tree X")
         self.manager.xml_file_path = ("./data/Tree X.xml")
         tree_x = self.manager.get_tree("Tree X")
@@ -470,16 +459,14 @@ class Test_Loading_of_Xml(unittest.TestCase):
     def tearDown(self) -> None: # pragma: no cover
         if os.path.isfile("./data/Tree X.xml"):
             os.remove("./data/Tree X.xml")
-        treemod.tt.clear()
-
 
 class Test_Actions(unittest.TestCase):
 
     def setUp(self) -> None:
-        treemod.tt.clear()
-        treemod.tt.add(treemod.tt.NewTemplate('Tree', {'name':'New'}, children=()))
+        self.app_template = treemod.tt.AppTemplate()
+        self.app_template.add(treemod.tt.NewTemplate('Tree', {'name':'New'}, children=()))
         tlist = treelist.TreeList()
-        self.manager = Tree_Manager(tlist, tree_tag='Tree')
+        self.manager = Tree_Manager(tlist, tree_tag='Tree',app_template=self.app_template)
         self.manager.new("Tree X")
         self.manager.new("Tree Y")
     
@@ -510,18 +497,15 @@ class Test_Actions(unittest.TestCase):
         )
         self.assertListEqual(self.names,[])
 
-    def tearDown(self) -> None:
-        treemod.tt.clear()
-
 
 class Test_Specifying_Nonexistent_Tree_Template(unittest.TestCase):
 
     def test_nonexistent_tree_template_tag_raises_key_error(self)->None:
-        treemod.tt.clear()
-        treemod.tt.add(treemod.tt.NewTemplate('Tree', {"name":"New"}, children=()))
+        app_template = treemod.tt.AppTemplate()
+        app_template.add(treemod.tt.NewTemplate('Tree', {"name":"New"}, children=()))
 
         tlist = treelist.TreeList('Label')
-        self.assertRaises(KeyError, Tree_Manager, tlist, "Nonexistent template tag")
+        self.assertRaises(KeyError, Tree_Manager, tlist, tree_tag="Nonexistent template tag", app_template=app_template)
 
 
 if __name__=="__main__": unittest.main()

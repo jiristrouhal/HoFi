@@ -6,18 +6,21 @@ from collections import OrderedDict
 
 import src.core.tree_templates as tt
 from src.core.attributes import _Attribute, Dependent_Attr, CURRY_FORMATS
+from src.core.tree_templates import AppTemplate
 
 
 class TreeItem:
 
-    def __init__(self, name:str, tag:str, name_attr:str="name")->None:
+    def __init__(self, name:str, tag:str, app_template:AppTemplate, name_attr:str="name")->None:
 
         self.name_attr = name_attr
 
-        self._attributes = tt.template(tag).attributes
+        self.app_template = app_template
+
+        self._attributes = app_template(tag).attributes
         self._attributes[name_attr].set(src.core.naming.strip_and_join_spaces(name))
 
-        self.__child_tags:Tuple[str,...] = tt.template(tag).children
+        self.__child_tags:Tuple[str,...] = app_template(tag).children
 
         self._children:List[TreeItem] = list()
         self._parent:TreeItem|None = None
@@ -31,12 +34,13 @@ class TreeItem:
 
         self.__children_allowed = bool(self.__child_tags)
 
-        self._dependent_attributes:OrderedDict[str,Dependent_Attr] = tt.template(tag).dependent_attributes
+        self._dependent_attributes:OrderedDict[str,Dependent_Attr] = \
+            app_template(tag).dependent_attributes
         for attr in self._dependent_attributes.values():
             attr.set_owner(self)
         
         self._user_defined_commands:OrderedDict[str,Callable[[],None]] = \
-            tt.template(tag).user_def_cmds(self)
+            app_template(tag).user_def_cmds(self)
         
         self._tree = self.its_tree
 
@@ -151,13 +155,13 @@ class TreeItem:
             parent.new(name,tag=tag)
 
         else:  # add the branch directly to the current object
-            child = TreeItem(name,tag,name_attr=self.name_attr)
+            child = TreeItem(name,tag,self.app_template,name_attr=self.name_attr)
             child._set_parent(self)
             for owner_id in self._actions:
                 if not self._actions[owner_id]: 
                     self.__initialize_actions(owner_id)
 
-            for key, foo in tt.template(tag).variable_defaults.items():
+            for key, foo in self.app_template(tag).variable_defaults.items():
                 if key in child.attributes:
                     child._attributes[key].set(foo(child))
 
