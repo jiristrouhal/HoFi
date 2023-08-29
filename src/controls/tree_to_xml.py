@@ -6,6 +6,13 @@ from typing import Dict, Callable, List, Literal
 import src.core.tree as treemod
 
 
+class No_Template_For_Loaded_Element(Exception): 
+    
+    def __init__(self, message:str, unknown_tag:str)->None:
+        super().__init__(message)
+        self.unknown_tag = unknown_tag
+
+
 DEFAULT_DIRECTORY = "."
 
 
@@ -68,6 +75,15 @@ class Tree_XML_Converter:
             return None
 
         xml_root = xml_tree.getroot()
+        if xml_root.tag not in self._app_template.template_tags():
+            raise No_Template_For_Loaded_Element(
+                f"The xml element being loaded has tag {xml_root.tag}." 
+                "The App_Template used for current application does not contain any template with this tag. "
+                "The xml file is not compatible with the current version of the application. " 
+                "Check the XML file, the language and version of the application.",
+                xml_root.tag
+            )
+
         tree = treemod.Tree(xml_root.attrib["name"],tag=xml_root.tag,app_template=self._app_template)
         for attr_name, value in xml_root.attrib.items():
             tree.set_attribute(attr_name,value)
@@ -82,6 +98,14 @@ class Tree_XML_Converter:
 
         for elem in xml_elem:
             branch_name = elem.attrib["name"]
+            if elem.tag not in self._app_template.template_tags():
+                raise No_Template_For_Loaded_Element(
+                    f"The loaded xml element (child of {xml_elem.tag}) has a tag {elem.tag}." 
+                    "The App_Template used for current application does not contain any template with such a tag. "
+                    "The xml file is not compatible with the current version of the application. "
+                    "Check the XML file, the language and version of the application.",
+                    elem.tag
+                )
             thing_with_branches.new(branch_name,tag=elem.tag)
             child_branch = thing_with_branches._children[-1]
             

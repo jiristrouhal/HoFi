@@ -187,7 +187,12 @@ class Tree_Manager:
             return
         if self.__file_already_in_use(filepath): 
             return 
-        tree = self._converter.load_tree(treename,dir)
+        
+        try:
+            tree = self._converter.load_tree(treename,dir)
+        except txml.No_Template_For_Loaded_Element as e:
+            self._notify_the_user_of_missing_template(e.unknown_tag)
+            return
 
         if tree is None: return
 
@@ -473,6 +478,12 @@ class Tree_Manager:
     def _notify_the_user_xml_is_invalid(self)->None:
         msg = self.vocabulary.subvocabulary("Invalid_XML")
         tkmsg.showerror(msg("Title"), msg("Content"))
+
+    def _notify_the_user_of_missing_template(self, missing_elem_tag:str)->None:
+        msg = self.vocabulary.subvocabulary("Missing_Template_For_XML_Elem")
+        tkmsg.showerror(
+            msg("Title"), 
+            msg("Message_part_1") + missing_elem_tag + msg("Message_part_2"))
                         
     def label_tree_as_modified(self,tree:treemod.TreeItem)->None:
         if not tree in self.__treelist._modified_trees:

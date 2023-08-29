@@ -85,6 +85,7 @@
         <xs:element name="Export_Info" type="Export_Info"/>
         <xs:element name="Not_Yet_Exported" type="Simple_Message_Box"/>
         <xs:element name="Invalid_XML" type="Invalid_XML_Error"/>
+        <xs:element name="Missing_Template_For_XML_Elem" type="Missing_Template_For_XML_Elem"/>
 
         <xs:element name="Tree_Status_Labels" type="Manager_Tree_Status_Labels"/>
 
@@ -180,6 +181,14 @@
     <xs:sequence>
         <xs:element name="Title" type="item"/>
         <xs:element name="Content" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Missing_Template_For_XML_Elem">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="Message_part_1" type="item"/>
+        <xs:element name="Message_part_2" type="item"/>
     </xs:sequence>
 </xs:complexType>
 

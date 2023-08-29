@@ -129,6 +129,12 @@
             <Content Text="The content of the XML file is invalid. Open the file externally and check its contents." />
         </Invalid_XML>  
 
+        <Missing_Template_For_XML_Elem>
+            <Title Text="Unknown XML element" />
+            <Message_part_1 Text="The xml element being loaded has tag " />
+            <Message_part_2 Text=". The App_Template used for current application does not contain any template with this tag. The xml file is not compatible with the current version of the application. Check the XML file, the language and version of the application." />
+        </Missing_Template_For_XML_Elem>
+
         <Tree_Status_Labels>
             <Waiting_For_Export Text="waiting for export" />
             <Modified Text="modified" />

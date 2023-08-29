@@ -131,6 +131,12 @@
             <Content Text="Soubor XML má neplatný obsah. Proveďte kontrolu a opravu souboru." />
         </Invalid_XML>
 
+        <Missing_Template_For_XML_Elem>
+            <Title Text="Neznámý XML element" />
+            <Message_part_1 Text="Při načítání XML souboru byl nalezen neznámý element '" />
+            <Message_part_2 Text="'. App_Template objekt použitý v této aplikaci neobsahuje příslušnou šablonu. Zkontrolujte XML soubor, jazyk i verzi aplikace." />
+        </Missing_Template_For_XML_Elem>
+
         <Tree_Status_Labels>
             <Waiting_For_Export Text="čeká na export" />
             <Modified Text="neuložené změny" />
