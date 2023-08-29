@@ -66,8 +66,8 @@ class Test_Default_Dates(unittest.TestCase):
 
     def test_default_date_with_given_locale_codes_returns_todays_date_string_propertly_formatted(self):
 
-        date_str1 = dates.Date_Converter.default_date(locale_code='cs_cz')
-        date_str2 = dates.Date_Converter.default_date(locale_code='en_us')
+        date_str1 = dates.default_date(locale_code='cs_cz')
+        date_str2 = dates.default_date(locale_code='en_us')
 
         self.assertTrue(fullmatch("\d{2}\.\d{2}\.\d{4}",date_str1) is not None)
         self.assertTrue(fullmatch("\d{4}\-\d{2}\-\d{2}",date_str2) is not None)

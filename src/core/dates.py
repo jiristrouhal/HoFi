@@ -23,7 +23,7 @@ class Date_Converter:
             return False
 
     def print_date(self,date_obj:datetime.date)->str:
-        return Date_Converter.__date_to_str(date_obj, self.__format)
+        return Date_Converter.date_to_str(date_obj, self.__format)
     
     def set(self,new_format_string:str)->None:
         self._validate_format(new_format_string)
@@ -70,22 +70,21 @@ class Date_Converter:
         "en_us" : "%Y-%m-%d",
         "cs_cz" : "%d.%m.%Y"
     }
-        
-    @staticmethod
-    def default_date(locale_code:Locale_Code)->str:
-        return Date_Converter.__date_to_str(
-            Date_Converter._get_today(), 
-            Date_Converter.DATE_FORMATS[locale_code]
-        )
 
     @staticmethod
     def _get_today()->datetime.date:
         return datetime.date.today()
     
     @staticmethod
-    def __date_to_str(date:datetime.date, format:str)->str:
+    def date_to_str(date:datetime.date, format:str)->str:
         return date.strftime(format)
     
+
+def default_date(locale_code:Locale_Code)->str:
+    return Date_Converter.date_to_str(
+        Date_Converter._get_today(), 
+        Date_Converter.DATE_FORMATS[locale_code]
+    )
         
 
 def get_date_converter(user_def_format:str)->Date_Converter:
