@@ -8,10 +8,10 @@ class Test_Creating_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
         # add a tree template
-        self.template = tree.tt.AppTemplate()
+        self.template = tree.AppTemplate()
         self.template.add(
-            tree.tt.NewTemplate("Tree",{"name":"New"}, children=("Branch",)),
-            tree.tt.NewTemplate("Branch",{"name":"New","weight":10}, children=("Branch",))
+            tree.NewTemplate("Tree",{"name":"New"}, children=("Branch",)),
+            tree.NewTemplate("Branch",{"name":"New","weight":10}, children=("Branch",))
         )
         self.tree = tree.Tree("Tree 1",tag="Tree",app_template=self.template)
         self.tree.new("Branch 1",tag="Branch")
@@ -151,10 +151,10 @@ class Test_Creating_Tree(unittest.TestCase):
 class Test_Actions(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.template = tree.tt.AppTemplate()
+        self.template = tree.AppTemplate()
         self.template.add(
-            tree.tt.NewTemplate("Tree",{"name":"New"},children=("Branch",)),
-            tree.tt.NewTemplate("Branch",{"name":"New"},children=("Branch",))
+            tree.NewTemplate("Tree",{"name":"New"},children=("Branch",)),
+            tree.NewTemplate("Branch",{"name":"New"},children=("Branch",))
         )
         self.tree = tree.Tree("Tree 1",tag="Tree",app_template=self.template)
         self.tree.new("Branch X",tag="Branch")
@@ -177,11 +177,11 @@ class Test_Actions(unittest.TestCase):
 class Test_Adding_Leaf_Type_Item(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.template = tree.tt.AppTemplate()
+        self.template = tree.AppTemplate()
         self.template.add(
-            tree.tt.NewTemplate("Tree",{"name":"New"},children=("Branch","Leaf")),
-            tree.tt.NewTemplate("Branch",{"name":"New"},children=("Branch","Leaf")),
-            tree.tt.NewTemplate("Leaf",{"name":"New"},children=())
+            tree.NewTemplate("Tree",{"name":"New"},children=("Branch","Leaf")),
+            tree.NewTemplate("Branch",{"name":"New"},children=("Branch","Leaf")),
+            tree.NewTemplate("Leaf",{"name":"New"},children=())
         )
         self.tree = tree.Tree("Tree 1",tag="Tree",app_template=self.template)
         self.tree.new("Branch X",tag="Branch")
@@ -199,9 +199,9 @@ class Test_Adding_Leaf_Type_Item(unittest.TestCase):
 class Test_Trees_And_Attributes(unittest.TestCase):
 
     def setUp(self) -> None:
-        template = tree.tt.AppTemplate()
+        template = tree.AppTemplate()
         template.add(
-            tree.tt.NewTemplate("Tree",{"name":"New", "height":20},children=()),
+            tree.NewTemplate("Tree",{"name":"New", "height":20},children=()),
         )
         self.tree = tree.Tree("Tree X", tag="Tree", app_template=template)
 
@@ -213,12 +213,12 @@ class Test_Trees_And_Attributes(unittest.TestCase):
 class Test_Adding_Children_According_To_Templates(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.template = tree.tt.AppTemplate()
+        self.template = tree.AppTemplate()
         self.template.add(
-            tree.tt.NewTemplate('Tree',{"name":"New"},children=("Branch","Root")),
-            tree.tt.NewTemplate('Branch',{"name":"New"},children=("Branch","Leaf")),
-            tree.tt.NewTemplate('Leaf',{"name":"New"},children=()),
-            tree.tt.NewTemplate('Root',{"name":"New"},children=("Root",)),
+            tree.NewTemplate('Tree',{"name":"New"},children=("Branch","Root")),
+            tree.NewTemplate('Branch',{"name":"New"},children=("Branch","Leaf")),
+            tree.NewTemplate('Leaf',{"name":"New"},children=()),
+            tree.NewTemplate('Root',{"name":"New"},children=("Root",)),
         )
 
     def test_accessing_available_child_element_tags(self)->None:
@@ -244,9 +244,9 @@ class Test_Dependent_Attributes(unittest.TestCase):
         def get_weight(t:tree.Tree): 
             return 2*t.attributes["height"].value**3
 
-        self.template = tree.tt.AppTemplate()
+        self.template = tree.AppTemplate()
         self.template.add(
-            tree.tt.NewTemplate("Tree", 
+            tree.NewTemplate("Tree", 
                 {
                     "name":"New", 
                     "height":20, 

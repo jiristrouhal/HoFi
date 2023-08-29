@@ -23,7 +23,7 @@ class Tree_Manager:
     def __init__(
         self,
         treelist:treelist.TreeList,
-        app_template:treemod.tt.AppTemplate,
+        app_template:treemod.AppTemplate,
         tree_tag:str,
         ui_master:tk.Frame|tk.Tk|tk.LabelFrame|None = None,
         label:str = "Manager",

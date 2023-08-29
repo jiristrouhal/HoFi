@@ -16,7 +16,7 @@ def data_file_path(name:str,dir:str)->str:
 
 class Tree_XML_Converter:
     __event_label = Literal['invalid_xml']
-    def __init__(self, app_template:treemod.tt.AppTemplate)->None:
+    def __init__(self, app_template:treemod.AppTemplate)->None:
         self._actions:Dict[str,List[Callable[[],None]]] = dict()
         self._app_template = app_template
 

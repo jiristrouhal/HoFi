@@ -4,14 +4,14 @@ sys.path.insert(1,"src")
 
 import src.controls.treelist as tlist
 import unittest
-from core.tree import Tree, tt
+from core.tree import Tree, AppTemplate, NewTemplate
 
 
 class Test_Modifying_List(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
-        self.app_template.add(tt.NewTemplate('Tree', {"name":"New"},children=()))
+        self.app_template = AppTemplate()
+        self.app_template.add(NewTemplate('Tree', {"name":"New"},children=()))
         self.nlist = tlist.TreeList(label='TreeList')
     
     def test_adding_to_list(self)->None:

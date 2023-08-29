@@ -4,16 +4,16 @@ sys.path.insert(1,"src")
 
 import src.reports.properties as pp
 import unittest
-from core.tree import TreeItem, tt
+from core.tree import TreeItem, AppTemplate, NewTemplate
 
 
 class Test_Displaying_Tree_Properties(unittest.TestCase):
 
 
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree', {"name":"New", "weight":4500, "height":12},children=())
+            NewTemplate('Tree', {"name":"New", "weight":4500, "height":12},children=())
         )
         self.tree = TreeItem("Tree 1", tag='Tree',app_template=self.app_template)
         self.prop_window = pp.Properties()

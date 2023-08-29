@@ -17,6 +17,7 @@ class AppTemplate:
     def __init__(self, locale_code:Locale_Code="en_us")->None:
         self.__locale_code = locale_code
         self.__templates:Dict[str, Template] = dict()
+        self.__attribute_factory = attrs.Attribute_Factory(locale_code)
 
     @property
     def locale_code(self)->Locale_Code: return self.__locale_code
@@ -120,9 +121,9 @@ class AppTemplate:
         attributes = OrderedDict()
         for name, value in new_attributes.items():
             if isinstance(value,tuple):
-                attributes[name] = attrs.create_attribute(value[1],value[0])
+                attributes[name] = self.__attribute_factory.create_attribute(value[1],value[0])
             else:
-                attributes[name] = attrs.create_attribute(value)
+                attributes[name] = self.__attribute_factory.create_attribute(value)
         return attributes
 
     def __template_exists(self,tag:str)->bool:

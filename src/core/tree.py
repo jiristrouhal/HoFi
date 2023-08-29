@@ -4,9 +4,8 @@ import src.core.naming
 from collections import OrderedDict
 
 
-import src.core.tree_templates as tt
-from src.core.attributes import _Attribute, Dependent_Attr, CURRY_FORMATS
-from src.core.tree_templates import AppTemplate
+from src.core.attributes import _Attribute, Dependent_Attr
+from src.core.tree_templates import AppTemplate, NewTemplate
 
 
 class TreeItem:

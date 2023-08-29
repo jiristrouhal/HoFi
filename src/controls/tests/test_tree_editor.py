@@ -8,16 +8,16 @@ import tkinter as tk
 
 
 import controls.tree_editor  as tree_editor
-from core.tree import Tree, TreeItem, tt
+from core.tree import Tree, TreeItem, AppTemplate, NewTemplate
 
 
 class Test_Creating_Trees(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
-            tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
+            NewTemplate('Tree',{"name":"New"},children=('Branch',)),
+            NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
         self.editor = tree_editor.TreeEditor(app_template=self.app_template)
         self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
@@ -115,10 +115,10 @@ class Test_Creating_Trees(unittest.TestCase):
 class Test_Accessing_Branch_From_Treeview(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
-            tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
+            NewTemplate('Tree',{"name":"New"},children=('Branch',)),
+            NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
         self.editor = tree_editor.TreeEditor(app_template=self.app_template)
         self.tree1 = Tree("Tree 1",tag='Tree',app_template=self.app_template)
@@ -141,10 +141,10 @@ class Test_Right_Click_Menu(unittest.TestCase):
 
     def setUp(self) -> None:
 
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New", "weight":500},children=('Branch',)),
-            tt.NewTemplate('Branch',{"name":"New","length":10},children=('Branch',)),
+            NewTemplate('Tree',{"name":"New", "weight":500},children=('Branch',)),
+            NewTemplate('Branch',{"name":"New","length":10},children=('Branch',)),
         )
         self.editor = tree_editor.TreeEditor(app_template=self.app_template)
         self.tree1 = Tree("Tree 1",tag='Branch',app_template=self.app_template)
@@ -216,10 +216,10 @@ class Test_Right_Click_Menu(unittest.TestCase):
 class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
-            tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
+            NewTemplate('Tree',{"name":"New"},children=('Branch',)),
+            NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
 
         self.editor = tree_editor.TreeEditor(app_template=self.app_template)
@@ -297,10 +297,10 @@ class Test_Moving_Branch_Under_New_Parent(unittest.TestCase):
 class Test_Moving_Tree(unittest.TestCase):
     
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
-            tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
+            NewTemplate('Tree',{"name":"New"},children=('Branch',)),
+            NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
         self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
@@ -315,10 +315,10 @@ class Test_Moving_Tree(unittest.TestCase):
 class Test_Load_Existing_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
-            tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
+            NewTemplate('Tree',{"name":"New"},children=('Branch',)),
+            NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
         self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
@@ -345,10 +345,10 @@ class Test_Load_Existing_Tree(unittest.TestCase):
 class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
-            tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
+            NewTemplate('Tree',{"name":"New"},children=('Branch',)),
+            NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
         self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
@@ -385,10 +385,10 @@ class Test_Adding_Branch_Via_Treeview(unittest.TestCase):
 class Test_Modifying_Loaded_Tree(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
-            tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
+            NewTemplate('Tree',{"name":"New"},children=('Branch',)),
+            NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
         self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
@@ -412,10 +412,10 @@ class Test_Modifying_Loaded_Tree(unittest.TestCase):
 class Test_Error_Message(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
-            tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
+            NewTemplate('Tree',{"name":"New"},children=('Branch',)),
+            NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
         self.tree1 = Tree("Tree 1",tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
@@ -440,10 +440,10 @@ class Test_Error_Message(unittest.TestCase):
 class Test_Actions_On_Selection(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New"},children=('Branch',)),
-            tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
+            NewTemplate('Tree',{"name":"New"},children=('Branch',)),
+            NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
         self.tree1 = Tree("Tree 1", tag="Tree",app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
@@ -484,10 +484,10 @@ class Test_Actions_On_Selection(unittest.TestCase):
 class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New","weight":50},children=('Branch',)),
-            tt.NewTemplate('Branch',{"name":"New"},children=('Branch',)),
+            NewTemplate('Tree',{"name":"New","weight":50},children=('Branch',)),
+            NewTemplate('Branch',{"name":"New"},children=('Branch',)),
         )
         self.tree1 = Tree("Tree 1",tag='Tree',app_template=self.app_template)
         self.tree1_iid = str(id(self.tree1))
@@ -526,9 +526,9 @@ class Test_Loading_Item_With_Icon_Defined_By_Template(unittest.TestCase):
 
     def test_loading_item_with_image_in_template(self) -> None:
 
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New","weight":50},children=(), icon_file=""),
+            NewTemplate('Tree',{"name":"New","weight":50},children=(), icon_file=""),
         )
         self.tree1 = Tree("Tree 1",tag='Tree',app_template=self.app_template)
         self.editor = tree_editor.TreeEditor(app_template=self.app_template)
@@ -543,9 +543,9 @@ class Test_User_Defined_Command_In_Right_Click_Menu(unittest.TestCase):
         def user_def_command(tree:Tree)->None:
             self.x += 1
 
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"New"},children=(),user_def_cmds={"Increment x":user_def_command}),
+            NewTemplate('Tree',{"name":"New"},children=(),user_def_cmds={"Increment x":user_def_command}),
         )
         
         editor = tree_editor.TreeEditor(app_template=self.app_template)
@@ -559,10 +559,10 @@ class Test_User_Defined_Command_In_Right_Click_Menu(unittest.TestCase):
 class Test_Undo_Redo(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.app_template = tt.AppTemplate()
+        self.app_template = AppTemplate()
         self.app_template.add(
-            tt.NewTemplate('Tree',{"name":"Tree"},children=('Branch',)),
-            tt.NewTemplate('Branch',{"name":"Branch XYZ"},children=('Branch',)),
+            NewTemplate('Tree',{"name":"Tree"},children=('Branch',)),
+            NewTemplate('Branch',{"name":"Branch XYZ"},children=('Branch',)),
         )
         self.editor = tree_editor.TreeEditor(app_template=self.app_template)
         self.treeA = Tree("TreeA",tag="Tree",app_template=self.app_template)

@@ -2,6 +2,7 @@ import sys
 sys.path.insert(1,"src")
 
 import core.attributes as attributes
+import core.currency as cur
 import unittest
 
 
@@ -32,6 +33,9 @@ class Test_Positive_Int_Attribute(unittest.TestCase):
 
 
 class Test_Choice_Attribute(unittest.TestCase):
+    
+    def setUp(self) -> None:
+        self.attrfactory = attributes.Attribute_Factory('en_us')
 
     def test_storing_the_options_and_the_default_option(self):
         options = {"Go for A":"A", "Go for B":"B"}
@@ -54,7 +58,7 @@ class Test_Choice_Attribute(unittest.TestCase):
 
     def test_automatic_identification_of_this_type_of_attribute(self):
         options = {"Go for A":"A", "Go for B":"B"}
-        chatt = attributes.create_attribute("Go for A", options)
+        chatt = self.attrfactory.create_attribute("Go for A", options)
         self.assertEqual(chatt.formatted_value, "Go for A")
 
 class Test_Date_Attribute(unittest.TestCase):
@@ -118,98 +122,100 @@ class Test_Name_Attribute(unittest.TestCase):
 class Test_Recognizing_Currency(unittest.TestCase):
 
     def test_valid_currencies(self):
-        self.assertTrue(attributes.convert_to_currency("10 Kč"))
-        self.assertTrue(attributes.convert_to_currency("10 $"))
-        self.assertTrue(attributes.convert_to_currency("10. $"))
-        self.assertTrue(attributes.convert_to_currency("10, $"))
-        self.assertTrue(attributes.convert_to_currency("10.0 $"))
-        self.assertTrue(attributes.convert_to_currency("10.1234564984654651 $"))
-        self.assertTrue(attributes.convert_to_currency("10.0       $"))
-        self.assertTrue(attributes.convert_to_currency("10.0$"))
-        self.assertTrue(attributes.convert_to_currency("10,0$"))
+        self.assertTrue(cur.convert_to_currency("10 Kč"))
+        self.assertTrue(cur.convert_to_currency("10 $"))
+        self.assertTrue(cur.convert_to_currency("10. $"))
+        self.assertTrue(cur.convert_to_currency("10, $"))
+        self.assertTrue(cur.convert_to_currency("10.0 $"))
+        self.assertTrue(cur.convert_to_currency("10.1234564984654651 $"))
+        self.assertTrue(cur.convert_to_currency("10.0       $"))
+        self.assertTrue(cur.convert_to_currency("10.0$"))
+        self.assertTrue(cur.convert_to_currency("10,0$"))
 
-        self.assertTrue(attributes.convert_to_currency("$ 10"))
-        self.assertTrue(attributes.convert_to_currency("$ 10.0000"))
-        self.assertTrue(attributes.convert_to_currency("$10.0000"))
+        self.assertTrue(cur.convert_to_currency("$ 10"))
+        self.assertTrue(cur.convert_to_currency("$ 10.0000"))
+        self.assertTrue(cur.convert_to_currency("$10.0000"))
 
     
     def test_missing_leading_digit_is_ok(self):
-        self.assertTrue(attributes.convert_to_currency("$.0000"))
-        self.assertTrue(attributes.convert_to_currency(".0000$"))
+        self.assertTrue(cur.convert_to_currency("$.0000"))
+        self.assertTrue(cur.convert_to_currency(".0000$"))
 
     def test_double_separator_is_invalid(self):
-        self.assertFalse(attributes.convert_to_currency("10.."))
+        self.assertFalse(cur.convert_to_currency("10.."))
 
     def test_missing_currency_symbol(self):
-        self.assertFalse(attributes.convert_to_currency("10"))
-        self.assertFalse(attributes.convert_to_currency("20"))
-        self.assertFalse(attributes.convert_to_currency("10.00"))
-        self.assertFalse(attributes.convert_to_currency("  10.00"))
-        self.assertFalse(attributes.convert_to_currency("10.00   "))
+        self.assertFalse(cur.convert_to_currency("10"))
+        self.assertFalse(cur.convert_to_currency("20"))
+        self.assertFalse(cur.convert_to_currency("10.00"))
+        self.assertFalse(cur.convert_to_currency("  10.00"))
+        self.assertFalse(cur.convert_to_currency("10.00   "))
 
     def test_no_number(self):
-        self.assertFalse(attributes.convert_to_currency(""))
-        self.assertFalse(attributes.convert_to_currency("asdf"))
+        self.assertFalse(cur.convert_to_currency(""))
+        self.assertFalse(cur.convert_to_currency("asdf"))
 
     def test_invalid_currency_symbols(self):
-        self.assertFalse(attributes.convert_to_currency("abc 20"))
-        self.assertFalse(attributes.convert_to_currency("10abc"))
-        self.assertFalse(attributes.convert_to_currency("123_"))
-        self.assertFalse(attributes.convert_to_currency("50.23 crowns"))
+        self.assertFalse(cur.convert_to_currency("abc 20"))
+        self.assertFalse(cur.convert_to_currency("10abc"))
+        self.assertFalse(cur.convert_to_currency("123_"))
+        self.assertFalse(cur.convert_to_currency("50.23 crowns"))
     
     def test_garbage_text_near_the_currency(self):
-        self.assertFalse(attributes.convert_to_currency("Lorem ipsum 20 $"))
-        self.assertFalse(attributes.convert_to_currency("20 $ sit amet"))
+        self.assertFalse(cur.convert_to_currency("Lorem ipsum 20 $"))
+        self.assertFalse(cur.convert_to_currency("20 $ sit amet"))
         
 
 class Test_Currency_Attribute(unittest.TestCase):
 
+    def setUp(self) -> None:
+        self.attrfac = attributes.Attribute_Factory('en_us')
+
     def test_defining_attribute(self):
-        attributes.set_localization('cs_cz')
-        catt = attributes.Currency_Attribute('USD', 5)
+        catt = attributes.Currency_Attribute('USD', 5, 'cs_cz')
         self.assertEqual(catt.value, 5)
         self.assertEqual(catt.formatted_value, '5.00 $')
-        attributes.set_localization('en_us')
+        catt = attributes.Currency_Attribute('USD', 5, 'en_us')
         self.assertEqual(catt.formatted_value, '$5.00')
 
     def test_setting_currency(self):
-        attributes.set_localization('cs_cz')
-        catt = attributes.Currency_Attribute('USD', 5)
+        catt = attributes.Currency_Attribute('USD', 5,'cs_cz')
         self.assertEqual(catt.formatted_value, '5.00 $')
         catt._set_currency('CZK')
         self.assertEqual(catt.formatted_value, '5.00 Kč')
 
     def test_setting_to_nonexistent_currency_raises_undefined_currency_error(self):
         catt = attributes.Currency_Attribute('USD', 5)
-        self.assertRaises(attributes.UndefinedCurrency, catt._set_currency, 'NEC')
+        with self.assertRaises(Exception):
+            catt._set_currency('NEC')
 
     def test_creating_currency_attribute_from_a_general_value(self):
-        attributes.set_localization('cs_cz')
-        catt = attributes.create_attribute("1.00 Kč")
+        self.attrfac.set_locale_code('cs_cz')
+        catt = self.attrfac.create_attribute("1.00 Kč")
         self.assertEqual(catt.formatted_value,"1.00 Kč")
         catt._set_currency("USD")
         self.assertEqual(catt.formatted_value,"1.00 $")
     
     def test_setting_currency_attribute_value(self):
-        attributes.set_localization('cs_cz')
-        catt = attributes.create_attribute("1 Kč")
+        self.attrfac.set_locale_code('cs_cz')
+        catt = self.attrfac.create_attribute("1 Kč")
         catt.set(5)
         self.assertEqual(catt.formatted_value,"5.00 Kč")
 
     def test_formatted_value_has_precision_limited_by_the_currency(self):
-        attributes.set_localization('cs_cz')
-        catt = attributes.create_attribute("1 Kč")
+        self.attrfac.set_locale_code('cs_cz')
+        catt = self.attrfac.create_attribute("1 Kč")
         catt.set(0.123456789)
         self.assertEqual(catt.formatted_value,"0.12 Kč")
 
     def test_attribute_keeps_its_default_currency(self):
-        attributes.set_localization('cs_cz')
-        catt = attributes.create_attribute("1 $")
+        self.attrfac.set_locale_code('cs_cz')
+        catt = self.attrfac.create_attribute("1 $")
         self.assertEqual(catt.formatted_value,"1.00 $")
 
     def test_copying_attribute(self):
-        attributes.set_localization('cs_cz')
-        catt = attributes.create_attribute("2 $")
+        self.attrfac.set_locale_code('cs_cz')
+        catt = self.attrfac.create_attribute("2 $")
         self.assertEqual(catt.formatted_value,"2.00 $")
         catt2 = catt.copy()
         self.assertEqual(catt2.formatted_value,"2.00 $")

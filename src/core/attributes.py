@@ -1,9 +1,61 @@
 from __future__ import annotations
-from typing import Any, Callable, Protocol, Dict, Literal, Tuple, List
+from typing import Any, Callable, Protocol, Dict, List
 
 import abc
 import re
+
+from functools import partial
+
+
 from src.lang.lang import Locale_Code
+
+
+import decimal
+from decimal import Decimal, Context
+import src.core.currency as cur
+
+import datetime, src.core.dates
+
+
+class Attribute_Factory:
+
+    def __init__(self,locale_code:Locale_Code)->None:
+        self.__locale_code = locale_code
+
+    @property
+    def locale_code(self)->str: return self.__locale_code
+
+    def set_locale_code(self,code:Locale_Code)->None:
+        self.__locale_code = code
+
+    def create_attribute(self, default_value:Any,options:Dict[str,Any]={})->_Attribute:
+        if callable(default_value):
+            return Dependent_Attr(default_value,locale_code=self.__locale_code)
+        
+        elif options:
+            return Choice_Attribute(default_value, options,locale_code=self.__locale_code)
+
+        elif Positive_Int_Attr.valid_entry(default_value):
+            return Positive_Int_Attr(default_value,locale_code=self.__locale_code)
+        
+        possible_currency = cur.convert_to_currency(default_value)
+        if possible_currency:
+            amount = possible_currency[0]
+            currency_code = possible_currency[1]
+            return Currency_Attribute(currency_code,amount,locale_code=self.__locale_code)
+        
+        elif Date_Attr.final_validation(default_value):
+            return Date_Attr(
+                Date_Attr.date_formatter.print_date(datetime.date.today()),
+                locale_code=self.__locale_code
+            )
+        
+        elif Name_Attr.valid_entry(default_value):
+            return Name_Attr(default_value,locale_code=self.__locale_code)
+        
+        else:
+            return Text_Attr(default_value,locale_code=self.__locale_code)
+
 
 
 class AttributesOwner(Protocol):
@@ -15,13 +67,14 @@ class AttributesOwner(Protocol):
 class _Attribute(abc.ABC):
     default_value:Any = None
 
-    def __init__(self, value:Any = None, value_options:Dict[str,Any]={})->None:
+    def __init__(self, value:Any = None, value_options:Dict[str,Any]={}, locale_code:Locale_Code="en_us")->None:
         if value is None: 
             self._value = self.default_value
         else:
             self._value = value
 
         self._value_options = value_options
+        self._locale_code = locale_code
 
         self.choice_actions:Dict[str,Callable[[Any],None]] = dict()
         self.choices:Dict[str,List[Any]] = dict()
@@ -49,11 +102,11 @@ class _Attribute(abc.ABC):
 
 class Choice_Attribute(_Attribute):
     is_choice:bool = True
-    def __init__(self, default:str, options:Dict[str,Any])->None:
+    def __init__(self, default:str, options:Dict[str,Any], locale_code:Locale_Code = "en_us")->None:
         if default not in options: 
             raise KeyError(f"Cannot initialize Choice attribute with option '{default}',"
                            f" which not present in the options passed {tuple(options.keys())}.")
-        super().__init__(default)
+        super().__init__(default,locale_code=locale_code)
         self._value_options = options
     
     @property
@@ -67,14 +120,13 @@ class Choice_Attribute(_Attribute):
     def valid_entry(value:str)->bool: return True
 
     def copy(self)->Choice_Attribute:
-        return Choice_Attribute(self._value, self._value_options)
+        return Choice_Attribute(self._value, self._value_options, locale_code=self._locale_code)
 
 
-from functools import partial
 class Dependent_Attr(_Attribute):
     default_value = ""
-    def __init__(self, foo:Callable[[AttributesOwner],Any])->None:
-        super().__init__(foo)
+    def __init__(self, foo:Callable[[AttributesOwner],Any], locale_code:Locale_Code = "en_us")->None:
+        super().__init__(foo,locale_code=locale_code)
         self._owner_has_been_set = False
     @property
     def value(self)->Any: return self._value()
@@ -90,7 +142,7 @@ class Dependent_Attr(_Attribute):
             self._owner_has_been_set = True
 
     def copy(self)->Dependent_Attr:
-        return Dependent_Attr(self._value)
+        return Dependent_Attr(self._value, locale_code=self._locale_code)
     
 
 class Positive_Int_Attr(_Attribute):
@@ -107,65 +159,7 @@ class Positive_Int_Attr(_Attribute):
         return int(value)>0
     
     def copy(self)->Positive_Int_Attr:
-        return Positive_Int_Attr(self._value)
-    
-
-import decimal
-from decimal import Decimal, Context
-from dataclasses import dataclass
-
-import src.core.currency as cur
-
-
-LOCALIZATION_CODE = 'en_us'
-DEFAULT_CURRENCY_CODE = cur.CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
-
-
-def set_localization(code:Locale_Code)->None:
-    global LOCALIZATION_CODE, DEFAULT_CURRENCY_CODE
-    LOCALIZATION_CODE = code
-    DEFAULT_CURRENCY_CODE = cur.CURRY_CODE_BY_LOCALIZATION[LOCALIZATION_CODE]
-
-
-@dataclass
-class __Curry_Format:
-    decimals:Literal[0,1,2,3]
-    symbol:str
-    prepend:bool = True
-    def __post_init__(self):
-        if self.decimals>0:
-            self.context = Context(prec=self.decimals,rounding=decimal.ROUND_HALF_EVEN)
-
-    def present(self,value:Decimal|float|str)->str:
-        value = str(value).replace(",",".")
-        if self.decimals==0:
-            value = int(value)
-        else:
-            value =  round(Decimal(str(value),self.context), self.decimals)
-        if cur.CURRY_SYMBOL_POSITION[LOCALIZATION_CODE]==0 and self.prepend:
-            return self.__prepend_symbol(value)
-        else:
-            return self.__append_symbol(value)
-
-    def __prepend_symbol(self,value:Decimal|float|str)->str:
-        return self.symbol+str(value)
-
-    def __append_symbol(self,value:Decimal|float|str)->str:
-        return str(value) + ' ' + self.symbol
-        
-
-
-CURRY_FORMATS:Dict[cur.Currency_Code,__Curry_Format] = {
-    'CZK':__Curry_Format(2,'Kč',prepend=False),
-    'EUR':__Curry_Format(2,'€'),
-    'USD': __Curry_Format(2,'$'),
-    'JPY': __Curry_Format(0,'¥')
-}
-CURRY_CODES = [code for code in CURRY_FORMATS]
-CURRENCY_SYMBOLS = [CURRY_FORMATS[code].symbol for code in CURRY_FORMATS]
-CURR_SYMBOLS_TO_CODE = {CURRY_FORMATS[code].symbol:code for code in CURRY_FORMATS}
-
-class UndefinedCurrency(Exception): pass
+        return Positive_Int_Attr(self._value, locale_code=self._locale_code)
 
 
 class Currency_Attribute(_Attribute):
@@ -174,11 +168,11 @@ class Currency_Attribute(_Attribute):
     rounding = decimal.ROUND_HALF_EVEN
     localization:cur.Curry_Symbol_Position = 0
 
-    def __init__(self, currency_code:cur.Currency_Code, value:Any=default_value)->None:
-        super().__init__(value)
+    def __init__(self, currency_code:cur.Currency_Code, value:Any=default_value, locale_code:Locale_Code = "en_us")->None:
+        super().__init__(value,locale_code=locale_code)
         self.currency_code = currency_code
         self._decimal_context = Context(
-            prec=CURRY_FORMATS[currency_code].decimals, 
+            prec=cur.CURRY_FORMATS[currency_code].decimals, 
             rounding = Currency_Attribute.rounding
         )
 
@@ -187,7 +181,7 @@ class Currency_Attribute(_Attribute):
         return Decimal(str(self._value).replace(",","."))
     @property
     def formatted_value(self)->str:
-        return CURRY_FORMATS[self.currency_code].present(str(self._value).replace(",","."))
+        return cur.CURRY_FORMATS[self.currency_code].present(str(self._value).replace(",","."),self._locale_code)
 
     @staticmethod
     def valid_entry(value:str) -> bool:
@@ -197,19 +191,20 @@ class Currency_Attribute(_Attribute):
         except: return False
     
     def copy(self)->Currency_Attribute:
-        return Currency_Attribute(self.currency_code,self._value)
+        return Currency_Attribute(self.currency_code,self._value, locale_code=self._locale_code)
     
     def _set_currency(self,currency_code:cur.Currency_Code)->None:
-        if currency_code not in CURRY_FORMATS: 
-            raise UndefinedCurrency(
+        if currency_code not in cur.CURRY_FORMATS: 
+            raise cur.UndefinedCurrency(
                 f"Cannot set currency. Code {currency_code} is not defined."
             )
-        self.currency_code = currency_code
-        self.selected_choices["currency"] = currency_code
+        else:
+            self.currency_code = currency_code
+            self.selected_choices["currency"] = currency_code
 
 
     def set(self,value:str="")->None:
-        formatted_currency = convert_to_currency(value)
+        formatted_currency = cur.convert_to_currency(value)
         if formatted_currency != ():
             self._value = formatted_currency[0]
             self._set_currency(formatted_currency[1])
@@ -218,14 +213,12 @@ class Currency_Attribute(_Attribute):
             self._value = str(value)
     
 
-
-import datetime, src.core.dates
 class Date_Attr(_Attribute):
     default_value = datetime.date.today()
-    date_formatter = src.core.dates.Date_Converter(LOCALIZATION_CODE)
+    date_formatter = src.core.dates.Date_Converter(cur.LOCALIZATION_CODE)
 
-    def __init__(self, value:str|None=None)->None:
-        super().__init__(value)
+    def __init__(self, value:str|None=None, locale_code:Locale_Code = "en_us")->None:
+        super().__init__(value,locale_code=locale_code)
         if value is not None and self.final_validation(value):
             self._value = self.date_formatter.enter_date(value)
         else:
@@ -249,7 +242,7 @@ class Date_Attr(_Attribute):
         return Date_Attr.date_formatter.validate_date(value)
     
     def copy(self)->Date_Attr:
-        return Date_Attr(self.value)
+        return Date_Attr(self.value, locale_code=self._locale_code)
     
     def set(self,value:str="")->None:
         if self.final_validation(value) and not str(value).strip()=="":
@@ -270,7 +263,7 @@ class Name_Attr(_Attribute):
         return True
 
     def copy(self)->Name_Attr:
-        return Name_Attr(self._value)
+        return Name_Attr(self._value, locale_code=self._locale_code)
     
 
 class Text_Attr(_Attribute):
@@ -284,56 +277,7 @@ class Text_Attr(_Attribute):
     def valid_entry(value:str)->bool: return True
 
     def copy(self)->Text_Attr:
-        return Text_Attr(self._value)
+        return Text_Attr(self._value, locale_code=self._locale_code)
     
 
 
-def create_attribute(default_value:Any,options:Dict[str,Any]={})->_Attribute:
-    if callable(default_value):
-        return Dependent_Attr(default_value)
-    
-    elif options:
-        return Choice_Attribute(default_value, options)
-
-    elif Positive_Int_Attr.valid_entry(default_value):
-        return Positive_Int_Attr(default_value)
-    
-    possible_currency = convert_to_currency(default_value)
-    if possible_currency:
-        amount = possible_currency[0]
-        currency_code = possible_currency[1]
-        return Currency_Attribute(currency_code,amount)
-    
-    elif Date_Attr.final_validation(default_value):
-        return Date_Attr(Date_Attr.date_formatter.print_date(datetime.date.today()))
-    
-    elif Name_Attr.valid_entry(default_value):
-        return Name_Attr(default_value)
-    
-    else:
-        return Text_Attr(default_value)
-
-
-def convert_to_currency(text:str)->Tuple[Decimal,str]|Tuple:
-    text = str(text).strip().replace(",",".")
-    if re.fullmatch("\d+(\.\d*)?\s*\S*",text) is not None or re.fullmatch("\.\d+\s*\S*",text) is not None:
-        i = 0
-        while i<len(text) and (text[i].isdigit() or text[i]=='.'):  
-            i += 1
-        text_without_number = text[i:].strip()
-        if text_without_number in CURRENCY_SYMBOLS:
-            currency_code = CURR_SYMBOLS_TO_CODE[text_without_number]
-            return (Decimal(text[:i]), currency_code)
-        return ()
-    
-    elif re.fullmatch("\S*\s*\d+(\.\d*)?",text) is not None:
-        i = -1
-        while  i>-len(text)-1 and (text[i].isdigit() or text[i]=='.'):
-            i -= 1
-        text_without_number = text[:i+1].strip()
-        if text_without_number in CURRENCY_SYMBOLS:
-            currency_code = CURR_SYMBOLS_TO_CODE[text_without_number]
-            return (Decimal(text[i+1:]), currency_code)
-        return ()
-    
-    return ()

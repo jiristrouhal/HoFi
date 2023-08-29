@@ -232,7 +232,7 @@ class TreeEditor:
 
     def __init__(
         self, 
-        app_template:treemod.tt.AppTemplate,
+        app_template:treemod.AppTemplate,
         parent:tk.Tk|tk.Toplevel|tk.Frame|tk.LabelFrame|None = None, 
         label:str = "TreeEditor", 
         displayed_attributes:Dict[str,Tuple[str,...]] = {},
