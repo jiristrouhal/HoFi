@@ -14,7 +14,8 @@ import decimal
 from decimal import Decimal, Context
 import src.core.currency as cur
 
-import datetime, src.core.dates
+import datetime
+import src.core.dates as dates
 
 
 class Attribute_Factory:
@@ -44,9 +45,9 @@ class Attribute_Factory:
             currency_code = possible_currency[1]
             return Currency_Attribute(currency_code,amount,locale_code=self.__locale_code)
         
-        elif Date_Attr.final_validation(default_value):
+        elif dates.validate_date(default_value, dates.DATE_FORMATS[self.__locale_code]):
             return Date_Attr(
-                Date_Attr.date_formatter.print_date(datetime.date.today()),
+                dates.date_to_str(datetime.date.today(), dates.DATE_FORMATS[self.__locale_code]),
                 locale_code=self.__locale_code
             )
         
@@ -215,18 +216,18 @@ class Currency_Attribute(_Attribute):
 
 class Date_Attr(_Attribute):
     default_value = datetime.date.today()
-    date_formatter = src.core.dates.Date_Converter(cur.LOCALIZATION_CODE)
 
     def __init__(self, value:str|None=None, locale_code:Locale_Code = "en_us")->None:
         super().__init__(value,locale_code=locale_code)
         if value is not None and self.final_validation(value):
-            self._value = self.date_formatter.enter_date(value)
+            self._value = dates.enter_date(value,dates.DATE_FORMATS[locale_code])
         else:
             self._value = self.default_value
+        self._format = dates.DATE_FORMATS[self._locale_code]
 
     @property
     def value(self)->str: 
-        return self.date_formatter.print_date(self._value)
+        return dates.date_to_str(self._value,dates.DATE_FORMATS[self._locale_code])
     @property
     def formatted_value(self)->str:
         return self.value
@@ -236,17 +237,17 @@ class Date_Attr(_Attribute):
         if value.strip()=="": return True
         if re.fullmatch("[\d\._\- ]*",value): return True
         return False
-    
-    @staticmethod
-    def final_validation(value:str)->bool:
-        return Date_Attr.date_formatter.validate_date(value)
+
+    def final_validation(self, value:str)->bool:
+        return dates.validate_date(value,dates.DATE_FORMATS[self._locale_code])
     
     def copy(self)->Date_Attr:
         return Date_Attr(self.value, locale_code=self._locale_code)
     
     def set(self,value:str="")->None:
-        if self.final_validation(value) and not str(value).strip()=="":
-            self._value = self.date_formatter.enter_date(value)
+        is_valid = self.final_validation(value)
+        if is_valid and not str(value).strip()=="":
+            self._value = dates.enter_date(value, dates.DATE_FORMATS[self._locale_code])
 
 
 class Name_Attr(_Attribute):

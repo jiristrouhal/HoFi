@@ -63,16 +63,12 @@ class Test_Choice_Attribute(unittest.TestCase):
 
 class Test_Date_Attribute(unittest.TestCase):
     
-    def setUp(self) -> None:
-        attributes.Date_Attr.date_formatter.set("%d.%m.%Y")
-        self.attr = attributes.Date_Attr()
-
     def test_specify_value_on_initialization(self):
-        attr = attributes.Date_Attr("01.12.2005")
+        attr = attributes.Date_Attr("01.12.2005",locale_code='cs_cz')
         self.assertEqual(attr.value, "01.12.2005")
 
     def test_validate_date(self):
-        attr = attributes.Date_Attr()
+        attr = attributes.Date_Attr(locale_code='cs_cz')
         self.assertTrue(attr.final_validation("1.4.2023"))
         self.assertTrue(attr.final_validation("21.4.2023"))
         self.assertFalse(attr.final_validation(""))
