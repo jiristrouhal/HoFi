@@ -77,6 +77,11 @@ class Test_Event_Realization_Confirmation(unittest.TestCase):
         #repeated dismissal should not occur, thus raise an exception, if it does so
         self.assertRaises(pf.AlreadyDismissed, self.event.dismiss)
 
+    def test_dismissing_realized_event_raises_error(self):
+        yesterday = self.today - timedelta(days=1)
+        some_realized_event = pf.Event(date=yesterday)
+        self.assertRaises(pf.AlreadyRealized, some_realized_event.dismiss)
+
     def test_dismissing_future_event_is_allowed(self):
         tomorrow = self.today+timedelta(days=1)
         some_event = pf.Event(date=tomorrow)
