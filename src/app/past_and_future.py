@@ -77,6 +77,9 @@ class Event_Manager:
     def realized(self)->Set[Event]: return self.__realized
     @property
     def planned(self)->Set[Event]: return self.__planned
+    @property
+    def waiting_for_confirmation(self)->Set[Event]: 
+        return {event for event in self.__planned if event.confirmation_required}
 
     def add(self,event:Event)->None:
         if event.realized: 

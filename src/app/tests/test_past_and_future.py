@@ -188,6 +188,35 @@ class Test_Event_Informing_The_Event_Manager(unittest.TestCase):
         self.assertFalse(self.event in self.manager.planned)
 
 
+class Test_Event_Manager_Inspecting_Its_Events(unittest.TestCase):
+
+    def test_manager_can_report_events_requiring_realization_confirmation(self):
+        manager = pf.Event_Manager()
+        self.today = date.today()
+        def today(): return self.today
+
+        day_1 = self.today + timedelta(days=1)
+        day_2 = self.today + timedelta(days=2)
+        day_3 = self.today + timedelta(days=3)
+        day_4 = self.today + timedelta(days=4)
+
+        event_A = pf.Event(day_1, today)
+        event_B = pf.Event(day_2, today)
+        event_C = pf.Event(day_3, today)
+        event_D = pf.Event(day_4, today)
+
+        manager.add(event_A)
+        manager.add(event_B)
+        manager.add(event_C)
+        manager.add(event_D)
+
+        self.today += timedelta(3)
+
+        self.assertSetEqual(manager.waiting_for_confirmation, {event_A,event_B,event_C})
+        self.assertSetEqual(manager.planned, {event_A,event_B,event_C,event_D})
+
+        self.today += timedelta(1)
+        self.assertSetEqual(manager.waiting_for_confirmation, {event_A,event_B,event_C,event_D})
 
 
 if __name__=="__main__": unittest.main()
