@@ -128,6 +128,13 @@ class Test_Event_Manager(unittest.TestCase):
         self.assertTrue(event in self.manager.realized)
         self.assertFalse(event in self.manager.planned)
 
+    def test_adding_planned_event_to_manager(self):
+        tomorrow = self.today+timedelta(days=1)
+        event = pf.Event(date=tomorrow)
+        self.manager.add(event)
+        self.assertTrue(event in self.manager.planned)
+        self.assertFalse(event in self.manager.realized)
+
     def test_adding_dismissed_event_to_manager_raises_error(self):
         tomorrow = self.today+timedelta(days=1)
         event = pf.Event(date=tomorrow, _reference_date=lambda: self.today)
@@ -136,7 +143,7 @@ class Test_Event_Manager(unittest.TestCase):
         self.assertTrue(event.dismissed)
         with self.assertRaises(DismissedEvent):
             self.manager.add(event)
-    
+
 
 
 if __name__=="__main__": unittest.main()
