@@ -101,6 +101,10 @@ class Test_Event_Realization_Confirmation(unittest.TestCase):
         self.assertEqual(self.x,1)
         self.assertEqual(self.y,5)
 
+    def test_trying_to_run_action_on_an_unknown_event_raises_key_error(self):
+        def action(): pass
+        self.assertRaises(KeyError, self.event.add_action,'nonexistent_event_type', 'owner', action)
+
 
 
 if __name__=="__main__": unittest.main()
