@@ -84,10 +84,14 @@ class Event_Manager:
         elif event.planned: 
             self.planned.add(event)
             event.add_action('confirmed',self.__label, partial(self.__event_realized,event))
+            event.add_action('dismissed',self.__label, partial(self.__event_dismissed,event))
         else: 
             raise DismissedEvent("Dismissed events cant be added to an Event_Manager.")
         
     def __event_realized(self,event:Event)->None:
         self.realized.add(event)
+        self.planned.remove(event)
+
+    def __event_dismissed(self,event:Event)->None:
         self.planned.remove(event)
  

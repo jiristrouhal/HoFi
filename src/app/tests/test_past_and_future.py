@@ -182,6 +182,12 @@ class Test_Event_Informing_The_Event_Manager(unittest.TestCase):
         self.assertTrue(self.event in self.manager.realized)
         self.assertFalse(self.event in self.manager.planned)
 
+    def test_dismissing_event_removes_it_from_planned_events(self):
+        self.event.dismiss()
+        self.assertFalse(self.event in self.manager.realized)
+        self.assertFalse(self.event in self.manager.planned)
+
+
 
 
 if __name__=="__main__": unittest.main()
