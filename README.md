@@ -162,11 +162,7 @@ The application is supplied in multiple languages.
 ## Currency
 The currency is independent of the application language and it is specific for each tree. When displaying results, total income or expense per item etc., the values are displayed using this currency.
 
-When item is being added or edited, the currency is customary and can be selected by dropdown menu next to the value. The value can be entered as a positive float number, but after confirming the changes, the value is rounded according to the currency (e.g., to 2 decimal places for euro or US dollar or to whole number in the case of yen). 
-
-When conversion is applied, to estimate the exchange rate, a date has to be specified. By default, the current date is selected. The user can pass a custom date, for which the value is converted. 
-
-When adding an income or expense, the currency is by default set by the application localization. The default currency is always passes to the 
+The value can be entered as a positive float number, but after confirming the changes, the value is displayed (not rounded!!!) according to the currency (e.g., to 2 decimal places for euro or US dollar or to whole number in the case of yen). 
 
 
 ## Displaying item info in the Tree Editor
@@ -174,3 +170,8 @@ As there is a lot of space, the tree editor (the treeview) could enable to displ
 
 For items, which contain both incomes and expenses, two values are to be reported (total income and total expense).
 
+
+## Connecting tree to the Events
+The past_and_future module contains the Event and Event_Manager class enabling to organize events in time and to distinguish between planned and realized events. 
+
+The best way to introduce the Events into the application seems to be connecting the Events and Tree via another object.
