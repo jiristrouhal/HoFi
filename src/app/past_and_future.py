@@ -1,5 +1,6 @@
 import datetime
 from typing import Literal, Dict, Callable, Set
+from functools import partial
 
 
 class AlreadyRealized(Exception): pass
@@ -70,6 +71,7 @@ class Event_Manager:
     def __init__(self)->None:
         self.__realized:Set[Event] = set()
         self.__planned:Set[Event] = set()   
+        self.__label:str = str(id(self))
 
     @property
     def realized(self)->Set[Event]: return self.__realized
@@ -77,8 +79,15 @@ class Event_Manager:
     def planned(self)->Set[Event]: return self.__planned
 
     def add(self,event:Event)->None:
-        if event.realized: self.realized.add(event)
-        elif event.planned: self.planned.add(event)
+        if event.realized: 
+            self.realized.add(event)
+        elif event.planned: 
+            self.planned.add(event)
+            event.add_action('confirmed',self.__label, partial(self.__event_realized,event))
         else: 
             raise DismissedEvent("Dismissed events cant be added to an Event_Manager.")
+        
+    def __event_realized(self,event:Event)->None:
+        self.realized.add(event)
+        self.planned.remove(event)
  

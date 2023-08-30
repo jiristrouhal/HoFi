@@ -136,7 +136,7 @@ class Test_Event_Realization_Confirmation(unittest.TestCase):
         self.assertRaises(KeyError, self.event.add_action,'nonexistent_event_type', 'owner', action)
 
 
-class Test_Event_Manager(unittest.TestCase):
+class Test_Adding_Event_To_Event_Manager(unittest.TestCase):
 
     def setUp(self) -> None:
         self.manager = pf.Event_Manager()
@@ -164,6 +164,23 @@ class Test_Event_Manager(unittest.TestCase):
         self.assertTrue(event.dismissed)
         with self.assertRaises(DismissedEvent):
             self.manager.add(event)
+
+
+class Test_Event_Informing_The_Event_Manager(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.today = date.today()
+        def today(): return self.today
+        self.manager = pf.Event_Manager()
+        tomorrow = self.today + timedelta(days=1)
+        self.event = pf.Event(date=tomorrow, _reference_date=today)
+        self.manager.add(self.event)
+        self.today += timedelta(3)
+
+    def test_confirming_event_realization_moves_it_in_the_manager_from_planned_to_realized(self):
+        self.event.confirm_realization()
+        self.assertTrue(self.event in self.manager.realized)
+        self.assertFalse(self.event in self.manager.planned)
 
 
 
