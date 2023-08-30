@@ -51,6 +51,18 @@ class Test_Event_Realization_Confirmation(unittest.TestCase):
         #repeated confirmation should not occur, thus raise an exception, if it does so
         self.assertRaises(pf.AlreadyRealized, self.event.confirm_realization)
 
+    def test_confirming_past_raises_error(self):
+        yesterday = self.today - timedelta(days=1)
+        some_realized_event = pf.Event(date=yesterday)
+        self.assertFalse(some_realized_event.confirmation_required)
+        self.assertRaises(pf.AlreadyRealized, some_realized_event.confirm_realization)
+    
+    def test_confirming_event_not_requiring_confirmation_raises_error(self):
+        tomorrow = self.today + timedelta(days=1)
+        future_event = pf.Event(date=tomorrow)
+        self.assertFalse(future_event.confirmation_required)
+        self.assertRaises(pf.ConfirmationNotRequired, future_event.confirm_realization)
+
     def test_dismissing_event(self):
         self.event.dismiss()
 

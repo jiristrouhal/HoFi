@@ -34,7 +34,7 @@ class Event:
     def dismissed(self)->bool: return self.__dismissed
     @property
     def confirmation_required(self)->bool:
-        return self.planned and self.__date>=self.__reference_date()
+        return self.planned and self.__date<=self.__reference_date()
     
     def add_action(self,on:Action_Type,owner:str, action:Callable[[],None])->None:
         if on not in self.__actions: raise KeyError
