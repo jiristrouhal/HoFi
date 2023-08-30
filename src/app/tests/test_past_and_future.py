@@ -69,5 +69,38 @@ class Test_Event_Realization_Confirmation(unittest.TestCase):
         #repeated dismissal should not occur, thus raise an exception, if it does so
         self.assertRaises(pf.AlreadyDismissed, self.event.dismiss_realization)
 
+    def test_running_action_on_dismissal(self):
+        self.x = 0
+        self.y = 0
+        def action(): self.x += 1
+        def other(): self.y += 5
+
+        self.event.add_action('dismissed','owner', action)
+        # repeatedly adding action under the same owner name is not allowed
+        with self.assertRaises(KeyError):
+            self.event.add_action('dismissed', 'owner', action)
+        self.event.add_action('dismissed','other_owner', other)
+
+        self.event.dismiss_realization()
+        self.assertEqual(self.x,1)
+        self.assertEqual(self.y,5)
+
+    def test_running_action_on_confirmation(self):
+        self.x = 0
+        self.y = 0
+        def action(): self.x += 1
+        def other(): self.y += 5
+
+        self.event.add_action('confirmed','owner', action)
+        # repeatedly adding action under the same owner name is not allowed
+        with self.assertRaises(KeyError):
+            self.event.add_action('confirmed', 'owner', action)
+        self.event.add_action('confirmed','other_owner', other)
+
+        self.event.confirm_realization()
+        self.assertEqual(self.x,1)
+        self.assertEqual(self.y,5)
+
+
 
 if __name__=="__main__": unittest.main()
