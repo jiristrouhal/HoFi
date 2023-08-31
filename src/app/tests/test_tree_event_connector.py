@@ -6,7 +6,7 @@ import unittest
 import src.app.tree_event_connector as tec
 import src.controls.tree_editor as tree_editor
 import src.core.tree_templates as tmpl
-import src.app.past_and_future as pf
+import src.events.past_and_future as pf
 import src.core.tree as treemod
 
 

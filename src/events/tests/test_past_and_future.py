@@ -1,10 +1,10 @@
 import sys
-sys.path.insert(1,"src/app")
+sys.path.insert(1,"src")
 
 
 import unittest
-import past_and_future as pf
-from past_and_future import DismissedEvent
+import src.events.past_and_future as pf
+from src.events.past_and_future import DismissedEvent
 
 
 from datetime import date, timedelta

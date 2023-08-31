@@ -7,7 +7,7 @@ from typing import Callable, Dict, Literal
 
 
 from src.controls.tree_editor import TreeEditor
-import src.app.past_and_future as pf
+import src.events.past_and_future as pf
 import src.core.tree as treemod
 
 
