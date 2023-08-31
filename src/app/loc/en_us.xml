@@ -32,7 +32,9 @@
         <name Text="name" />
         <date Text="date" />
         <description Text="description" />
+
         <status Text="status" />
+        <last_status Text="last_status" />
     </Templates>
 
     <Item_Moved_from_Future_to_Past>
@@ -48,5 +50,6 @@
     <Status>
         <Realized Text="realized" />
         <Planned Text="planned" />
+        <Requires_Confirmation Text="requires confirmation" />
     </Status>
 </Language>

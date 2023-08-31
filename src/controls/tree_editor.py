@@ -236,6 +236,7 @@ class TreeEditor:
         parent:tk.Tk|tk.Toplevel|tk.Frame|tk.LabelFrame|None = None, 
         label:str = "TreeEditor", 
         displayed_attributes:Dict[str,Tuple[str,...]] = {},
+        ignored_attributes:Tuple[str,...] = ()
         )->None:
 
         self.app_template = app_template
@@ -284,7 +285,9 @@ class TreeEditor:
         main_voc = lang.Vocabulary()
         main_voc.load_xml(os.path.join(os.path.dirname(__file__), 'loc'), self.app_template.locale_code)
         self._vocabulary = main_voc.subvocabulary("Editor")
+
         self.name_attr = app_template.name_attr
+        self.ignored_attributes = ignored_attributes
 
     @property
     def trees(self)->Tuple[str,...]: 
@@ -587,6 +590,7 @@ class TreeEditor:
         row=0
         for key,attr in attributes.items():
             if key in excluded: continue
+            if key in self.ignored_attributes: continue
             col=0
             tk.Label(entries_frame,text=key).grid(row=row,column=col)
             col += 1

@@ -20,15 +20,9 @@ def build_app(locale_code:lang.Locale_Code):
 
     root = tk.Tk()
     root.geometry("800x600")
+
     vocabulary = lang.Vocabulary()
     vocabulary.load_xml(os.path.dirname(os.path.abspath(__file__))+'/loc', locale_code)
-
-
-    app_template = temp.AppTemplate(locale_code,name_attr=vocabulary("Templates","name"))
-    
-
-    src.app.set_templates.main(vocabulary, app_template)
-
 
     left_frame = tk.Frame(root)
     left_frame.pack(expand=1,fill=tk.BOTH,side=tk.LEFT)
@@ -39,40 +33,18 @@ def build_app(locale_code:lang.Locale_Code):
     editor_frame = tk.LabelFrame(root, text=vocabulary("Edit_Frame_Label"))
     editor_frame.pack(expand=1,fill=tk.BOTH,side=tk.RIGHT)
 
-    # create app parts and place their widgets into their respective places in the GUI
-    treelist = tl.TreeList(label='TreeList')
-
-    manager = tmg.Tree_Manager(
-        treelist, 
-        tree_tag=vocabulary("Templates", "Scenario"), 
-        ui_master=manager_frame, 
-        app_template=app_template
-    )
+    app_template = temp.AppTemplate(locale_code,name_attr=vocabulary("Templates","name"))
 
     editor = te.TreeEditor(
         app_template,
         editor_frame,
         label='TreeEditor', 
-        displayed_attributes={vocabulary("Amount_Title"):(vocabulary("Templates","amount"),)}, 
+        displayed_attributes={
+            vocabulary("Amount_Title"):(vocabulary("Templates","amount"),),
+            "":(vocabulary("Templates","status"),)
+        },
+        ignored_attributes=(vocabulary("Templates","last_status"),) 
     )
-
-    properties = pp.Properties(
-        properties_frame,
-        title=vocabulary("Properties"),
-        name_attr=vocabulary("Templates","name")
-    )
-
-    def clear_properties(*args): properties.clear()
-    # connect (initially independent) Editor and Manager
-    def add_tree_to_editor(tree:treemod.Tree): editor.load_tree(tree)
-    def remove_tree_from_editor(tree:treemod.Tree): editor.remove_tree(str(id(tree)))
-    manager.add_action_on_selection(add_tree_to_editor)
-    manager.add_action_on_deselection(remove_tree_from_editor)
-    editor.add_action(properties.label,'selection',properties.display)
-    editor.add_action(properties.label,'deselection',clear_properties)
-    editor.add_action(properties.label,'edit',properties.display)
-    editor.add_action(manager.label,'any_modification',manager.label_items_tree_as_modified)
-    editor.add_action(manager.label,'tree_removal',clear_properties)
     
     event_manager = pf.Event_Manager()
     connector = tec.TreeEventConnector(
@@ -95,6 +67,38 @@ def build_app(locale_code:lang.Locale_Code):
         notify_item_moved_from_future_to_past_or_present)
     connector.add_action('realized_to_planned','app', 
         notify_that_realized_item_moved_to_future)
+
+    src.app.set_templates.main(vocabulary, app_template, event_manager)
+
+
+    # create app parts and place their widgets into their respective places in the GUI
+    treelist = tl.TreeList(label='TreeList')
+
+    manager = tmg.Tree_Manager(
+        treelist, 
+        tree_tag=vocabulary("Templates", "Scenario"), 
+        ui_master=manager_frame, 
+        app_template=app_template
+    )
+
+    properties = pp.Properties(
+        properties_frame,
+        title=vocabulary("Properties"),
+        name_attr=vocabulary("Templates","name"),
+        ignored=(vocabulary("Templates","last_status"),)
+    )
+
+    def clear_properties(*args): properties.clear()
+    # connect (initially independent) Editor and Manager
+    def add_tree_to_editor(tree:treemod.Tree): editor.load_tree(tree)
+    def remove_tree_from_editor(tree:treemod.Tree): editor.remove_tree(str(id(tree)))
+    manager.add_action_on_selection(add_tree_to_editor)
+    manager.add_action_on_deselection(remove_tree_from_editor)
+    editor.add_action(properties.label,'selection',properties.display)
+    editor.add_action(properties.label,'deselection',clear_properties)
+    editor.add_action(properties.label,'edit',properties.display)
+    editor.add_action(manager.label,'any_modification',manager.label_items_tree_as_modified)
+    editor.add_action(manager.label,'tree_removal',clear_properties)
 
     import tkinter.messagebox as tkmsg
     def discard_unsaved_changes():

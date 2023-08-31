@@ -44,6 +44,7 @@
         <xs:element name="description" type="item"/>
 
         <xs:element name="status" type="item" />
+        <xs:element name="last_status" type="item" />
 
     </xs:sequence>
 </xs:complexType>
@@ -52,6 +53,7 @@
     <xs:sequence>
         <xs:element name="Realized" type="item"/>
         <xs:element name="Planned" type="item"/>
+        <xs:element name="Requires_Confirmation" type="item" />
     </xs:sequence>
 </xs:complexType>
 

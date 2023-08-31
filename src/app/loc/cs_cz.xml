@@ -34,7 +34,9 @@
         <name Text="název" />
         <date Text="datum" />
         <description Text="popis" />
+
         <status Text="status" />
+        <last_status Text="poslední_status" />
 
     </Templates>
 
@@ -51,6 +53,7 @@
     <Status>
         <Realized Text="uskutečněno" />
         <Planned Text="plánováno" />
+        <Requires_Confirmation Text="vyžaduje potvrzení" />
     </Status>
 
 </Language>

@@ -1,7 +1,7 @@
 import core.tree as treemod
 import tkinter as tk
 import tkinter.ttk as ttk
-from typing import Dict
+from typing import Dict, Tuple
 from collections import OrderedDict
 
 
@@ -12,7 +12,8 @@ class Properties:
         master:tk.Tk|tk.Frame|ttk.Labelframe|None = None, 
         label:str='Properties', 
         title:str='Properties',
-        name_attr:str = "name"
+        name_attr:str = "name",
+        ignored:Tuple[str,...] = ()
         )->None:
 
         self.widget = ttk.Labelframe(master,text=title)
@@ -21,6 +22,7 @@ class Properties:
         self.row = 0
         self.__label = label
         self.name_attr = name_attr
+        self.ignored = ignored
     @property
     def label(self)->str: return self.__label
 
@@ -49,6 +51,9 @@ class Properties:
 
     def __draw_attributes(self,attributes:Dict[str,treemod._Attribute])->None:
         for name, value in attributes.items():
+            
+            if name in self.ignored: continue
+
             label = tk.Label(self.widget,text="• "+ name+": ")
             value_widget = tk.Label(self.widget,text=str(value))
             self.props[name] = value_widget

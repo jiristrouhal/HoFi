@@ -6,13 +6,13 @@ from decimal import Decimal
 import src.lang.lang as lang
 
 import src.core.currency as cur
-
+from src.events.past_and_future import Event, Event_Manager
 
 
 from src.core.dates import default_date
 
 
-def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate):
+def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_manager:Event_Manager):
 
     cur.set_localization(app_template.locale_code)
     tvoc = vocabulary.subvocabulary("Templates")
@@ -31,6 +31,11 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate):
     DATE = tvoc("date")
     DESCRIPTION = tvoc("description")
     STATUS = tvoc("status")
+    LAST_STATUS = tvoc("last_status")
+
+    PLANNED = vocabulary("Status","Planned")
+    REALIZED = vocabulary("Status","Realized")
+    REQUIRES_CONFIRMATION = vocabulary("Status","Requires_Confirmation")
 
     income_icon = ImageTk.PhotoImage(Image.open("src/_icons/income.png"))
     expense_icon = ImageTk.PhotoImage(Image.open("src/_icons/expense.png"))
@@ -67,11 +72,37 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate):
         return cur.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].present(s,locale_code)
     
     def status(item:treemod.TreeItem)->str:
-        if vocabulary("Templates","date") not in item.attributes: return ""
+        if DATE not in item.attributes: return ""
+        
+        if "event" not in item.data: 
+            item.data["event"] = Event(item.attributes[DATE].value)
+            event_manager.add(item.data["event"])
+
+        event:Event = item.data["event"]
+        if LAST_STATUS not in item.attributes: 
+            return PLANNED if event.planned else REALIZED
         else:
-            if "event" not in item.data: return ""
-            elif item.data["event"].realized: return vocabulary("Status","Realized")
-            else: return vocabulary("Status","Planned")
+            last_status_attribute = item._attributes[LAST_STATUS]
+            if last_status_attribute.value==PLANNED:
+                event.consider_as_planned()
+                if event.confirmation_required:
+                    print(f"confirmation_required for item {item.name}")
+                    return REQUIRES_CONFIRMATION
+                else:
+                    return PLANNED
+            else:
+                if event.confirmation_required: 
+                    last_status_attribute.set(PLANNED)
+                    return REQUIRES_CONFIRMATION
+                elif event.realized:
+                    last_status_attribute.set(REALIZED)
+                    print(item.name, REALIZED)
+                    return REALIZED
+                else:
+                    last_status_attribute.set(PLANNED)
+                    print(item.name, PLANNED)
+                    return PLANNED
+
     
     def print_hello_world(item:treemod.TreeItem)->None:
         print("Hello, world!!!")
@@ -97,7 +128,8 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate):
                 NAME:INCOME, 
                 AMOUNT: "1 Kč", 
                 DATE: default_date(app_template.locale_code),
-                STATUS: status
+                STATUS: status,
+                LAST_STATUS: "unknown"
             }),
             children=(),
             icon_file=income_icon,
@@ -109,7 +141,8 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate):
                 NAME:EXPENSE,
                 AMOUNT: "1 Kč", 
                 DATE: default_date(app_template.locale_code),
-                STATUS: status
+                STATUS: status,
+                LAST_STATUS: "unknown"
             }),
             children=(),
             icon_file=expense_icon,
