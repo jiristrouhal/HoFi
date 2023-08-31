@@ -36,6 +36,9 @@ class Event:
     @property
     def confirmation_required(self)->bool:
         return self.planned and self.__date<=self.__reference_date()
+    @property
+    def date(self)->datetime.date:
+        return self.__date
     
     def add_action(self,on:Action_Type,owner:str, action:Callable[[],None])->None:
         if on not in self.__actions: raise KeyError
@@ -97,4 +100,16 @@ class Event_Manager:
 
     def __event_dismissed(self,event:Event)->None:
         self.planned.remove(event)
- 
+
+    def forget(self,event:Event)->None:
+        if event.realized: 
+            self.realized.remove(event)
+        elif event.planned: 
+            self.planned.remove(event)
+            event.dismiss()
+        else:
+            raise DismissedEvent(
+                f"Forgetting dismissed event is not allowed."
+                "The event should not be at this point accessible."
+            )
+
