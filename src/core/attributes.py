@@ -227,10 +227,10 @@ class Date_Attr(_Attribute):
 
     @property
     def value(self)->str: 
-        return dates.date_to_str(self._value,dates.DATE_FORMATS[self._locale_code])
+        return self._value
     @property
     def formatted_value(self)->str:
-        return self.value
+        return dates.date_to_str(self._value,dates.DATE_FORMATS[self._locale_code])
     
     @staticmethod
     def valid_entry(value:str)->bool: 

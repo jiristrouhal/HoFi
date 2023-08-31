@@ -65,7 +65,7 @@ class Test_Date_Attribute(unittest.TestCase):
     
     def test_specify_value_on_initialization(self):
         attr = attributes.Date_Attr("01.12.2005",locale_code='cs_cz')
-        self.assertEqual(attr.value, "01.12.2005")
+        self.assertEqual(attr.formatted_value, "01.12.2005")
 
     def test_validate_date(self):
         attr = attributes.Date_Attr(locale_code='cs_cz')

@@ -15,7 +15,7 @@ import src.controls.right_click_menu as rcm
 
 
 
-_Action_Type = Literal['selection','deselection','edit','any_modification','tree_removal']
+_Action_Type = Literal['load_tree','selection','deselection','edit','any_modification','tree_removal']
 
 
 class EditorCommand(Protocol):
@@ -271,6 +271,7 @@ class TreeEditor:
         self._last_selection:Tuple[str,...] = ()
 
         self._actions:Dict[_Action_Type,Dict[str,Callable[[treemod.TreeItem|None],None]]] = {
+            'load_tree':{},
             'selection':{},
             'deselection':{},
             'edit':{},
@@ -323,6 +324,7 @@ class TreeEditor:
         iid = str(id(tree)) 
         self._load_item_into_tree(iid,tree)
         self._map[iid] = tree
+        for action in self._actions["load_tree"].values(): action(tree)
         if "editor_cmd_controller" not in tree.data:
             tree.add_data("editor_cmd_controller",CmdController())
         tree.add_data("treeview_iid",iid)
