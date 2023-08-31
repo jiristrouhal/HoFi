@@ -15,6 +15,9 @@
             <xs:element name="Templates" type="Templates" />
 
             <xs:element name="Item_Moved_from_Future_to_Past" type="Item_Moved_from_Future_to_Past" />
+            <xs:element name="Realized_Item_Moved_to_Future" type="Realized_Item_Moved_to_Future" />
+
+            <xs:element name="Status" type="Status" />
 
         </xs:sequence>
         <xs:attribute name="Id" type="xs:string" use="required"/>
@@ -40,10 +43,26 @@
         <xs:element name="date" type="item"/>
         <xs:element name="description" type="item"/>
 
+        <xs:element name="status" type="item" />
+
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Status">
+    <xs:sequence>
+        <xs:element name="Realized" type="item"/>
+        <xs:element name="Planned" type="item"/>
     </xs:sequence>
 </xs:complexType>
 
 <xs:complexType name="Item_Moved_from_Future_to_Past">
+    <xs:sequence>
+        <xs:element name="Title" type="item"/>
+        <xs:element name="Content" type="item"/>
+    </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="Realized_Item_Moved_to_Future">
     <xs:sequence>
         <xs:element name="Title" type="item"/>
         <xs:element name="Content" type="item"/>

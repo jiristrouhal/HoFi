@@ -30,6 +30,7 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate):
     NAME =  tvoc("name")
     DATE = tvoc("date")
     DESCRIPTION = tvoc("description")
+    STATUS = tvoc("status")
 
     income_icon = ImageTk.PhotoImage(Image.open("src/_icons/income.png"))
     expense_icon = ImageTk.PhotoImage(Image.open("src/_icons/expense.png"))
@@ -65,6 +66,13 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate):
                 s += Decimal(extract_money_amount(child.dependent_attributes[EXPENSES].value))
         return cur.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].present(s,locale_code)
     
+    def status(item:treemod.TreeItem)->str:
+        if vocabulary("Templates","date") not in item.attributes: return ""
+        else:
+            if "event" not in item.data: return ""
+            elif item.data["event"].realized: return vocabulary("Status","Realized")
+            else: return vocabulary("Status","Planned")
+    
     def print_hello_world(item:treemod.TreeItem)->None:
         print("Hello, world!!!")
 
@@ -85,17 +93,27 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate):
         ),
         treemod.NewTemplate(
             INCOME,
-            OrderedDict({NAME:INCOME, AMOUNT: "1 Kč", DATE: default_date(app_template.locale_code)}),
+            OrderedDict({
+                NAME:INCOME, 
+                AMOUNT: "1 Kč", 
+                DATE: default_date(app_template.locale_code),
+                STATUS: status
+            }),
             children=(),
             icon_file=income_icon,
             variable_defaults={AMOUNT: default_amount_by_tree}
         ),
         treemod.NewTemplate(
             EXPENSE,
-            OrderedDict({NAME:EXPENSE,AMOUNT: "1 Kč", DATE: default_date(app_template.locale_code)}),
+            OrderedDict({
+                NAME:EXPENSE,
+                AMOUNT: "1 Kč", 
+                DATE: default_date(app_template.locale_code),
+                STATUS: status
+            }),
             children=(),
             icon_file=expense_icon,
-            variable_defaults={AMOUNT: default_amount_by_tree}
+            variable_defaults={AMOUNT: default_amount_by_tree},
         ),
         treemod.NewTemplate(
             ITEM,

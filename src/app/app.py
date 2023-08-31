@@ -85,12 +85,16 @@ def build_app(locale_code:lang.Locale_Code):
             vocabulary("Item_Moved_from_Future_to_Past","Title"),
             vocabulary("Item_Moved_from_Future_to_Past","Content"),
         )
+    def notify_that_realized_item_moved_to_future()->None:
+        tkmsg.showinfo( 
+            vocabulary("Realized_Item_Moved_to_Future","Title"),
+            vocabulary("Realized_Item_Moved_to_Future","Content"),
+        )
 
-    connector.add_action(
-        'planned_to_realized', 
-        'app', 
-        notify_item_moved_from_future_to_past_or_present
-    )
+    connector.add_action('planned_to_realized','app', 
+        notify_item_moved_from_future_to_past_or_present)
+    connector.add_action('realized_to_planned','app', 
+        notify_that_realized_item_moved_to_future)
 
     import tkinter.messagebox as tkmsg
     def discard_unsaved_changes():

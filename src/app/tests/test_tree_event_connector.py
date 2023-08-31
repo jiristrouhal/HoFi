@@ -35,7 +35,7 @@ class Test_Creating_Events_When_Creating_New_Tree_Item(unittest.TestCase):
         self.assertEqual(len(self.event_manager.realized), 1)
         self.assertEqual(
             self.logbook._children[-1].data["event"].date, 
-            transaction_date.value
+            transaction_date._value
         )
 
     def test_dismissing_event_when_item_is_removed(self)->None:
@@ -53,13 +53,13 @@ class Test_Creating_Events_When_Creating_New_Tree_Item(unittest.TestCase):
         self.logbook.new("RealizedTransaction", tag="Transaction")
         transaction = self.logbook._children[-1]
 
-        old_date = transaction.attributes["date"].value
+        old_date = transaction.attributes["date"]._value
         self.assertEqual(len(self.event_manager.realized), 1)
         self.assertSetEqual(self.event_manager.realized, {transaction.data["event"]})
         self.assertEqual(transaction.data["event"].date, old_date)
 
         transaction.attributes["date"].set(datetime.date.today()-datetime.timedelta(days=2))
-        new_date = transaction.attributes["date"].value
+        new_date = transaction.attributes["date"]._value
 
         self.assertEqual(len(self.event_manager.realized), 1)
         self.assertSetEqual(self.event_manager.realized, {transaction.data["event"]})

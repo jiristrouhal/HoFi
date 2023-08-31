@@ -237,10 +237,14 @@ class Date_Attr(_Attribute):
         self._format = dates.DATE_FORMATS[self._locale_code]
 
     @property
-    def value(self)->str: 
+    def raw_value(self)->datetime.date:
         return self._value
     @property
+    def value(self)->str: 
+        return self.formatted_value
+    @property
     def formatted_value(self)->str:
+        date = dates.date_to_str(self._value,dates.DATE_FORMATS[self._locale_code])
         return dates.date_to_str(self._value,dates.DATE_FORMATS[self._locale_code])
     
     @staticmethod

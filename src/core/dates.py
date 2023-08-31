@@ -9,7 +9,7 @@ SEPARATORS = (".","_","-"," ")
 
 
 def enter_date(readable_date:str,format:str)->datetime.date|None:
-    return datetime.datetime.strptime(readable_date, format)
+    return datetime.datetime.strptime(readable_date, format).date()
 
 def validate_date(readable_date:str,format:str)->bool:
     try: 

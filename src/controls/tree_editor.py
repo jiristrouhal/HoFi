@@ -684,8 +684,8 @@ class TreeEditor:
 
     def __load_children(self,parent:treemod.TreeItem)->None:
         for branch in parent._children:
-            iid = str(id(branch))
-            self._insert_child_into_tree(iid,branch)
+            if branch.parent is not None:
+                branch.parent.run_actions('add_child',branch)
             self.__load_children(branch)
 
     def __new_item_selected(self,item_id:str)->None:

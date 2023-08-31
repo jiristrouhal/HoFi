@@ -32,10 +32,21 @@
         <name Text="name" />
         <date Text="date" />
         <description Text="description" />
+        <status Text="status" />
     </Templates>
 
     <Item_Moved_from_Future_to_Past>
         <Title Text="Item requires confirmation" />
         <Content Text="The item date was changed from future to a present/past date. Confirm, that the item was actually realized." />
     </Item_Moved_from_Future_to_Past>
+
+    <Realized_Item_Moved_to_Future>
+        <Title Text="Realized item moved to future" />
+        <Content Text="A realized item was moved to the future and it will require confirmation of realization." />
+    </Realized_Item_Moved_to_Future>
+
+    <Status>
+        <Realized Text="realized" />
+        <Planned Text="planned" />
+    </Status>
 </Language>

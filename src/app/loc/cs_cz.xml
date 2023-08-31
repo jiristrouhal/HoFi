@@ -34,12 +34,23 @@
         <name Text="název" />
         <date Text="datum" />
         <description Text="popis" />
-        
+        <status Text="status" />
+
     </Templates>
 
     <Item_Moved_from_Future_to_Past>
         <Title Text="Předmět vyžaduje potvrzení" />
         <Content Text="Datum uskutečnění u předmětu bylo změněno z budoucího na současné/minulé. Potvrďte jeho uskutečnění." />
     </Item_Moved_from_Future_to_Past>
+
+    <Realized_Item_Moved_to_Future>
+        <Title Text="Uskutenčněný předmět změněn na plánovaný" />
+        <Content Text="Datum uskutečnění předmětu bylo změněno na budoucí. V budoucnu bude vyžadováno potvrzení uskutečnění." />
+    </Realized_Item_Moved_to_Future>
+
+    <Status>
+        <Realized Text="uskutečněno" />
+        <Planned Text="plánováno" />
+    </Status>
 
 </Language>
