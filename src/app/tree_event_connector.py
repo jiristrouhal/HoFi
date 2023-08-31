@@ -23,7 +23,8 @@ class TreeEventConnector:
         self.event_manager = event_manager
 
 
-    def _new_tree_item_events(self,tree:treemod.Tree)->None:
+    def _new_tree_item_events(self,tree:treemod.TreeItem|None)->None:
+        if tree is None: return
         tree.add_action(self.label, 'add_child', self._new_event)
 
     def _new_event(self,item:treemod.TreeItem)->None:
