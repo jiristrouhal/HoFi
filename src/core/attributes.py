@@ -81,6 +81,8 @@ class _Attribute(abc.ABC):
         self.choices:Dict[str,List[Any]] = dict()
         self.selected_choices:Dict[str,Any] = dict()
 
+        self._actions_on_edit:Dict[str, Callable[[],None]] = {}
+
     @abc.abstractproperty
     def value(self)->Any: pass
     @abc.abstractproperty
@@ -99,6 +101,14 @@ class _Attribute(abc.ABC):
     def set(self,value:str="")->None:
         if self.valid_entry(value) and not str(value).strip()=="": 
             self._value = str(value)
+        self.run_actions_on_edit()
+
+    def add_action_on_edit(self, owner_id:str, action:Callable[[],None])->None:
+        self._actions_on_edit[owner_id] = action
+
+    def run_actions_on_edit(self)->None:
+        for owner in self._actions_on_edit: 
+            self._actions_on_edit[owner]()
 
 
 class Choice_Attribute(_Attribute):
@@ -212,6 +222,7 @@ class Currency_Attribute(_Attribute):
 
         elif self.valid_entry(value) and not str(value).strip()=="": 
             self._value = str(value)
+        self.run_actions_on_edit()
     
 
 class Date_Attr(_Attribute):
@@ -247,7 +258,13 @@ class Date_Attr(_Attribute):
     def set(self,value:str="")->None:
         is_valid = self.final_validation(value)
         if is_valid and not str(value).strip()=="":
-            self._value = dates.enter_date(value, dates.DATE_FORMATS[self._locale_code])
+            date = dates.enter_date(value, dates.DATE_FORMATS[self._locale_code])
+            if date is None: return
+            self.set_from_date_obj(date)
+
+    def set_from_date_obj(self,date:datetime.date)->None:
+        self._value = date
+        self.run_actions_on_edit()
 
 
 class Name_Attr(_Attribute):

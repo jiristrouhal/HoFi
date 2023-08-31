@@ -10,6 +10,9 @@ import src.app.past_and_future as pf
 import src.core.tree as treemod
 
 
+import datetime
+
+
 class Test_Creating_Events_When_Creating_New_Tree_Item(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -45,6 +48,74 @@ class Test_Creating_Events_When_Creating_New_Tree_Item(unittest.TestCase):
         self.logbook.new("ItemWithoutDateAttribute", tag="ItemWithoutDateAttribute")
         self.assertSetEqual(self.event_manager.planned, set())
         self.assertSetEqual(self.event_manager.realized, set())
+
+    def test_moving_item_date_further_to_past_just_replaces_the_corresponding_event_with_other_realized_event(self):
+        self.logbook.new("RealizedTransaction", tag="Transaction")
+        transaction = self.logbook._children[-1]
+
+        old_date = transaction.attributes["date"].value
+        self.assertEqual(len(self.event_manager.realized), 1)
+        self.assertSetEqual(self.event_manager.realized, {transaction.data["event"]})
+        self.assertEqual(transaction.data["event"].date, old_date)
+
+        transaction.attributes["date"].set(datetime.date.today()-datetime.timedelta(days=2))
+        new_date = transaction.attributes["date"].value
+
+        self.assertEqual(len(self.event_manager.realized), 1)
+        self.assertSetEqual(self.event_manager.realized, {transaction.data["event"]})
+        self.assertEqual(transaction.data["event"].date, new_date)
+
+    def test_moving_item_date_to_the_future_replaced_realized_event_with_planned_event_and_run_actions(self):
+        # create and add an action that will be run when previously confirmed event is moved to future
+        self.moved_to_future = False
+        def action(): self.moved_to_future=True
+        self.connector.add_action('realized_to_planned','x', action)
+        
+        self.logbook.new("RealizedTransaction", tag="Transaction")
+        transaction = self.logbook._children[-1]
+        date_attr:treemod.Date_Attr = transaction.attributes["date"]
+        date_attr.set_from_date_obj(datetime.date.today()+datetime.timedelta(days=2))
+
+        self.assertEqual(len(self.event_manager.realized), 0)
+        self.assertEqual(len(self.event_manager.planned), 1)
+        self.assertTrue(transaction.data["event"] in self.event_manager.planned)
+
+        # check the action has been run
+        self.assertTrue(self.moved_to_future)
+
+    def test_moving_item_date_from_future_to_present(self):
+        # create and add an action that will be run when planned event is moved to present (or past)
+        self.moved_to_present = False
+        def action(): self.moved_to_present=True
+        self.connector.add_action('planned_to_realized','x', action)
+        # move the transaction to the future
+        self.logbook.new("PlannedTransaction", tag="Transaction")
+        transaction = self.logbook._children[-1]
+        date_attr:treemod.Date_Attr = transaction.attributes["date"]
+        date_attr.set_from_date_obj(datetime.date.today()+datetime.timedelta(days=2))
+        self.assertFalse(transaction.data["event"].confirmation_required)
+
+        # move the event to present
+        date_attr.set_from_date_obj(datetime.date.today())
+        self.assertTrue(transaction.data["event"].confirmation_required)
+
+    def test_moving_item_date_from_future_to_present_when_the_original_event_was_not_yet_confirmed(self):
+        # create and add an action that will be run when event is moved in the past
+        self.moved_to_present = False
+        def action(): self.moved_to_present=True
+        self.connector.add_action('planned_to_realized','x', action)
+        
+        self.logbook.new("PlannedTransaction", tag="Transaction")
+        transaction = self.logbook._children[-1]
+        transaction.data["event"].consider_as_planned()
+        date_attr:treemod.Date_Attr = transaction.attributes["date"]
+
+        self.assertTrue(transaction.data["event"].confirmation_required)
+
+        # move the event further to past
+        date_attr.set_from_date_obj(datetime.date.today()-datetime.timedelta(days=5))
+        self.assertTrue(transaction.data["event"].confirmation_required)
+
 
 
 if __name__=="__main__": # pragma: no cover

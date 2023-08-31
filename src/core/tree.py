@@ -4,7 +4,7 @@ import src.core.naming
 from collections import OrderedDict
 
 
-from src.core.attributes import _Attribute, Dependent_Attr
+from src.core.attributes import _Attribute, Dependent_Attr, Date_Attr
 from src.core.tree_templates import AppTemplate, NewTemplate
 
 
