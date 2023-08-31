@@ -56,7 +56,7 @@ class TreeEventConnector:
 
     def _move_event(self,item:treemod.TreeItem)->None:
         old_event:pf.Event = item.data["event"]
-        new_event = pf.Event(date=item.attributes["date"].value)
+        new_event = pf.Event(date=item.attributes[self.date_label].value)
         if old_event.planned:
             new_event.consider_as_planned()
 

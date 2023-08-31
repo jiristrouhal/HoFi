@@ -37,4 +37,9 @@
         
     </Templates>
 
+    <Item_Moved_from_Future_to_Past>
+        <Title Text="Předmět vyžaduje potvrzení" />
+        <Content Text="Datum uskutečnění u předmětu bylo změněno z budoucího na současné/minulé. Potvrďte jeho uskutečnění." />
+    </Item_Moved_from_Future_to_Past>
+
 </Language>

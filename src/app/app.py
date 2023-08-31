@@ -1,4 +1,9 @@
 import tkinter as tk
+import tkinter.messagebox as tkmsg
+import os
+from functools import partial
+
+
 import src.controls.tree_editor as te
 import src.controls.treemanager as tmg
 import src.controls.treelist as tl
@@ -6,12 +11,9 @@ import src.core.tree as treemod
 import src.reports.properties as pp
 import src.lang.lang as lang
 import src.core.tree_templates as temp
-import os
-
-
 import src.app.set_templates
-
-
+import src.app.tree_event_connector as tec
+import src.events.past_and_future as pf
 
 
 def build_app(locale_code:lang.Locale_Code):
@@ -37,7 +39,6 @@ def build_app(locale_code:lang.Locale_Code):
     editor_frame = tk.LabelFrame(root, text=vocabulary("Edit_Frame_Label"))
     editor_frame.pack(expand=1,fill=tk.BOTH,side=tk.RIGHT)
 
-
     # create app parts and place their widgets into their respective places in the GUI
     treelist = tl.TreeList(label='TreeList')
 
@@ -61,7 +62,6 @@ def build_app(locale_code:lang.Locale_Code):
         name_attr=vocabulary("Templates","name")
     )
 
-
     def clear_properties(*args): properties.clear()
     # connect (initially independent) Editor and Manager
     def add_tree_to_editor(tree:treemod.Tree): editor.load_tree(tree)
@@ -73,7 +73,24 @@ def build_app(locale_code:lang.Locale_Code):
     editor.add_action(properties.label,'edit',properties.display)
     editor.add_action(manager.label,'any_modification',manager.label_items_tree_as_modified)
     editor.add_action(manager.label,'tree_removal',clear_properties)
+    
+    event_manager = pf.Event_Manager()
+    connector = tec.TreeEventConnector(
+        editor, 
+        event_manager, 
+        date_label=vocabulary("Templates","date")
+    )
+    def notify_item_moved_from_future_to_past_or_present()->None:
+        tkmsg.showinfo( 
+            vocabulary("Item_Moved_from_Future_to_Past","Title"),
+            vocabulary("Item_Moved_from_Future_to_Past","Content"),
+        )
 
+    connector.add_action(
+        'planned_to_realized', 
+        'app', 
+        notify_item_moved_from_future_to_past_or_present
+    )
 
     import tkinter.messagebox as tkmsg
     def discard_unsaved_changes():

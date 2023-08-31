@@ -33,4 +33,9 @@
         <date Text="date" />
         <description Text="description" />
     </Templates>
+
+    <Item_Moved_from_Future_to_Past>
+        <Title Text="Item requires confirmation" />
+        <Content Text="The item date was changed from future to a present/past date. Confirm, that the item was actually realized." />
+    </Item_Moved_from_Future_to_Past>
 </Language>
