@@ -22,7 +22,9 @@ class TreeEventConnector:
         )->None:
 
         event_manager_id = str(id(event_manager))
-        editor.add_action(event_manager_id, 'load_tree', self._new_tree_item_events)
+        self.editor = editor
+
+        self.editor.add_action(event_manager_id, 'load_tree', self._new_tree_item_events)
         self.label = str(id(self))
         self.date_label = date_label
         self.event_manager = event_manager
@@ -49,6 +51,11 @@ class TreeEventConnector:
         item.add_data("event", event)
         item.add_action(self.label, 'on_removal', self._dismiss_event)
         item.attributes[self.date_label].add_action_on_edit(self.label, partial(self._move_event,item))
+        event.add_action(
+            'confirmed',
+            self.label, 
+            partial(self.editor.run_actions,'edit',item)
+        )
 
     def _dismiss_event(self, item:treemod.TreeItem)->None:
         event:pf.Event = item.data["event"]

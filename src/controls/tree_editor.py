@@ -3,7 +3,7 @@ from __future__ import annotations
 import tkinter.ttk as ttk
 import tkinter as tk
 import tkinter.messagebox as tkmsg
-from typing import Tuple, Dict, Callable, List, Literal, Protocol, Any
+from typing import Tuple, Dict, Callable, List, Literal, Protocol
 from functools import partial
 from collections import OrderedDict
 import dataclasses
@@ -12,7 +12,6 @@ import os
 
 import src.core.tree as treemod
 import src.controls.right_click_menu as rcm
-
 
 
 _Action_Type = Literal['load_tree','selection','deselection','edit','any_modification','tree_removal']
@@ -358,6 +357,10 @@ class TreeEditor:
         if self.right_click_menu.winfo_exists():
             self.right_click_menu.tk_popup(x=event.x_root,y=event.y_root)
 
+    def run_actions(self,on:_Action_Type,item:treemod.TreeItem)->None:
+        if on not in self._actions: raise KeyError(f"No such type of Editor actions ({on}).")
+        for action in self._actions[on].values(): action(item)
+
     def tree_item(self,treeview_iid:str)->treemod.TreeItem|None:
         if treeview_iid not in self._map: return None
         return self._map[treeview_iid]
@@ -505,10 +508,9 @@ class TreeEditor:
                 partial(self.remove_item,item)
             )
         if item.user_defined_commands:
-            self.right_click_menu.add_separator()
             self.right_click_menu.add_commands(
                 {
-                    label:command for label,command in item.user_defined_commands.items()
+                    cmd.label: partial(cmd.command,item) for cmd in item.user_defined_commands if cmd.condition(item)
                 }
             )
         if self.widget.get_children(item.data["treeview_iid"]):

@@ -2,10 +2,12 @@ from __future__ import annotations
 from typing import List, Tuple, Dict, Any, Callable, Literal, OrderedDict
 import src.core.naming
 from collections import OrderedDict
+import dataclasses
 
 
 from src.core.attributes import _Attribute, Dependent_Attr, Date_Attr
-from src.core.tree_templates import AppTemplate, NewTemplate
+from src.core.tree_templates import AppTemplate, NewTemplate, User_Defined_Command
+
 
 
 class TreeItem:
@@ -38,8 +40,8 @@ class TreeItem:
         for attr in self._dependent_attributes.values():
             attr.set_owner(self)
         
-        self._user_defined_commands:OrderedDict[str,Callable[[],None]] = \
-            app_template(tag).user_def_cmds(self)
+        self._user_defined_commands:List[User_Defined_Command] = \
+            app_template(tag).user_defined_commands(self)
         
         self._tree = self.its_tree
 
@@ -67,7 +69,7 @@ class TreeItem:
     @property
     def child_tags(self)->Tuple[str,...]: return self.__child_tags
     @property
-    def user_defined_commands(self)->OrderedDict[str,Callable[[],None]]: 
+    def user_defined_commands(self)->List[User_Defined_Command]: 
         return self._user_defined_commands
 
     __tree_events =  Literal['add_child','on_removal','on_renaming','on_moving','on_self_rename']

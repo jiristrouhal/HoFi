@@ -1,15 +1,23 @@
 from PIL import Image, ImageTk
 from collections import OrderedDict
+from typing import Literal, Dict
 
 import src.core.tree as treemod
 from decimal import Decimal
 import src.lang.lang as lang
 
+
 import src.core.currency as cur
 from src.events.past_and_future import Event, Event_Manager
+from src.core.tree_templates import User_Defined_Command
 
 
 from src.core.dates import default_date
+
+
+
+_Status_Label = Literal['planned','realized','requires_confirmation']
+
 
 
 def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_manager:Event_Manager):
@@ -70,45 +78,39 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
             elif child.tag==ITEM:
                 s += Decimal(extract_money_amount(child.dependent_attributes[EXPENSES].value))
         return cur.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].present(s,locale_code)
-    
+
     def status(item:treemod.TreeItem)->str:
-        if DATE not in item.attributes: return ""
-        
+        if DATE not in item._attributes: return ""
         if "event" not in item.data: 
-            item.data["event"] = Event(item.attributes[DATE].value)
+            item.data["event"] = Event(item._attributes[DATE].value)
             event_manager.add(item.data["event"])
-
-        event:Event = item.data["event"]
-        if LAST_STATUS not in item.attributes: 
-            return PLANNED if event.planned else REALIZED
+        if LAST_STATUS not in item._attributes: 
+            return PLANNED if item.data["event"].planned else REALIZED
         else:
-            last_status_attribute = item._attributes[LAST_STATUS]
-            if last_status_attribute.value==PLANNED:
-                event.consider_as_planned()
-                if event.confirmation_required:
-                    print(f"confirmation_required for item {item.name}")
-                    return REQUIRES_CONFIRMATION
-                else:
-                    return PLANNED
-            else:
-                if event.confirmation_required: 
-                    last_status_attribute.set(PLANNED)
-                    return REQUIRES_CONFIRMATION
-                elif event.realized:
-                    last_status_attribute.set(REALIZED)
-                    print(item.name, REALIZED)
-                    return REALIZED
-                else:
-                    last_status_attribute.set(PLANNED)
-                    print(item.name, PLANNED)
-                    return PLANNED
+            last_status = item._attributes[LAST_STATUS]
+            event:Event = item.data["event"]
+            states = {
+                'planned':PLANNED,
+                'realized':REALIZED,
+                'requires_confirmation':REQUIRES_CONFIRMATION
+            }
+            state_keys = {state:key for key,state in states.items()}
+            new_status_label:_Status_Label = _updated_status(state_keys[last_status.value],event)
+            last_status.set(states[new_status_label])
+            return last_status.value
+                
 
-    
-    def print_hello_world(item:treemod.TreeItem)->None:
-        print("Hello, world!!!")
 
     def default_amount_by_tree(item:treemod.TreeItem)->str:
         return "1" + cur.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].symbol
+    
+    def confirm_realization(item:treemod.TreeItem)->None:
+        event:Event = item.data["event"]
+        event.confirm_realization()
+
+    def confirmation_required(item:treemod.TreeItem)->bool:
+        event:Event = item.data["event"]
+        return event.confirmation_required
 
 
     app_template.add(
@@ -133,7 +135,14 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
             }),
             children=(),
             icon_file=income_icon,
-            variable_defaults={AMOUNT: default_amount_by_tree}
+            variable_defaults={AMOUNT: default_amount_by_tree},
+            user_def_cmds=[
+                User_Defined_Command(
+                    label="Confirm", 
+                    condition=confirmation_required,
+                    command=confirm_realization
+                )
+            ],
         ),
         treemod.NewTemplate(
             EXPENSE,
@@ -156,8 +165,8 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
                 EXPENSES: sum_expenses
             }),
             children=(INCOME,EXPENSE,ITEM),
-            user_def_cmds=OrderedDict({"Hello, world": print_hello_world}),
-            icon_file=item_icon),
+            icon_file=item_icon
+        ),
 
         treemod.NewTemplate(
             DEBT,
@@ -182,3 +191,33 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
         ),
     )
 
+
+def _updated_status(
+    last_status:_Status_Label, 
+    event:Event,
+    )->_Status_Label:
+
+    if last_status=='planned':
+        if event.planned:
+            if event.confirmation_required: 
+                return 'requires_confirmation'
+            else: 
+                return 'planned'
+        else:
+            event.consider_as_planned()
+            return 'requires_confirmation'
+
+    elif last_status=='requires_confirmation':
+        if event.realized or event.confirmation_required:
+            event.consider_as_planned()
+            return 'requires_confirmation'
+        else:
+            return 'planned'
+    else: #last_status.value=='realized'
+        if event.realized: 
+            return 'realized'
+        else: 
+            if event.confirmation_required: 
+                return 'requires_confirmation'
+            else: 
+                return 'planned'

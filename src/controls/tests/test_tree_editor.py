@@ -8,7 +8,7 @@ import tkinter as tk
 
 
 import controls.tree_editor  as tree_editor
-from core.tree import Tree, TreeItem, AppTemplate, NewTemplate
+from core.tree import Tree, TreeItem, AppTemplate, NewTemplate, User_Defined_Command
 
 
 class Test_Creating_Trees(unittest.TestCase):
@@ -545,7 +545,14 @@ class Test_User_Defined_Command_In_Right_Click_Menu(unittest.TestCase):
 
         self.app_template = AppTemplate()
         self.app_template.add(
-            NewTemplate('Tree',{"name":"New"},children=(),user_def_cmds={"Increment x":user_def_command}),
+            NewTemplate(
+                'Tree',
+                {"name":"New"},
+                children=(),
+                user_def_cmds=[
+                    User_Defined_Command("Increment x", lambda item: True, user_def_command)
+                ]
+            ),
         )
         
         editor = tree_editor.TreeEditor(app_template=self.app_template)

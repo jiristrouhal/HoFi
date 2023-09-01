@@ -12,6 +12,13 @@ from src.lang.lang import Locale_Code
 class TemplateLocked(Exception): pass
 
 
+@dataclasses.dataclass(frozen=True)
+class User_Defined_Command:
+    label:str
+    condition:Callable[[Any],bool]
+    command:Callable[[Any],None]
+
+
 class AppTemplate:
 
     def __init__(self, locale_code:Locale_Code="en_us", name_attr:str="name")->None:
@@ -142,8 +149,8 @@ class NewTemplate:
     children:Tuple[str,...]
     locked:bool = False
     icon_file:Any = None # relative path to a widget icon
-    user_def_cmds:OrderedDict[str,Callable[[attrs.AttributesOwner],None]] = \
-        dataclasses.field(default_factory=OrderedDict)
+    user_def_cmds:List[User_Defined_Command] = \
+        dataclasses.field(default_factory=list)
     variable_defaults:Dict[str,Callable[[Any],Any]] = \
         dataclasses.field(default_factory=OrderedDict)
     
@@ -166,8 +173,8 @@ class Template:
     _children:Tuple[str,...]
     _locked:bool
     _icon_file:Any
-    _user_def_cmds:OrderedDict[str,Callable[[attrs.AttributesOwner],None]] = \
-        dataclasses.field(default_factory=OrderedDict)
+    _user_def_cmds:List[User_Defined_Command] = \
+        dataclasses.field(default_factory=list)
     variable_defaults:Dict[str,Callable[[Any],Any]] = \
         dataclasses.field(default_factory=OrderedDict)
 
@@ -191,11 +198,8 @@ class Template:
             instance_attributes[name] = attr.copy()
         return instance_attributes
     
-    def user_def_cmds(self,obj:attrs.AttributesOwner)->OrderedDict[str,partial]:
-        obj_cmds = OrderedDict()
-        for name, cmd in self._user_def_cmds.items():
-            obj_cmds[name] = partial(cmd,obj)
-        return obj_cmds
+    def user_defined_commands(self,obj:attrs.AttributesOwner)->List[User_Defined_Command]:
+        return self._user_def_cmds
     
     @property
     def children(self)->Tuple[str,...]: 
