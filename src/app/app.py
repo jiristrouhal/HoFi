@@ -1,7 +1,5 @@
 import tkinter as tk
-import tkinter.messagebox as tkmsg
 import os
-from functools import partial
 
 
 import src.controls.tree_editor as te

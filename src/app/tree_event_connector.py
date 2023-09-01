@@ -43,9 +43,10 @@ class TreeEventConnector:
         tree.add_action(self.label, 'add_child', self._new_event)
 
     def _new_event(self,item:treemod.TreeItem)->None:
-        if self.date_label not in item.attributes: 
+        if self.date_label not in item._attributes: 
             return
-        date = item.attributes[self.date_label]._value
+        
+        date = item._attributes[self.date_label]._value
         event = pf.Event(date)
         self.event_manager.add(event)
         item.add_data("event", event)

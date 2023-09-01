@@ -80,9 +80,10 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
         return cur.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].present(s,locale_code)
 
     def status(item:treemod.TreeItem)->str:
-        if DATE not in item._attributes: return ""
+        if DATE not in item._attributes: 
+            return ""
         if "event" not in item.data: 
-            item.data["event"] = Event(item._attributes[DATE].value)
+            item.data["event"] = Event(item._attributes[DATE]._value)
             event_manager.add(item.data["event"])
         if LAST_STATUS not in item._attributes: 
             return PLANNED if item.data["event"].planned else REALIZED

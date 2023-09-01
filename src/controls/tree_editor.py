@@ -327,7 +327,7 @@ class TreeEditor:
         self._load_item_into_tree(iid,tree)
         self._map[iid] = tree
         for action in self._actions["load_tree"].values(): action(tree)
-        if "editor_cmd_controller" not in tree.data:
+        if "editor_cmd_controller" not in tree._data:
             tree.add_data("editor_cmd_controller",CmdController())
         tree.add_data("treeview_iid",iid)
         tree.add_action(self.label,'add_child', partial(self.__on_new_child,iid)) 
@@ -408,9 +408,9 @@ class TreeEditor:
         self.__configure_toplevel(self.edit_window)
         item = self._map[item_id]
         if item.parent is None:
-            self.__create_entries(self.edit_window, item.attributes, excluded=[self.name_attr])
+            self.__create_entries(self.edit_window, item._attributes, excluded=[self.name_attr])
         else:
-            self.__create_entries(self.edit_window, item.attributes)
+            self.__create_entries(self.edit_window, item._attributes)
         self.edit_window.bind("<Key-Escape>",self.disregard_edit_entry_values_on_keypress)
         self.edit_window.bind("<Return>",partial(self.__confirm_edit_entry_values_on_keypress,item_id))
         button_frame(
@@ -677,7 +677,7 @@ class TreeEditor:
         )
 
     def _load_item_into_tree(self,iid:str,item:treemod.TreeItem,index:int=0)->None:
-        parent_iid = "" if item.parent is None else item.parent.data["treeview_iid"]
+        parent_iid = "" if item._parent is None else item._parent.data["treeview_iid"]
         self.widget.insert(
             parent_iid,
             index=index,
@@ -690,8 +690,8 @@ class TreeEditor:
 
     def __load_children(self,parent:treemod.TreeItem)->None:
         for branch in parent._children:
-            if branch.parent is not None:
-                branch.parent.run_actions('add_child',branch)
+            if branch._parent is not None:
+                branch._parent.run_actions('add_child',branch)
             self.__load_children(branch)
 
     def __new_item_selected(self,item_id:str)->None:
@@ -736,7 +736,7 @@ class TreeEditor:
     def __revert_edit_entry_changes(self,branch_id:str)->None:
         for attribute, entry in self.entries.items():
             entry.delete(0,tk.END)
-            entry.insert(0,self._map[branch_id].attributes[attribute].value)
+            entry.insert(0,self._map[branch_id]._attributes[attribute].value)
 
     def _treeview_values(self,item:treemod.TreeItem)->List[str]:
         values = []
