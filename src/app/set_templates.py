@@ -94,6 +94,11 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
                 'realized':REALIZED,
                 'requires_confirmation':REQUIRES_CONFIRMATION
             }
+            if last_status.value not in states.values():
+                if event.realized: last_status.set(REALIZED)
+                elif event.confirmation_required: last_status.set(REQUIRES_CONFIRMATION)
+                else: last_status.set(PLANNED)
+                return last_status.value
             state_keys = {state:key for key,state in states.items()}
             new_status_label:_Status_Label = _updated_status(state_keys[last_status.value],event)
             last_status.set(states[new_status_label])
