@@ -63,7 +63,7 @@ class TreeEventConnector:
 
     def _move_event(self,item:treemod.TreeItem)->None:
         old_event:pf.Event = item.data["event"]
-        new_event = pf.Event(date=item.attributes[self.date_label]._value)
+        new_event = pf.Event(date=item._attributes[self.date_label]._value)
         if old_event.planned:
             new_event.consider_as_planned()
 
@@ -76,5 +76,6 @@ class TreeEventConnector:
     def __do_if_moved_between_future_and_past(self,old_event:pf.Event, new_event:pf.Event)->None:
         if old_event.realized and new_event.planned:
             for action in self._actions['realized_to_planned'].values(): action()
-        elif old_event.planned and new_event.confirmation_required:
+
+        elif old_event.planned and not old_event.confirmation_required and new_event.confirmation_required:
             for action in self._actions['planned_to_realized'].values(): action()

@@ -107,6 +107,7 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
     def confirm_realization(item:treemod.TreeItem)->None:
         event:Event = item.data["event"]
         event.confirm_realization()
+        item._attributes[LAST_STATUS].set(REALIZED)
 
     def confirmation_required(item:treemod.TreeItem)->bool:
         event:Event = item.data["event"]
