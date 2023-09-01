@@ -46,7 +46,7 @@
     </Item_Moved_from_Future_to_Past>
 
     <Realized_Item_Moved_to_Future>
-        <Title Text="Uskutenčněný předmět změněn na plánovaný" />
+        <Title Text="Uskutečněný předmět změněn na plánovaný" />
         <Content Text="Datum uskutečnění předmětu bylo změněno na budoucí. V budoucnu bude vyžadováno potvrzení uskutečnění." />
     </Realized_Item_Moved_to_Future>
 
