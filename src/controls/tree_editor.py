@@ -584,10 +584,8 @@ class TreeEditor:
 
         self.widget.config(
             selectmode='browse',
-            # show='tree', # hide zeroth row, that would contain the tree columns' headings
             yscrollcommand=scroll_y.set,
         )
-        print(self._displayed_attributes.keys())
         self.widget['columns'] = tuple(self._displayed_attributes.keys())
         self.widget.heading('#0', text=self.name_attr)
         for key in self._displayed_attributes:
