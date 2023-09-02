@@ -57,9 +57,10 @@ class Test_Getting_Transaction_State(unittest.TestCase):
         self.assertEqual(st._updated_status(last_status, event), 'requires_confirmation')
 
     def test_last_status_is_planned_and_event_is_realized(self):
-        last_status:st._Status_Label = 'planned'
         realized_event = Event(date=date.today()-timedelta(days=1))
-        self.assertEqual(st._updated_status(last_status, realized_event), 'requires_confirmation')
+        self.assertEqual(
+            st._updated_status(last_status='planned',event=realized_event), 
+        'requires_confirmation')
 
 
 

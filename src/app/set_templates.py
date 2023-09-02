@@ -22,7 +22,6 @@ def photo_icon(rel_path:str)->ImageTk.PhotoImage:
     return ImageTk.PhotoImage(Image.open(rel_path))
 
 
-
 def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_manager:Event_Manager):
 
     cur.set_localization(app_template.locale_code)
@@ -38,7 +37,6 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
     EXPENSES = tvoc("expenses")
     CURRENCY = tvoc("currency")
     AMOUNT = tvoc("amount")
-    NAME =  tvoc("name")
     DATE = tvoc("date")
     DESCRIPTION = tvoc("description")
     STATUS = tvoc("status")
@@ -71,14 +69,12 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
         s = Decimal(0.0)
         for child in item._children:
             if child.tag==EXPENSE:
-                s += child.attributes[AMOUNT].value
+                s += child._attributes[AMOUNT].value
             elif child.tag==ITEM:
                 s += Decimal(extract_money_amount(child.dependent_attributes[EXPENSES].value))
-        return cur.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].present(s,locale_code)
+        return cur.CURRY_FORMATS[item.its_tree._attributes[CURRENCY].value].present(s,locale_code)
 
     def status(item:treemod.TreeItem)->str:
-        if DATE not in item._attributes: 
-            return ""
         if "event" not in item.data: 
             item.data["event"] = Event(item._attributes[DATE]._value)
             event_manager.add(item.data["event"])
@@ -103,16 +99,14 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
             return last_status.value
                 
     def default_amount_by_tree(item:treemod.TreeItem)->str:
-        return "1" + cur.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].symbol
+        return "1" + cur.CURRY_FORMATS[item.its_tree._attributes[CURRENCY].value].symbol
     
     def confirm_realization(item:treemod.TreeItem)->None:
-        event:Event = item.data["event"]
-        event.confirm_realization()
+        item.data["event"].confirm_realization()
         item._attributes[LAST_STATUS].set(REALIZED)
 
     def confirmation_required(item:treemod.TreeItem)->bool:
-        event:Event = item.data["event"]
-        return event.confirmation_required
+        return item.data["event"].confirmation_required
 
     app_template.add(
         NewTemplate(
@@ -184,32 +178,9 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
     )
 
 
-def _updated_status(
-    last_status:_Status_Label, 
-    event:Event,
-    )->_Status_Label:
-
-    if last_status=='planned':
-        if event.planned:
-            if event.confirmation_required: 
-                return 'requires_confirmation'
-            else: 
-                return 'planned'
-        else:
-            event.consider_as_planned()
-            return 'requires_confirmation'
-
-    elif last_status=='requires_confirmation':
-        if event.realized or event.confirmation_required:
-            event.consider_as_planned()
-            return 'requires_confirmation'
-        else:
-            return 'planned'
-    else: #last_status.value=='realized'
-        if event.realized: 
-            return 'realized'
-        else: 
-            if event.confirmation_required: 
-                return 'requires_confirmation'
-            else: 
-                return 'planned'
+def _updated_status(last_status:_Status_Label, event:Event)->_Status_Label:
+    if event.confirmation_required: return 'requires_confirmation'
+    elif event.planned: return 'planned'
+    else: 
+        if last_status=='realized': return 'realized'
+        else: return 'requires_confirmation'
