@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from typing import Literal
 
 import src.core.tree as treemod
@@ -12,7 +11,6 @@ from src.core.tree_templates import User_Defined_Command
 
 
 from src.core.dates import default_date
-
 
 
 _Status_Label = Literal['planned','realized','requires_confirmation']
@@ -118,24 +116,24 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
     app_template.add(
         treemod.NewTemplate(
             SCENARIO,
-            OrderedDict({
+            {
                 NAME:SCENARIO,
                 CURRENCY:({code:code for code in cur.CURRY_CODES}, cur.DEFAULT_CURRENCY_CODE),
                 INCOMES: sum_incomes,
                 EXPENSES: sum_expenses
-            }),
+            },
             children=(INCOME, EXPENSE, ITEM, DEBT, NONFINANCIAL_DEBT),
             icon_file=photo_icon("src/_icons/scenario.png"),
         ),
         treemod.NewTemplate(
             INCOME,
-            OrderedDict({
+            {
                 NAME:INCOME, 
                 AMOUNT: "1 Kč", 
                 DATE: default_date(app_template.locale_code),
                 STATUS: status,
                 LAST_STATUS: "unknown"
-            }),
+            },
             children=(),
             icon_file=photo_icon("src/_icons/income.png"),
             variable_defaults={AMOUNT: default_amount_by_tree},
@@ -149,45 +147,41 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
         ),
         treemod.NewTemplate(
             EXPENSE,
-            OrderedDict({
+            {
                 NAME:EXPENSE,
                 AMOUNT: "1 Kč", 
                 DATE: default_date(app_template.locale_code),
                 STATUS: status,
                 LAST_STATUS: "unknown"
-            }),
+            },
             children=(),
             icon_file=photo_icon("src/_icons/expense.png"),
             variable_defaults={AMOUNT: default_amount_by_tree},
         ),
         treemod.NewTemplate(
             ITEM,
-            OrderedDict({
-                NAME:ITEM,
-                INCOMES: sum_incomes,
-                EXPENSES: sum_expenses
-            }),
+            {NAME:ITEM, INCOMES: sum_incomes, EXPENSES: sum_expenses},
             children=(INCOME,EXPENSE,ITEM),
             icon_file=photo_icon("src/_icons/item.png")
         ),
         treemod.NewTemplate(
             DEBT,
-            OrderedDict({
+            {
                 NAME:DEBT,
                 AMOUNT:"1 Kč", 
                 DATE: default_date(app_template.locale_code)
-            }),
+            },
             children=(),
             icon_file=photo_icon("src/_icons/debt.png"),
             variable_defaults={AMOUNT: default_amount_by_tree}
         ),
         treemod.NewTemplate(
             NONFINANCIAL_DEBT,
-            OrderedDict({
+            {
                 NAME:NONFINANCIAL_DEBT,
                 DESCRIPTION:"...", 
                 DATE: default_date(app_template.locale_code)
-            }),
+            },
             children=(),
             icon_file=photo_icon("src/_icons/nonmonetary_debt.png")
         ),
