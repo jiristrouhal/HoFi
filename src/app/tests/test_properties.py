@@ -4,7 +4,8 @@ sys.path.insert(1,"src")
 
 import src.reports.properties as pp
 import unittest
-from core.tree import TreeItem, AppTemplate, NewTemplate
+from core.tree import TreeItem, AppTemplate
+from core.tree_templates import NewTemplate
 
 
 class Test_Displaying_Tree_Properties(unittest.TestCase):

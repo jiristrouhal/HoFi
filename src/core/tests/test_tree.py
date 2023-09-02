@@ -2,6 +2,7 @@ import sys
 sys.path.insert(1,"src")
 
 import core.tree as tree
+import core.tree_templates as templ
 import unittest
 
 class Test_Creating_Tree(unittest.TestCase):
@@ -10,8 +11,8 @@ class Test_Creating_Tree(unittest.TestCase):
         # add a tree template
         self.template = tree.AppTemplate()
         self.template.add(
-            tree.NewTemplate("Tree",{"name":"New"}, children=("Branch",)),
-            tree.NewTemplate("Branch",{"name":"New","weight":10}, children=("Branch",))
+            templ.NewTemplate("Tree",{"name":"New"}, children=("Branch",)),
+            templ.NewTemplate("Branch",{"name":"New","weight":10}, children=("Branch",))
         )
         self.tree = tree.Tree("Tree 1",tag="Tree",app_template=self.template)
         self.tree.new("Branch 1",tag="Branch")
@@ -153,8 +154,8 @@ class Test_Actions(unittest.TestCase):
     def setUp(self) -> None:
         self.template = tree.AppTemplate()
         self.template.add(
-            tree.NewTemplate("Tree",{"name":"New"},children=("Branch",)),
-            tree.NewTemplate("Branch",{"name":"New"},children=("Branch",))
+            templ.NewTemplate("Tree",{"name":"New"},children=("Branch",)),
+            templ.NewTemplate("Branch",{"name":"New"},children=("Branch",))
         )
         self.tree = tree.Tree("Tree 1",tag="Tree",app_template=self.template)
         self.tree.new("Branch X",tag="Branch")
@@ -179,9 +180,9 @@ class Test_Adding_Leaf_Type_Item(unittest.TestCase):
     def setUp(self) -> None:
         self.template = tree.AppTemplate()
         self.template.add(
-            tree.NewTemplate("Tree",{"name":"New"},children=("Branch","Leaf")),
-            tree.NewTemplate("Branch",{"name":"New"},children=("Branch","Leaf")),
-            tree.NewTemplate("Leaf",{"name":"New"},children=())
+            templ.NewTemplate("Tree",{"name":"New"},children=("Branch","Leaf")),
+            templ.NewTemplate("Branch",{"name":"New"},children=("Branch","Leaf")),
+            templ.NewTemplate("Leaf",{"name":"New"},children=())
         )
         self.tree = tree.Tree("Tree 1",tag="Tree",app_template=self.template)
         self.tree.new("Branch X",tag="Branch")
@@ -201,7 +202,7 @@ class Test_Trees_And_Attributes(unittest.TestCase):
     def setUp(self) -> None:
         template = tree.AppTemplate()
         template.add(
-            tree.NewTemplate("Tree",{"name":"New", "height":20},children=()),
+            templ.NewTemplate("Tree",{"name":"New", "height":20},children=()),
         )
         self.tree = tree.Tree("Tree X", tag="Tree", app_template=template)
 
@@ -215,10 +216,10 @@ class Test_Adding_Children_According_To_Templates(unittest.TestCase):
     def setUp(self) -> None:
         self.template = tree.AppTemplate()
         self.template.add(
-            tree.NewTemplate('Tree',{"name":"New"},children=("Branch","Root")),
-            tree.NewTemplate('Branch',{"name":"New"},children=("Branch","Leaf")),
-            tree.NewTemplate('Leaf',{"name":"New"},children=()),
-            tree.NewTemplate('Root',{"name":"New"},children=("Root",)),
+            templ.NewTemplate('Tree',{"name":"New"},children=("Branch","Root")),
+            templ.NewTemplate('Branch',{"name":"New"},children=("Branch","Leaf")),
+            templ.NewTemplate('Leaf',{"name":"New"},children=()),
+            templ.NewTemplate('Root',{"name":"New"},children=("Root",)),
         )
 
     def test_accessing_available_child_element_tags(self)->None:
@@ -246,7 +247,7 @@ class Test_Dependent_Attributes(unittest.TestCase):
 
         self.template = tree.AppTemplate()
         self.template.add(
-            tree.NewTemplate("Tree", 
+            templ.NewTemplate("Tree", 
                 {
                     "name":"New", 
                     "height":20, 

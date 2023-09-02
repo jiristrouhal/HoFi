@@ -1,14 +1,13 @@
 from typing import Literal
 
 import src.core.tree as treemod
-from src.core.tree import NewTemplate
 from decimal import Decimal
 import src.lang.lang as lang
 
 
 import src.core.currency as cur
 from src.events.past_and_future import Event, Event_Manager
-from src.core.tree_templates import User_Defined_Command
+from src.core.tree_templates import User_Defined_Command, NewTemplate
 
 
 from src.core.dates import default_date
@@ -75,9 +74,8 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
         return cur.CURRY_FORMATS[item.its_tree._attributes[CURRENCY].value].present(s,locale_code)
 
     def status(item:treemod.TreeItem)->str:
-        if "event" not in item.data: 
-            item.data["event"] = Event(item._attributes[DATE]._value)
-            event_manager.add(item.data["event"])
+        if "event" not in item.data: return ""
+            
         if LAST_STATUS not in item._attributes: 
             return PLANNED if item.data["event"].planned else REALIZED
         else:

@@ -4,7 +4,8 @@ sys.path.insert(1,"src")
 
 import src.controls.treelist as tlist
 import unittest
-from core.tree import Tree, AppTemplate, NewTemplate
+from core.tree import Tree, AppTemplate
+from core.tree_templates import NewTemplate
 
 
 class Test_Modifying_List(unittest.TestCase):

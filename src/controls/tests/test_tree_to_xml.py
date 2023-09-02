@@ -3,7 +3,7 @@ sys.path.insert(1,"src")
 
 import controls.tree_to_xml as tree_to_xml
 import core.tree as treemod
-import core.attributes as attrs
+import core.tree_templates as templ
 import unittest
 import os
 
@@ -13,8 +13,8 @@ class Test_Saving_And_Loading_Trees(unittest.TestCase):
     def setUp(self) -> None:
         self.app_template = treemod.AppTemplate()
         self.app_template.add(
-            treemod.NewTemplate('Tree',{'name':"New", "weight":123, "height":20}, children=('Branch',)),
-            treemod.NewTemplate('Branch',{'name':"New", "weight":123}, children=('Branch',)),
+            templ.NewTemplate('Tree',{'name':"New", "weight":123, "height":20}, children=('Branch',)),
+            templ.NewTemplate('Branch',{'name':"New", "weight":123}, children=('Branch',)),
         )
         self.converter = tree_to_xml.Tree_XML_Converter(self.app_template)
         self.tree1 = treemod.Tree("Tree 1",tag='Tree',app_template=self.app_template)
@@ -99,7 +99,7 @@ class Test_Saving_And_Loading_Tree_With_Money_Attribute(unittest.TestCase):
     def test_saving_and_loading_tree_with_currency_attribute_keeps_the_amount_and_currency_unchanger(self):
         self.app_template = treemod.AppTemplate("en_us")
         self.app_template.add(
-            treemod.NewTemplate('Tree', {"name":"Tree","cost":"$1"},children=())
+            templ.NewTemplate('Tree', {"name":"Tree","cost":"$1"},children=())
         )
         converter = tree_to_xml.Tree_XML_Converter(self.app_template)
         tree = treemod.Tree("TreeXY",'Tree',app_template=self.app_template)

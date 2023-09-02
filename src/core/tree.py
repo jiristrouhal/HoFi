@@ -2,11 +2,10 @@ from __future__ import annotations
 from typing import List, Tuple, Dict, Any, Callable, Literal, OrderedDict
 import src.core.naming
 from collections import OrderedDict
-import dataclasses
 
 
-from src.core.attributes import _Attribute, Dependent_Attr, Date_Attr
-from src.core.tree_templates import AppTemplate, NewTemplate, User_Defined_Command
+from src.core.attributes import _Attribute, Dependent_Attr
+from src.core.tree_templates import AppTemplate, User_Defined_Command
 
 
 
@@ -48,7 +47,7 @@ class TreeItem:
     @property
     def its_tree(self)->TreeItem:
         item = self
-        while not item.parent is None:
+        while not item.parent is None: 
             item = item.parent
         return item
 

@@ -8,7 +8,8 @@ import tkinter as tk
 
 
 import controls.tree_editor  as tree_editor
-from core.tree import Tree, TreeItem, AppTemplate, NewTemplate, User_Defined_Command
+from core.tree import Tree, TreeItem, AppTemplate, User_Defined_Command
+from core.tree_templates import NewTemplate
 
 
 class Test_Creating_Trees(unittest.TestCase):
