@@ -1,6 +1,5 @@
-from PIL import Image, ImageTk
 from collections import OrderedDict
-from typing import Literal, Dict
+from typing import Literal
 
 import src.core.tree as treemod
 from decimal import Decimal
@@ -17,6 +16,11 @@ from src.core.dates import default_date
 
 
 _Status_Label = Literal['planned','realized','requires_confirmation']
+
+
+from PIL import Image, ImageTk
+def photo_icon(rel_path:str)->ImageTk.PhotoImage:
+    return ImageTk.PhotoImage(Image.open(rel_path))
 
 
 
@@ -44,13 +48,6 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
     PLANNED = vocabulary("Status","Planned")
     REALIZED = vocabulary("Status","Realized")
     REQUIRES_CONFIRMATION = vocabulary("Status","Requires_Confirmation")
-
-    scenario_icon = ImageTk.PhotoImage(Image.open("src/_icons/scenario.png"))
-    income_icon = ImageTk.PhotoImage(Image.open("src/_icons/income.png"))
-    expense_icon = ImageTk.PhotoImage(Image.open("src/_icons/expense.png"))
-    item_icon = ImageTk.PhotoImage(Image.open("src/_icons/item.png"))
-    debt_icon = ImageTk.PhotoImage(Image.open("src/_icons/debt.png"))
-    nonmon_debt_icon = ImageTk.PhotoImage(Image.open("src/_icons/nonmonetary_debt.png"))
 
     locale_code = app_template.locale_code
 
@@ -106,8 +103,6 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
             last_status.set(states[new_status_label])
             return last_status.value
                 
-
-
     def default_amount_by_tree(item:treemod.TreeItem)->str:
         return "1" + cur.CURRY_FORMATS[item.its_tree.attributes[CURRENCY].value].symbol
     
@@ -120,7 +115,6 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
         event:Event = item.data["event"]
         return event.confirmation_required
 
-
     app_template.add(
         treemod.NewTemplate(
             SCENARIO,
@@ -131,7 +125,7 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
                 EXPENSES: sum_expenses
             }),
             children=(INCOME, EXPENSE, ITEM, DEBT, NONFINANCIAL_DEBT),
-            icon_file=scenario_icon,
+            icon_file=photo_icon("src/_icons/scenario.png"),
         ),
         treemod.NewTemplate(
             INCOME,
@@ -143,7 +137,7 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
                 LAST_STATUS: "unknown"
             }),
             children=(),
-            icon_file=income_icon,
+            icon_file=photo_icon("src/_icons/income.png"),
             variable_defaults={AMOUNT: default_amount_by_tree},
             user_def_cmds=[
                 User_Defined_Command(
@@ -163,7 +157,7 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
                 LAST_STATUS: "unknown"
             }),
             children=(),
-            icon_file=expense_icon,
+            icon_file=photo_icon("src/_icons/expense.png"),
             variable_defaults={AMOUNT: default_amount_by_tree},
         ),
         treemod.NewTemplate(
@@ -174,9 +168,8 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
                 EXPENSES: sum_expenses
             }),
             children=(INCOME,EXPENSE,ITEM),
-            icon_file=item_icon
+            icon_file=photo_icon("src/_icons/item.png")
         ),
-
         treemod.NewTemplate(
             DEBT,
             OrderedDict({
@@ -185,7 +178,7 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
                 DATE: default_date(app_template.locale_code)
             }),
             children=(),
-            icon_file=debt_icon,
+            icon_file=photo_icon("src/_icons/debt.png"),
             variable_defaults={AMOUNT: default_amount_by_tree}
         ),
         treemod.NewTemplate(
@@ -196,7 +189,7 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
                 DATE: default_date(app_template.locale_code)
             }),
             children=(),
-            icon_file=nonmon_debt_icon
+            icon_file=photo_icon("src/_icons/nonmonetary_debt.png")
         ),
     )
 
