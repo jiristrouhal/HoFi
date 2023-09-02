@@ -45,6 +45,7 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
     REALIZED = vocabulary("Status","Realized")
     REQUIRES_CONFIRMATION = vocabulary("Status","Requires_Confirmation")
 
+    scenario_icon = ImageTk.PhotoImage(Image.open("src/_icons/scenario.png"))
     income_icon = ImageTk.PhotoImage(Image.open("src/_icons/income.png"))
     expense_icon = ImageTk.PhotoImage(Image.open("src/_icons/expense.png"))
     item_icon = ImageTk.PhotoImage(Image.open("src/_icons/item.png"))
@@ -129,7 +130,8 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
                 INCOMES: sum_incomes,
                 EXPENSES: sum_expenses
             }),
-            children=(INCOME, EXPENSE, ITEM, DEBT, NONFINANCIAL_DEBT)
+            children=(INCOME, EXPENSE, ITEM, DEBT, NONFINANCIAL_DEBT),
+            icon_file=scenario_icon,
         ),
         treemod.NewTemplate(
             INCOME,

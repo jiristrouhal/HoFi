@@ -39,10 +39,12 @@ def build_app(locale_code:lang.Locale_Code):
         label='TreeEditor', 
         displayed_attributes={
             vocabulary("Amount_Title"):(vocabulary("Templates","amount"),),
-            "":(vocabulary("Templates","status"),)
+            "Status":(vocabulary("Templates","status"),)
         },
         ignored_attributes=(vocabulary("Templates","last_status"),) 
     )
+    editor.widget.column(vocabulary("Amount_Title"),anchor=tk.E,width=100)
+    editor.widget.column("Status",anchor=tk.CENTER,width=100)
     
     event_manager = pf.Event_Manager()
     connector = tec.TreeEventConnector(

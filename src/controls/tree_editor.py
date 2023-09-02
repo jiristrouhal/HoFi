@@ -241,8 +241,9 @@ class TreeEditor:
         self.app_template = app_template
 
         self.widget = ttk.Treeview(parent, columns=tuple(displayed_attributes.keys()))
+        self._displayed_attributes:Dict[str,Tuple[str,...]] = displayed_attributes
+        
         self.__bind_keys()
-        self.__configure_widget()
 
         self._attribute_template:OrderedDict[str,treemod._Attribute] = OrderedDict()
 
@@ -263,7 +264,6 @@ class TreeEditor:
         self.entries:Dict[str,tk.Entry] = dict()
         self.entry_options:Dict[str,Dict[str,ttk.Combobox]] = dict()
 
-        self._displayed_attributes:Dict[str,Tuple[str,...]] = displayed_attributes
         # this flag will prevent some events to occur when the treeview is tested
         # WITHOUT opening the GUI (e.g. it prevents any message box from showing up)
         self._messageboxes_allowed:bool = True
@@ -287,6 +287,8 @@ class TreeEditor:
 
         self.name_attr = app_template.name_attr
         self.ignored_attributes = ignored_attributes
+        
+        self.__configure_widget()
 
     @property
     def trees(self)->Tuple[str,...]: 
@@ -582,9 +584,16 @@ class TreeEditor:
 
         self.widget.config(
             selectmode='browse',
-            show='tree', # hide zeroth row, that would contain the tree columns' headings
+            # show='tree', # hide zeroth row, that would contain the tree columns' headings
             yscrollcommand=scroll_y.set,
         )
+        print(self._displayed_attributes.keys())
+        self.widget['columns'] = tuple(self._displayed_attributes.keys())
+        self.widget.heading('#0', text=self.name_attr)
+        for key in self._displayed_attributes:
+            self.widget.heading(key,text=key.lower())
+            self.widget.column(key,width=50,minwidth=25)
+        
 
     def __create_entries(self,window:tk.Toplevel,attributes:Dict[str,treemod._Attribute],excluded:List[str]=[])->None:
         self.entries = dict()
