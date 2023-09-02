@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter.messagebox as tkmsg
 import os
 
 
@@ -22,14 +23,18 @@ def build_app(locale_code:lang.Locale_Code):
     vocabulary = lang.Vocabulary()
     vocabulary.load_xml(os.path.dirname(os.path.abspath(__file__))+'/loc', locale_code)
 
-    left_frame = tk.Frame(root)
-    left_frame.pack(expand=1,fill=tk.BOTH,side=tk.LEFT)
-    manager_frame = tk.LabelFrame(left_frame, text=vocabulary("Manager_Title"))
-    manager_frame.pack(expand=1,fill=tk.BOTH)
-    properties_frame = tk.Frame(left_frame)
-    properties_frame.pack(expand=2,fill=tk.BOTH, side=tk.BOTTOM)
+
+    root_pane = tk.PanedWindow(root,orient=tk.HORIZONTAL)
+    root_pane.pack(fill=tk.BOTH, expand=1)
+    left_pane = tk.PanedWindow(root_pane, orient=tk.VERTICAL)
+    root_pane.add(left_pane)
+    manager_frame = tk.LabelFrame(left_pane, text=vocabulary("Manager_Title"))
+    left_pane.add(manager_frame)
+    properties_frame = tk.Frame(left_pane)
+    left_pane.add(properties_frame)
     editor_frame = tk.LabelFrame(root, text=vocabulary("Edit_Frame_Label"))
-    editor_frame.pack(expand=1,fill=tk.BOTH,side=tk.RIGHT)
+    root_pane.add(editor_frame)
+
 
     app_template = temp.AppTemplate(locale_code,name_attr=vocabulary("Templates","name"))
 
@@ -100,7 +105,6 @@ def build_app(locale_code:lang.Locale_Code):
     editor.add_action(manager.label,'any_modification',manager.label_items_tree_as_modified)
     editor.add_action(manager.label,'tree_removal',clear_properties)
 
-    import tkinter.messagebox as tkmsg
     def discard_unsaved_changes():
         if manager.unsaved_trees:
             if tkmsg.askokcancel(
