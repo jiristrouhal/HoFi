@@ -458,7 +458,7 @@ class Test_Actions_On_Selection(unittest.TestCase):
             self.selection = item.name
         self.editor.add_action('Test','selection',action)
         self.editor.widget.selection_set(self.tree1_iid)
-        self.editor.check_selection_changes()
+        self.editor._check_selection_changes()
         self.assertEqual(self.selection, "Tree 1")
 
     def test_repeated_selection_has_no_effect(self)->None:
@@ -470,15 +470,15 @@ class Test_Actions_On_Selection(unittest.TestCase):
 
         self.editor.widget.selection_set(self.tree1_iid)
         # this function is automatically run when user click in Treeview
-        self.editor.check_selection_changes()
-        self.editor.check_selection_changes()
+        self.editor._check_selection_changes()
+        self.editor._check_selection_changes()
         self.assertEqual(self.i, 1)
 
         # the selection has to be first cleared and then repeated
         self.editor.widget.selection_set()
-        self.editor.check_selection_changes()
+        self.editor._check_selection_changes()
         self.editor.widget.selection_set(self.tree1_iid)
-        self.editor.check_selection_changes()
+        self.editor._check_selection_changes()
         self.assertEqual(self.i, 2)
 
 

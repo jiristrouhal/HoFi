@@ -303,13 +303,6 @@ class TreeEditor:
 
         self._actions[on][owner] = action
 
-    def check_selection_changes(self,event:tk.Event|None=None)->None:
-        current_selection = self.widget.selection()
-        if current_selection==self._last_selection: return
-        self._last_selection = current_selection
-        if not current_selection: self.__no_item_selected()
-        else: self.__new_item_selected(current_selection[0])
-
     def remove_selected_item(self,event:tk.Event)->None: # pragma: no cover
         #validation
         selection = self.widget.selection()
@@ -332,8 +325,10 @@ class TreeEditor:
         if "editor_cmd_controller" not in tree._data:
             tree.add_data("editor_cmd_controller",CmdController())
         tree.add_data("treeview_iid",iid)
-        tree.add_action(self.label,'add_child', partial(self.__on_new_child,iid)) 
-        tree.add_action(self.label,'on_self_rename', partial(self.__on_renaming,iid))
+        if self.label not in tree._actions['add_child']:
+            tree.add_action(self.label,'add_child', partial(self.__on_new_child,iid))
+        if self.label not in tree._actions['on_self_rename']:
+            tree.add_action(self.label,'on_self_rename', partial(self.__on_renaming,iid))
         self.__load_children(tree)
         self.__open_all("")
         if self._lastly_edited_tree_iid == "":
@@ -528,7 +523,7 @@ class TreeEditor:
         self.widget.bind("<Button-3>",self.right_click_item)
         self.widget.bind("<Double-Button-1>",self.__open_edit_window_on_double_click,add="")
         self.widget.bind("<Key-Delete>",self.remove_selected_item)
-        self.widget.bind("<<TreeviewSelect>>",self.check_selection_changes)
+        self.widget.bind("<<TreeviewSelect>>",self._check_selection_changes)
         self.widget.bind("<Control-z>",self._undo_on_key_stroke)
         self.widget.bind("<Control-y>",self._redo_on_key_stroke)
 
@@ -570,6 +565,13 @@ class TreeEditor:
             msgbox_contents("Title"),
             msgbox_contents("Content")
         )
+
+    def _check_selection_changes(self,event:tk.Event|None=None)->None:
+        current_selection = self.widget.selection()
+        if current_selection==self._last_selection: return
+        self._last_selection = current_selection
+        if not current_selection: self.__no_item_selected()
+        else: self.__new_item_selected(current_selection[0])
 
     def __configure_widget(self)->None:
         style = ttk.Style()
@@ -673,10 +675,14 @@ class TreeEditor:
     def _insert_child_into_tree(self, item_iid:str, child:treemod.TreeItem)->None:
         self._map[item_iid] = child
         self._load_item_into_tree(item_iid,child)
-        child.add_action(self.label,'add_child', partial(self.__on_new_child, item_iid))
-        child.add_action(self.label,'on_removal', partial(self.__on_removal, item_iid))
-        child.add_action(self.label,'on_renaming', partial(self.__on_renaming, item_iid))
-        child.add_action(self.label,'on_moving', partial(self.__on_moving, item_iid))
+        if self.label not in child._actions["add_child"]:
+            child.add_action(self.label,'add_child', partial(self.__on_new_child, item_iid))
+        if self.label not in child._actions['on_removal']:
+            child.add_action(self.label,'on_removal', partial(self.__on_removal, item_iid))
+        if self.label not in child._actions['on_renaming']:
+            child.add_action(self.label,'on_renaming', partial(self.__on_renaming, item_iid))
+        if self.label not in child._actions['on_moving']:
+            child.add_action(self.label,'on_moving', partial(self.__on_moving, item_iid))
         child.add_data("treeview_iid",item_iid)
         child.do_if_error_occurs(
             'cannot_remove_branch_with_children',

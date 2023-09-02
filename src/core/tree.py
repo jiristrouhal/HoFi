@@ -8,7 +8,7 @@ from src.core.attributes import _Attribute, Dependent_Attr
 from src.core.tree_templates import AppTemplate, User_Defined_Command
 
 
-
+_Tree_Events = Literal['add_child','on_removal','on_renaming','on_moving','on_self_rename']
 class TreeItem:
 
     def __init__(self, name:str, tag:str, app_template:AppTemplate)->None:
@@ -24,8 +24,6 @@ class TreeItem:
 
         self._children:List[TreeItem] = list()
         self._parent:TreeItem|None = None
-
-        self._actions:Dict[str,Dict[str,List[Callable]]] = {}
 
         self._do_on_error:Dict[str,List[Callable]] = {'cannot_remove_branch_with_children':[],}
 
@@ -43,6 +41,14 @@ class TreeItem:
             app_template(tag).user_defined_commands(self)
         
         self._tree = self.its_tree
+
+        self._actions:Dict[_Tree_Events,Dict[str,Callable]] = {
+            'add_child':{},
+            'on_moving':{},
+            'on_removal':{},
+            'on_renaming':{},
+            'on_self_rename':{}
+        }
 
     @property
     def its_tree(self)->TreeItem:
@@ -76,21 +82,15 @@ class TreeItem:
     def add_action(
         self,
         owner_id:str,
-        on:__tree_events,
+        on:_Tree_Events,
         action:Callable[[TreeItem],None]
         )->None: 
 
-        if not owner_id in self._actions: self.__initialize_actions(owner_id)
-        self._actions[owner_id][on].append(action)
-
-    def __initialize_actions(self,owner_id:str)->None:
-        self._actions[owner_id] = {
-            'add_child': [],
-            'on_removal': [],
-            'on_renaming': [],
-            'on_moving': [],
-            'on_self_rename': [],
-        }
+        if on not in self._actions: 
+            raise KeyError(f"Unknown type of action ({on}).")
+        if owner_id in self._actions[on]: 
+            raise KeyError(f"Action '{on}' already added under the owner '{owner_id}'.")
+        self._actions[on][owner_id] = action
 
     def add_data(self,new_key:str,value:Any)->None:
         self._data[new_key] = value
@@ -157,10 +157,6 @@ class TreeItem:
         else:  # add the branch directly to the current object
             child = TreeItem(name,tag,self.app_template)
             child._set_parent(self)
-            for owner_id in self._actions:
-                if not self._actions[owner_id]: 
-                    self.__initialize_actions(owner_id)
-
             for key, foo in self.app_template(tag).variable_defaults.items():
                 if key in child.attributes:
                     child._attributes[key].set(foo(child))
@@ -229,8 +225,9 @@ class TreeItem:
         self.run_actions('on_self_rename',self)
  
     def run_actions(self,on:__tree_events,item:TreeItem)->None:
-        for owner in self._actions:
-            for action in self._actions[owner][on]: action(item)
+        if on not in self._actions: raise KeyError(f"Unknown type of action ({on}).")
+        for action in self._actions[on].values():
+            action(item)
     
     
 class Tree(TreeItem): pass
