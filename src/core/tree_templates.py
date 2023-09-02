@@ -98,8 +98,10 @@ class AppTemplate:
             for attr_name in dependent_attributes:
                 t.attributes.pop(attr_name)
 
+            attributes = {self.__name_attr:t.tag}
+            attributes.update(t.attributes)
             self.__templates[t.tag] = Template(
-                _attributes = self.__create_attributes(OrderedDict(t.attributes)),
+                _attributes = self.__create_attributes(OrderedDict(attributes)),
                 _dependent_attributes = self.__create_attributes(dependent_attributes),
                 _children=t.children,
                 _locked=t.locked,

@@ -1,6 +1,7 @@
 from typing import Literal
 
 import src.core.tree as treemod
+from src.core.tree import NewTemplate
 from decimal import Decimal
 import src.lang.lang as lang
 
@@ -114,10 +115,9 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
         return event.confirmation_required
 
     app_template.add(
-        treemod.NewTemplate(
+        NewTemplate(
             SCENARIO,
             {
-                NAME:SCENARIO,
                 CURRENCY:({code:code for code in cur.CURRY_CODES}, cur.DEFAULT_CURRENCY_CODE),
                 INCOMES: sum_incomes,
                 EXPENSES: sum_expenses
@@ -125,10 +125,9 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
             children=(INCOME, EXPENSE, ITEM, DEBT, NONFINANCIAL_DEBT),
             icon_file=photo_icon("src/_icons/scenario.png"),
         ),
-        treemod.NewTemplate(
+        NewTemplate(
             INCOME,
-            {
-                NAME:INCOME, 
+            { 
                 AMOUNT: "1 Kč", 
                 DATE: default_date(app_template.locale_code),
                 STATUS: status,
@@ -145,10 +144,9 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
                 )
             ],
         ),
-        treemod.NewTemplate(
+        NewTemplate(
             EXPENSE,
             {
-                NAME:EXPENSE,
                 AMOUNT: "1 Kč", 
                 DATE: default_date(app_template.locale_code),
                 STATUS: status,
@@ -158,16 +156,15 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
             icon_file=photo_icon("src/_icons/expense.png"),
             variable_defaults={AMOUNT: default_amount_by_tree},
         ),
-        treemod.NewTemplate(
+        NewTemplate(
             ITEM,
-            {NAME:ITEM, INCOMES: sum_incomes, EXPENSES: sum_expenses},
+            {INCOMES: sum_incomes, EXPENSES: sum_expenses},
             children=(INCOME,EXPENSE,ITEM),
             icon_file=photo_icon("src/_icons/item.png")
         ),
-        treemod.NewTemplate(
+        NewTemplate(
             DEBT,
             {
-                NAME:DEBT,
                 AMOUNT:"1 Kč", 
                 DATE: default_date(app_template.locale_code)
             },
@@ -175,10 +172,9 @@ def main(vocabulary:lang.Vocabulary, app_template:treemod.AppTemplate, event_man
             icon_file=photo_icon("src/_icons/debt.png"),
             variable_defaults={AMOUNT: default_amount_by_tree}
         ),
-        treemod.NewTemplate(
+        NewTemplate(
             NONFINANCIAL_DEBT,
             {
-                NAME:NONFINANCIAL_DEBT,
                 DESCRIPTION:"...", 
                 DATE: default_date(app_template.locale_code)
             },
