@@ -215,11 +215,11 @@ skinparam Linetype ortho
     !$attr_color = "#LightGrey"
     !$template_color = "#LightYellow"
     !$editor_color = "#SteelBlue"
-    !$manager_color = "#LightBlue"
-    !$displayer_color = "#HotPink"
+    !$displayer_color = "#Violet"
     !$imp_exp_color = "#Yellow"
     !$tree_item_color = "#LightGrey"
     !$creator_color = "#SandyBrown"
+    !$app_color = "#OrangeRed"
 
     !$time_color = "#LimeGreen"
 
@@ -245,10 +245,11 @@ skinparam Linetype ortho
 
 
     class TreeItem $tree_item_color {
-        +add_child()
-        +move()
+        +move(parent:TreeItem)
         +remove()
-        +attribute()
+        +attribute(label:str)
+        +copy()
+        +insert(item:TreeItem)
         +list_attibutes()
         +list_children_type()
         #edited()
@@ -259,30 +260,37 @@ skinparam Linetype ortho
     TreeItem o-left->"1..*" Attribute
 
     class Editor $editor_color
-    class RightClickMenu #CadetBlue
+    class RightClickMenu $editor_color
     Editor -left-> RightClickMenu
 
     class Template $tree_item_color
     class NewTemplate $template_color 
-    class AppTemplate  $template_color
+    class ItemSetup  $app_color
+    class Application $app_color
+
+    Application -down-> ItemSetup
+    Application -down-> Editor
 
     Template o-->"1..*" Attribute
-    AppTemplate -left-> NewTemplate
-    AppTemplate -right-> Template
+    ItemSetup -left-> NewTemplate
+    ItemSetup -right-> Template
 
     Editor -down--> TreeItem
 
-    class TreeItemCreator $creator_color
+    class TreeItemCreator $creator_color {
+        +new()
+    }
+    Editor --> TreeItemCreator
     class AttributeFactory $creator_color {
         +new(type:str)
     }
 
-    AttributeFactory -down-> NameAttr
-    AttributeFactory -down-> DateAttr
-    AttributeFactory -down-> CurrencyAttr
+    AttributeFactory -down--> NameAttr
+    AttributeFactory -down--> DateAttr
+    AttributeFactory -down--> CurrencyAttr
 
-    TreeItemCreator --> AttributeFactory
-    TreeItemCreator -down--> TreeItem
+    ItemSetup --> AttributeFactory
+    TreeItemCreator --> TreeItem
     TreeItemCreator -left-> Template 
 
     class Converter <<abstract>> $imp_exp_color
@@ -297,9 +305,10 @@ skinparam Linetype ortho
     XML_Converter -|> Converter
     BIN_Converter -|> Converter
 
-    class Manager $manager_color
+    class Manager $editor_color
     Manager -left-> Converter
-    Manager -right-> RightClickMenu
+    Manager -right--> RightClickMenu
+    Application -> Manager
 
     class Event $time_color
     class TreeEventConnector #DarkSeaGreen
@@ -311,11 +320,11 @@ skinparam Linetype ortho
         +display()
         +clear()
     }
-    Properties -left-> Editor
+    Properties -left--> Editor
     
     class Graph $displayer_color {
         +draw(date:Date)
     }
-    Graph -left-> Editor
+    Graph -left--> Editor
 
 @enduml
