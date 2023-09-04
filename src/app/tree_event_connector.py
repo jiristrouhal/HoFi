@@ -24,7 +24,7 @@ class TreeEventConnector:
         event_manager_id = str(id(event_manager))
         self.editor = editor
 
-        self.editor.add_action(event_manager_id, 'load_tree', self._new_tree_item_events)
+        self.editor.add_tree_manipulation_action(event_manager_id, 'load_tree', self._new_tree_item_events)
         self.label = str(id(self))
         self.date_label = date_label
         self.event_manager = event_manager

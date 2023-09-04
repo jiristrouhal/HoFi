@@ -1,6 +1,7 @@
 import tkinter as tk
 import tkinter.messagebox as tkmsg
 import os
+from typing import List, Tuple, Literal
 
 
 import src.controls.tree_editor as te
@@ -13,6 +14,58 @@ import src.core.tree_templates as temp
 import src.app.set_templates
 import src.app.tree_event_connector as tec
 import src.events.past_and_future as pf
+
+import dataclasses
+
+@dataclasses.dataclass
+class Display_Properties:
+    properties_window:pp.Properties
+    item:treemod.TreeItem = dataclasses.field(init=False)
+    def run(self,item:treemod.TreeItem):
+        self.item = item
+        self.properties_window.display(self.item)
+    def undo(self)->None:
+        self.properties_window.clear()
+    def redo(self)->None:
+        self.properties_window.display(self.item)
+
+
+@dataclasses.dataclass
+class Mark_Tree_As_Updated:
+    manager:tmg.Tree_Manager
+    item:treemod.TreeItem = dataclasses.field(init=False)
+    previous_state:List|Tuple|Literal[''] = dataclasses.field(init=False)
+    new_state:List|Tuple|Literal[''] = dataclasses.field(init=False)
+    tree_id:str = dataclasses.field(init=False)
+    modified_before:bool = dataclasses.field(init=False)
+    def run(self,item:treemod.TreeItem):
+        self.tree_id = item.its_tree.data["treemanager_id"]
+        self.previous_state = self.manager._view.item(self.tree_id)["values"].copy()
+
+        self.modified_before = item.its_tree in self.manager._treelist._modified_trees
+        self.manager.label_items_tree_as_modified(item)
+
+        self.new_state = self.manager._view.item(self.tree_id)["values"].copy()
+        self.item = item
+
+    def undo(self)->None:
+        self.manager._view.item(self.tree_id,values=self.previous_state)
+        if not self.modified_before: self.manager.label_tree_as_ok(self.item.its_tree)
+    def redo(self)->None:
+        self.manager.label_items_tree_as_modified(self.item)
+
+
+@dataclasses.dataclass
+class Clear_Properties:
+    properties_window:pp.Properties
+    item:treemod.TreeItem = dataclasses.field(init=False)
+    def run(self,item:treemod.TreeItem):
+        self.item = item
+        self.properties_window.clear()
+    def undo(self)->None:
+        self.properties_window.display(self.item)
+    def redo(self)->None:
+        self.properties_window.clear()
 
 
 def build_app(locale_code:lang.Locale_Code):
@@ -95,15 +148,20 @@ def build_app(locale_code:lang.Locale_Code):
 
     def clear_properties(*args): properties.clear()
     # connect (initially independent) Editor and Manager
-    def add_tree_to_editor(tree:treemod.Tree): editor.load_tree(tree)
-    def remove_tree_from_editor(tree:treemod.Tree): editor.remove_tree(str(id(tree)))
+    def add_tree_to_editor(tree:treemod.Tree): 
+        editor.load_tree(tree)
+    def remove_tree_from_editor(tree:treemod.Tree): 
+        editor.remove_tree(str(id(tree)))
+
+    
+
     manager.add_action_on_selection(add_tree_to_editor)
     manager.add_action_on_deselection(remove_tree_from_editor)
-    editor.add_action(properties.label,'selection',properties.display)
-    editor.add_action(properties.label,'deselection',clear_properties)
-    editor.add_action(properties.label,'edit',properties.display)
-    editor.add_action(manager.label,'any_modification',manager.label_items_tree_as_modified)
-    editor.add_action(manager.label,'tree_removal',clear_properties)
+    editor.add_action(properties.label,'selection',Display_Properties(properties))
+    editor.add_action(properties.label,'deselection',Clear_Properties(properties))
+    editor.add_action(properties.label,'edit',Display_Properties(properties))
+    editor.add_action(manager.label,'any_modification',Mark_Tree_As_Updated(manager))
+    editor.add_tree_manipulation_action(manager.label,'tree_removal',clear_properties)
 
     def discard_unsaved_changes():
         if manager.unsaved_trees:

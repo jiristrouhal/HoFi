@@ -2,15 +2,28 @@ import sys
 sys.path.insert(1,"src")
 
 import unittest
-from typing import List
+from typing import List, Any
 import tkinter.ttk as ttk
 import tkinter as tk
+import dataclasses
 
 
 import controls.tree_editor  as tree_editor
 from core.tree import Tree, TreeItem, AppTemplate, User_Defined_Command
 from core.tree_templates import NewTemplate
+import abc
 
+
+class Abstract_Action(abc.ABC):
+    
+    @abc.abstractmethod
+    def run(self,item:TreeItem|None)->None: pass
+
+    @abc.abstractmethod
+    def undo(self)->None: pass
+
+    @abc.abstractmethod
+    def redo(sefl)->None: pass
 
 class Test_Creating_Trees(unittest.TestCase):
 
@@ -454,8 +467,25 @@ class Test_Actions_On_Selection(unittest.TestCase):
 
     def test_selection_of_item_runs_the_action(self)->None:
         self.selection = ""
-        def action(item:TreeItem)->None:
-            self.selection = item.name
+
+        @dataclasses.dataclass
+        class Action(Abstract_Action):
+            target:Any
+            selection:str = dataclasses.field(init=False)
+            def run(self,item:TreeItem):
+                self.selection = self.target.selection
+                self.target.selection = item.name
+            def undo(self)->None:
+                new_selection = self.target.selection
+                self.target.selection = self.selection
+                self.selection = new_selection
+            def redo(self)->None:
+                old_selection = self.selection
+                self.selection = self.target.selection
+                self.target.selection = old_selection
+
+        action = Action(self)
+        
         self.editor.add_action('Test','selection',action)
         self.editor.widget.selection_set(self.tree1_iid)
         self.editor._check_selection_changes()
@@ -463,9 +493,19 @@ class Test_Actions_On_Selection(unittest.TestCase):
 
     def test_repeated_selection_has_no_effect(self)->None:
         self.i = 0
-        def action(item:TreeItem)->None:
-            self.i += 1
+        @dataclasses.dataclass
+        class Action(Abstract_Action):
+            target:Any
+            def run(self,item:TreeItem):
+                self.target.i += 1
 
+            def undo(self)->None:
+                self.target.i -= 1
+
+            def redo(self)->None:
+                self.target.i += 1
+
+        action = Action(self)
         self.editor.add_action('Test','selection',action)
 
         self.editor.widget.selection_set(self.tree1_iid)
@@ -480,6 +520,8 @@ class Test_Actions_On_Selection(unittest.TestCase):
         self.editor.widget.selection_set(self.tree1_iid)
         self.editor._check_selection_changes()
         self.assertEqual(self.i, 2)
+        self.editor.undo(self.tree1_iid)
+        self.assertEqual(self.i, 1)
 
 
 class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
@@ -498,8 +540,22 @@ class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
 
     def test_edit_confirmation_runs_action(self)->None:
         self.w = self.tree1.attributes["weight"].value
-        def action(item:TreeItem)->None:
-            self.w = item.attributes["weight"].value
+
+        @dataclasses.dataclass
+        class Action(Abstract_Action):
+            target:Any
+            item:TreeItem = dataclasses.field(init=False)
+            orig_value:str = dataclasses.field(init=False)
+            def run(self,item:TreeItem):
+                self.orig_value = self.target.w
+                self.target.w = item.attributes["weight"].value
+                self.item = item
+            def undo(self)->None:
+                self.target.w = self.orig_value
+            def redo(self)->None:
+                self.target.w = self.item.attributes["weight"].value
+
+        action = Action(self)
 
         self.editor.add_action('Test','edit',action)
         self.assertEqual(self.w, 50)
@@ -508,6 +564,12 @@ class Test_Action_On_Item_Edit_Confirmation(unittest.TestCase):
         self.editor.entries["weight"].insert(0,75)
         self.editor.confirm_edit_entry_values(self.tree1_iid)
         self.assertEqual(self.w, 75)
+        self.editor.undo(self.tree1_iid)
+        self.assertEqual(self.w, 50)
+        self.editor.redo(self.tree1_iid)
+        self.assertEqual(self.w, 75)
+        self.editor.undo(self.tree1_iid)
+        self.assertEqual(self.w, 50)
 
     def test_edit_cancellation_does_not_run_action(self)->None:
         self.w = self.tree1.attributes["weight"].value

@@ -14,8 +14,8 @@ import src.core.tree as treemod
 import src.controls.right_click_menu as rcm
 
 
-_Action_Type = Literal['load_tree','selection','deselection','edit','any_modification','tree_removal']
-
+_Action_Type = Literal['selection','deselection','edit','any_modification']
+_Tree_Manipulation_Type = Literal['tree_removal','load_tree']
 
 class EditorCommand(Protocol):
     def run(self)->None:
@@ -28,6 +28,19 @@ class EditorCommand(Protocol):
         ...
 
 
+class EditorAction(Protocol):
+
+    def __init__(sefl,*args,**kwargs)->None: ...
+
+    def run(self,item:treemod.TreeItem|None)->None:
+        ...
+    
+    def undo(self)->None:
+        ...
+
+    def redo(self)->None:
+        ...
+
 
 @dataclasses.dataclass
 class New:
@@ -36,9 +49,9 @@ class New:
     tag:str
     item:treemod.TreeItem = dataclasses.field(init=False)
     view_index:int = dataclasses.field(init=False)
+    actions:List[EditorAction] = dataclasses.field(default_factory=list)
     
     def run(self)->None:
-
         self.parent.new(self.editor.entries.pop(self.editor.name_attr).get() ,tag=self.tag)
         new_child = self.parent._children[-1]
 
@@ -48,14 +61,16 @@ class New:
                 for opt_label, option in self.editor.entry_options[attr_name].items():
                     new_child.attributes[attr_name].choice_actions[opt_label](option.get())
 
-        for action in self.editor._actions['any_modification'].values(): action(new_child)
+        for action in self.editor._actions['any_modification'].values(): 
+            action.run(new_child)
+            self.actions.append(action)
+
         self.editor._destroy_toplevel(self.editor.add_window)
-        
         self.item = new_child
         self.view_index = self.editor.widget.index(self.item.data["treeview_iid"])
 
     def undo(self)->None:
-        for action in self.editor._actions['deselection'].values(): action(self.item)
+        for action in reversed(self.actions): action.undo() 
         self.parent.remove_child(self.item.name)
 
     def redo(self)->None:
@@ -66,6 +81,7 @@ class New:
             self.item,
             self.view_index,
         )
+        for action in self.actions: action.redo()
 
 
 @dataclasses.dataclass
@@ -75,6 +91,7 @@ class Edit:
     item:treemod.TreeItem = dataclasses.field(init=False)
     old_attributes:Dict[str,treemod._Attribute] = dataclasses.field(default_factory=dict)
     new_attributes:Dict[str,treemod._Attribute] = dataclasses.field(default_factory=dict)
+    actions:List[EditorAction] = dataclasses.field(default_factory=list)
 
     def run(self)->None:
         self.item = self.editor._map[self.item_id]
@@ -95,24 +112,28 @@ class Edit:
 
         self.__update_widget_item()
         self.editor._destroy_toplevel(self.editor.edit_window)
-        for action in self.editor._actions['edit'].values(): action(self.item)
-        for action in self.editor._actions['any_modification'].values(): action(self.item)
+        for action in self.editor._actions['edit'].values(): 
+            action.run(self.item)
+            self.actions.append(action)
+        for action in self.editor._actions['any_modification'].values(): 
+            action.run(self.item)
+            self.actions.append(action)
 
     def undo(self)->None:
+        for action in reversed(self.actions):
+            action.undo()
         for attr_name in self.item.attributes:
             self.new_attributes[attr_name] = self.item.attributes[attr_name].copy()
             self.item._attributes[attr_name] = self.old_attributes[attr_name].copy()
         self.__update_widget_item()
-        for action in self.editor._actions['edit'].values(): action(self.item)
-        for action in self.editor._actions['any_modification'].values(): action(self.item)
 
     def redo(self)->None:
         for attr_name in self.item.attributes:
             self.old_attributes[attr_name] = self.item.attributes[attr_name].copy()
             self.item._attributes[attr_name] = self.new_attributes[attr_name].copy()
         self.__update_widget_item()
-        for action in self.editor._actions['edit'].values(): action(self.item)
-        for action in self.editor._actions['any_modification'].values(): action(self.item)
+        for action in self.actions:
+            action.redo()
 
     def __update_widget_item(self):
         self.editor.widget.item(
@@ -130,6 +151,7 @@ class Move:
     new_parent:treemod.TreeItem = dataclasses.field(init=False)
     prev_index:int = dataclasses.field(init=False)
     new_index:int = dataclasses.field(init=False)
+    actions:List[EditorAction] = dataclasses.field(default_factory=list)
 
     def run(self)->None:
         if not self.editor.available_parents.winfo_exists(): return
@@ -149,7 +171,10 @@ class Move:
 
                 self.editor.widget.move(self.item_id,selection[0], self.new_index)
 
-                for action in self.editor._actions['any_modification'].values(): action(branch)
+                for action in self.editor._actions['any_modification'].values(): 
+                    self.actions.append(action)
+                    action.run(branch)
+
                 self.editor.widget.see(self.item_id)
 
 
@@ -161,9 +186,10 @@ class Move:
             self.prev_parent.data["treeview_iid"], 
             self.prev_index
         )
-        self.editor._map[self.item_id]._set_parent(self.prev_parent)
-        for action in self.editor._actions['any_modification'].values(): 
-            action(self.editor._map[self.item_id])
+
+        item = self.editor._map[self.item_id]
+        item._set_parent(self.prev_parent)
+        for action in reversed(self.actions): action.undo()
 
     def redo(self)->None:
         self.editor.widget.move(
@@ -171,9 +197,9 @@ class Move:
             self.new_parent.data["treeview_iid"], 
             self.new_index
         )
-        self.editor._map[self.item_id]._set_parent(self.new_parent)
-        for action in self.editor._actions['any_modification'].values(): 
-            action(self.editor._map[self.item_id])
+        item = self.editor._map[self.item_id]
+        item._set_parent(self.new_parent)
+        for action in self.actions: action.redo()
 
 
 @dataclasses.dataclass
@@ -199,6 +225,49 @@ class Remove:
     def redo(self)->None:
         assert(self.item.parent is not None)
         self.item.parent.remove_child(self.item.name)
+
+
+@dataclasses.dataclass
+class Selection:
+
+    editor:TreeEditor
+    item:treemod.TreeItem
+    actions:List[EditorAction] = dataclasses.field(default_factory=list)
+    prev_selection:Tuple[str,...] = dataclasses.field(init=False)
+    new_selection:Tuple[str,...] = dataclasses.field(init=False)
+
+    def run(self)->None:
+        self.prev_selection = self.editor._last_selection
+        for action in self.editor._actions["selection"].values(): 
+            action.run(self.item)
+            self.actions.append(action)
+        self.new_selection = self.editor.widget.selection()
+
+    def undo(self)->None:
+        for action in reversed(self.actions): action.undo()
+        self.editor.widget.selection_set(*self.prev_selection)
+
+    def redo(self)->None:
+        for action in self.actions: action.redo()
+        self.editor.widget.selection_set(*self.new_selection)
+
+@dataclasses.dataclass
+class Deselection:
+
+    editor:TreeEditor
+    actions:List[EditorAction] = dataclasses.field(default_factory=list)
+
+    def run(self)->None:
+        for action in self.editor._actions["deselection"].values(): 
+            action.run(item=None)
+            self.actions.append(action)
+
+    def undo(self)->None:
+        for action in reversed(self.actions): action.undo()
+
+    def redo(self)->None:
+        for action in self.actions: action.redo()
+
 
 
 @dataclasses.dataclass
@@ -270,12 +339,14 @@ class TreeEditor:
 
         self._last_selection:Tuple[str,...] = ()
 
-        self._actions:Dict[_Action_Type,Dict[str,Callable[[treemod.TreeItem|None],None]]] = {
-            'load_tree':{},
+        self._actions:Dict[_Action_Type,Dict[str,EditorAction]] = {
             'selection':{},
             'deselection':{},
             'edit':{},
             'any_modification':{},
+        }
+        self._tree_manipulation_actions:Dict[_Tree_Manipulation_Type,Dict[str,Callable]] = {
+            'load_tree':{},
             'tree_removal':{}
         }
   
@@ -298,10 +369,19 @@ class TreeEditor:
         self,
         owner:str,
         on:_Action_Type,
-        action:Callable[[treemod.TreeItem|None],None]
+        action:EditorAction
         )->None:
 
         self._actions[on][owner] = action
+
+    def add_tree_manipulation_action(
+        self,
+        owner:str,
+        on:_Tree_Manipulation_Type,
+        action:Callable[[],None]
+        ) -> None:
+
+        self._tree_manipulation_actions[on][owner] = action
 
     def remove_selected_item(self,event:tk.Event)->None: # pragma: no cover
         #validation
@@ -321,7 +401,9 @@ class TreeEditor:
         iid = str(id(tree)) 
         self._load_item_into_tree(iid,tree)
         self._map[iid] = tree
-        for action in self._actions["load_tree"].values(): action(tree)
+        for action in self._tree_manipulation_actions["load_tree"].values(): 
+            action(tree)
+
         if "editor_cmd_controller" not in tree._data:
             tree.add_data("editor_cmd_controller",CmdController())
         tree.add_data("treeview_iid",iid)
@@ -340,7 +422,8 @@ class TreeEditor:
             raise ValueError("Trying to delete nonexistent tree")
         #command
         tree = self._map[tree_id]
-        for action in self._actions["tree_removal"].values(): action(tree)
+        for action in self._tree_manipulation_actions["tree_removal"].values(): 
+            action(tree)
         self.__clear_related_actions(tree)
         self.widget.delete(tree_id)
 
@@ -356,7 +439,7 @@ class TreeEditor:
 
     def run_actions(self,on:_Action_Type,item:treemod.TreeItem)->None:
         if on not in self._actions: raise KeyError(f"No such type of Editor actions ({on}).")
-        for action in self._actions[on].values(): action(item)
+        for action in self._actions[on].values(): action.run(item)
 
     def tree_item(self,treeview_iid:str)->treemod.TreeItem|None:
         if treeview_iid not in self._map: return None
@@ -568,10 +651,13 @@ class TreeEditor:
 
     def _check_selection_changes(self,event:tk.Event|None=None)->None:
         current_selection = self.widget.selection()
-        if current_selection==self._last_selection: return
+        if current_selection==self._last_selection: 
+            return
         self._last_selection = current_selection
-        if not current_selection: self.__no_item_selected()
-        else: self.__new_item_selected(current_selection[0])
+        if not current_selection: 
+            self.__no_item_selected()
+        else: 
+            self.__new_item_selected(current_selection[0])
 
     def __configure_widget(self)->None:
         style = ttk.Style()
@@ -637,9 +723,9 @@ class TreeEditor:
         entries_frame.pack()
 
     def __clear_related_actions(self,item:treemod.TreeItem):
-        if self.label in item._actions: 
-            item._actions[self.label].clear()
-            item._actions.pop(self.label)
+        for action_type in item._actions:
+            if self.label in item._actions[action_type]:
+                item._actions[action_type].pop(self.label)
         for child in item._children: 
             self.__clear_related_actions(child)
 
@@ -709,10 +795,12 @@ class TreeEditor:
 
     def __new_item_selected(self,item_id:str)->None:
         item = self._map[item_id]
-        for action in self._actions["selection"].values(): action(item)
+        controller:CmdController = item.its_tree.data["editor_cmd_controller"]
+        controller.run(Selection(self,item))
 
     def __no_item_selected(self)->None:
-        for action in self._actions['deselection'].values(): action(None)
+        controller:CmdController = self._map[self._lastly_edited_tree_iid].data["editor_cmd_controller"]
+        controller.run(Deselection(self))
 
     def __on_new_child(self,parent_iid:str,new_branch:treemod.TreeItem)->None:
         child_iid = str(id(new_branch))
@@ -724,7 +812,8 @@ class TreeEditor:
         self.widget.see(child_iid)
 
     def __on_removal(self,branch_iid:str,*args)->None:
-        for action in self._actions['any_modification'].values(): action(self._map[branch_iid])
+        for action in self._actions['any_modification'].values(): 
+            action.run(self._map[branch_iid])
         self._map.pop(branch_iid)
         self.widget.delete(branch_iid)
 

@@ -60,11 +60,11 @@ class Tree_Manager:
         self.__on_selection:List[Callable[[treemod.Tree],None]] = list()
         self.__on_deselection:List[Callable[[treemod.Tree],None]] = list()
         
-        self.__treelist = treelist
-        self.__treelist.add_name_warning(self._error_if_tree_names_already_taken)
-        self.__treelist.add_action_on_adding(self.__add_tree_to_view)
-        self.__treelist.add_action_on_removal(self.__remove_tree_from_view)
-        self.__treelist.add_action_on_renaming(self.__rename_tree_in_view)
+        self._treelist = treelist
+        self._treelist.add_name_warning(self._error_if_tree_names_already_taken)
+        self._treelist.add_action_on_adding(self.__add_tree_to_view)
+        self._treelist.add_action_on_removal(self.__remove_tree_from_view)
+        self._treelist.add_action_on_renaming(self.__rename_tree_in_view)
 
         self.right_click_menu = rcm.RCMenu(self._view)
         self._last_export_dir:str = "."
@@ -75,9 +75,9 @@ class Tree_Manager:
     @property
     def label(self)->str: return self.__label
     @property
-    def trees(self)->List[str]: return self.__treelist.names
+    def trees(self)->List[str]: return self._treelist.names
     @property
-    def unsaved_trees(self)->bool: return bool(self.__treelist._modified_trees)
+    def unsaved_trees(self)->bool: return bool(self._treelist._modified_trees)
 
     def add_action_on_selection(self,action:Callable[[treemod.Tree],None])->None:
         if action not in self.__on_selection:
@@ -98,7 +98,7 @@ class Tree_Manager:
             app_template=self._app_template
         )
 
-        self.__treelist.append(tree)
+        self._treelist.append(tree)
         tree.add_data("treemanager_id",str(id(tree)))
         self.label_tree_as_waiting_for_export(tree)
 
@@ -195,7 +195,7 @@ class Tree_Manager:
         if tree is None: return
 
         self._tree_files[tree] = filepath
-        self.__treelist.append(tree)
+        self._treelist.append(tree)
         tree.add_data("treemanager_id",str(id(tree)))
         self.label_tree_as_ok(tree)
 
@@ -248,7 +248,7 @@ class Tree_Manager:
             self._notify_the_user_selected_tree_cannot_be_deleted(tree.name)
         elif self._removal_confirmed(tree.name): 
             if tree in self._tree_files: self._tree_files.pop(tree)
-            self.__treelist.remove(tree.name)
+            self._treelist.remove(tree.name)
 
     def __add_button(
         self, 
@@ -350,7 +350,7 @@ class Tree_Manager:
             attributes[label].set(entry.get())
         name = attributes.pop(self.name_attr).value
         self.new(name)
-        new_tree = self.__treelist._items[-1]
+        new_tree = self._treelist._items[-1]
         for attr_name in attributes:
             new_tree.set_attribute(attr_name,attributes[attr_name].value)
         self.__close_new_tree_window()
@@ -388,17 +388,17 @@ class Tree_Manager:
         self._view.item(item_id,text=tree.name)
 
     def get_tree(self,name:str)->treemod.Tree|None:
-        return self.__treelist.item(name)
+        return self._treelist.item(name)
 
     def _set_tree_attribute(self,name:str,key:str,value:Any)->None:
         tree = self.get_tree(name)
         if tree is None: return
         if key in tree.attributes:
-            if key==self.name_attr: self.__treelist.rename(tree.name, value)
+            if key==self.name_attr: self._treelist.rename(tree.name, value)
             else: tree._attributes[key].set(value)
 
     def rename(self,old_name:str,new_name:str)->None:
-        renamed_tree = self.__treelist.rename(old_name,new_name)
+        renamed_tree = self._treelist.rename(old_name,new_name)
         if renamed_tree is None:
             # renaming of a nonexistent tree has been attempted, no further action is taken
             return 
@@ -484,33 +484,33 @@ class Tree_Manager:
             msg("Message_part_1") + missing_elem_tag + msg("Message_part_2"))
                         
     def label_tree_as_modified(self,tree:treemod.TreeItem)->None:
-        if not tree in self.__treelist._modified_trees:
+        if not tree in self._treelist._modified_trees:
             self._view.item(
                 tree.data["treemanager_id"], 
                 values=(self.vocabulary("Tree_Status_Labels","Modified"),)
             )
-            self.__treelist.add_tree_to_modified(tree)
+            self._treelist.add_tree_to_modified(tree)
 
     def label_tree_as_ok(self,tree:treemod.TreeItem)->None:
         self._view.item(
             tree.data["treemanager_id"], 
             values=(self.vocabulary("Tree_Status_Labels","OK"),)
         )
-        if tree in self.__treelist._modified_trees:
-            self.__treelist._modified_trees.remove(tree)
+        if tree in self._treelist._modified_trees:
+            self._treelist._modified_trees.remove(tree)
     
     def label_tree_as_waiting_for_export(self,tree:treemod.TreeItem)->None:
         self._view.item(
             tree.data["treemanager_id"], 
             values=(self.vocabulary("Tree_Status_Labels","Waiting_For_Export"),)
         )
-        self.__treelist.add_tree_to_modified(tree)
+        self._treelist.add_tree_to_modified(tree)
 
     def label_items_tree_as_modified(self,item:treemod.TreeItem)->None:
         tree = item.its_tree
-        if not tree in self.__treelist._modified_trees:
+        if not tree in self._treelist._modified_trees:
             self.label_tree_as_modified(tree)
-            self.__treelist.add_tree_to_modified(tree)
+            self._treelist.add_tree_to_modified(tree)
 
     def __configure_ui(self)->None: # pragma: no cover
         button_frame = tk.Frame(self.__ui)
