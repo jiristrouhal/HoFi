@@ -204,6 +204,118 @@ skinparam Style strictuml
         TreeX -> BranchA: Create
     end
 
+@enduml
 
+
+@startuml app_class_diagram_3
+skinparam style strictuml
+skinparam ClassAttributeIconSize 0
+skinparam Linetype ortho
+
+    !$attr_color = "#LightGrey"
+    !$template_color = "#LightYellow"
+    !$editor_color = "#SteelBlue"
+    !$manager_color = "#LightBlue"
+    !$displayer_color = "#HotPink"
+    !$imp_exp_color = "#Yellow"
+    !$tree_item_color = "#LightGrey"
+    !$creator_color = "#SandyBrown"
+
+    !$time_color = "#LimeGreen"
+
+    class AttributeFactory $creator_color
+    class Attribute <<abstract>> $attr_color {
+        +valid_value()
+        +set()
+        +raw_value()
+        +formatted_value()
+    }
+    class DateAttr $attr_color
+    class CurrencyAttr $attr_color
+    class NameAttr $attr_color
+    class Date $attr_color
+    class Currency $attr_color
+    NameAttr -right-|> Attribute
+    DateAttr -up-|> Attribute
+    CurrencyAttr -up-|> Attribute
+    DateAttr -left-> Date
+    CurrencyAttr -left-> Currency
+    DateAttr -up[hidden]->NameAttr
+    CurrencyAttr -up[hidden]->DateAttr
+
+
+    class TreeItem $tree_item_color {
+        +add_child()
+        +move()
+        +remove()
+        +attribute()
+        +list_attibutes()
+        +list_children_type()
+        #edited()
+        #moved()
+        #removed()
+    }
+
+    TreeItem o-left->"1..*" Attribute
+
+    class Editor $editor_color
+    class RightClickMenu #CadetBlue
+    Editor -left-> RightClickMenu
+
+    class Template $tree_item_color
+    class NewTemplate $template_color 
+    class AppTemplate  $template_color
+
+    Template o-->"1..*" Attribute
+    AppTemplate -left-> NewTemplate
+    AppTemplate -right-> Template
+
+    Editor -down--> TreeItem
+
+    class TreeItemCreator $creator_color
+    class AttributeFactory $creator_color {
+        +new(type:str)
+    }
+
+    AttributeFactory -down-> NameAttr
+    AttributeFactory -down-> DateAttr
+    AttributeFactory -down-> CurrencyAttr
+
+    TreeItemCreator --> AttributeFactory
+    TreeItemCreator -down--> TreeItem
+    TreeItemCreator -left-> Template 
+
+    class Converter <<abstract>> $imp_exp_color
+
+    class XML_Converter $imp_exp_color
+    class BIN_Converter $imp_exp_color
+    BIN_Converter -[hidden]down-> XML_Converter
+
+
+    Converter -down-> TreeItemCreator
+    Converter -down-> TreeItem
+    XML_Converter -|> Converter
+    BIN_Converter -|> Converter
+
+    class Manager $manager_color
+    Manager -left-> Converter
+    Manager -right-> RightClickMenu
+
+    class Event $time_color
+    class TreeEventConnector #DarkSeaGreen
+    TreeEventConnector -> Event
+    TreeEventConnector -up-> TreeItem
+
+    
+    class Properties $displayer_color {
+        +display()
+        +clear()
+    }
+    Properties -left-> Editor
+    
+    class Graph $displayer_color {
+        +draw(date:Date)
+    }
+    Graph -left-> Editor
 
 @enduml
