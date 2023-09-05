@@ -132,6 +132,10 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.assertEqual(grandparent.root, greatgrandparent)
         self.assertEqual(greatgrandparent.root, greatgrandparent)
 
+    def test_after_leaving_parent_the_child_becomes_its_own_root(self):
+        self.child.leave_parent(self.parent)
+        self.assertEqual(self.child.root, self.child)
+
 
 
 if __name__=="__main__": unittest.main()
