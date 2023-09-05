@@ -1,8 +1,7 @@
 from __future__ import annotations
-from typing import Dict, Protocol, Any
+from typing import Dict, Protocol, Any, Set
 import dataclasses
 from src.cmd.commands import Command, Controller
-
 
 
 
@@ -35,15 +34,47 @@ class Item:
         self.__cmdcontroller = Controller()
         self.__attributes = attributes
         self._rename(name)
+        self.__children:Set[Item] = set()
+        self.__parent:Item|None = None
 
-    @property
-    def name(self)->str: return self.__name
     @property
     def attributes(self)->Dict[str,Attribute]: 
         return self.__attributes.copy()
+    
     @property
     def attribute_values(self)->Dict[str,Any]: 
         return {key:attr.value for key,attr in self.__attributes.items()}
+    
+    @property
+    def name(self)->str: return self.__name
+
+    @property
+    def parent(self)->Item|None: return self.__parent
+
+    def _adopt_by(self,item:Item)->None:
+        if self.parent is None: self.__parent=item
+    
+    def adopt(self, child:Item)->None:
+        child._adopt_by(self)
+        if self is child.parent:
+            self.__children.add(child)
+
+    def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
+        child.leave_parent(self)
+        new_parent.adopt(child)
+
+    def is_child(self, child:Item)->bool: 
+        return child in self.__children
+    
+    def leave_child(self,child:Item)->None:
+        if child in self.__children:
+            self.__children.remove(child)
+            child.leave_parent(self)
+    
+    def leave_parent(self,parent:Item)->None:
+        if parent is self.parent:
+            self.__parent.leave_child(self)
+            self.__parent = None
 
     def redo(self)->None:
         self.__cmdcontroller.redo()

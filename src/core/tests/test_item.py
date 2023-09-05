@@ -76,4 +76,43 @@ class Test_Undo_And_Redo_Renaming(unittest.TestCase):
         self.assertEqual(item.name, "Apple")
 
 
+class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
+
+    def test_children_were_added(self):
+        parent = Item(name="Parent")
+        child = Item(name="Child")
+        not_a_child = Item(name="Not a Child")
+        parent.adopt(child)
+        self.assertTrue(parent.is_child(child))
+        self.assertFalse(parent.is_child(not_a_child))
+        self.assertEqual(child.parent, parent)
+
+    def test_child_having_a_parent_cannot_be_added_to_new_parent(self):
+        parent = Item(name="Parent")
+        new_parent = Item(name="New Parent")
+        child = Item(name="Child")
+
+        parent.adopt(child)
+        self.assertEqual(child.parent,parent)
+        new_parent.adopt(child)
+        self.assertEqual(child.parent,parent)
+
+    def test_parent_can_pass_child_to_another_parent(self):
+        parent = Item(name="Parent")
+        new_parent = Item(name="New parent")
+        child = Item(name="Child")
+
+        parent.adopt(child)
+        parent.pass_to_new_parent(child,new_parent)
+        self.assertEqual(child.parent, new_parent)
+       
+    def test_item_leaving_child_makes_child_forget_the_item_as_its_parent(self):
+        parent = Item(name="Parent")
+        child = Item(name="Child")
+
+        parent.adopt(child)
+        parent.leave_child(child)
+        self.assertEqual(child.parent,None)
+
+
 if __name__=="__main__": unittest.main()
