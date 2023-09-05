@@ -1,7 +1,7 @@
 from typing import Dict, Protocol, Any
 
 
-class Attribute(Protocol):
+class Attribute(Protocol): # pragma: no cover
 
     @property
     def value(self)->Any: ...
