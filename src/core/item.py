@@ -51,6 +51,10 @@ class Item:
     @property
     def parent(self)->Item|None: return self.__parent
 
+    @property
+    def root(self)->Item: 
+        return self if self.__parent is None else self.__parent.root
+
     def _adopt_by(self,item:Item)->None:
         if self.parent is None: self.__parent=item
     

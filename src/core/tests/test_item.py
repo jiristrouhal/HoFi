@@ -123,6 +123,20 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.assertEqual(child.parent,None)
         self.assertFalse(parent.is_child(child))
 
+    def test_getting_item_at_the_top_of_family_hierachy(self)->None:
+        child = Item("Child")
+        parent = Item("Parent")
+        grandparent = Item("Grandparent")
+        greatgrandparent = Item("Great-grandparent")
+
+        greatgrandparent.adopt(grandparent)
+        grandparent.adopt(parent)
+        parent.adopt(child)
+
+        self.assertEqual(child.root, greatgrandparent)
+        self.assertEqual(grandparent.root, greatgrandparent)
+        self.assertEqual(greatgrandparent.root, greatgrandparent)
+
 
 
 if __name__=="__main__": unittest.main()
