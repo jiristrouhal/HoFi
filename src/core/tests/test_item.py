@@ -78,71 +78,57 @@ class Test_Undo_And_Redo_Renaming(unittest.TestCase):
 
 class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
 
+    def setUp(self) -> None:
+        self.parent = Item(name="Parent")
+        self.child = Item(name="Child")
+        self.parent.adopt(self.child)
+
     def test_children_were_added(self):
-        parent = Item(name="Parent")
-        child = Item(name="Child")
         not_a_child = Item(name="Not a Child")
-        parent.adopt(child)
-        self.assertTrue(parent.is_child(child))
-        self.assertFalse(parent.is_child(not_a_child))
-        self.assertEqual(child.parent, parent)
+        self.assertTrue(self.parent.is_child(self.child))
+        self.assertFalse(self.parent.is_child(not_a_child))
+        self.assertEqual(self.child.parent, self.parent)
+
+    def test_repeatedly_adopting_child_does_not_have_effect(self):
+        self.parent.adopt(self.child)
+        self.assertTrue(self.parent.is_child(self.child))
+        self.assertEqual(self.child.parent, self.parent)
 
     def test_child_having_a_parent_cannot_be_added_to_new_parent(self):
-        parent = Item(name="Parent")
         new_parent = Item(name="New Parent")
-        child = Item(name="Child")
-
-        parent.adopt(child)
-        self.assertEqual(child.parent,parent)
-        new_parent.adopt(child)
-        self.assertEqual(child.parent,parent)
+        self.assertEqual(self.child.parent, self.parent)
+        new_parent.adopt(self.child)
+        self.assertEqual(self.child.parent, self.parent)
 
     def test_parent_can_pass_child_to_another_parent(self):
-        parent = Item(name="Parent")
         new_parent = Item(name="New parent")
-        child = Item(name="Child")
-
-        parent.adopt(child)
-        parent.pass_to_new_parent(child,new_parent)
-        self.assertEqual(child.parent, new_parent)
+        self.parent.adopt(self.child)
+        self.parent.pass_to_new_parent(self.child,new_parent)
+        self.assertEqual(self.child.parent, new_parent)
        
     def test_item_leaving_child_makes_child_forget_the_item_as_its_parent(self):
-        parent = Item(name="Parent")
-        child = Item(name="Child")
-        parent.adopt(child)
-
-        parent.leave_child(child)
-        self.assertEqual(child.parent,None)
+        self.parent.leave_child(self.child)
+        self.assertEqual(self.child.parent,None)
 
     def test_item_leaving_its_parent_makes_the_parent_forget_is(self):
-        parent = Item(name="Parent")
-        child = Item(name="Child")
-        parent.adopt(child)
-
-        child.leave_parent(parent)
-        self.assertEqual(child.parent,None)
-        self.assertFalse(parent.is_child(child))
+        self.child.leave_parent(self.parent)
+        self.assertEqual(self.child.parent,None)
+        self.assertFalse(self.parent.is_child(self.child))
 
     def test_leaving_parent_not_belonging_to_child_has_no_effect(self)->None:
-        parent = Item(name="Parent")
-        child = Item(name="Child")
         not_a_parent = Item(name="Not a parent")
-        parent.adopt(child)
-
-        child.leave_parent(not_a_parent)
-        self.assertEqual(child.parent, parent)
+        self.child.leave_parent(not_a_parent)
+        self.assertEqual(self.child.parent, self.parent)
 
     def test_getting_item_at_the_top_of_family_hierachy(self)->None:
-        child = Item("Child")
-        parent = Item("Parent")
         grandparent = Item("Grandparent")
         greatgrandparent = Item("Great-grandparent")
 
         greatgrandparent.adopt(grandparent)
-        grandparent.adopt(parent)
-        parent.adopt(child)
+        grandparent.adopt(self.parent)
+        self.parent.adopt(self.child)
 
-        self.assertEqual(child.root, greatgrandparent)
+        self.assertEqual(self.child.root, greatgrandparent)
         self.assertEqual(grandparent.root, greatgrandparent)
         self.assertEqual(greatgrandparent.root, greatgrandparent)
 
