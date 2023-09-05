@@ -10,7 +10,7 @@ class Attribute(Protocol): # pragma: no cover
     def value(self)->Any: ...
 
 
-class Command(abc.ABC):
+class Command(abc.ABC): # pragma: no cover
     @abc.abstractmethod
     def run(self)->None: pass
     @abc.abstractmethod
