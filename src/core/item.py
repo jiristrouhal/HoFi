@@ -1,35 +1,9 @@
-from typing import Dict, Any, Literal
-import typing
-import abc
+from typing import Dict, Protocol
 
 
-Attribute_Type = Literal['text','integer']
-class Attribute:
-    
-    def __init__(self,atype:Attribute_Type='text')->None:
-        if atype not in typing.get_args(Attribute_Type): raise self.InvalidAttributeType(atype)
-        self.__type = atype
-        self.__value = ""
+class Attribute(Protocol):
 
-    @property
-    def type(self)->Attribute_Type: return self.__type
-    @property
-    def value(self)->Any: return self.__value
-
-    def set(self,value:Any)->None: 
-        if not self.is_valid(value): raise self.InvalidValueType
-        self.__value=value
-
-    def is_valid(self, value:Any)->bool: 
-        if self.__type=='integer':
-            try: 
-                int(value+1)
-                return True
-            except: return False
-        return True
-
-    class InvalidAttributeType(Exception): pass
-    class InvalidValueType(Exception): pass
+    pass
 
 
 class Item:
@@ -41,7 +15,7 @@ class Item:
     @property
     def name(self)->str: return self.__name
     @property
-    def attributes(self)->Dict[str,Any]: return self.__attributes
+    def attributes(self)->Dict[str,Attribute]: return self.__attributes
 
     def rename(self,name:str)->None:
         name = name.strip()
