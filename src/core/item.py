@@ -44,15 +44,15 @@ class Item:
     @property
     def attribute_values(self)->Dict[str,Any]: 
         return {key:attr.value for key,attr in self.__attributes.items()}
-    
+
+    def redo(self)->None:
+        self.__cmdcontroller.redo()
+
     def rename(self,name:str)->None:
         self.__cmdcontroller.run(Rename(self,name))
 
     def undo(self)->None:
         self.__cmdcontroller.undo()
-
-    def redo(self)->None:
-        self.__cmdcontroller.redo()
 
     def _rename(self,name:str)->None:
         name = name.strip()

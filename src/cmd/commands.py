@@ -9,6 +9,7 @@ class Command(abc.ABC): # pragma: no cover
     def undo(self)->None: pass
     @abc.abstractmethod
     def redo(self)->None: pass
+    
 
 class Controller:
 
