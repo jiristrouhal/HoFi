@@ -123,6 +123,15 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.assertEqual(child.parent,None)
         self.assertFalse(parent.is_child(child))
 
+    def test_leaving_parent_not_belonging_to_child_has_no_effect(self)->None:
+        parent = Item(name="Parent")
+        child = Item(name="Child")
+        not_a_parent = Item(name="Not a parent")
+        parent.adopt(child)
+
+        child.leave_parent(not_a_parent)
+        self.assertEqual(child.parent, parent)
+
     def test_getting_item_at_the_top_of_family_hierachy(self)->None:
         child = Item("Child")
         parent = Item("Parent")
