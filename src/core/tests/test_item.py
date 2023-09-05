@@ -30,12 +30,14 @@ class Test_Naming_The_Item(unittest.TestCase):
 
 
 class Attribute_Mock:
-    pass
+    
+    @property
+    def value(self)->str: return "Default_Value"
 
 class Test_Accessing_Item_Attributes(unittest.TestCase):
     
     def test_defining_no_attributes(self)->None:
-        item = Item(name="Item A")
+        item = Item(name="Item X")
         self.assertDictEqual(item.attributes, {})
 
     def test_defining_attributes(self)->None:
@@ -44,5 +46,13 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
         item = Item("Item X", attributes={"label_1":a1, "label_2":a2})
         self.assertDictEqual(item.attributes, {"label_1":a1, "label_2":a2})
 
+    def test_accessing_attribute_values(self)->None:
+        a1 = Attribute_Mock()
+        a2 = Attribute_Mock()
+        item = Item("Item X", attributes={"label_1":a1, "label_2":a2})
+        self.assertDictEqual(
+            item.attribute_values, 
+            {"label_1": "Default_Value", "label_2": "Default_Value"}
+        )
 
 if __name__=="__main__": unittest.main()

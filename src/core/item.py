@@ -1,9 +1,10 @@
-from typing import Dict, Protocol
+from typing import Dict, Protocol, Any
 
 
 class Attribute(Protocol):
 
-    pass
+    @property
+    def value(self)->Any: ...
 
 
 class Item:
@@ -15,7 +16,11 @@ class Item:
     @property
     def name(self)->str: return self.__name
     @property
-    def attributes(self)->Dict[str,Attribute]: return self.__attributes
+    def attributes(self)->Dict[str,Attribute]: 
+        return self.__attributes
+    @property
+    def attribute_values(self)->Dict[str,Any]: 
+        return {key:attr.value for key,attr in self.__attributes.items()}
 
     def rename(self,name:str)->None:
         name = name.strip()
@@ -24,5 +29,6 @@ class Item:
     
     def __raise_if_name_is_blank(self,name:str)->None:
         if name=="": raise self.BlankName
+
 
     class BlankName(Exception): pass
