@@ -109,10 +109,20 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
     def test_item_leaving_child_makes_child_forget_the_item_as_its_parent(self):
         parent = Item(name="Parent")
         child = Item(name="Child")
-
         parent.adopt(child)
+
         parent.leave_child(child)
         self.assertEqual(child.parent,None)
+
+    def test_item_leaving_its_parent_makes_the_parent_forget_is(self):
+        parent = Item(name="Parent")
+        child = Item(name="Child")
+        parent.adopt(child)
+
+        child.leave_parent(parent)
+        self.assertEqual(child.parent,None)
+        self.assertFalse(parent.is_child(child))
+
 
 
 if __name__=="__main__": unittest.main()
