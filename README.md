@@ -175,3 +175,11 @@ For items, which contain both incomes and expenses, two values are to be reporte
 The past_and_future module contains the Event and Event_Manager class enabling to organize events in time and to distinguish between planned and realized events. 
 
 The best way to introduce the Events into the application seems to be connecting the Events and Tree via another object.
+
+
+# Rebuild 
+At certain point, it was not anymore clear, how and when exactly are dependent attributes being updated, how to correctly implement undo and redo commands for editor actions and how to easily add checking various deadlines and how to handle changing the event (e.g., expense) dates. Another issue comes with the idea of using a whole scenario as an item in another, which appears to be a usefull option for first analysing a simple situation and then adding it to a more general scenario. 
+Other goals are:
+- simplify defining the various objects occuring in the editor (scenario, income, ...)
+- exporting only a single item into a file
+- enable to connect a various kinds of visualisation tools (e.g., a graph displaying evolution of a quantity with respect to time)
