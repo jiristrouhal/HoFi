@@ -50,7 +50,7 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
         self.assertEqual(a1.type, 'integer')
 
     def test_setting_attribute_to_invalid_type_raises_error(self)->None:
-        self.assertRaises(Attribute.InvalidType, Attribute, 'invalid_argument_type_0123456789')
+        self.assertRaises(Attribute.InvalidAttributeType, Attribute, 'invalid_argument_type_0123456789')
 
     def test_accessing_attribute_value(self)->None:
         a = Attribute('text')
@@ -74,6 +74,10 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
         self.assertTrue(a.is_valid("abc"))
         self.assertTrue(a.is_valid("5"))
         self.assertTrue(a.is_valid(""))
+
+    def test_setting_attribute_to_an_invalid_value_raises_error(self):
+        a = Attribute('integer')
+        self.assertRaises(Attribute.InvalidValueType, a.set, "invalid value")
         
 
 if __name__=="__main__": unittest.main()

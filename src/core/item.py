@@ -1,12 +1,13 @@
 from typing import Dict, Any, Literal
 import typing
+import abc
 
 
 Attribute_Type = Literal['text','integer']
 class Attribute:
     
     def __init__(self,atype:Attribute_Type='text')->None:
-        if atype not in typing.get_args(Attribute_Type): raise self.InvalidType(atype)
+        if atype not in typing.get_args(Attribute_Type): raise self.InvalidAttributeType(atype)
         self.__type = atype
         self.__value = ""
 
@@ -15,7 +16,9 @@ class Attribute:
     @property
     def value(self)->Any: return self.__value
 
-    def set(self,value:Any)->None: self.__value=value
+    def set(self,value:Any)->None: 
+        if not self.is_valid(value): raise self.InvalidValueType
+        self.__value=value
 
     def is_valid(self, value:Any)->bool: 
         if self.__type=='integer':
@@ -25,7 +28,8 @@ class Attribute:
             except: return False
         return True
 
-    class InvalidType(Exception): pass
+    class InvalidAttributeType(Exception): pass
+    class InvalidValueType(Exception): pass
 
 
 class Item:
