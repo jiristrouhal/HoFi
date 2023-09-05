@@ -1,44 +1,15 @@
 from __future__ import annotations
-from typing import Dict, Protocol, Any, List
-import abc
+from typing import Dict, Protocol, Any
 import dataclasses
+from src.cmd.commands import Command, Controller
+
+
 
 
 class Attribute(Protocol): # pragma: no cover
 
     @property
     def value(self)->Any: ...
-
-
-class Command(abc.ABC): # pragma: no cover
-    @abc.abstractmethod
-    def run(self)->None: pass
-    @abc.abstractmethod
-    def undo(self)->None: pass
-    @abc.abstractmethod
-    def redo(self)->None: pass
-
-class CmdController:
-
-    def __init__(self)->None:
-        self.__undo_stack:List[Command] = list()
-        self.__redo_stack:List[Command] = list()
-    
-    def run(self,cmd:Command)->None:
-        cmd.run()
-        self.__undo_stack.append(cmd)
-        self.__redo_stack.clear()
-
-    def undo(self)->None:
-        cmd = self.__undo_stack.pop()    
-        cmd.undo()
-        self.__redo_stack.append(cmd)
-
-    def redo(self)->None:
-        cmd = self.__redo_stack.pop()    
-        cmd.redo()
-        self.__undo_stack.append(cmd)
-
 
 
 @dataclasses.dataclass
@@ -61,7 +32,7 @@ class Rename(Command):
 class Item:
     
     def __init__(self,name:str,attributes:Dict[str,Attribute]={})->None:
-        self.__cmdcontroller = CmdController()
+        self.__cmdcontroller = Controller()
         self.__attributes = attributes
         self._rename(name)
 

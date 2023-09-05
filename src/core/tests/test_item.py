@@ -72,6 +72,8 @@ class Test_Undo_And_Redo_Renaming(unittest.TestCase):
         self.assertEqual(item.name, "Apple")
         item.redo()
         self.assertEqual(item.name, "Orange")
+        item.undo()
+        self.assertEqual(item.name, "Apple")
 
 
 if __name__=="__main__": unittest.main()
