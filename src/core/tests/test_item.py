@@ -377,6 +377,34 @@ class Test_Undo_And_Redo_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.assertEqual(A_child.name, "Child (1)")
 
 
+class Test_Child_Copy(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.mg = ItemManager()
+        self.parent = self.mg.new("Parent")
+        self.child = self.mg.new("Child")
+        self.parent.adopt(self.child)
+        self.copy = self.child.get_copy()
+
+    def test_child_copy_has_the_same_parent_as_the_original(self):
+        self.assertTrue(self.parent.is_parent_of(self.copy))
+        self.assertEqual(self.copy.parent, self.parent)
+        self.assertEqual(self.copy.name, "Child (1)")
+
+    def test_undo_and_redo_copying(self):
+        self.mg.undo()
+        self.assertFalse(self.parent.is_parent_of(self.copy))
+        self.assertTrue(self.copy.parent, NullItem)
+        self.assertEqual(self.copy.name, "Child")
+
+        self.mg.redo()
+        self.assertTrue(self.parent.is_parent_of(self.copy))
+        self.assertEqual(self.copy.name, "Child (1)")
+
+        self.mg.undo()
+        self.assertFalse(self.parent.is_parent_of(self.copy))
+        self.assertEqual(self.copy.name, "Child")
+
 
 if __name__=="__main__": unittest.main()
 

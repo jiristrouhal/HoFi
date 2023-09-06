@@ -85,6 +85,9 @@ class Item(abc.ABC): # pragma: no cover
     def adopt(self,child:Item)->None: pass
 
     @abc.abstractmethod
+    def get_copy(self)->Item: pass
+
+    @abc.abstractmethod
     def has_children(self)->bool: pass
 
     @abc.abstractmethod
@@ -140,6 +143,7 @@ class ItemImpl(Item):
 
         def adopt(self,child:Item)->None: 
             child.parent.pass_to_new_parent(child,self)
+        def get_copy(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
         def is_predecessor_of(self, child:Item)->bool: return child==self
@@ -186,6 +190,11 @@ class ItemImpl(Item):
         if child.is_predecessor_of(self):
             raise Item.HierarchyCollision
         self.__cmdcontroller.run(PassToNewParent(self.NULL, child, self))
+
+    def get_copy(self)->Item:
+        item_copy = ItemImpl(self.name, self.attributes, self.__cmdcontroller)
+        self.parent.adopt(item_copy)
+        return item_copy
 
     def has_children(self)->bool:
         return bool(self.__children)
