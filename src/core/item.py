@@ -45,23 +45,6 @@ class Rename(Command):
 
 
 @dataclasses.dataclass
-class Adopt(Command):
-    parent:Item
-    child:Item
-    old_name:str = dataclasses.field(init=False)
-
-    def run(self):
-        self.old_name = self.child.name
-        self.parent._adopt(self.child)
-
-    def undo(self):
-        self.parent._leave_child(self.child)
-        self.child._rename(self.old_name)
-
-    def redo(self):
-        self.run()
-
-@dataclasses.dataclass
 class PassToNewParent(Command):
     parent:Item
     child:Item
@@ -154,9 +137,10 @@ class ItemImpl(Item):
         @property
         def root(self)->Item: return self
 
-        def adopt(self,child:Item)->None: return
+        def adopt(self,child:Item)->None: 
+            child.parent.pass_to_new_parent(child,self)
         def has_children(self)->bool: return False
-        def is_parent_of(self, child:Item)->bool: return child==self
+        def is_parent_of(self, child:Item)->bool: return child.parent is self
         def is_predecessor_of(self, child:Item)->bool: return child==self
         def pass_to_new_parent(self, child:Item, new_parent:Item)->None: 
             new_parent.adopt(child)
@@ -198,7 +182,7 @@ class ItemImpl(Item):
     def adopt(self,child:Item)->None:
         if child.is_predecessor_of(self):
             raise Item.HierarchyCollision
-        self.__cmdcontroller.run(Adopt(parent=self,child=child))
+        self.__cmdcontroller.run(PassToNewParent(self.NULL, child, self))
 
     def has_children(self)->bool:
         return bool(self.__children)
