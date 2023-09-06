@@ -24,6 +24,18 @@ class Test_Naming_The_Item(unittest.TestCase):
         item.rename(name="Item C")
         self.assertEqual(item.name, "Item C")
 
+    def test_grouped_spaces_and_other_in_a_proposed_name_are_automatically_joined_into_single_space(self):
+        item = Item(name="The      Item")
+        self.assertEqual(item.name, "The Item")
+
+        item.rename("New        name")
+        self.assertEqual(item.name, "New name")
+
+    def test_white_characters_are_replaced_with_spaces(self):
+        for c in ('\n','\t','\r','\v','\f'):
+            item = Item(name=f"New{c}name")
+            self.assertEqual(item.name, "New name")
+
     def test_renaming_item_with_blank_name_raises_error(self):
         item = Item(name="Item A")
         self.assertRaises(Item.BlankName, item.rename, "    ")
@@ -136,6 +148,56 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.child.leave_parent(self.parent)
         self.assertEqual(self.child.root, self.child)
 
+    def test_grandparent_and_parent_are_predecesors_of_item(self):
+        grandparent = Item("Grandparent")
+        grandparent.adopt(self.parent)
+        stranger = Item("Stranger")
+        self.assertTrue(grandparent.is_predecessor_of(self.child))
+        self.assertTrue(self.parent.is_predecessor_of(self.child))
+        self.assertFalse(self.child.is_predecessor_of(self.parent))
+        self.assertFalse(stranger.is_predecessor_of(self.child))
+    
+    def test_adopting_its_own_predecesor_raises_error(self):
+        self.assertRaises(Item.HierarchyCollision, self.child.adopt, self.parent)
+
+        grandchild = Item("Grandchild")
+        self.child.adopt(grandchild)
+        self.assertRaises(Item.HierarchyCollision, grandchild.adopt, self.parent)
+
+
+class Test_Name_Collisions_Of_Items_With_Common_Parent(unittest.TestCase):
+
+    def test_adding_new_child_with_name_already_taken_by_other_child_makes_the_name_to_adjust(self):
+        parent = Item("Parent")
+        child = Item("Child")
+        parent.adopt(child)
+
+        child2 = Item("Child")
+        parent.adopt(child2)
+        self.assertEqual(child2.name, "Child (1)")
+
+    def test_adding_two_children_with_already_taken_name(self):
+        parent = Item("Parent")
+        child = Item("Child")
+        parent.adopt(child)
+
+        child2 = Item("Child")
+        parent.adopt(child2)
+        child3 = Item("Child")
+        parent.adopt(child3)
+
+        self.assertEqual(child2.name, "Child (1)")
+        self.assertEqual(child3.name, "Child (2)")
+
+    def test_adding_children_differing_in_white_characters(self):
+        parent = Item("Parent")
+        child = Item("The Child")
+        parent.adopt(child)
+
+        child2 = Item("The        Child")
+        parent.adopt(child2)
+        self.assertEqual(child2.name, "The Child (1)")
+    
 
 
 if __name__=="__main__": unittest.main()
