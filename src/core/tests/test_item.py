@@ -70,6 +70,8 @@ class Test_NULL_Item(unittest.TestCase):
         NullItem.pass_to_new_parent(child,parent)
         self.assertEqual(child.parent, parent)
 
+        self.assertEqual(NullItem.get_copy(), NullItem)
+
     def test_leaving_child_has_no_effect(self):
         mg = ItemManager()
         child = mg.new("Child")
