@@ -114,6 +114,7 @@ class Item(abc.ABC): # pragma: no cover
     @abc.abstractmethod
     def _rename(self,name:str)->None: pass
         
+    class AdoptingNULL(Exception): pass
     class BlankName(Exception): pass
     class HierarchyCollision(Exception): pass
 
@@ -180,6 +181,8 @@ class ItemImpl(Item):
         return self if self.__parent is self.NULL else self.__parent.root
 
     def adopt(self,child:Item)->None:
+        if child is self.NULL: 
+            raise Item.AdoptingNULL
         if child.is_predecessor_of(self):
             raise Item.HierarchyCollision
         self.__cmdcontroller.run(PassToNewParent(self.NULL, child, self))

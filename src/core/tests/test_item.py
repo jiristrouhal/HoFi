@@ -66,6 +66,23 @@ class Test_NULL_Item(unittest.TestCase):
         self.assertEqual(parent.parent, NullItem)
         NullItem.pass_to_new_parent(child,parent)
         self.assertEqual(child.parent, parent)
+
+    def test_leaving_child_has_no_effect(self):
+        mg = ItemManager()
+        child = mg.new("Child")
+        self.assertTrue(NullItem.is_parent_of, child)
+        NullItem._leave_child(child)
+        self.assertTrue(NullItem.is_parent_of, child)
+
+    def test_leaving_parent_has_no_effect(self):
+        mg = ItemManager()
+        NullItem._leave_parent(NullItem)
+        self.assertTrue(NullItem.is_parent_of, NullItem)
+
+    def test_adding_null_item_under_a_nonnull_parent_raises_error(self):
+        mg = ItemManager()
+        parent = mg.new("Parent")
+        self.assertRaises(Item.AdoptingNULL, parent.adopt, NullItem)
         
     def test_adopting_child_by_null_is_equivalent_to_leaving_parent(self):
         mg = ItemManager()
@@ -82,6 +99,8 @@ class Test_NULL_Item(unittest.TestCase):
         
     def test_renaming(self):
         NullItem.rename("New Name")
+        self.assertEqual(NullItem.name,"")
+        NullItem._rename("New Name")
         self.assertEqual(NullItem.name,"")
 
     
