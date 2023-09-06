@@ -53,6 +53,10 @@ class Test_Adjusting_Already_Taken_Name(unittest.TestCase):
         for name, expected_name in names.items():
             self.assertEqual(naming.adjust_taken_name(name), expected_name)
 
+    def test_empty_parentheses_at_the_name_end(self):
+        name = "Fig ()"
+        self.assertEqual(naming.adjust_taken_name(name), "Fig (1)")
+
 
 class Test_Stripping_And_Joining_Spaces(unittest.TestCase):
 
