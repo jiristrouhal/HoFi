@@ -170,6 +170,12 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.child.adopt(grandchild)
         self.assertRaises(Item.HierarchyCollision, grandchild.adopt, self.parent)
 
+    def test_leaving_none_has_no_effect(self):
+        self.child.leave_parent(self.parent)
+        self.assertEqual(self.child.parent, None)
+        self.child.leave_parent(None)
+        self.assertEqual(self.child.parent, None)
+
 
 class Test_Name_Collisions_Of_Items_With_Common_Parent(unittest.TestCase):
 
