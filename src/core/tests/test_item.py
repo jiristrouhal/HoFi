@@ -323,6 +323,23 @@ class Test_Undo_And_Redo_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.mg.undo()
         self.assertEqual(child2.name, "Child")
 
+    def test_undo_passing_to_new_parent_when_child_name_was_adjusted(self):
+        A_child = self.mg.new("Child")
+        A_parent = self.mg.new("Parent 1")
+        A_parent.adopt(A_child)
+
+        B_child = self.mg.new("Child")
+        B_parent = self.mg.new("Parent 2")
+        B_parent.adopt(B_child)
+
+        A_parent.pass_to_new_parent(A_child, B_parent)
+        self.assertEqual(A_child.name, "Child (1)")
+
+        self.mg.undo()
+        self.assertEqual(A_child.name, "Child")
+        self.mg.redo()
+        self.assertEqual(A_child.name, "Child (1)")
+
 
 
 if __name__=="__main__": unittest.main()

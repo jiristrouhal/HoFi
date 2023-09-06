@@ -66,14 +66,17 @@ class PassToNewParent(Command):
     parent:Item
     child:Item
     new_parent:Item
+    old_name:str = dataclasses.field(init=False)
 
     def run(self):
+        self.old_name = self.child.name
         self.child._leave_parent(self.parent)
         self.new_parent._adopt(self.child)
     
     def undo(self):
         self.child._leave_parent(self.new_parent)
         self.parent._adopt(self.child)
+        self.child._rename(self.old_name)
 
     def redo(self):
         self.run()
