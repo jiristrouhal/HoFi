@@ -58,6 +58,14 @@ class Test_NULL_Item(unittest.TestCase):
     def test_parent_child_relationships(self):
         self.assertTrue(NullItem.is_predecessor_of(NullItem))
         self.assertTrue(NullItem.is_parent_of(NullItem))
+
+        mg = ItemManager()
+        child = mg.new("Child")
+        parent = mg.new("Parent")
+        self.assertEqual(child.parent, NullItem)
+        self.assertEqual(parent.parent, NullItem)
+        NullItem.pass_to_new_parent(child,parent)
+        self.assertEqual(child.parent, parent)
         
     def test_renaming(self):
         NullItem.rename("New Name")

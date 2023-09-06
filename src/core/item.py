@@ -155,7 +155,8 @@ class ItemImpl(Item):
         def has_children(self)->bool: return False
         def is_parent_of(self, child:Item)->bool: return child==self
         def is_predecessor_of(self, child:Item)->bool: return child==self
-        def pass_to_new_parent(self, child:Item, new_parent:Item)->None: return
+        def pass_to_new_parent(self, child:Item, new_parent:Item)->None: 
+            new_parent.adopt(child)
         def rename(self,name:str)->None: return
         def _adopt(self, child:Item)->None: return
         def _adopt_by(self,item:Item)->None: return
