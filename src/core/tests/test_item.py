@@ -266,8 +266,32 @@ class Test_Undo_And_Redo_Setting_Parent_Child_Relationship(unittest.TestCase):
 
         self.mg.undo()
         self.assertTrue(parent2.is_parent_of(self.child))
+        self.assertEqual(self.child.parent, parent2)
         self.mg.undo()
-        self.assertTrue(self.parent.is_parent_of(self.child)) 
+        self.assertTrue(self.parent.is_parent_of(self.child))
+        self.assertEqual(self.child.parent, self.parent)
+
+        self.mg.redo()
+        self.assertTrue(parent2.is_parent_of(self.child))
+        self.assertEqual(self.child.parent, parent2)
+        self.mg.redo()
+        self.assertTrue(parent3.is_parent_of(self.child))
+        self.assertEqual(self.child.parent, parent3)
+        #additional redo should not do anything
+        self.mg.redo()
+        self.assertTrue(parent3.is_parent_of(self.child))
+
+    def test_undo_adoption_when_child_name_was_adjusted(self):
+        child2 = self.mg.new("Child")
+        self.parent.adopt(child2)
+        self.assertEqual(child2.name, "Child (1)")
+
+        self.mg.undo()
+        self.assertEqual(child2.name, "Child")
+        self.mg.redo()
+        self.assertEqual(child2.name, "Child (1)")
+        self.mg.undo()
+        self.assertEqual(child2.name, "Child")
 
 
 if __name__=="__main__": unittest.main()

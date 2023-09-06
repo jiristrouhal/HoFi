@@ -48,12 +48,15 @@ class Rename(Command):
 class Adopt(Command):
     parent:Item
     child:Item
+    old_name:str = dataclasses.field(init=False)
 
     def run(self):
+        self.old_name = self.child.name
         self.parent._adopt(self.child)
 
     def undo(self):
         self.parent._leave_child(self.child)
+        self.child._rename(self.old_name)
 
     def redo(self):
         self.run()
