@@ -3,7 +3,10 @@ sys.path.insert(1,"src")
 
 
 import unittest
-from src.core.item import ItemManager, Item
+from src.core.item import ItemManager, Item, ItemImpl
+
+
+NullItem = ItemImpl.NULL
 
 
 class Test_Naming_The_Item(unittest.TestCase):
@@ -42,6 +45,15 @@ class Test_Naming_The_Item(unittest.TestCase):
     def test_renaming_item_with_blank_name_raises_error(self):
         item = self.iman.new(name="Item A")
         self.assertRaises(Item.BlankName, item.rename, "    ")
+
+
+class Test_NULL_Item(unittest.TestCase):
+
+    def test_null_item(self):
+        self.assertDictEqual(NullItem.attribute_values, {})
+        self.assertDictEqual(NullItem.attributes, {})
+        self.assertEqual(NullItem.name, "")
+        self.assertEqual(NullItem.parent, NullItem)
 
 
 class Attribute_Mock:
@@ -126,11 +138,11 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
        
     def test_item_leaving_child_makes_child_forget_the_item_as_its_parent(self):
         self.parent._leave_child(self.child)
-        self.assertEqual(self.child.parent,None)
+        self.assertEqual(self.child.parent, NullItem)
 
     def test_item_leaving_its_parent_makes_the_parent_forget_is(self):
         self.child._leave_parent(self.parent)
-        self.assertEqual(self.child.parent,None)
+        self.assertEqual(self.child.parent, NullItem)
         self.assertFalse(self.parent.is_parent_of(self.child))
 
     def test_leaving_parent_not_belonging_to_child_has_no_effect(self)->None:
@@ -170,11 +182,11 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.child.adopt(grandchild)
         self.assertRaises(Item.HierarchyCollision, grandchild.adopt, self.parent)
 
-    def test_leaving_none_has_no_effect(self):
+    def test_leaving_null_has_no_effect(self):
         self.child._leave_parent(self.parent)
-        self.assertEqual(self.child.parent, None)
-        self.child._leave_parent(None)
-        self.assertEqual(self.child.parent, None)
+        self.assertEqual(self.child.parent, NullItem)
+        self.child._leave_parent(NullItem)
+        self.assertEqual(self.child.parent, NullItem)
 
     def test_passing_item_to_its_own_child_raises_error(self):
         grandchild = self.iman.new("Grandchild")
@@ -233,13 +245,13 @@ class Test_Undo_And_Redo_Setting_Parent_Child_Relationship(unittest.TestCase):
     def test_undo_and_redo_adoption(self):
         self.mg.undo()
         self.assertFalse(self.parent.is_parent_of(self.child))
-        self.assertEqual(self.child.parent, None)
+        self.assertEqual(self.child.parent, NullItem)
         self.mg.redo()
         self.assertTrue(self.parent.is_parent_of(self.child))
         self.assertEqual(self.child.parent, self.parent)
         self.mg.undo()
         self.assertFalse(self.parent.is_parent_of(self.child))
-        self.assertEqual(self.child.parent, None)
+        self.assertEqual(self.child.parent, NullItem)
 
     def test_undo_and_redo_passing_to_new_parent(self):
         new_parent = self.mg.new("New Parent")
@@ -292,6 +304,10 @@ class Test_Undo_And_Redo_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.assertEqual(child2.name, "Child (1)")
         self.mg.undo()
         self.assertEqual(child2.name, "Child")
+
+    def test_undo_creating_an_item(self):
+        item = self.mg.new("Item",attributes={"height":50})
+        self.mg.undo()
 
 
 if __name__=="__main__": unittest.main()
