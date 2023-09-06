@@ -54,10 +54,13 @@ class Test_NULL_Item(unittest.TestCase):
         self.assertDictEqual(NullItem.attributes, {})
         self.assertEqual(NullItem.name, "")
         self.assertEqual(NullItem.parent, NullItem)
+        self.assertEqual(NullItem.root, NullItem)
 
     def test_parent_child_relationships(self):
         self.assertTrue(NullItem.is_predecessor_of(NullItem))
         self.assertTrue(NullItem.is_parent_of(NullItem))
+
+        self.assertTrue(NullItem.has_children())
 
         mg = ItemManager()
         child = mg.new("Child")
@@ -83,6 +86,7 @@ class Test_NULL_Item(unittest.TestCase):
         mg = ItemManager()
         parent = mg.new("Parent")
         self.assertRaises(Item.AdoptingNULL, parent.adopt, NullItem)
+        self.assertRaises(Item.AdoptingNULL, NullItem._adopt_by, parent)
         
     def test_adopting_child_by_null_is_equivalent_to_leaving_parent(self):
         mg = ItemManager()

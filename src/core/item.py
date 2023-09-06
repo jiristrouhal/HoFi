@@ -140,14 +140,14 @@ class ItemImpl(Item):
 
         def adopt(self,child:Item)->None: 
             child.parent.pass_to_new_parent(child,self)
-        def has_children(self)->bool: return False
+        def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
         def is_predecessor_of(self, child:Item)->bool: return child==self
         def pass_to_new_parent(self, child:Item, new_parent:Item)->None: 
             new_parent.adopt(child)
         def rename(self,name:str)->None: return
         def _adopt(self, child:Item)->None: return
-        def _adopt_by(self,item:Item)->None: return
+        def _adopt_by(self,item:Item)->None: raise Item.AdoptingNULL
         def _leave_child(self,child:Item)->None: return
         def _leave_parent(self,parent:Item)->None: return
         def _rename(self,name:str)->None: return
