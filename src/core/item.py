@@ -12,6 +12,16 @@ class Attribute(Protocol): # pragma: no cover
     def value(self)->Any: ...
 
 
+
+class ItemManager:
+    def __init__(self)->None:
+        self._controller = Controller()
+
+    def new(self,name:str,attributes:Dict[str,Attribute]={})->Item:
+        return Item(name,attributes,self._controller)
+    
+
+
 @dataclasses.dataclass
 class Rename(Command):
     item:Item
@@ -31,8 +41,8 @@ class Rename(Command):
 
 class Item:
     
-    def __init__(self,name:str,attributes:Dict[str,Attribute]={})->None:
-        self.__cmdcontroller = Controller()
+    def __init__(self,name:str,attributes:Dict[str,Attribute],controller:Controller)->None:
+        self.__cmdcontroller = controller
         self.__attributes = attributes
         self._rename(name)
         self.__children:Set[Item] = set()
