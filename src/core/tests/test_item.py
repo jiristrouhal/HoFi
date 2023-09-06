@@ -49,11 +49,21 @@ class Test_Naming_The_Item(unittest.TestCase):
 
 class Test_NULL_Item(unittest.TestCase):
 
-    def test_null_item(self):
+    def test_properties(self):
         self.assertDictEqual(NullItem.attribute_values, {})
         self.assertDictEqual(NullItem.attributes, {})
         self.assertEqual(NullItem.name, "")
         self.assertEqual(NullItem.parent, NullItem)
+
+    def test_parent_child_relationships(self):
+        self.assertTrue(NullItem.is_predecessor_of(NullItem))
+        self.assertTrue(NullItem.is_parent_of(NullItem))
+        
+    def test_renaming(self):
+        NullItem.rename("New Name")
+        self.assertEqual(NullItem.name,"")
+
+    
 
 
 class Attribute_Mock:
@@ -305,9 +315,6 @@ class Test_Undo_And_Redo_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.mg.undo()
         self.assertEqual(child2.name, "Child")
 
-    def test_undo_creating_an_item(self):
-        item = self.mg.new("Item",attributes={"height":50})
-        self.mg.undo()
 
 
 if __name__=="__main__": unittest.main()

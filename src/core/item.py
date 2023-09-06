@@ -153,8 +153,8 @@ class ItemImpl(Item):
 
         def adopt(self,child:Item)->None: return
         def has_children(self)->bool: return False
-        def is_parent_of(self, child:Item)->bool: return False
-        def is_predecessor_of(self, child:Item)->bool: return False
+        def is_parent_of(self, child:Item)->bool: return child==self
+        def is_predecessor_of(self, child:Item)->bool: return child==self
         def pass_to_new_parent(self, child:Item, new_parent:Item)->None: return
         def rename(self,name:str)->None: return
         def _adopt(self, child:Item)->None: return
@@ -203,10 +203,10 @@ class ItemImpl(Item):
         return child in self.__children
     
     def is_predecessor_of(self, item:Item)->bool:
-        while item is not self.NULL:
+        while True:
             item = item.parent
             if item==self: return True
-        return False
+            elif item==self.NULL: return False
 
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
         if child.is_predecessor_of(new_parent):
