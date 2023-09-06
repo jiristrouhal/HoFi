@@ -20,7 +20,8 @@ def adjust_taken_name(name:str)->str:
             number_str = s[-1]+number_str
             s = s[:-1]
         # increment the extracted number - if the number string is empty, set it to one
-        if number_str=="": number_str = "1"
+        if number_str=="": 
+            number_str = "1"
         else:
             number_str = str(int(number_str)+1)
         name = s.strip() + number_str+')'
