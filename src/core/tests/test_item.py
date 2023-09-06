@@ -82,14 +82,14 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
 class Test_Undo_And_Redo_Renaming(unittest.TestCase):
 
     def test_single_undo_and_redo(self)->None:
-        iman = ItemManager()
-        item = iman.new(name="Apple")
+        mg = ItemManager()
+        item = mg.new(name="Apple")
         item.rename("Orange")
-        item.undo()
+        mg.undo()
         self.assertEqual(item.name, "Apple")
-        item.redo()
+        mg.redo()
         self.assertEqual(item.name, "Orange")
-        item.undo()
+        mg.undo()
         self.assertEqual(item.name, "Apple")
 
 
@@ -212,6 +212,17 @@ class Test_Name_Collisions_Of_Items_With_Common_Parent(unittest.TestCase):
         child2 = self.iman.new("The        Child")
         parent.adopt(child2)
         self.assertEqual(child2.name, "The Child (1)")
+
+
+# class Test_Undo_And_Redo_Setting_Parent_Child_Relationship(unittest.TestCase):
+
+#     def test_undo_adoption(self):
+#         iman = ItemManager()
+#         parent = iman.new("Parent")
+#         child = iman.new("Child")
+#         parent.adopt(child)
+
+        
     
 
 

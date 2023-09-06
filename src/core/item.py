@@ -20,6 +20,11 @@ class ItemManager:
     def new(self,name:str,attributes:Dict[str,Attribute]={})->Item:
         return Item(name,attributes,self._controller)
     
+    def undo(self):
+        self._controller.undo()
+    
+    def redo(self):
+        self._controller.redo()
 
 
 @dataclasses.dataclass
@@ -109,14 +114,8 @@ class Item:
         child.leave_parent(self)
         new_parent.adopt(child)
 
-    def redo(self)->None:
-        self.__cmdcontroller.redo()
-
     def rename(self,name:str)->None:
         self.__cmdcontroller.run(Rename(self,name))
-
-    def undo(self)->None:
-        self.__cmdcontroller.undo()
 
     def _rename(self,name:str)->None:
         name = strip_and_join_spaces(name)
