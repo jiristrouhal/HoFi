@@ -103,13 +103,13 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
 
     def test_children_were_added(self):
         not_a_child = self.iman.new(name="Not a Child")
-        self.assertTrue(self.parent.is_child(self.child))
-        self.assertFalse(self.parent.is_child(not_a_child))
+        self.assertTrue(self.parent.is_parent_of(self.child))
+        self.assertFalse(self.parent.is_parent_of(not_a_child))
         self.assertEqual(self.child.parent, self.parent)
 
     def test_repeatedly_adopting_child_does_not_have_effect(self):
         self.parent.adopt(self.child)
-        self.assertTrue(self.parent.is_child(self.child))
+        self.assertTrue(self.parent.is_parent_of(self.child))
         self.assertEqual(self.child.parent, self.parent)
 
     def test_child_having_a_parent_cannot_be_added_to_new_parent(self):
@@ -125,17 +125,17 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.assertEqual(self.child.parent, new_parent)
        
     def test_item_leaving_child_makes_child_forget_the_item_as_its_parent(self):
-        self.parent.leave_child(self.child)
+        self.parent._leave_child(self.child)
         self.assertEqual(self.child.parent,None)
 
     def test_item_leaving_its_parent_makes_the_parent_forget_is(self):
-        self.child.leave_parent(self.parent)
+        self.child._leave_parent(self.parent)
         self.assertEqual(self.child.parent,None)
-        self.assertFalse(self.parent.is_child(self.child))
+        self.assertFalse(self.parent.is_parent_of(self.child))
 
     def test_leaving_parent_not_belonging_to_child_has_no_effect(self)->None:
         not_a_parent = self.iman.new(name="Not a parent")
-        self.child.leave_parent(not_a_parent)
+        self.child._leave_parent(not_a_parent)
         self.assertEqual(self.child.parent, self.parent)
 
     def test_getting_item_at_the_top_of_family_hierachy(self)->None:
@@ -151,7 +151,7 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.assertEqual(greatgrandparent.root, greatgrandparent)
 
     def test_after_leaving_parent_the_child_becomes_its_own_root(self):
-        self.child.leave_parent(self.parent)
+        self.child._leave_parent(self.parent)
         self.assertEqual(self.child.root, self.child)
 
     def test_grandparent_and_parent_are_predecesors_of_item(self):
@@ -171,11 +171,19 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.assertRaises(Item.HierarchyCollision, grandchild.adopt, self.parent)
 
     def test_leaving_none_has_no_effect(self):
-        self.child.leave_parent(self.parent)
+        self.child._leave_parent(self.parent)
         self.assertEqual(self.child.parent, None)
-        self.child.leave_parent(None)
+        self.child._leave_parent(None)
         self.assertEqual(self.child.parent, None)
 
+    def test_passing_item_to_its_own_child_raises_error(self):
+        grandchild = self.iman.new("Grandchild")
+        self.child.adopt(grandchild)
+        self.assertRaises(
+            Item.HierarchyCollision, 
+            self.parent.pass_to_new_parent, 
+            self.child,grandchild
+        )
 
 class Test_Name_Collisions_Of_Items_With_Common_Parent(unittest.TestCase):
 
@@ -214,16 +222,52 @@ class Test_Name_Collisions_Of_Items_With_Common_Parent(unittest.TestCase):
         self.assertEqual(child2.name, "The Child (1)")
 
 
-# class Test_Undo_And_Redo_Setting_Parent_Child_Relationship(unittest.TestCase):
+class Test_Undo_And_Redo_Setting_Parent_Child_Relationship(unittest.TestCase):
 
-#     def test_undo_adoption(self):
-#         iman = ItemManager()
-#         parent = iman.new("Parent")
-#         child = iman.new("Child")
-#         parent.adopt(child)
+    def setUp(self) -> None:
+        self.mg = ItemManager()
+        self.parent = self.mg.new("Parent")
+        self.child = self.mg.new("Child")
+        self.parent.adopt(self.child)
 
+    def test_undo_and_redo_adoption(self):
+        self.mg.undo()
+        self.assertFalse(self.parent.is_parent_of(self.child))
+        self.assertEqual(self.child.parent, None)
+        self.mg.redo()
+        self.assertTrue(self.parent.is_parent_of(self.child))
+        self.assertEqual(self.child.parent, self.parent)
+        self.mg.undo()
+        self.assertFalse(self.parent.is_parent_of(self.child))
+        self.assertEqual(self.child.parent, None)
+
+    def test_undo_and_redo_passing_to_new_parent(self):
+        new_parent = self.mg.new("New Parent")
+        self.parent.pass_to_new_parent(self.child,new_parent)
         
-    
+        self.assertTrue(new_parent.is_parent_of(self.child))
+        self.assertFalse(self.parent.has_children())
+        self.mg.undo()
+        self.assertTrue(self.parent.is_parent_of(self.child))
+        self.assertTrue(self.parent.has_children())
+        self.assertFalse(new_parent.has_children())
+        self.mg.redo()
+        self.assertTrue(new_parent.is_parent_of(self.child))
+        self.mg.undo()
+        self.assertTrue(self.parent.is_parent_of(self.child))
+
+    def test_change_parent_twice_and_then_undo_twice_and_redo_twice(self):
+        parent2 = self.mg.new("Parent 2")
+        parent3 = self.mg.new("Parent 3")
+        self.parent.pass_to_new_parent(self.child, parent2)
+        parent2.pass_to_new_parent(self.child, parent3)
+
+        self.assertTrue(parent3.is_parent_of(self.child))
+
+        self.mg.undo()
+        self.assertTrue(parent2.is_parent_of(self.child))
+        self.mg.undo()
+        self.assertTrue(self.parent.is_parent_of(self.child)) 
 
 
 if __name__=="__main__": unittest.main()

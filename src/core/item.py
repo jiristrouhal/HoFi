@@ -44,6 +44,38 @@ class Rename(Command):
         self.item._rename(self.new_name)
 
 
+@dataclasses.dataclass
+class Adopt(Command):
+    parent:Item
+    child:Item
+
+    def run(self):
+        self.parent._adopt(self.child)
+
+    def undo(self):
+        self.parent._leave_child(self.child)
+
+    def redo(self):
+        self.run()
+
+@dataclasses.dataclass
+class PassToNewParent(Command):
+    parent:Item
+    child:Item
+    new_parent:Item
+
+    def run(self):
+        self.child._leave_parent(self.parent)
+        self.new_parent._adopt(self.child)
+    
+    def undo(self):
+        self.child._leave_parent(self.new_parent)
+        self.parent._adopt(self.child)
+
+    def redo(self):
+        self.run()
+
+
 class Item:
     
     def __init__(self,name:str,attributes:Dict[str,Attribute],controller:Controller)->None:
@@ -71,17 +103,15 @@ class Item:
     def root(self)->Item: 
         return self if self.__parent is None else self.__parent.root
 
-    def _adopt_by(self,item:Item)->None:
-        if self.parent is None: self.__parent=item
-    
-    def adopt(self, child:Item)->None:
-        if child.is_predecessor_of(self): raise Item.HierarchyCollision
-        child._adopt_by(self)
-        self._make_child_to_rename_if_its_name_already_taken(child)
-        if self is child.parent:
-            self.__children.add(child)
+    def adopt(self,child:Item)->None:
+        if child.is_predecessor_of(self):
+            raise Item.HierarchyCollision
+        self.__cmdcontroller.run(Adopt(parent=self,child=child))
 
-    def is_child(self, child:Item)->bool: 
+    def has_children(self)->bool:
+        return bool(self.__children)
+
+    def is_parent_of(self, child:Item)->bool: 
         return child in self.__children
     
     def is_predecessor_of(self, child:Item)->bool:
@@ -90,16 +120,34 @@ class Item:
             item = item.parent
             if item==self: return True
         return False
-    
-    def leave_child(self,child:Item)->None:
+
+    def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
+        if child.is_predecessor_of(new_parent):
+            raise Item.HierarchyCollision
+        self.__cmdcontroller.run(PassToNewParent(self,child,new_parent))
+
+    def rename(self,name:str)->None:
+        self.__cmdcontroller.run(Rename(self,name))
+
+
+    def _adopt(self, child:Item)->None:
+        child._adopt_by(self)
+        self._make_child_to_rename_if_its_name_already_taken(child)
+        if self is child.parent:
+            self.__children.add(child)
+
+    def _adopt_by(self,item:Item)->None:
+        if self.parent is None: self.__parent=item
+
+    def _leave_child(self,child:Item)->None:
         if child in self.__children:
             self.__children.remove(child)
-            child.leave_parent(self)
-    
-    def leave_parent(self,parent:Item)->None:
+            child._leave_parent(self)
+
+    def _leave_parent(self,parent:Item)->None:
         if parent is self.parent:
             if self.__parent is None: return
-            self.__parent.leave_child(self)
+            self.__parent._leave_child(self)
             self.__parent = None
 
     def _make_child_to_rename_if_its_name_already_taken(self, child:Item):
@@ -110,13 +158,6 @@ class Item:
             cname = adjust_taken_name(cname)
             child._rename(cname)
 
-    def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
-        child.leave_parent(self)
-        new_parent.adopt(child)
-
-    def rename(self,name:str)->None:
-        self.__cmdcontroller.run(Rename(self,name))
-
     def _rename(self,name:str)->None:
         name = strip_and_join_spaces(name)
         self.__raise_if_name_is_blank(name)
@@ -124,7 +165,7 @@ class Item:
     
     def __raise_if_name_is_blank(self,name:str)->None:
         if name=="": raise self.BlankName
-
+        
     class BlankName(Exception): pass
     class HierarchyCollision(Exception): pass
 
