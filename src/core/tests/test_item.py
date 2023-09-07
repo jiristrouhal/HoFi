@@ -504,7 +504,8 @@ class Test_Connecting_External_Commands_To_The_Adopt_Command(unittest.TestCase):
 
         self.parent.do_on_adoption(
             'test', 
-            record_adoption
+            record_adoption,
+            'before'
         ) 
 
     def test_adding_simple_command_to_the_adopt_command(self):
@@ -572,12 +573,13 @@ class Test_Adding_External_Command_To_Renaming(unittest.TestCase):
         self.label = Test_Adding_External_Command_To_Renaming.Label("Empty")
         self.mg = ItemManager()
         self.item = self.mg.new("Child")
-        def catch_new_item_name_in_label(data:Renaming_Data)->self.CatchNewItemNameInLabel:
+        def catch_new_item_name_in_label(data:Renaming_Data)->Test_Adding_External_Command_To_Renaming.CatchNewItemNameInLabel:
             return self.CatchNewItemNameInLabel(self.label, data.item)
         
         self.item.do_on_renaming(
             'test',
-            catch_new_item_name_in_label
+            catch_new_item_name_in_label,
+            'after'
         )
 
     def test_single_rename_command_undo_and_redo(self):
@@ -590,7 +592,6 @@ class Test_Adding_External_Command_To_Renaming(unittest.TestCase):
         self.assertEqual(self.label.text, "The Child")
         self.mg.undo()
         self.assertEqual(self.label.text, "Empty")
-
 
     def test_two_rename_commands_undo_and_redo(self):
         self.item.rename("The Child")
@@ -610,9 +611,78 @@ class Test_Adding_External_Command_To_Renaming(unittest.TestCase):
         self.mg.redo()
         self.assertEqual(self.label.text, "The Awesome Child")
         self.assertEqual(self.item.name, "The Awesome Child")
+
  
+class Test_Catching_Old_And_New_Name_On_Paper(unittest.TestCase):
+
+    @dataclasses.dataclass
+    class Paper:
+        old_name:str = ""
+        new_name:str = ""
     
-        
+    @dataclasses.dataclass
+    class Catch_Old_Name(Command):
+        item:Item
+        paper:Test_Catching_Old_And_New_Name_On_Paper.Paper
+        previous_value:str = dataclasses.field(init=False)
+        new_value:str = dataclasses.field(init=False)
+        def run(self)->None:
+            self.previous_value:str = self.paper.old_name
+            self.paper.old_name = self.item.name
+            self.new_value = self.paper.old_name
+        def undo(self)->None:
+            self.paper.old_name = self.previous_value
+        def redo(self)->None:
+            self.paper.old_name = self.new_value
+
+    @dataclasses.dataclass
+    class Catch_New_Name(Command):
+        item:Item
+        paper:Test_Catching_Old_And_New_Name_On_Paper.Paper
+        previous_value:str = dataclasses.field(init=False)
+        new_value:str = dataclasses.field(init=False)
+        def run(self)->None:
+            self.previous_value:str = self.paper.new_name
+            self.paper.new_name = self.item.name
+            self.new_value = self.paper.new_name
+        def undo(self)->None:
+            self.paper.new_name = self.previous_value
+        def redo(self)->None:
+            self.paper.new_name = self.new_value
+    
+    def test_catching_old_and_new_item_name_on_paper_when_undoing_and_redoing_rename_operation(self):
+        self.mg = ItemManager()
+        self.item = self.mg.new("Old name")
+        self.paper = self.Paper()
+
+        def catch_old_name(data:Renaming_Data)->Test_Catching_Old_And_New_Name_On_Paper.Catch_Old_Name:
+            return self.Catch_Old_Name(data.item, self.paper)
+        def catch_new_name(data:Renaming_Data)->Test_Catching_Old_And_New_Name_On_Paper.Catch_New_Name:
+            return self.Catch_New_Name(data.item, self.paper)
+
+        self.item.do_on_renaming('test',catch_old_name,'before')
+        self.item.do_on_renaming('test',catch_new_name,'after')
+
+        self.item.rename("New name")
+        self.assertEqual(self.paper.old_name, "Old name")
+        self.assertEqual(self.paper.new_name, "New name")
+
+        self.item.rename("Newer name")
+        self.assertEqual(self.paper.old_name, "New name")
+        self.assertEqual(self.paper.new_name, "Newer name")
+
+        self.mg.undo()
+        self.mg.undo()
+        self.assertEqual(self.paper.old_name, "")
+        self.assertEqual(self.paper.new_name, "")
+
+        self.mg.redo()
+        self.assertEqual(self.paper.old_name, "Old name")
+        self.assertEqual(self.paper.new_name, "New name")
+        self.mg.redo()
+        self.assertEqual(self.paper.old_name, "New name")
+        self.assertEqual(self.paper.new_name, "Newer name")
+
 
 
 if __name__=="__main__": unittest.main()
