@@ -171,8 +171,8 @@ class ItemImpl(Item):
 
         def adopt(self,child:Item)->None: 
             child.parent.pass_to_new_parent(child,self)
-        def do_on_adoption(self,*args)->None: pass
-        def do_on_renaming(self,*args)->None: pass
+        def do_on_adoption(self,*args)->None: pass # pragma: no cover
+        def do_on_renaming(self,*args)->None: pass # pragma: no cover
         def get_copy(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
