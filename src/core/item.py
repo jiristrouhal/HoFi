@@ -1,9 +1,12 @@
 from __future__ import annotations
-from typing import Dict, Protocol, Any, Set
+from typing import Dict, Protocol, Any, Set, Literal, get_args, List, Tuple, Callable
 import dataclasses
 from src.cmd.commands import Command, Controller
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
 import abc
+
+
+Item_Command_Type = Literal['pass_to_new_parent']
 
 
 class Attribute(Protocol): # pragma: no cover
@@ -28,6 +31,10 @@ class ItemManager:
 
 
 @dataclasses.dataclass
+class Renaming_Data:
+    item:Item
+
+@dataclasses.dataclass
 class Rename(Command):
     item:Item
     new_name:str
@@ -42,6 +49,12 @@ class Rename(Command):
     
     def redo(self) -> None:
         self.item._rename(self.new_name)
+
+
+@dataclasses.dataclass
+class Adoption_Data:
+    parent:Item
+    child:Item
 
 
 @dataclasses.dataclass
@@ -62,7 +75,8 @@ class PassToNewParent(Command):
         self.child._rename(self.old_name)
 
     def redo(self):
-        self.run()
+        self.child._leave_parent(self.parent)
+        self.new_parent._adopt(self.child)
 
 
 class Item(abc.ABC): # pragma: no cover
@@ -83,6 +97,20 @@ class Item(abc.ABC): # pragma: no cover
 
     @abc.abstractmethod
     def adopt(self,child:Item)->None: pass
+
+    @abc.abstractmethod
+    def do_on_adoption(
+        self, 
+        owner_id:str, 
+        command_creator:Callable[[Adoption_Data], Command]
+    )->None: pass
+
+    @abc.abstractmethod
+    def do_on_renaming(
+        self, 
+        owner_id:str, 
+        command_creator:Callable[[Renaming_Data], Command]
+    )->None: pass
 
     @abc.abstractmethod
     def get_copy(self)->Item: pass
@@ -120,7 +148,7 @@ class Item(abc.ABC): # pragma: no cover
     class AdoptingNULL(Exception): pass
     class BlankName(Exception): pass
     class HierarchyCollision(Exception): pass
-
+    class NonexistentCommandType(Exception): pass
 
 
 class ItemImpl(Item):
@@ -143,6 +171,8 @@ class ItemImpl(Item):
 
         def adopt(self,child:Item)->None: 
             child.parent.pass_to_new_parent(child,self)
+        def do_on_adoption(self,*args)->None: pass
+        def do_on_renaming(self,*args)->None: pass
         def get_copy(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
@@ -165,6 +195,8 @@ class ItemImpl(Item):
         self._rename(name)
         self.__children:Set[Item] = set()
         self.__parent:Item = self.NULL
+        self.__on_adoption:Dict[str,Callable[[Adoption_Data], Command]] = {}
+        self.__on_renaming:Dict[str,Callable[[Renaming_Data], Command]] = {}
 
     @property
     def attributes(self)->Dict[str,Attribute]: 
@@ -183,13 +215,33 @@ class ItemImpl(Item):
     @property
     def root(self)->Item: 
         return self if self.__parent is self.NULL else self.__parent.root
-
+        
     def adopt(self,child:Item)->None:
         if child is self.NULL: 
             raise Item.AdoptingNULL
-        if child.is_predecessor_of(self):
+        if child.is_predecessor_of(self): 
             raise Item.HierarchyCollision
-        self.__cmdcontroller.run(PassToNewParent(self.NULL, child, self))
+        
+        self.__cmdcontroller.run(
+            *[cmd(Adoption_Data(self,child)) for cmd in self.__on_adoption.values()],
+            PassToNewParent(self.NULL, child, self)
+        )
+
+    def do_on_adoption(
+        self, 
+        owner_id:str, 
+        command_creator:Callable[[Adoption_Data], Command]
+        )->None: 
+
+        self.__on_adoption[owner_id] = command_creator
+
+    def do_on_renaming(
+        self, 
+        owner_id:str, 
+        command_creator:Callable[[Renaming_Data], Command]
+        )->None: 
+
+        self.__on_renaming[owner_id] = command_creator
 
     def get_copy(self)->Item:
         item_copy = ItemImpl(self.name, self.attributes, self.__cmdcontroller)
@@ -209,12 +261,16 @@ class ItemImpl(Item):
             elif item==self.NULL: return False
 
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
-        if child.is_predecessor_of(new_parent):
-            raise Item.HierarchyCollision
-        self.__cmdcontroller.run(PassToNewParent(self,child,new_parent))
+        if child.is_predecessor_of(new_parent): raise Item.HierarchyCollision
+        self.__cmdcontroller.run(
+            PassToNewParent(self,child,new_parent)
+        )
 
     def rename(self,name:str)->None:
-        self.__cmdcontroller.run(Rename(self,name))
+        self.__cmdcontroller.run(
+            Rename(self,name),
+            *[cmd(Renaming_Data(self)) for cmd in self.__on_renaming.values()]
+        )
 
     def _adopt(self, child:Item)->None:
         child._adopt_by(self)

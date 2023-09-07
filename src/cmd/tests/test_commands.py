@@ -4,7 +4,7 @@ import dataclasses
 
 
 import unittest
-from src.cmd.commands import Controller
+from src.cmd.commands import Controller, Command
 
 
 @dataclasses.dataclass
@@ -13,7 +13,7 @@ class Integer_Owner:
 
 
 @dataclasses.dataclass
-class IncrementIntAttribute:
+class IncrementIntAttribute(Command):
     obj:Integer_Owner
     step:int=1
     def run(self)->None: self.obj.i += self.step
@@ -66,6 +66,45 @@ class Test_Running_A_Command(unittest.TestCase):
         self.assertFalse(self.controller.any_redo)
         self.controller.undo()
         self.assertTrue(self.controller.any_redo)
+
+
+
+@dataclasses.dataclass
+class MultiplyIntAttribute(Command):
+    obj:Integer_Owner
+    factor:int
+    prev_value:int = dataclasses.field(init=False)
+    new_value:int = dataclasses.field(init=False)
+
+    def run(self)->None: 
+        self.prev_value = self.obj.i
+        self.obj.i *= self.factor
+        self.new_value = self.obj.i
+
+    def undo(self)->None: 
+        self.obj.i = self.prev_value
+
+    def redo(self)->None: 
+        self.obj.i = self.new_value
+
+
+class Test_Running_Multiple_Commands(unittest.TestCase):
+
+    def test_undo_and_redo_two_commands_at_once(self)->None:
+        obj = Integer_Owner(0)
+        controller = Controller()
+        controller.run(
+            IncrementIntAttribute(obj, 2),
+            MultiplyIntAttribute(obj, 3)
+        )
+        self.assertEqual(obj.i, 6)
+
+        controller.undo()
+        self.assertEqual(obj.i, 0)
+        controller.redo()
+        self.assertEqual(obj.i, 6)
+        controller.undo()
+        self.assertEqual(obj.i, 0)
 
 
 if __name__=='__main__': unittest.main()

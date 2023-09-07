@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 import sys 
 sys.path.insert(1,"src")
 
@@ -451,13 +454,165 @@ class Test_Undo_And_Redo_Multiple_Operations(unittest.TestCase):
         self.assertEqual(child.name, "The Child")
         mg.undo()
         child.rename("The First Child")
-        mg.redo()
+        mg.redo() # this redo has no effect
         self.assertEqual(child.name, "The First Child")
         mg.undo()
         self.assertEqual(child.name,"Child")
         mg.redo()
         self.assertEqual(child.name, "The First Child")
 
+
+from src.cmd.commands import Command
+from src.core.item import Adoption_Data
+import dataclasses
+class Test_Connecting_External_Commands_To_The_Adopt_Command(unittest.TestCase):
+
+    @dataclasses.dataclass
+    class AdoptionDisplay:
+        notification:str = ""
+        message:str = ""
+        count:int = 0
+
+    @dataclasses.dataclass
+    class RecordAdoption(Command):
+        parent:Item
+        child:Item
+        display:Test_Connecting_External_Commands_To_The_Adopt_Command.AdoptionDisplay
+        old_message:str = dataclasses.field(init=False)
+        new_message:str = dataclasses.field(init=False)
+  
+        def run(self)->None:
+            self.old_message = self.display.message
+            self.new_message = f"{self.parent.name} has adopted the {self.child.name}"
+            self.display.message = self.new_message
+            self.display.count += 1
+
+        def undo(self)->None:
+            self.display.count -= 1
+            self.display.message = self.old_message
+
+        def redo(self)->None: self.run()
+
+ 
+    def setUp(self) -> None:
+        self.display = self.AdoptionDisplay()
+        self.mg = ItemManager()
+        self.parent = self.mg.new("Parent")
+
+        def record_adoption(data:Adoption_Data)->Command:
+            return self.RecordAdoption(data.parent, data.child, self.display)
+
+        self.parent.do_on_adoption(
+            'test', 
+            record_adoption
+        ) 
+
+    def test_adding_simple_command_to_the_adopt_command(self):
+        child = self.mg.new("Child")
+        self.parent.adopt(child)
+        self.assertEqual(self.display.message, "Parent has adopted the Child")
+        self.assertEqual(self.display.count, 1)
+
+        self.mg.undo()
+        self.assertEqual(self.display.message, "")
+        self.assertEqual(self.display.count, 0)
+        self.mg.redo()
+        self.assertEqual(self.display.message, "Parent has adopted the Child")
+        self.assertEqual(self.display.count, 1)
+        self.mg.undo()
+        self.assertEqual(self.display.message, "")
+        self.assertEqual(self.display.count, 0)
+
+    def test_adoption_of_two_children(self):
+        child = self.mg.new("Child")
+        self.parent.adopt(child)
+
+        child2 = self.mg.new("Child 2")
+        self.parent.adopt(child2)
+        self.assertEqual(self.display.message, "Parent has adopted the Child 2")
+        self.assertEqual(self.display.count, 2)
+
+        self.mg.undo()
+        self.assertEqual(self.display.message, "Parent has adopted the Child")
+        self.assertEqual(self.display.count, 1)
+
+        self.mg.undo()
+        self.assertEqual(self.display.message, "")
+        self.assertEqual(self.display.count, 0)
+
+
+
+from src.core.item import Renaming_Data
+class Test_Adding_External_Command_To_Renaming(unittest.TestCase):
+
+    @dataclasses.dataclass
+    class Label:
+        text:str
+    
+    @dataclasses.dataclass
+    class CatchNewItemNameInLabel(Command):
+        label:Test_Adding_External_Command_To_Renaming.Label
+        item:Item
+        orig_text:str = dataclasses.field(init=False)
+        new_text:str = dataclasses.field(init=False)
+
+        def run(self)->None:
+            self.orig_text = self.label.text
+            self.label.text = self.item.name
+            self.new_text = self.item.name
+
+        def undo(self)->None:
+            self.label.text = self.orig_text
+        
+        def redo(self)->None:
+            self.label.text = self.new_text
+
+
+    def setUp(self) -> None:
+        self.label = Test_Adding_External_Command_To_Renaming.Label("Empty")
+        self.mg = ItemManager()
+        self.item = self.mg.new("Child")
+        def catch_new_item_name_in_label(data:Renaming_Data)->self.CatchNewItemNameInLabel:
+            return self.CatchNewItemNameInLabel(self.label, data.item)
+        
+        self.item.do_on_renaming(
+            'test',
+            catch_new_item_name_in_label
+        )
+
+    def test_single_rename_command_undo_and_redo(self):
+        self.item.rename("The Child")
+        self.assertEqual(self.label.text, "The Child")
+
+        self.mg.undo()
+        self.assertEqual(self.label.text, "Empty")
+        self.mg.redo()
+        self.assertEqual(self.label.text, "The Child")
+        self.mg.undo()
+        self.assertEqual(self.label.text, "Empty")
+
+
+    def test_two_rename_commands_undo_and_redo(self):
+        self.item.rename("The Child")
+        self.item.rename("The Awesome Child")
+        self.assertEqual(self.label.text, "The Awesome Child")
+
+        self.mg.undo()
+        self.mg.undo()
+        self.assertEqual(self.label.text, "Empty")
+        self.assertEqual(self.item.name, "Child")
+        self.mg.undo() # does nothing
+        self.assertEqual(self.label.text, "Empty")
+        self.assertEqual(self.item.name, "Child")
+        self.mg.redo()
+        self.assertEqual(self.label.text, "The Child")
+        self.assertEqual(self.item.name, "The Child")
+        self.mg.redo()
+        self.assertEqual(self.label.text, "The Awesome Child")
+        self.assertEqual(self.item.name, "The Awesome Child")
+ 
+    
+        
 
 
 if __name__=="__main__": unittest.main()

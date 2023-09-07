@@ -14,8 +14,8 @@ class Command(abc.ABC): # pragma: no cover
 class Controller:
 
     def __init__(self)->None:
-        self.__undo_stack:List[Command] = list()
-        self.__redo_stack:List[Command] = list()
+        self.__undo_stack:List[List[Command]] = list()
+        self.__redo_stack:List[List[Command]] = list()
 
     @property
     def any_undo(self)->bool: return bool(self.__undo_stack)
@@ -23,19 +23,19 @@ class Controller:
     def any_redo(self)->bool: return bool(self.__redo_stack)
 
     
-    def run(self,cmd:Command)->None:
-        cmd.run()
-        self.__undo_stack.append(cmd)
+    def run(self,*cmds:Command)->None:
+        for cmd in cmds: cmd.run()
+        self.__undo_stack.append(list(cmds))
         self.__redo_stack.clear()
 
     def undo(self)->None:
         if not self.__undo_stack: return 
-        cmd = self.__undo_stack.pop()    
-        cmd.undo()
-        self.__redo_stack.append(cmd)
+        batch = self.__undo_stack.pop()    
+        for cmd in reversed(batch): cmd.undo()
+        self.__redo_stack.append(batch)
 
     def redo(self)->None:
         if not self.__redo_stack: return 
-        cmd = self.__redo_stack.pop()    
-        cmd.redo()
-        self.__undo_stack.append(cmd)
+        batch = self.__redo_stack.pop()    
+        for cmd in batch: cmd.redo()
+        self.__undo_stack.append(batch)
