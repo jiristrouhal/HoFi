@@ -408,6 +408,58 @@ class Test_Child_Copy(unittest.TestCase):
         self.assertEqual(self.copy.name, "Child")
 
 
+class Test_Undo_And_Redo_Multiple_Operations(unittest.TestCase):
+
+    def test_copying_and_renaming(self):
+        mg = ItemManager()
+        parent = mg.new("Parent")
+        child = mg.new("Child")
+        parent.adopt(child)
+        child_copy = child.get_copy()
+        child_copy.rename("Second child")
+
+        for _ in range(3):
+            mg.undo()
+            mg.undo()
+            mg.undo()
+            self.assertEqual(child_copy.parent,NullItem)
+            self.assertFalse(parent.is_parent_of(child_copy))
+            self.assertEqual(child_copy.name, "Child")
+            self.assertEqual(child.parent, NullItem)
+            self.assertFalse(parent.is_parent_of(child))
+            mg.redo()
+            self.assertEqual(child.parent, parent)
+            self.assertTrue(parent.is_parent_of(child))
+            self.assertEqual(child_copy.parent,NullItem)
+            mg.redo()
+            self.assertEqual(child_copy.parent,parent)
+            self.assertEqual(child_copy.name, "Child (1)")
+            mg.redo()
+            self.assertEqual(child_copy.parent,parent)
+            self.assertEqual(child_copy.name, "Second child")
+
+    def test_undo_and_executing_new_command_erases_redo_command(self):
+        mg = ItemManager()
+        parent = mg.new("Parent")
+        child = mg.new("Child")
+        parent.adopt(child)
+        child.rename("The Child")
+
+        mg.undo()
+        self.assertEqual(child.name, "Child")
+        mg.redo()
+        self.assertEqual(child.name, "The Child")
+        mg.undo()
+        child.rename("The First Child")
+        mg.redo()
+        self.assertEqual(child.name, "The First Child")
+        mg.undo()
+        self.assertEqual(child.name,"Child")
+        mg.redo()
+        self.assertEqual(child.name, "The First Child")
+
+
+
 if __name__=="__main__": unittest.main()
 
 
