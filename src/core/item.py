@@ -8,7 +8,7 @@ from src.utils.naming import adjust_taken_name, strip_and_join_spaces
 import abc
 
 
-Item_Command_Type = Literal['pass_to_new_parent']
+Command_label = Literal['adopt','rename']
 Timing = Literal['before','after']
 
 
@@ -43,7 +43,6 @@ class Renaming_Data(Command_Data):
 class Adoption_Data(Command_Data):
     parent:Item
     child:Item
-
 
 
 @dataclasses.dataclass
@@ -106,18 +105,11 @@ class Item(abc.ABC): # pragma: no cover
     def adopt(self,child:Item)->None: pass
 
     @abc.abstractmethod
-    def do_on_adoption(
+    def add_command(
         self, 
+        on:Command_label,
         owner_id:str, 
-        command_creator:Callable[[Adoption_Data], Command],
-        timing:Timing
-    )->None: pass
-
-    @abc.abstractmethod
-    def do_on_renaming(
-        self, 
-        owner_id:str, 
-        command_creator:Callable[[Renaming_Data], Command],
+        command_creator:Callable[[Command_Data], Command],
         timing:Timing
     )->None: pass
 
@@ -162,34 +154,27 @@ class Item(abc.ABC): # pragma: no cover
 
 class ItemImpl(Item):
 
+    Creators_Dict = OrderedDict[str, Callable[[Command_Data], Command]]
     @dataclasses.dataclass
     class __External_Commands:
-        pre_commands_creators:OrderedDict[str, Callable[[Command_Data], Command]] = \
-            dataclasses.field(default_factory=OrderedDict, init=False)
-        post_commands_creators:OrderedDict[str, Callable[[Command_Data], Command]] = \
-            dataclasses.field(default_factory=OrderedDict, init=False)
+        pre_cmd_creators:ItemImpl.Creators_Dict = dataclasses.field(default_factory=OrderedDict, init=False)
+        post_cmd_creators:ItemImpl.Creators_Dict = dataclasses.field(default_factory=OrderedDict, init=False)
 
-        def add_before(
+        def add(
             self,
             owner_id:str, 
-            command_creator:Callable[[Command_Data], Command]
+            command_creator:Callable[[Command_Data], Command],
+            timing:Timing
             )->None:
 
-            self.pre_commands_creators[owner_id] = command_creator
-
-        def add_after(
-            self,
-            owner_id:str, 
-            command_creator:Callable[[Command_Data], Command]
-            )->None:
-
-            self.post_commands_creators[owner_id] = command_creator
+            cmd_dict = self.pre_cmd_creators if timing=="before" else self.post_cmd_creators
+            cmd_dict[owner_id] = command_creator
 
         def get_cmds_before(self,data:Command_Data)->Tuple[Command,...]:
-            return tuple([cmd(data) for cmd in self.pre_commands_creators.values()])
+            return tuple([cmd(data) for cmd in self.pre_cmd_creators.values()])
         
         def get_cmds_after(self,data:Command_Data)->Tuple[Command,...]:
-            return tuple([cmd(data) for cmd in self.post_commands_creators.values()])
+            return tuple([cmd(data) for cmd in self.post_cmd_creators.values()])
 
     class __ItemNull(Item):
 
@@ -209,8 +194,7 @@ class ItemImpl(Item):
 
         def adopt(self,child:Item)->None: 
             child.parent.pass_to_new_parent(child,self)
-        def do_on_adoption(self,*args)->None: pass # pragma: no cover
-        def do_on_renaming(self,*args)->None: pass # pragma: no cover
+        def add_command(self,*args)->None: pass # pragma: no cover
         def get_copy(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
@@ -233,8 +217,10 @@ class ItemImpl(Item):
         self._rename(name)
         self.__children:Set[Item] = set()
         self.__parent:Item = self.NULL
-        self.__on_adoption = self.__External_Commands()
-        self.__on_renaming = self.__External_Commands()
+        self.__ext_cmds:Dict[Command_label, ItemImpl.__External_Commands] = {
+            'adopt':self.__External_Commands(),
+            'rename':self.__External_Commands()
+        }
 
     @property
     def attributes(self)->Dict[str,Attribute]: 
@@ -261,34 +247,20 @@ class ItemImpl(Item):
             raise Item.HierarchyCollision
         
         self.__cmdcontroller.run(
-            *self.__on_adoption.get_cmds_before(Adoption_Data(self,child)),
+            *self.__ext_cmds['adopt'].get_cmds_before(Adoption_Data(self,child)),
             PassToNewParent(self.NULL, child, self),
-            *self.__on_adoption.get_cmds_after(Adoption_Data(self,child)),
+            *self.__ext_cmds['adopt'].get_cmds_after(Adoption_Data(self,child)),
         )
 
-    def do_on_adoption(
+    def add_command(
         self, 
+        on:Command_label,
         owner_id:str, 
-        command_creator:Callable[[Adoption_Data], Command],
+        command_creator:Callable[[Command_Data], Command],
         timing:Timing
         )->None: 
 
-        if timing=="before": 
-            self.__on_adoption.add_before(owner_id,command_creator)
-        else: 
-            self.__on_adoption.add_after(owner_id,command_creator)
-
-    def do_on_renaming(
-        self, 
-        owner_id:str, 
-        command_creator:Callable[[Renaming_Data], Command],
-        timing:Timing
-        )->None: 
-
-        if timing=="before": 
-            self.__on_renaming.add_before(owner_id,command_creator)
-        else: 
-            self.__on_renaming.add_after(owner_id,command_creator)
+        self.__ext_cmds[on].add(owner_id,command_creator,timing)
 
     def get_copy(self)->Item:
         item_copy = ItemImpl(self.name, self.attributes, self.__cmdcontroller)
@@ -315,9 +287,9 @@ class ItemImpl(Item):
 
     def rename(self,name:str)->None:
         self.__cmdcontroller.run(
-            *self.__on_renaming.get_cmds_before(Renaming_Data(self)),
+            *self.__ext_cmds['rename'].get_cmds_before(Renaming_Data(self)),
             Rename(self,name),
-            *self.__on_renaming.get_cmds_after(Renaming_Data(self))
+            *self.__ext_cmds['rename'].get_cmds_after(Renaming_Data(self))
         )
 
     def _adopt(self, child:Item)->None:

@@ -502,7 +502,8 @@ class Test_Connecting_External_Commands_To_The_Adopt_Command(unittest.TestCase):
         def record_adoption(data:Adoption_Data)->Command:
             return self.RecordAdoption(data.parent, data.child, self.display)
 
-        self.parent.do_on_adoption(
+        self.parent.add_command(
+            'adopt',
             'test', 
             record_adoption,
             'before'
@@ -576,7 +577,8 @@ class Test_Adding_External_Command_To_Renaming(unittest.TestCase):
         def catch_new_item_name_in_label(data:Renaming_Data)->Test_Adding_External_Command_To_Renaming.CatchNewItemNameInLabel:
             return self.CatchNewItemNameInLabel(self.label, data.item)
         
-        self.item.do_on_renaming(
+        self.item.add_command(
+            'rename',
             'test',
             catch_new_item_name_in_label,
             'after'
@@ -660,8 +662,8 @@ class Test_Catching_Old_And_New_Name_On_Paper(unittest.TestCase):
         def catch_new_name(data:Renaming_Data)->Test_Catching_Old_And_New_Name_On_Paper.Catch_New_Name:
             return self.Catch_New_Name(data.item, self.paper)
 
-        self.item.do_on_renaming('test',catch_old_name,'before')
-        self.item.do_on_renaming('test',catch_new_name,'after')
+        self.item.add_command('rename','test',catch_old_name,'before')
+        self.item.add_command('rename','test',catch_new_name,'after')
 
         self.item.rename("New name")
         self.assertEqual(self.paper.old_name, "Old name")
@@ -682,6 +684,7 @@ class Test_Catching_Old_And_New_Name_On_Paper(unittest.TestCase):
         self.mg.redo()
         self.assertEqual(self.paper.old_name, "New name")
         self.assertEqual(self.paper.new_name, "Newer name")
+
 
 
 
