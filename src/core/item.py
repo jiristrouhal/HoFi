@@ -1,16 +1,14 @@
 from __future__ import annotations
 from collections import OrderedDict
-from typing import Dict, Protocol, Any, Set, Literal, Type, Tuple, Callable, OrderedDict
-import typing
+from typing import Dict, Protocol, Any, Set, Literal, Type, Tuple, Callable, OrderedDict, List
+from typing import Protocol
 import dataclasses
 from src.cmd.commands import Command, Controller
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
 import abc
 
 
-Command_Label = Literal['adopt','rename','pass_to_new_parent']
-Timing = Literal['before','after']
-
+        
 
 class Attribute(Protocol): # pragma: no cover
     @property
@@ -31,26 +29,28 @@ class ItemManager:
         self._controller.redo()
 
 @dataclasses.dataclass
-class Command_Data(abc.ABC):
+class Command_Data(Protocol):
     ...
 
+
 @dataclasses.dataclass
-class Renaming_Data(Command_Data):
+class Renaming_Data:
     item:Item
     new_name:str
 
 
 @dataclasses.dataclass
-class Adoption_Data(Command_Data):
+class Adoption_Data:
     parent:Item
     child:Item
 
 
 @dataclasses.dataclass
-class Pass_To_New_Parrent_Data(Command_Data):
+class Pass_To_New_Parrent_Data:
     parent:Item
     child:Item
     new_parent:Item
+
 
 
 @dataclasses.dataclass
@@ -70,28 +70,42 @@ class Rename(Command):
         self.item._rename(self.new_name)
 
 
+@dataclasses.dataclass
+class Adopt(Command):
+    data:Adoption_Data
+    old_name:str = dataclasses.field(init=False)
+    def run(self):
+        self.old_name = self.data.child.name
+        self.data.parent._adopt(self.data.child)
+    
+    def undo(self):
+        self.data.child._leave_parent(self.data.parent)
+        self.data.child._rename(self.old_name)
+
+    def redo(self):
+        self.data.parent._adopt(self.data.child)
 
 @dataclasses.dataclass
 class PassToNewParent(Command):
-    parent:Item
-    child:Item
-    new_parent:Item
+    data:Pass_To_New_Parrent_Data
     old_name:str = dataclasses.field(init=False)
 
     def run(self):
-        self.old_name = self.child.name
-        self.child._leave_parent(self.parent)
-        self.new_parent._adopt(self.child)
+        self.old_name = self.data.child.name
+        self.data.child._leave_parent(self.data.parent)
+        self.data.new_parent._adopt(self.data.child)
     
     def undo(self):
-        self.child._leave_parent(self.new_parent)
-        self.parent._adopt(self.child)
-        self.child._rename(self.old_name)
+        self.data.child._leave_parent(self.data.new_parent)
+        self.data.parent._adopt(self.data.child)
+        self.data.child._rename(self.old_name)
 
     def redo(self):
-        self.child._leave_parent(self.parent)
-        self.new_parent._adopt(self.child)
+        self.data.child._leave_parent(self.data.parent)
+        self.data.new_parent._adopt(self.data.child)
 
+
+Command_Label = Literal['adopt','rename','pass_to_new_parent']
 
 class Item(abc.ABC): # pragma: no cover
     
@@ -161,26 +175,81 @@ class Item(abc.ABC): # pragma: no cover
 
 
 Creators_Dict = OrderedDict[str, Callable[[Command_Data], Command]]
-@dataclasses.dataclass
+Timing = Literal['before','after']
+
+
 class External_Commands:
-    pre_cmd_creators:ItemImpl.Creators_Dict = dataclasses.field(default_factory=OrderedDict, init=False)
-    post_cmd_creators:ItemImpl.Creators_Dict = dataclasses.field(default_factory=OrderedDict, init=False)
+
+    def __init__(self,controller:Controller,*options:str)->None:
+        self.__options = options
+        self._controller = controller
+        self.pre_cmd_creators:Dict[str,Creators_Dict] = {}
+        self.post_cmd_creators:Dict[str,Creators_Dict] = {}
+        for option in self.__options:
+            self.pre_cmd_creators[option] = OrderedDict()
+            self.post_cmd_creators[option] = OrderedDict()
 
     def add(
         self,
+        on:str,
         owner_id:str, 
         command_creator:Callable[[Command_Data], Command],
         timing:Timing
         )->None:
 
+        if on not in self.__options: 
+            raise KeyError(f"{on} not in the available command types ({self.__options}).")
         cmd_dict = self.pre_cmd_creators if timing=="before" else self.post_cmd_creators
-        cmd_dict[owner_id] = command_creator
+        cmd_dict[on][owner_id] = command_creator
 
-    def get_cmds_before(self,data:Command_Data)->Tuple[Command,...]:
-        return tuple([cmd(data) for cmd in self.pre_cmd_creators.values()])
+    def run(
+        self,
+        on:Command_Label,   
+        data:Command_Data
+        )->None:
+
+        cmd = _get_cmd(on,data)
+        self._controller.run(
+            *self.__get_cmds_before(on,data),
+            cmd,
+            *self.__get_cmds_after(on,data)
+        )
+
+    def __get_cmds_before(self, on:str, data:Command_Data)->Tuple[Command,...]:
+        if on not in self.__options: 
+            raise KeyError(f"{on} not in the available command types ({self.__options}).")
+        return tuple([cmd(data) for cmd in self.pre_cmd_creators[on].values()])
     
-    def get_cmds_after(self,data:Command_Data)->Tuple[Command,...]:
-        return tuple([cmd(data) for cmd in self.post_cmd_creators.values()])
+    def __get_cmds_after(self, on:str, data:Command_Data)->Tuple[Command,...]:
+        if on not in self.__options: 
+             raise KeyError(f"{on} not in the available command types ({self.__options}).")
+        return tuple([cmd(data) for cmd in self.post_cmd_creators[on].values()])
+    
+
+
+def command_data(command_type:str)->Type[Command_Data]:
+    match command_type:
+        case "pass_to_new_parent": 
+            return Pass_To_New_Parrent_Data
+        case "adopt":
+            return Adoption_Data
+        case "rename":
+            return Renaming_Data
+        case _:
+            raise KeyError
+
+
+def _get_cmd(on:Command_Label,data:Command_Data)->Command:
+    match on:
+        case 'adopt': 
+            return Adopt(data)
+        case 'pass_to_new_parent': 
+            return PassToNewParent(data)
+        case 'rename':
+            return Rename(data.item, data.new_name)
+        case _:
+            raise Item.NonexistentCommandType
+        
 
 class ItemImpl(Item):
 
@@ -219,17 +288,12 @@ class ItemImpl(Item):
 
     NULL = __ItemNull()
     
-    def __init__(self,name:str,attributes:Dict[str,Attribute],controller:Controller)->None:
-        self.__cmdcontroller = controller
+    def __init__(self,name:str,attributes:Dict[str,Attribute], controller:Controller)->None:
+        self.commands = External_Commands(controller,'adopt','rename','pass_to_new_parent')
         self.__attributes = attributes
         self._rename(name)
         self.__children:Set[Item] = set()
         self.__parent:Item = self.NULL
-        self.__ext_cmds:Dict[Command_Label,External_Commands] = {
-            'adopt':External_Commands(),
-            'rename':External_Commands(),
-            'pass_to_new_parent':External_Commands(),
-        }
 
     @property
     def attributes(self)->Dict[str,Attribute]: 
@@ -257,19 +321,28 @@ class ItemImpl(Item):
         timing:Timing
         )->None: 
 
-        self.__ext_cmds[on].add(owner_id,command_creator,timing)
+        self.commands.add(on,owner_id,command_creator,timing)
+
 
     def adopt(self,child:Item)->None:
         if child is self.NULL: 
             raise Item.AdoptingNULL
         if child.is_ancestor_of(self): 
             raise Item.HierarchyCollision
-        
         data = Adoption_Data(self,child)
-        self._run_command_via_controller('adopt',self.__cmdcontroller, self.__ext_cmds, data)
+        self.commands.run('adopt', data)
+
+    def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
+        if child.is_ancestor_of(new_parent): 
+            raise Item.HierarchyCollision
+        data = Pass_To_New_Parrent_Data(self,child,new_parent)
+        self.commands.run('pass_to_new_parent', data)
+
+    def rename(self,name:str)->None:
+        self.commands.run('rename',Renaming_Data(self,name))
 
     def get_copy(self)->Item:
-        item_copy = ItemImpl(self.name, self.attributes, self.__cmdcontroller)
+        item_copy = ItemImpl(self.name, self.attributes, self.commands._controller)
         self.parent.adopt(item_copy)
         return item_copy
 
@@ -284,42 +357,6 @@ class ItemImpl(Item):
             item = item.parent
             if item==self: return True
             elif item==self.NULL: return False
-
-    def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
-        if child.is_ancestor_of(new_parent): raise Item.HierarchyCollision
-        data = Pass_To_New_Parrent_Data(self,child,new_parent)
-        self._run_command_via_controller('pass_to_new_parent',self.__cmdcontroller, self.__ext_cmds, data)
-
-    def rename(self,name:str)->None:
-        data = Renaming_Data(self,name)
-        self._run_command_via_controller('rename', self.__cmdcontroller, self.__ext_cmds, data)
-
-    @staticmethod
-    def _run_command_via_controller(
-        on:Command_Label, 
-        controller:Controller, 
-        ext_commands:Dict[Command_Label,External_Commands], 
-        data:Command_Data
-        )->None:
-
-        cmd = ItemImpl._get_cmd(on,data)
-        controller.run(
-            *ext_commands[on].get_cmds_before(data),
-            cmd,
-            *ext_commands[on].get_cmds_after(data)
-        )
-
-    @staticmethod
-    def _get_cmd(on:Command_Label,data:Command_Data)->Command:
-        match on:
-            case 'adopt': 
-                return PassToNewParent(ItemImpl.NULL, data.child, data.parent)
-            case 'pass_to_new_parent': 
-                return PassToNewParent(data.parent, data.child, data.new_parent)
-            case 'rename':
-                return Rename(data.item, data.new_name)
-            case _:
-                raise Item.NonexistentCommandType
 
     def _adopt(self, child:Item)->None:
         child._adopt_by(self)

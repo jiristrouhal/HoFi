@@ -715,6 +715,7 @@ class Test_Store_New_Parent_Name(unittest.TestCase):
         paper = Test_Store_New_Parent_Name.Paper()
         mg = ItemManager()
         parent_A = mg.new("Parent A")
+
         def store_name_of_new_parent(
             data:Pass_To_New_Parrent_Data
             )->Test_Store_New_Parent_Name.Store_Parent_Name:
