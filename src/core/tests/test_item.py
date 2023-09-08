@@ -721,7 +721,7 @@ class Test_Store_New_Parent_Name(unittest.TestCase):
             )->Test_Store_New_Parent_Name.Store_Parent_Name:
 
             return Test_Store_New_Parent_Name.Store_Parent_Name(data.parent,data.new_parent,paper)
-            
+
         parent_A.add_command('pass_to_new_parent','test',store_name_of_new_parent,'before')
         child = mg.new("Child")
         

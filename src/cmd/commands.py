@@ -1,8 +1,9 @@
 import abc
-from typing import List
+from typing import List, Any
 
 
 class Command(abc.ABC): # pragma: no cover
+    def __init__(self, data:Any)->None: pass
     @abc.abstractmethod
     def run(self)->None: pass
     @abc.abstractmethod
