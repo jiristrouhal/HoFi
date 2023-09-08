@@ -502,12 +502,7 @@ class Test_Connecting_External_Commands_To_The_Adopt_Command(unittest.TestCase):
         def record_adoption(data:Adoption_Data)->Command:
             return self.RecordAdoption(data.parent, data.child, self.display)
 
-        self.parent.add_command(
-            'adopt',
-            'test', 
-            record_adoption,
-            'before'
-        ) 
+        self.parent.on_adoption('test', record_adoption,'before') 
 
     def test_adding_simple_command_to_the_adopt_command(self):
         child = self.mg.new("Child")
@@ -577,12 +572,7 @@ class Test_Adding_External_Command_To_Renaming(unittest.TestCase):
         def catch_new_item_name_in_label(data:Renaming_Data)->Test_Adding_External_Command_To_Renaming.CatchNewItemNameInLabel:
             return self.CatchNewItemNameInLabel(self.label, data.item)
         
-        self.item.add_command(
-            'rename',
-            'test',
-            catch_new_item_name_in_label,
-            'after'
-        )
+        self.item.on_renaming('test',catch_new_item_name_in_label,'after')
 
     def test_single_rename_command_undo_and_redo(self):
         self.item.rename("The Child")
@@ -662,8 +652,8 @@ class Test_Catching_Old_And_New_Name_On_Paper(unittest.TestCase):
         def catch_new_name(data:Renaming_Data)->Test_Catching_Old_And_New_Name_On_Paper.Catch_New_Name:
             return self.Catch_New_Name(data.item, self.paper)
 
-        self.item.add_command('rename','test',catch_old_name,'before')
-        self.item.add_command('rename','test',catch_new_name,'after')
+        self.item.on_renaming('test',catch_old_name,'before')
+        self.item.on_renaming('test',catch_new_name,'after')
 
         self.item.rename("New name")
         self.assertEqual(self.paper.old_name, "Old name")
@@ -722,14 +712,14 @@ class Test_Store_New_Parent_Name(unittest.TestCase):
 
             return Test_Store_New_Parent_Name.Store_Parent_Name(data.parent,data.new_parent,paper)
 
-        parent_A.add_command('pass_to_new_parent','test',store_name_of_new_parent,'before')
+        parent_A.on_passing_to_new_parent('test',store_name_of_new_parent,'before')
         child = mg.new("Child")
         
         parent_A.adopt(child)
         self.assertEqual(paper.parent_name, "")
 
         parent_B = mg.new("Parent B")
-        parent_B.add_command('pass_to_new_parent','test',store_name_of_new_parent,'before')
+        parent_B.on_passing_to_new_parent('test',store_name_of_new_parent,'before')
 
         parent_A.pass_to_new_parent(child,parent_B)
         self.assertEqual(child.parent, parent_B)

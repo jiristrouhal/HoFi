@@ -28,6 +28,7 @@ class ItemManager:
     def redo(self):
         self._controller.redo()
 
+
 @dataclasses.dataclass
 class Command_Data(abc.ABC):
     ...
@@ -104,22 +105,17 @@ class PassToNewParent(Command):
         self.data.new_parent._adopt(self.data.child)
 
 
-@dataclasses.dataclass
-class Command_Description:
-    command_class:Type[Command]
-    constructor_func:Type[Command_Data]
-
 
 Command_Label = Literal['adopt','rename','pass_to_new_parent']
 
 
-Creators_Dict = OrderedDict[str, Callable[[Command_Data], Command]]
+Creators_Dict = OrderedDict[str, Callable]
 Timing = Literal['before','after']
 
 
 class External_Commands:
 
-    def __init__(self,controller:Controller,options:Dict[str,Command_Description])->None:
+    def __init__(self,controller:Controller,options:Dict[str,Type[Command]])->None:
         self.__options = options
         self._controller = controller
         self.pre_cmd_creators:Dict[str,Creators_Dict] = {}
@@ -127,16 +123,12 @@ class External_Commands:
         for option in self.__options:
             self.pre_cmd_creators[option] = OrderedDict()
             self.post_cmd_creators[option] = OrderedDict()
-        
-        
-    def __call__(self,on:str)->None:
-        return 
 
     def add(
         self,
         on:str,
         owner_id:str, 
-        command_creator:Callable[[Command_Data], Command],
+        command_creator:Callable[[Any], Command],
         timing:Timing
         )->None:
 
@@ -165,7 +157,7 @@ class External_Commands:
             raise KeyError(f"{on} not in the available command types ({self.__options.keys()}).")
         
     def _get_cmd(self,on:Command_Label,data:Command_Data)->Command:
-        command_class = self.__options[on].command_class
+        command_class = self.__options[on]
         return command_class(data)
 
 
@@ -188,11 +180,26 @@ class Item(abc.ABC): # pragma: no cover
     def adopt(self,child:Item)->None: pass
 
     @abc.abstractmethod
-    def add_command(
+    def on_adoption(
         self, 
-        on:Command_Label,
         owner_id:str, 
-        command_creator:Callable[[Command_Data], Command],
+        command_creator:Callable[[Any], Command],
+        timing:Timing
+    )->None: pass
+
+    @abc.abstractmethod
+    def on_passing_to_new_parent(
+        self, 
+        owner_id:str, 
+        command_creator:Callable[[Any], Command],
+        timing:Timing
+    )->None: pass
+
+    @abc.abstractmethod
+    def on_renaming(
+        self, 
+        owner_id:str, 
+        command_creator:Callable[[Any], Command],
         timing:Timing
     )->None: pass
 
@@ -255,7 +262,9 @@ class ItemImpl(Item):
 
         def adopt(self,child:Item)->None: 
             child.parent.pass_to_new_parent(child,self)
-        def add_command(self,*args)->None: pass # pragma: no cover
+        def on_adoption(self,*args)->None: pass # pragma: no cover
+        def on_passing_to_new_parent(self,*args)->None: pass  # pragma: no cover
+        def on_renaming(self, *args)->None: pass # pragma: no cover
         def get_copy(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
@@ -274,9 +283,9 @@ class ItemImpl(Item):
     
     def __init__(self,name:str,attributes:Dict[str,Attribute], controller:Controller)->None:
         self.commands = External_Commands(controller,{
-            'adopt':Command_Description(Adopt, Adoption_Data),
-            'rename':Command_Description(Rename, Renaming_Data),
-            'pass_to_new_parent':Command_Description(PassToNewParent, Pass_To_New_Parrent_Data)
+            'adopt':Adopt,
+            'rename':Rename,
+            'pass_to_new_parent':PassToNewParent
         })
         self.__attributes = attributes
         self._rename(name)
@@ -301,16 +310,32 @@ class ItemImpl(Item):
     def root(self)->Item: 
         return self if self.__parent is self.NULL else self.__parent.root
 
-    def add_command(
+    def on_passing_to_new_parent(
         self, 
-        on:Command_Label,
         owner_id:str, 
-        command_creator:Callable[[Command_Data], Command],
+        command_creator:Callable[[Pass_To_New_Parrent_Data], Command],
         timing:Timing
         )->None: 
 
-        self.commands.add(on,owner_id,command_creator,timing)
+        self.commands.add('pass_to_new_parent',owner_id,command_creator,timing)
 
+    def on_adoption(
+        self, 
+        owner_id:str, 
+        command_creator:Callable[[Adoption_Data], Command],
+        timing:Timing
+        )->None: 
+
+        self.commands.add('adopt',owner_id,command_creator,timing)
+
+    def on_renaming(
+        self, 
+        owner_id:str, 
+        command_creator:Callable[[Renaming_Data], Command],
+        timing:Timing
+        )->None: 
+
+        self.commands.add('rename',owner_id,command_creator,timing)
 
     def adopt(self,child:Item)->None:
         if child is self.NULL: 
