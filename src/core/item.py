@@ -8,7 +8,7 @@ from src.utils.naming import adjust_taken_name, strip_and_join_spaces
 import abc
 
 
-Command_label = Literal['adopt','rename']
+Command_label = Literal['adopt','rename','pass_to_new_parent']
 Timing = Literal['before','after']
 
 
@@ -43,6 +43,13 @@ class Renaming_Data(Command_Data):
 class Adoption_Data(Command_Data):
     parent:Item
     child:Item
+
+
+@dataclasses.dataclass
+class Pass_To_New_Parrent_Data(Command_Data):
+    parent:Item
+    child:Item
+    new_parent:Item
 
 
 @dataclasses.dataclass
@@ -123,7 +130,7 @@ class Item(abc.ABC): # pragma: no cover
     def is_parent_of(self, child:Item)->bool: pass
     
     @abc.abstractmethod
-    def is_predecessor_of(self, child:Item)->bool: pass
+    def is_ancestor_of(self, child:Item)->bool: pass
 
     @abc.abstractmethod
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None: pass
@@ -198,7 +205,7 @@ class ItemImpl(Item):
         def get_copy(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
-        def is_predecessor_of(self, child:Item)->bool: return child==self
+        def is_ancestor_of(self, child:Item)->bool: return child==self
         def pass_to_new_parent(self, child:Item, new_parent:Item)->None: 
             new_parent.adopt(child)
         def rename(self,name:str)->None: return
@@ -219,7 +226,8 @@ class ItemImpl(Item):
         self.__parent:Item = self.NULL
         self.__ext_cmds:Dict[Command_label, ItemImpl.__External_Commands] = {
             'adopt':self.__External_Commands(),
-            'rename':self.__External_Commands()
+            'rename':self.__External_Commands(),
+            'pass_to_new_parent':self.__External_Commands(),
         }
 
     @property
@@ -243,13 +251,14 @@ class ItemImpl(Item):
     def adopt(self,child:Item)->None:
         if child is self.NULL: 
             raise Item.AdoptingNULL
-        if child.is_predecessor_of(self): 
+        if child.is_ancestor_of(self): 
             raise Item.HierarchyCollision
         
+        data = Adoption_Data(self,child)
         self.__cmdcontroller.run(
-            *self.__ext_cmds['adopt'].get_cmds_before(Adoption_Data(self,child)),
+            *self.__ext_cmds['adopt'].get_cmds_before(data),
             PassToNewParent(self.NULL, child, self),
-            *self.__ext_cmds['adopt'].get_cmds_after(Adoption_Data(self,child)),
+            *self.__ext_cmds['adopt'].get_cmds_after(data),
         )
 
     def add_command(
@@ -273,23 +282,28 @@ class ItemImpl(Item):
     def is_parent_of(self, child:Item)->bool: 
         return child in self.__children
     
-    def is_predecessor_of(self, item:Item)->bool:
+    def is_ancestor_of(self, item:Item)->bool:
         while True:
             item = item.parent
             if item==self: return True
             elif item==self.NULL: return False
 
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
-        if child.is_predecessor_of(new_parent): raise Item.HierarchyCollision
+        if child.is_ancestor_of(new_parent): raise Item.HierarchyCollision
+
+        data = Pass_To_New_Parrent_Data(self,child,new_parent)
         self.__cmdcontroller.run(
-            PassToNewParent(self,child,new_parent)
+            *self.__ext_cmds['pass_to_new_parent'].get_cmds_before(data),
+            PassToNewParent(self,child,new_parent),
+            *self.__ext_cmds['pass_to_new_parent'].get_cmds_after(data)
         )
 
     def rename(self,name:str)->None:
+        data = Renaming_Data(self)
         self.__cmdcontroller.run(
-            *self.__ext_cmds['rename'].get_cmds_before(Renaming_Data(self)),
+            *self.__ext_cmds['rename'].get_cmds_before(data),
             Rename(self,name),
-            *self.__ext_cmds['rename'].get_cmds_after(Renaming_Data(self))
+            *self.__ext_cmds['rename'].get_cmds_after(data)
         )
 
     def _adopt(self, child:Item)->None:

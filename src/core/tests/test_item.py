@@ -60,7 +60,7 @@ class Test_NULL_Item(unittest.TestCase):
         self.assertEqual(NullItem.root, NullItem)
 
     def test_parent_child_relationships(self):
-        self.assertTrue(NullItem.is_predecessor_of(NullItem))
+        self.assertTrue(NullItem.is_ancestor_of(NullItem))
         self.assertTrue(NullItem.is_parent_of(NullItem))
 
         self.assertTrue(NullItem.has_children())
@@ -229,10 +229,10 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         grandparent = self.iman.new("Grandparent")
         grandparent.adopt(self.parent)
         stranger = self.iman.new("Stranger")
-        self.assertTrue(grandparent.is_predecessor_of(self.child))
-        self.assertTrue(self.parent.is_predecessor_of(self.child))
-        self.assertFalse(self.child.is_predecessor_of(self.parent))
-        self.assertFalse(stranger.is_predecessor_of(self.child))
+        self.assertTrue(grandparent.is_ancestor_of(self.child))
+        self.assertTrue(self.parent.is_ancestor_of(self.child))
+        self.assertFalse(self.child.is_ancestor_of(self.parent))
+        self.assertFalse(stranger.is_ancestor_of(self.child))
     
     def test_adopting_its_own_predecesor_raises_error(self):
         self.assertRaises(Item.HierarchyCollision, self.child.adopt, self.parent)
@@ -686,6 +686,74 @@ class Test_Catching_Old_And_New_Name_On_Paper(unittest.TestCase):
         self.assertEqual(self.paper.new_name, "Newer name")
 
 
+from src.core.item import Pass_To_New_Parrent_Data
+class Test_Store_New_Parent_Name(unittest.TestCase):
+
+    @dataclasses.dataclass
+    class Paper:
+        parent_name:str = ""
+
+    @dataclasses.dataclass
+    class Store_Parent_Name(Command):
+        parent:Item
+        new_parent:Item
+        paper:Test_Store_New_Parent_Name.Paper
+        old_name:str = dataclasses.field(init=False)
+        new_name:str = dataclasses.field(init=False)
+
+        def run(self)->None:
+            self.old_name = self.parent.name
+            self.new_name = self.new_parent.name
+            self.paper.parent_name = self.new_name
+        def undo(self)->None:
+            self.paper.parent_name = self.old_name
+        def redo(self)->None:
+            self.paper.parent_name = self.new_name
+
+
+    def test_undo_and_redo_passing_to_new_parent(self):
+        paper = Test_Store_New_Parent_Name.Paper()
+        mg = ItemManager()
+        parent_A = mg.new("Parent A")
+        def store_name_of_new_parent(
+            data:Pass_To_New_Parrent_Data
+            )->Test_Store_New_Parent_Name.Store_Parent_Name:
+
+            return Test_Store_New_Parent_Name.Store_Parent_Name(data.parent,data.new_parent,paper)
+            
+        parent_A.add_command('pass_to_new_parent','test',store_name_of_new_parent,'before')
+        child = mg.new("Child")
+        
+        parent_A.adopt(child)
+        self.assertEqual(paper.parent_name, "")
+
+        parent_B = mg.new("Parent B")
+        parent_B.add_command('pass_to_new_parent','test',store_name_of_new_parent,'before')
+
+        parent_A.pass_to_new_parent(child,parent_B)
+        self.assertEqual(child.parent, parent_B)
+        self.assertEqual(paper.parent_name, "Parent B")
+
+        parent_C = mg.new("Parent C")
+        parent_B.pass_to_new_parent(child,parent_C)
+        self.assertEqual(child.parent, parent_C)
+        self.assertEqual(paper.parent_name, "Parent C")
+
+        mg.undo()
+        self.assertEqual(child.parent, parent_B)
+        self.assertEqual(paper.parent_name, "Parent B")
+
+        mg.undo()
+        self.assertEqual(child.parent, parent_A)
+        self.assertEqual(paper.parent_name, "Parent A")
+
+        mg.redo()
+        self.assertEqual(child.parent, parent_B)
+        self.assertEqual(paper.parent_name, "Parent B")
+        
+        mg.undo()
+        self.assertEqual(child.parent, parent_A)
+        self.assertEqual(paper.parent_name, "Parent A")
 
 
 if __name__=="__main__": unittest.main()
