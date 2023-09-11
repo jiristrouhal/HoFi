@@ -1,15 +1,13 @@
 from __future__ import annotations
-from collections import OrderedDict
-from typing import Dict, Protocol, Any, Set, Literal, Type, Tuple, Callable, OrderedDict, List
+from typing import Dict, Protocol, Any, Set, Literal, Callable
 from typing import Protocol
 import dataclasses
-from src.cmd.commands import Command, Controller
+from src.cmd.commands import Command, Controller, External_Commands, Timing, Command_Data
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
 import abc
 
 
-        
-
+    
 class Attribute(Protocol): # pragma: no cover
     @property
     def value(self)->Any: ...
@@ -27,11 +25,6 @@ class ItemManager:
     
     def redo(self):
         self._controller.redo()
-
-
-@dataclasses.dataclass
-class Command_Data(abc.ABC):
-    ...
 
 
 @dataclasses.dataclass
@@ -85,6 +78,7 @@ class Adopt(Command):
     def redo(self):
         self.data.parent._adopt(self.data.child)
 
+
 @dataclasses.dataclass
 class PassToNewParent(Command):
     data:Pass_To_New_Parrent_Data
@@ -104,61 +98,6 @@ class PassToNewParent(Command):
         self.data.child._leave_parent(self.data.parent)
         self.data.new_parent._adopt(self.data.child)
 
-
-
-Command_Label = Literal['adopt','rename','pass_to_new_parent']
-
-
-Creators_Dict = OrderedDict[str, Callable]
-Timing = Literal['before','after']
-
-
-class External_Commands:
-
-    def __init__(self,controller:Controller,options:Dict[str,Type[Command]])->None:
-        self.__options = options
-        self._controller = controller
-        self.pre_cmd_creators:Dict[str,Creators_Dict] = {}
-        self.post_cmd_creators:Dict[str,Creators_Dict] = {}
-        for option in self.__options:
-            self.pre_cmd_creators[option] = OrderedDict()
-            self.post_cmd_creators[option] = OrderedDict()
-
-    def add(
-        self,
-        on:str,
-        owner_id:str, 
-        command_creator:Callable[[Any], Command],
-        timing:Timing
-        )->None:
-
-        self.__check_type_exists(on)
-        cmd_dict = self.pre_cmd_creators if timing=="before" else self.post_cmd_creators
-        cmd_dict[on][owner_id] = command_creator
-
-    def run(self, on:Command_Label, data:Command_Data)->None:
-        cmd = self._get_cmd(on,data)
-        self._controller.run(
-            *self.__get_cmds_before(on,data),
-            cmd,
-            *self.__get_cmds_after(on,data)
-        )
-
-    def __get_cmds_before(self, on:str, data:Command_Data)->Tuple[Command,...]:
-        self.__check_type_exists(on)
-        return tuple([cmd(data) for cmd in self.pre_cmd_creators[on].values()])
-    
-    def __get_cmds_after(self, on:str, data:Command_Data)->Tuple[Command,...]:
-        self.__check_type_exists(on)
-        return tuple([cmd(data) for cmd in self.post_cmd_creators[on].values()])
-    
-    def __check_type_exists(self,on:str)->None:
-        if on not in self.__options: 
-            raise KeyError(f"{on} not in the available command types ({self.__options.keys()}).")
-        
-    def _get_cmd(self,on:Command_Label,data:Command_Data)->Command:
-        command_class = self.__options[on]
-        return command_class(data)
 
 
 class Item(abc.ABC): # pragma: no cover
@@ -242,6 +181,7 @@ class Item(abc.ABC): # pragma: no cover
     class NonexistentCommandType(Exception): pass
 
 
+Command_Label = Literal['adopt','rename','pass_to_new_parent']
 class ItemImpl(Item):
 
     class __ItemNull(Item):
@@ -352,7 +292,7 @@ class ItemImpl(Item):
         self.commands.run('pass_to_new_parent',data)
 
     def rename(self,name:str)->None:
-        self.commands.run('rename',Renaming_Data(self,name))
+        self.commands.run('rename', Renaming_Data(self,name))
 
     def get_copy(self)->Item:
         item_copy = ItemImpl(self.name, self.attributes, self.commands._controller)
