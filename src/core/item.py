@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Protocol, Any, Set, Literal, Callable
+from typing import Dict, Protocol, Any, Set, Callable
 from typing import Protocol
 import dataclasses
 from src.cmd.commands import Command, Controller, External_Commands, Timing, Command_Data
@@ -102,7 +102,13 @@ class PassToNewParent(Command):
 
 class Item(abc.ABC): # pragma: no cover
     
-    def __init__(self,name:str,attributes:Dict[str,Attribute],controller:Controller)->None:
+    def __init__(
+        self,
+        name:str,
+        attributes:Dict[str,Attribute],
+        controller:Controller
+        )->None:
+        
         pass
     @abc.abstractproperty
     def attributes(self)->Dict[str,Attribute]: pass
@@ -164,7 +170,10 @@ class Item(abc.ABC): # pragma: no cover
     def _adopt(self, child:Item)->None: pass
 
     @abc.abstractmethod
-    def _adopt_by(self,item:Item)->None: pass
+    def _accept_parent(self,item:Item)->None: pass
+
+    @abc.abstractmethod
+    def _can_be_parent_of(self,item:Item)->bool: pass
 
     @abc.abstractmethod
     def _leave_child(self,child:Item)->None: pass
@@ -175,13 +184,13 @@ class Item(abc.ABC): # pragma: no cover
     @abc.abstractmethod
     def _rename(self,name:str)->None: pass
         
+    class AdoptionOfAncestor(Exception): pass
     class AdoptingNULL(Exception): pass
     class BlankName(Exception): pass
-    class HierarchyCollision(Exception): pass
+    class ItemAdoptsItself(Exception): pass
     class NonexistentCommandType(Exception): pass
 
 
-Command_Label = Literal['adopt','rename','pass_to_new_parent']
 class ItemImpl(Item):
 
     class __ItemNull(Item):
@@ -213,7 +222,8 @@ class ItemImpl(Item):
             new_parent.adopt(child)
         def rename(self,name:str)->None: return
         def _adopt(self, child:Item)->None: return
-        def _adopt_by(self,item:Item)->None: raise Item.AdoptingNULL
+        def _accept_parent(self,item:Item)->None: raise Item.AdoptingNULL
+        def _can_be_parent_of(self,item:Item)->bool: return True   # pragma: no cover
         def _leave_child(self,child:Item)->None: return
         def _leave_parent(self,parent:Item)->None: return
         def _rename(self,name:str)->None: return
@@ -241,10 +251,12 @@ class ItemImpl(Item):
         return {key:attr.value for key,attr in self.__attributes.items()}
     
     @property
-    def name(self)->str: return self.__name
+    def name(self)->str: 
+        return self.__name
 
     @property
-    def parent(self)->Item: return self.__parent
+    def parent(self)->Item: 
+        return self.__parent
 
     @property
     def root(self)->Item: 
@@ -277,19 +289,15 @@ class ItemImpl(Item):
 
         self.commands.add('rename',owner_id,command_creator,timing)
 
-    def adopt(self,child:Item)->None:
-        if child is self.NULL: 
-            raise Item.AdoptingNULL
-        if child.is_ancestor_of(self): 
-            raise Item.HierarchyCollision
-        data = Adoption_Data(self,child)
-        self.commands.run('adopt', data)
+    def adopt(self,item:Item)->None:
+        if self._can_be_parent_of(item):
+            data = Adoption_Data(self,item)
+            self.commands.run('adopt', data)
 
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
-        if child.is_ancestor_of(new_parent): 
-            raise Item.HierarchyCollision
-        data = Pass_To_New_Parrent_Data(self,child,new_parent)
-        self.commands.run('pass_to_new_parent',data)
+        if new_parent._can_be_parent_of(child):
+            data = Pass_To_New_Parrent_Data(self,child,new_parent)
+            self.commands.run('pass_to_new_parent',data)
 
     def rename(self,name:str)->None:
         self.commands.run('rename', Renaming_Data(self,name))
@@ -311,14 +319,19 @@ class ItemImpl(Item):
             if item==self: return True
             elif item==self.NULL: return False
 
+    def _accept_parent(self,item:Item)->None:
+        if self.parent is self.NULL: self.__parent = item
+
     def _adopt(self, child:Item)->None:
-        child._adopt_by(self)
+        child._accept_parent(self)
         self.__make_child_to_rename_if_its_name_already_taken(child)
         if self is child.parent:
             self.__children.add(child)
 
-    def _adopt_by(self,item:Item)->None:
-        if self.parent is self.NULL: self.__parent = item
+    def _can_be_parent_of(self,item:Item)->bool:
+        if item.is_ancestor_of(self): raise Item.AdoptionOfAncestor
+        elif item==self: raise Item.ItemAdoptsItself
+        else: return True
 
     def _leave_child(self,child:Item)->None:
         if child in self.__children:

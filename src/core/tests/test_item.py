@@ -91,7 +91,7 @@ class Test_NULL_Item(unittest.TestCase):
         mg = ItemManager()
         parent = mg.new("Parent")
         self.assertRaises(Item.AdoptingNULL, parent.adopt, NullItem)
-        self.assertRaises(Item.AdoptingNULL, NullItem._adopt_by, parent)
+        self.assertRaises(Item.AdoptingNULL, NullItem._accept_parent, parent)
         
     def test_adopting_child_by_null_is_equivalent_to_leaving_parent(self):
         mg = ItemManager()
@@ -204,6 +204,9 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.assertEqual(self.child.parent, NullItem)
         self.assertFalse(self.parent.is_parent_of(self.child))
 
+    def test_not_a_null_item_cannot_be_its_own_parent(self)->None:
+        self.assertRaises(Item.ItemAdoptsItself, self.parent.pass_to_new_parent, self.child, self.child)
+
     def test_leaving_parent_not_belonging_to_child_has_no_effect(self)->None:
         not_a_parent = self.iman.new(name="Not a parent")
         self.child._leave_parent(not_a_parent)
@@ -235,11 +238,11 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.assertFalse(stranger.is_ancestor_of(self.child))
     
     def test_adopting_its_own_predecesor_raises_error(self):
-        self.assertRaises(Item.HierarchyCollision, self.child.adopt, self.parent)
+        self.assertRaises(Item.AdoptionOfAncestor, self.child.adopt, self.parent)
 
         grandchild = self.iman.new("Grandchild")
         self.child.adopt(grandchild)
-        self.assertRaises(Item.HierarchyCollision, grandchild.adopt, self.parent)
+        self.assertRaises(Item.AdoptionOfAncestor, grandchild.adopt, self.parent)
 
     def test_leaving_null_has_no_effect(self):
         self.child._leave_parent(self.parent)
@@ -251,7 +254,7 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
         grandchild = self.iman.new("Grandchild")
         self.child.adopt(grandchild)
         self.assertRaises(
-            Item.HierarchyCollision, 
+            Item.AdoptionOfAncestor, 
             self.parent.pass_to_new_parent, 
             self.child,grandchild
         )
