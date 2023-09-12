@@ -1,7 +1,6 @@
 from __future__ import annotations
 import abc
-from typing import List, Any, Callable, OrderedDict, Literal, Dict, Type, Tuple
-import dataclasses
+from typing import List, Any, Callable, Literal, Dict, Type
 
 
 class Command(abc.ABC): # pragma: no cover
@@ -44,85 +43,26 @@ class Controller:
         self.__undo_stack.append(batch)
 
 
-@dataclasses.dataclass
-class Command_Data(abc.ABC):
-    def __init__(self,*args,**kwargs)->None: pass
-
-
-Creators_Dict = OrderedDict[str, Callable]
-Timing = Literal['before','after']
-
-
-class External_Commands:
-
-    def __init__(self,controller:Controller,options:Dict[str,Type[Command]])->None:
-        self.__options = options
-        self._controller = controller
-        self.pre_cmd_creators:Dict[str,Creators_Dict] = {}
-        self.post_cmd_creators:Dict[str,Creators_Dict] = {}
-        for option in self.__options:
-            self.pre_cmd_creators[option] = OrderedDict()
-            self.post_cmd_creators[option] = OrderedDict()
-
-    def add(
-        self,
-        on:str,
-        owner_id:str, 
-        command_creator:Callable[[Any], Command],
-        timing:Timing
-        )->None:
-
-        self.__check_type_exists(on)
-        cmd_dict = self.pre_cmd_creators if timing=="before" else self.post_cmd_creators
-        cmd_dict[on][owner_id] = command_creator
-
-    def run(self, on:str, data:Command_Data)->None:
-        cmd = self._get_cmd(on,data)
-        self._controller.run(
-            *self.__get_cmds_before(on,data),
-            cmd,
-            *self.__get_cmds_after(on,data)
-        )
-
-    def __get_cmds_before(self, on:str, data:Command_Data)->Tuple[Command,...]:
-        self.__check_type_exists(on)
-        return tuple([cmd(data) for cmd in self.pre_cmd_creators[on].values()])
-    
-    def __get_cmds_after(self, on:str, data:Command_Data)->Tuple[Command,...]:
-        self.__check_type_exists(on)
-        return tuple([cmd(data) for cmd in self.post_cmd_creators[on].values()])
-    
-    def __check_type_exists(self,on:str)->None:
-        if on not in self.__options: 
-            raise KeyError(f"{on} not in the available command types ({self.__options.keys()}).")
-        
-    def _get_cmd(self,on:str,data:Command_Data)->Command:
-        command_class = self.__options[on]
-        return command_class(data)
-
-
+Timing = Literal['pre','post']
 class Composed_Command:
 
     @abc.abstractstaticmethod
     def cmd_type(*args)->Type[Command]: return Command
 
-    def __init__(self,controller:Controller)->None:
-        self.controller = controller
+    def __init__(self)->None:
         self.pre:Dict[str,Callable[[Any],Command]] = dict()
         self.post:Dict[str,Callable[[Any],Command]] = dict()
 
     @abc.abstractmethod
-    def execute(self,data:Any)->None:
-        self.controller.run(
+    def execute(self,controller:Controller,data:Any)->None:
+        controller.run(
             *[p(data) for p in self.pre.values()],
             self.cmd_type()(data),
             *[p(data) for p in self.post.values()]
         )
 
     @abc.abstractmethod
-    def add_pre(self, owner_id:str, creator_func:Callable[[Any],Command])->None:
-        self.pre[owner_id] = creator_func
-
-    @abc.abstractmethod
-    def add_post(self, owner_id:str, creator_func:Callable[[Any],Command])->None:
-        self.post[owner_id] = creator_func
+    def add(self, owner_id:str, creator_func:Callable[[Any],Command], timing:Timing)->None:
+        if timing=='pre': self.pre[owner_id] = creator_func
+        elif timing=='post': self.post[owner_id] = creator_func
+        else: raise KeyError(f"Invalid timing key: {timing}.")

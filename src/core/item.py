@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Dict, Protocol, Any, Set, Callable
 from typing import Protocol
 import dataclasses
-from src.cmd.commands import Command, Controller, External_Commands, Timing, Command_Data
+from src.cmd.commands import Command, Controller, Composed_Command, Timing
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
 import abc
 
@@ -28,19 +28,19 @@ class ItemManager:
 
 
 @dataclasses.dataclass
-class Renaming_Data(Command_Data):
+class Renaming_Data:
     item:Item
     new_name:str
 
 
 @dataclasses.dataclass
-class Adoption_Data(Command_Data):
+class Adoption_Data:
     parent:Item
     child:Item
 
 
 @dataclasses.dataclass
-class Pass_To_New_Parrent_Data(Command_Data):
+class Pass_To_New_Parrent_Data:
     parent:Item
     child:Item
     new_parent:Item
@@ -63,6 +63,17 @@ class Rename(Command):
         self.data.item._rename(self.data.new_name)
 
 
+class Rename_Composed(Composed_Command):
+    @staticmethod
+    def cmd_type(): return Rename
+
+    def execute(self, controller:Controller, data:Renaming_Data) -> None:
+        super().execute(controller, data)
+
+    def add(self, owner_id:str, func:Callable[[Renaming_Data],Command],timing:Timing)->None:
+        super().add(owner_id,creator_func=func,timing=timing)
+
+
 @dataclasses.dataclass
 class Adopt(Command):
     data:Adoption_Data
@@ -77,6 +88,17 @@ class Adopt(Command):
 
     def redo(self):
         self.data.parent._adopt(self.data.child)
+
+
+class Adopt_Composed(Composed_Command):
+    @staticmethod
+    def cmd_type(): return Adopt
+
+    def execute(self, controller:Controller, data:Adoption_Data) -> None:
+        super().execute(controller, data)
+
+    def add(self, owner_id:str, func:Callable[[Adoption_Data],Command],timing:Timing)->None:
+        super().add(owner_id,creator_func=func,timing=timing)
 
 
 @dataclasses.dataclass
@@ -99,17 +121,29 @@ class PassToNewParent(Command):
         self.data.new_parent._adopt(self.data.child)
 
 
+class PassToNewParent_Composed(Composed_Command):
+    @staticmethod
+    def cmd_type(): return PassToNewParent
 
+    def execute(self, controller:Controller, data:Pass_To_New_Parrent_Data) -> None:
+        super().execute(controller, data)
+
+    def add(
+        self, 
+        owner_id:str, 
+        func:Callable[[Pass_To_New_Parrent_Data],Command],
+        timing:Timing)->None:
+
+        super().add(owner_id,creator_func=func,timing=timing)
+
+
+from typing import Literal
+Command_Type = Literal['adopt','pass_to_new_parent','rename']
 class Item(abc.ABC): # pragma: no cover
     
-    def __init__(
-        self,
-        name:str,
-        attributes:Dict[str,Attribute],
-        controller:Controller
-        )->None:
-        
+    def __init__(self,name:str,attributes:Dict[str,Attribute],controller:Controller)->None:
         pass
+
     @abc.abstractproperty
     def attributes(self)->Dict[str,Attribute]: pass
     @abc.abstractproperty
@@ -125,28 +159,11 @@ class Item(abc.ABC): # pragma: no cover
     def adopt(self,child:Item)->None: pass
 
     @abc.abstractmethod
-    def on_adoption(
-        self, 
-        owner_id:str, 
-        command_creator:Callable[[Any], Command],
-        timing:Timing
-    )->None: pass
-
+    def on_adoption(self,owner:str,func:Callable[[Adoption_Data],Command],timing:Timing)->None: pass
     @abc.abstractmethod
-    def on_passing_to_new_parent(
-        self, 
-        owner_id:str, 
-        command_creator:Callable[[Any], Command],
-        timing:Timing
-    )->None: pass
-
+    def on_passing_to_new_parent(self,owner:str,func:Callable[[Pass_To_New_Parrent_Data],Command],timing:Timing)->None: pass
     @abc.abstractmethod
-    def on_renaming(
-        self, 
-        owner_id:str, 
-        command_creator:Callable[[Any], Command],
-        timing:Timing
-    )->None: pass
+    def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None: pass
 
     @abc.abstractmethod
     def get_copy(self)->Item: pass
@@ -212,8 +229,8 @@ class ItemImpl(Item):
         def adopt(self,child:Item)->None: 
             child.parent.pass_to_new_parent(child,self)
         def on_adoption(self,*args)->None: pass # pragma: no cover
-        def on_passing_to_new_parent(self,*args)->None: pass  # pragma: no cover
-        def on_renaming(self, *args)->None: pass # pragma: no cover
+        def on_passing_to_new_parent(self,*args)->None: pass # pragma: no cover
+        def on_renaming(self,*args)->None: pass # pragma: no cover
         def get_copy(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
@@ -232,11 +249,12 @@ class ItemImpl(Item):
     NULL = __ItemNull()
     
     def __init__(self,name:str,attributes:Dict[str,Attribute], controller:Controller)->None:
-        self.commands = External_Commands(controller,{
-            'adopt':Adopt,
-            'rename':Rename,
-            'pass_to_new_parent':PassToNewParent
-        })
+        self.command:Dict[Command_Type,Composed_Command] = {
+            'adopt':Adopt_Composed(),
+            'rename':Rename_Composed(),
+            'pass_to_new_parent':PassToNewParent_Composed()
+        }
+        self._controller = controller
         self.__attributes = attributes
         self._rename(name)
         self.__children:Set[Item] = set()
@@ -262,48 +280,31 @@ class ItemImpl(Item):
     def root(self)->Item: 
         return self if self.__parent is self.NULL else self.__parent.root
 
-    def on_passing_to_new_parent(
-        self, 
-        owner_id:str, 
-        command_creator:Callable[[Pass_To_New_Parrent_Data], Command],
-        timing:Timing
-        )->None: 
+    def on_adoption(self,owner:str,func:Callable[[Adoption_Data],Command],timing:Timing)->None:
+        self.command['adopt'].add(owner, func, timing)
 
-        self.commands.add('pass_to_new_parent',owner_id,command_creator,timing)
+    def on_passing_to_new_parent(self,owner:str,func:Callable[[Pass_To_New_Parrent_Data],Command],timing:Timing)->None:
+        self.command['pass_to_new_parent'].add(owner, func, timing)
 
-    def on_adoption(
-        self, 
-        owner_id:str, 
-        command_creator:Callable[[Adoption_Data], Command],
-        timing:Timing
-        )->None: 
-
-        self.commands.add('adopt',owner_id,command_creator,timing)
-
-    def on_renaming(
-        self, 
-        owner_id:str, 
-        command_creator:Callable[[Renaming_Data], Command],
-        timing:Timing
-        )->None: 
-
-        self.commands.add('rename',owner_id,command_creator,timing)
+    def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None:
+        self.command['rename'].add(owner, func, timing)
 
     def adopt(self,item:Item)->None:
         if self._can_be_parent_of(item):
-            data = Adoption_Data(self,item)
-            self.commands.run('adopt', data)
+            self.command['adopt'].execute(self._controller,Adoption_Data(self,item))
 
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
         if new_parent._can_be_parent_of(child):
-            data = Pass_To_New_Parrent_Data(self,child,new_parent)
-            self.commands.run('pass_to_new_parent',data)
+            self.command['pass_to_new_parent'].execute(
+                self._controller,
+                Pass_To_New_Parrent_Data(self,child,new_parent)
+            )
 
     def rename(self,name:str)->None:
-        self.commands.run('rename', Renaming_Data(self,name))
+        self.command['rename'].execute(self._controller,Renaming_Data(self,name))
 
     def get_copy(self)->Item:
-        item_copy = ItemImpl(self.name, self.attributes, self.commands._controller)
+        item_copy = ItemImpl(self.name, self.attributes, self._controller)
         self.parent.adopt(item_copy)
         return item_copy
 

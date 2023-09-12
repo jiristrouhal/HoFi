@@ -15,10 +15,8 @@ class Integer_Owner:
     i:int
 
 
-from src.cmd.commands import Command_Data
-
 @dataclasses.dataclass
-class IncrementIntData(Command_Data):
+class IncrementIntData:
     obj:Integer_Owner
     step:int=1
 
@@ -119,7 +117,7 @@ class Test_Running_Multiple_Commands(unittest.TestCase):
         self.assertEqual(obj.i, 0)
 
 
-from src.cmd.commands import Composed_Command
+from src.cmd.commands import Composed_Command, Timing
 @dataclasses.dataclass
 class OtherInt:
     value:int = 0
@@ -131,14 +129,12 @@ class Composed_Increment(Composed_Command):
     @staticmethod
     def cmd_type(): return IncrementIntAttribute
 
-    def execute(self, data:IncrementIntData) -> None:
-        super().execute(data)
+    def execute(self, controller:Controller, data:IncrementIntData) -> None:
+        super().execute(controller, data)
 
-    def add_pre(self,owner_id:str,func:Callable[[IncrementIntData],Command])->None:
-        super().add_pre(owner_id,func)
+    def add(self,owner_id:str,func:Callable[[IncrementIntData],Command],timing:Timing)->None:
+        super().add(owner_id,func,timing)
 
-    def add_post(self,owner_id:str,func:Callable[[IncrementIntData],Command])->None:
-        super().add_post(owner_id,func)
 
 
 @dataclasses.dataclass
@@ -165,12 +161,12 @@ class Test_Composed_Command(unittest.TestCase):
         other_int = OtherInt()
         controller = Controller()
 
-        composed_command = Composed_Increment(controller)
+        composed_command = Composed_Increment()
         def get_cmd(data:IncrementIntData)->Increment_Other_Int:
             return Increment_Other_Int(other_int, data.obj)
         
-        composed_command.add_post('test', get_cmd)
-        composed_command.execute(IncrementIntData(obj,step=5))
+        composed_command.add('test', get_cmd, 'post')
+        composed_command.execute(controller,IncrementIntData(obj,step=5))
         self.assertEqual(obj.i, 5)
         self.assertEqual(other_int.value, 5)
 
