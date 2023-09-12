@@ -122,7 +122,7 @@ class Attribute(abc.ABC):
             attribute.on_set(this_id, set_dependent_attr, 'post')
             self._dependencies.add(attribute)
 
-    def remove_dependency(self)->None:
+    def remove_dependencies(self)->None:
         for attribute_affecting_this_one in self._dependencies: 
             attribute_affecting_this_one.command['set'].post.pop(self._id)
         self._dependencies.clear()

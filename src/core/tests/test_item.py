@@ -867,7 +867,7 @@ class Test_Dependent_Attributes(unittest.TestCase):
         item.set("a",2)
         self.assertEqual(item("b"),4)
 
-        item.attribute("b").remove_dependency()
+        item.attribute("b").remove_dependencies()
         item.set("a",1)
         self.assertEqual(item("b"),4)
 
