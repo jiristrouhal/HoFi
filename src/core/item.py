@@ -377,7 +377,7 @@ class ItemImpl(Item):
             elif item==self.NULL: return False
 
     def value(self,attrib_label:str)->Any:
-        return self.__attributes[attrib_label].value
+        return self.attribute(attrib_label).value
 
     def _accept_parent(self,item:Item)->None:
         if self.parent is self.NULL: self.__parent = item

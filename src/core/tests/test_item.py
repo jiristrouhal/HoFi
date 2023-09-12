@@ -770,6 +770,15 @@ class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
         self.assertEqual(item.value("Volume"),10)
 
 
+class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
+
+    def test_accessing_nonexistent_attribute(self):
+        mg = ItemManager()
+        item = mg.new("Water",{"Volume":Attribute('integer')}) 
+        self.assertRaises(Item.NonexistentAttribute, item.set_attr, "Nonexistent attribute",5)
+        self.assertRaises(Item.NonexistentAttribute, item.value, "Nonexistent attribute")
+
+
 if __name__=="__main__": unittest.main()
 
 
