@@ -780,6 +780,7 @@ class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
         mg = ItemManager()
         item = mg.new("Water",{"Volume":'integer'}) 
         self.assertRaises(Item.NonexistentAttribute, item.set_attr, "Nonexistent attribute",5)
+        self.assertRaises(Item.NonexistentAttribute, item, "Nonexistent attribute")
 
 
 class Test_Dependent_Attributes(unittest.TestCase):
