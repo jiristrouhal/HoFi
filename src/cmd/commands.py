@@ -44,10 +44,10 @@ class Controller:
 
 
 Timing = Literal['pre','post']
-class Composed_Command:
+class Composed_Command(abc.ABC):
 
     @abc.abstractstaticmethod
-    def cmd_type(*args)->Type[Command]: return Command
+    def cmd_type(*args)->Type[Command]: return Command # pragma: no cover
 
     def __init__(self)->None:
         self.pre:Dict[str,Callable[[Any],Command]] = dict()
