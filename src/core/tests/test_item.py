@@ -766,12 +766,12 @@ class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
         item.attribute("Volume").on_set('test',write_to_logbook,'post')
         item.set_attr("Volume",5)
         item.set_attr("Volume",10)
-        self.assertEqual(item.attribute("Volume").value,10)
+        self.assertEqual(item("Volume"),10)
 
         mg.undo()
-        self.assertEqual(item.attribute("Volume").value,5)
+        self.assertEqual(item("Volume"),5)
         mg.redo()
-        self.assertEqual(item.attribute("Volume").value,10)
+        self.assertEqual(item("Volume"),10)
 
 
 class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
@@ -784,18 +784,67 @@ class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
 
 class Test_Dependent_Attributes(unittest.TestCase):
 
-    def __test_dependent_attribute(self):
+    def test_setting_dependency_of_one_attribute_on_another(self):
         mg = ItemManager()
-        item = mg.new(
-            "Water", {
-                "Volume":'integer', 
-                "Mass":'integer'
+        DENSITY = 1000
+        item = mg.new("Water", {"Volume":'integer', "Mass":'integer'})
+        def dependency(volume_attr:Attribute)->int:
+            return volume_attr.value*DENSITY
+        
+        item.attribute("Mass").add_dependency(dependency, item.attribute("Volume"))
+
+        item.attribute("Volume").set(2)
+        self.assertEqual(item("Mass"), 2000)
+
+        item.attribute("Volume").set(5)
+        self.assertEqual(item("Mass"), 5000)
+
+        mg.undo()
+        self.assertEqual(item("Mass"), 2000)
+        mg.redo()
+        self.assertEqual(item("Mass"), 5000)
+        mg.undo()
+        self.assertEqual(item("Mass"), 2000)
+
+    def test_chaining_dependency_of_three_attributes(self):
+        mg = ItemManager()
+        box = mg.new(
+            "Box", {
+                "side":'integer',
+                "volume":'integer',
+                'max number of items':'integer'
             }
         )
-        item.set_attr("Volume",2)
-
-        self.assertEqual(item.attribute("Mass").value,2)
+        def calc_volume(side:Attribute)->int:
+            return side.value**3
+        def calc_max_items(volume:Attribute)->int:
+            return int(volume.value/0.1)
         
+        box.attribute("volume").add_dependency(
+            calc_volume,box.attribute("side")
+        )
+        box.attribute("max number of items").add_dependency(
+            calc_max_items,box.attribute("volume")
+        )
+
+        box.attribute("side").set(1)
+        self.assertEqual(box("volume"),1)
+        self.assertEqual(box("max number of items"),10)
+
+        box.attribute("side").set(2)
+        self.assertEqual(box("volume"),8)
+        self.assertEqual(box("max number of items"),80)
+
+        mg.undo()
+        self.assertEqual(box("volume"),1)
+        self.assertEqual(box("max number of items"),10)
+        mg.redo()
+        self.assertEqual(box("volume"),8)
+        self.assertEqual(box("max number of items"),80)
+        mg.undo()
+        self.assertEqual(box("volume"),1)
+        self.assertEqual(box("max number of items"),10)
+
 
 
 if __name__=="__main__": unittest.main()

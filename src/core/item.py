@@ -184,6 +184,9 @@ class Item(abc.ABC): # pragma: no cover
     def set_attr(self, attribute_name:str, value:Any)->None: pass
 
     @abc.abstractmethod
+    def __call__(self, attr_name:str)->Any: pass
+
+    @abc.abstractmethod
     def _adopt(self, child:Item)->None: pass
 
     @abc.abstractmethod
@@ -239,7 +242,7 @@ class ItemImpl(Item):
             new_parent.adopt(child)
         def rename(self,name:str)->None: return
         def set_attr(self, attr_name:str,value:Any)->None: raise Item.NonexistentAttribute   # pragma: no cover
-        def value(self, attr_name:str)->Any: raise Item.NonexistentAttribute   # pragma: no cover
+        def __call__(self, attr_name:str)->Any: raise Item.NonexistentAttribute   # pragma: no cover
         def _adopt(self, child:Item)->None: return
         def _accept_parent(self,item:Item)->None: raise Item.AdoptingNULL
         def _can_be_parent_of(self,item:Item)->bool: return True   # pragma: no cover
@@ -324,6 +327,12 @@ class ItemImpl(Item):
             item = item.parent
             if item==self: return True
             elif item==self.NULL: return False
+
+    def __call__(self, attr_name:str)->Any: 
+        if attr_name not in self.attributes: 
+            raise Item.NonexistentAttribute
+        else:
+            return self.attribute(attr_name).value
 
     def _accept_parent(self,item:Item)->None:
         if self.parent is self.NULL: self.__parent = item
