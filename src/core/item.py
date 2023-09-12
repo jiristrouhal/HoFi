@@ -13,7 +13,9 @@ class ItemManager:
         self._controller = Controller()
 
     def new(self,name:str,attr_info:Dict[str,Attribute_Type]={})->Item:
-        attributes = {label:new_attribute(self._controller,attr_type) for label, attr_type in attr_info.items()}
+        attributes = {}
+        for label, attr_type in attr_info.items():
+            attributes[label] = new_attribute(self._controller,attr_type,name=label) 
         return ItemImpl(name,attributes,self._controller)
     
     def undo(self):
@@ -181,7 +183,7 @@ class Item(abc.ABC): # pragma: no cover
     def rename(self,name:str)->None: pass
 
     @abc.abstractmethod
-    def set_attr(self, attribute_name:str, value:Any)->None: pass
+    def set(self, attribute_name:str, value:Any)->None: pass
 
     @abc.abstractmethod
     def __call__(self, attr_name:str)->Any: pass
@@ -241,7 +243,7 @@ class ItemImpl(Item):
         def pass_to_new_parent(self, child:Item, new_parent:Item)->None: 
             new_parent.adopt(child)
         def rename(self,name:str)->None: return
-        def set_attr(self, attr_name:str,value:Any)->None: raise Item.NonexistentAttribute   # pragma: no cover
+        def set(self, attr_name:str,value:Any)->None: raise Item.NonexistentAttribute   # pragma: no cover
         def __call__(self, attr_name:str)->Any: raise Item.NonexistentAttribute   # pragma: no cover
         def _adopt(self, child:Item)->None: return
         def _accept_parent(self,item:Item)->None: raise Item.AdoptingNULL
@@ -299,7 +301,7 @@ class ItemImpl(Item):
     def rename(self,name:str)->None:
         self._controller.run(self.command['rename'](Renaming_Data(self,name)))
 
-    def set_attr(self,attrib_label:str, value:Any)->None:
+    def set(self,attrib_label:str, value:Any)->None:
         self.attribute(attrib_label).set(value)
 
     def on_adoption(self,owner:str,func:Callable[[Adoption_Data],Command],timing:Timing)->None:

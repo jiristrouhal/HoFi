@@ -764,8 +764,8 @@ class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
             write_data = self.Write_Data(logbook,data.attr)
             return self.Write_Value_To_LogBook(write_data)
         item.attribute("Volume").on_set('test',write_to_logbook,'post')
-        item.set_attr("Volume",5)
-        item.set_attr("Volume",10)
+        item.set("Volume",5)
+        item.set("Volume",10)
         self.assertEqual(item("Volume"),10)
 
         mg.undo()
@@ -779,7 +779,7 @@ class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
     def test_accessing_nonexistent_attribute(self):
         mg = ItemManager()
         item = mg.new("Water",{"Volume":'integer'}) 
-        self.assertRaises(Item.NonexistentAttribute, item.set_attr, "Nonexistent attribute",5)
+        self.assertRaises(Item.NonexistentAttribute, item.set, "Nonexistent attribute",5)
         self.assertRaises(Item.NonexistentAttribute, item, "Nonexistent attribute")
 
 
@@ -846,6 +846,54 @@ class Test_Dependent_Attributes(unittest.TestCase):
         self.assertEqual(box("volume"),1)
         self.assertEqual(box("max number of items"),10)
 
+    def test_calling_set_method_on_dependent_attribute_has_no_effect(self)->None:
+        mg = ItemManager()
+        item = mg.new("Item", {"a":'integer',"b":'integer'})
+        def b_double_of_a(a:Attribute)->int: 
+            return 2*a.value
+        item.attribute("b").add_dependency(b_double_of_a,item.attribute("a"))
+        
+        item.set("a",2)
+        self.assertEqual(item("b"),4)
+        item.set("b",2)
+        self.assertEqual(item("b"),4)
+
+    def test_removing_dependency(self)->None:
+        mg = ItemManager()
+        item = mg.new("Item", {"a":'integer',"b":'integer'})
+        def b_double_of_a(a:Attribute)->int: 
+            return 2*a.value
+        item.attribute("b").add_dependency(b_double_of_a,item.attribute("a"))
+        
+        item.set("a",2)
+        self.assertEqual(item("b"),4)
+
+        item.attribute("b").remove_dependency()
+        item.set("a",1)
+        self.assertEqual(item("b"),4)
+
+        item.set("b",5)
+        self.assertEqual(item("b"),5)
+
+    def test_attribute_cannot_depend_on_itself(self):
+        mg = ItemManager()
+        item = mg.new("Item",{"a":'integer'})
+        def triple(a:Attribute)->int:  # pragma: no cover
+            return 2*a.value
+        self.assertRaises(
+            Attribute.CyclicDependency,
+            item.attribute("a").add_dependency, triple, item.attribute("a")
+        )
+
+    def test_attribute_indirectly_depending_on_itself_raises_exception(self):
+        mg = ItemManager()
+        item = mg.new("Item",{"a":'integer',"b":'integer',"c":'integer'})
+        def equal_to(attr:Attribute)->int: # pragma: no cover
+            return attr.value
+        item.attribute("a").add_dependency(equal_to,item.attribute("b"))
+        item.attribute("b").add_dependency(equal_to,item.attribute("c"))
+        with self.assertRaises(Attribute.CyclicDependency):
+            item.attribute("c").add_dependency(equal_to, item.attribute("a"))
 
 
 if __name__=="__main__": unittest.main()
