@@ -120,7 +120,7 @@ class Attribute_Mock:
     @property
     def value(self)->str: return "Default_Value"
 
-    def set(self,value:Any)->None: return
+    def set(self,value:Any)->None: return # pragma: no cover
 
 
 class Test_Accessing_Item_Attributes(unittest.TestCase):
@@ -753,13 +753,43 @@ class Test_Store_New_Parent_Name(unittest.TestCase):
 
 
 from src.core.attributes import Attribute
-
+from src.core.item import Set_Attr_Data
 
 class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
 
+    @dataclasses.dataclass
+    class LogBook:
+        value:int
+    
+    @dataclasses.dataclass
+    class Write_Data:
+        logbook:Test_Undo_And_Redo_Setting_Attribute_Values.LogBook
+        item:Item
+        attr_name:str
+
+    @dataclasses.dataclass
+    class Write_Value_To_LogBook(Command):
+        data:Test_Undo_And_Redo_Setting_Attribute_Values.Write_Data
+        prev_value:Any = dataclasses.field(init=False)
+        new_value:Any = dataclasses.field(init=False)
+        def run(self)->None:
+            self.prev_value = self.data.logbook.value
+            self.data.logbook.value = self.data.item.value(self.data.attr_name)
+            self.new_value = self.data.logbook.value
+        def undo(self)->None:
+            self.data.logbook.value = self.prev_value
+        def redo(self)->None:
+            self.data.logbook.value = self.new_value
+
+
     def test_undo_and_redo_setting_attribute_values(self):
         mg = ItemManager()
+        logbook = self.LogBook(0)
         item = mg.new("Water",{"Volume":Attribute('integer')}) 
+        def  write_to_logbook(data:Set_Attr_Data)->Test_Undo_And_Redo_Setting_Attribute_Values.Write_Value_To_LogBook:
+            write_data = self.Write_Data(logbook,data.item,data.attr_label)
+            return self.Write_Value_To_LogBook(write_data)
+        item.on_setting_attribute('test',write_to_logbook,'post')
         item.set_attr("Volume",5)
         item.set_attr("Volume",10)
         self.assertEqual(item.value("Volume"),10)
@@ -777,16 +807,6 @@ class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
         item = mg.new("Water",{"Volume":Attribute('integer')}) 
         self.assertRaises(Item.NonexistentAttribute, item.set_attr, "Nonexistent attribute",5)
         self.assertRaises(Item.NonexistentAttribute, item.value, "Nonexistent attribute")
-
-
-class Test_Attributes_Of_Null_Item(unittest.TestCase):
-
-    def test_accessing_attributes_of_null_item(self):
-        mg = ItemManager()
-        item = mg.new("Water",{"Volume":Attribute('integer')}) 
-        self.assertRaises(Item.NonexistentAttribute, item.set_attr, "Nonexistent attribute",5)
-        self.assertRaises(Item.NonexistentAttribute, item.value, "Nonexistent attribute")
-
 
 
 if __name__=="__main__": unittest.main()

@@ -202,6 +202,8 @@ class Item(abc.ABC): # pragma: no cover
     def on_passing_to_new_parent(self,owner:str,func:Callable[[Pass_To_New_Parrent_Data],Command],timing:Timing)->None: pass
     @abc.abstractmethod
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None: pass
+    @abc.abstractmethod
+    def on_setting_attribute(self,owner:str,func:Callable[[Set_Attr_Data],Command],timing:Timing)->None: pass
 
     @abc.abstractmethod
     def get_copy(self)->Item: pass
@@ -277,6 +279,7 @@ class ItemImpl(Item):
         def on_adoption(self,*args)->None: pass # pragma: no cover
         def on_passing_to_new_parent(self,*args)->None: pass # pragma: no cover
         def on_renaming(self,*args)->None: pass # pragma: no cover
+        def on_setting_attribute(self, *args)->None: pass # pragma: no cover
         def get_copy(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
@@ -355,6 +358,9 @@ class ItemImpl(Item):
 
     def on_passing_to_new_parent(self,owner:str,func:Callable[[Pass_To_New_Parrent_Data],Command],timing:Timing)->None:
         self.command['pass_to_new_parent'].add(owner, func, timing)
+
+    def on_setting_attribute(self,owner:str,func:Callable[[Set_Attr_Data],Command],timing:Timing)->None:
+        self.command['set_attr'].add(owner, func, timing)
 
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None:
         self.command['rename'].add(owner, func, timing)
