@@ -169,6 +169,18 @@ class Test_Composed_Command(unittest.TestCase):
         composed_command.execute(controller,IncrementIntData(obj,step=5))
         self.assertEqual(obj.i, 5)
         self.assertEqual(other_int.value, 5)
+        composed_command.execute(controller,IncrementIntData(obj,step=4))
+        self.assertEqual(obj.i, 9)
+        self.assertEqual(other_int.value, 9)
+        controller.undo()
+        self.assertEqual(obj.i, 5)
+        self.assertEqual(other_int.value, 5)
+        controller.redo()
+        self.assertEqual(obj.i, 9)
+        self.assertEqual(other_int.value, 9)
+        controller.undo()
+        self.assertEqual(obj.i, 5)
+        self.assertEqual(other_int.value, 5)
 
 
 
