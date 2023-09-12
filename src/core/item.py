@@ -280,15 +280,6 @@ class ItemImpl(Item):
     def root(self)->Item: 
         return self if self.__parent is self.NULL else self.__parent.root
 
-    def on_adoption(self,owner:str,func:Callable[[Adoption_Data],Command],timing:Timing)->None:
-        self.command['adopt'].add(owner, func, timing)
-
-    def on_passing_to_new_parent(self,owner:str,func:Callable[[Pass_To_New_Parrent_Data],Command],timing:Timing)->None:
-        self.command['pass_to_new_parent'].add(owner, func, timing)
-
-    def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None:
-        self.command['rename'].add(owner, func, timing)
-
     def adopt(self,item:Item)->None:
         if self._can_be_parent_of(item):
             self._controller.run(*self.command['adopt'](Adoption_Data(self,item)))
@@ -301,6 +292,15 @@ class ItemImpl(Item):
 
     def rename(self,name:str)->None:
         self._controller.run(self.command['rename'](Renaming_Data(self,name)))
+
+    def on_adoption(self,owner:str,func:Callable[[Adoption_Data],Command],timing:Timing)->None:
+        self.command['adopt'].add(owner, func, timing)
+
+    def on_passing_to_new_parent(self,owner:str,func:Callable[[Pass_To_New_Parrent_Data],Command],timing:Timing)->None:
+        self.command['pass_to_new_parent'].add(owner, func, timing)
+
+    def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None:
+        self.command['rename'].add(owner, func, timing)
 
     def get_copy(self)->Item:
         item_copy = ItemImpl(self.name, self.attributes, self._controller)
