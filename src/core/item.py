@@ -284,8 +284,8 @@ class ItemImpl(Item):
         def pass_to_new_parent(self, child:Item, new_parent:Item)->None: 
             new_parent.adopt(child)
         def rename(self,name:str)->None: return
-        def set_attr(self,attr_name:str,value:Any)->None: return
-        def value(self, attribute_name)->Any: return
+        def set_attr(self, attr_name:str,value:Any)->None: raise Item.NonexistentAttribute   # pragma: no cover
+        def value(self, attr_name:str)->Any: raise Item.NonexistentAttribute   # pragma: no cover
         def _adopt(self, child:Item)->None: return
         def _accept_parent(self,item:Item)->None: raise Item.AdoptingNULL
         def _can_be_parent_of(self,item:Item)->bool: return True   # pragma: no cover
