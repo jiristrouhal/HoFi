@@ -1,25 +1,19 @@
 from __future__ import annotations
-from typing import Dict, Protocol, Any, Set, Callable
-from typing import Protocol
+from typing import Dict, Any, Set, Callable
 import dataclasses
 from src.cmd.commands import Command, Controller, Composed_Command, Timing
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
+from src.core.attributes import Attribute, Attribute_Type, new_attribute
 import abc
 
-
-    
-class Attribute(Protocol): # pragma: no cover
-    @property
-    def value(self)->Any: ...
-
-    def set(self,value:Any)->None: ...
 
 
 class ItemManager:
     def __init__(self)->None:
         self._controller = Controller()
 
-    def new(self,name:str,attributes:Dict[str,Attribute]={})->Item:
+    def new(self,name:str,attr_info:Dict[str,Attribute_Type]={})->Item:
+        attributes = {label:new_attribute(self._controller,attr_type) for label, attr_type in attr_info.items()}
         return ItemImpl(name,attributes,self._controller)
     
     def undo(self):
@@ -139,39 +133,6 @@ class PassToNewParent_Composed(Composed_Command):
         super().add(owner_id,creator_func=func,timing=timing)
 
 
-@dataclasses.dataclass
-class Set_Attr_Data:
-    item:Item
-    attr_label:str
-    value:Any
-
-
-@dataclasses.dataclass
-class Set_Attr(Command):
-    data:Set_Attr_Data
-    prev_value:Any = dataclasses.field(init=False)
-
-    def run(self)->None:
-        self.prev_value = self.data.item.value(self.data.attr_label)
-        self.data.item.attribute(self.data.attr_label).set(self.data.value)
-    def undo(self)->None:
-        self.data.item.attribute(self.data.attr_label).set(self.prev_value)
-    def redo(self)->None:
-        self.data.item.attribute(self.data.attr_label).set(self.data.value)
-
-
-class Set_Attr_Composed(Composed_Command):
-    @staticmethod
-    def cmd_type(): return Set_Attr
-
-    def __call__(self, data:Set_Attr_Data):
-        return super().__call__(data)
-    
-    def add(self, owner:str, func:Callable[[Set_Attr_Data],Command],timing:Timing)->None:
-        super().add(owner,func,timing)
-    
-
-
 from typing import Literal
 Command_Type = Literal['adopt','pass_to_new_parent','rename','set_attr']
 class Item(abc.ABC): # pragma: no cover
@@ -202,8 +163,6 @@ class Item(abc.ABC): # pragma: no cover
     def on_passing_to_new_parent(self,owner:str,func:Callable[[Pass_To_New_Parrent_Data],Command],timing:Timing)->None: pass
     @abc.abstractmethod
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None: pass
-    @abc.abstractmethod
-    def on_setting_attribute(self,owner:str,func:Callable[[Set_Attr_Data],Command],timing:Timing)->None: pass
 
     @abc.abstractmethod
     def get_copy(self)->Item: pass
@@ -225,9 +184,6 @@ class Item(abc.ABC): # pragma: no cover
 
     @abc.abstractmethod
     def set_attr(self, attribute_name:str, value:Any)->None: pass
-
-    @abc.abstractmethod
-    def value(self, attribute_name)->Any: pass
 
     @abc.abstractmethod
     def _adopt(self, child:Item)->None: pass
@@ -279,7 +235,6 @@ class ItemImpl(Item):
         def on_adoption(self,*args)->None: pass # pragma: no cover
         def on_passing_to_new_parent(self,*args)->None: pass # pragma: no cover
         def on_renaming(self,*args)->None: pass # pragma: no cover
-        def on_setting_attribute(self, *args)->None: pass # pragma: no cover
         def get_copy(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
@@ -303,8 +258,7 @@ class ItemImpl(Item):
         self.command:Dict[Command_Type,Composed_Command] = {
             'adopt':Adopt_Composed(),
             'pass_to_new_parent':PassToNewParent_Composed(),
-            'rename':Rename_Composed(),
-            'set_attr':Set_Attr_Composed()
+            'rename':Rename_Composed()
         }
         self._controller = controller
         self.__attributes = attributes
@@ -351,16 +305,13 @@ class ItemImpl(Item):
         self._controller.run(self.command['rename'](Renaming_Data(self,name)))
 
     def set_attr(self,attrib_label:str, value:Any)->None:
-        self._controller.run(self.command['set_attr'](Set_Attr_Data(self,attrib_label,value)))
+        self.attribute(attrib_label).set(value)
 
     def on_adoption(self,owner:str,func:Callable[[Adoption_Data],Command],timing:Timing)->None:
         self.command['adopt'].add(owner, func, timing)
 
     def on_passing_to_new_parent(self,owner:str,func:Callable[[Pass_To_New_Parrent_Data],Command],timing:Timing)->None:
         self.command['pass_to_new_parent'].add(owner, func, timing)
-
-    def on_setting_attribute(self,owner:str,func:Callable[[Set_Attr_Data],Command],timing:Timing)->None:
-        self.command['set_attr'].add(owner, func, timing)
 
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None:
         self.command['rename'].add(owner, func, timing)
@@ -381,9 +332,6 @@ class ItemImpl(Item):
             item = item.parent
             if item==self: return True
             elif item==self.NULL: return False
-
-    def value(self,attrib_label:str)->Any:
-        return self.attribute(attrib_label).value
 
     def _accept_parent(self,item:Item)->None:
         if self.parent is self.NULL: self.__parent = item
