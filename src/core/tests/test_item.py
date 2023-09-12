@@ -7,7 +7,6 @@ sys.path.insert(1,"src")
 
 import unittest
 from src.core.item import ItemManager, Item, ItemImpl
-from src.core.attributes import new_attribute
 
 
 NullItem = ItemImpl.NULL
