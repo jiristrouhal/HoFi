@@ -156,42 +156,39 @@ class Increment_Other_Int(Command):
 
 class Test_Composed_Command(unittest.TestCase):
 
-    def test_composed_command(self):
-        obj = Integer_Owner(i=0)
-        other_int = OtherInt()
-        controller = Controller()
+    def setUp(self) -> None:
+        self.obj = Integer_Owner(i=0)
+        self.other_int = OtherInt()
+        self.controller = Controller()
 
+    def get_cmd(self,data:IncrementIntData)->Increment_Other_Int:
+        return Increment_Other_Int(self.other_int, data.obj)
+
+    def test_composed_command(self):
         composed_command = Composed_Increment()
-        def get_cmd(data:IncrementIntData)->Increment_Other_Int:
-            return Increment_Other_Int(other_int, data.obj)
         
-        composed_command.add('test', get_cmd, 'post')
-        composed_command.execute(controller,IncrementIntData(obj,step=5))
-        self.assertEqual(obj.i, 5)
-        self.assertEqual(other_int.value, 5)
-        composed_command.execute(controller,IncrementIntData(obj,step=4))
-        self.assertEqual(obj.i, 9)
-        self.assertEqual(other_int.value, 9)
-        controller.undo()
-        self.assertEqual(obj.i, 5)
-        self.assertEqual(other_int.value, 5)
-        controller.redo()
-        self.assertEqual(obj.i, 9)
-        self.assertEqual(other_int.value, 9)
-        controller.undo()
-        self.assertEqual(obj.i, 5)
-        self.assertEqual(other_int.value, 5)
+        composed_command.add('test', self.get_cmd, 'post')
+        composed_command.execute(self.controller,IncrementIntData(self.obj,step=5))
+        self.assertEqual(self.obj.i, 5)
+        self.assertEqual(self.other_int.value, 5)
+        composed_command.execute(self.controller,IncrementIntData(self.obj,step=4))
+        self.assertEqual(self.obj.i, 9)
+        self.assertEqual(self.other_int.value, 9)
+        self.controller.undo()
+        self.assertEqual(self.obj.i, 5)
+        self.assertEqual(self.other_int.value, 5)
+        self.controller.redo()
+        self.assertEqual(self.obj.i, 9)
+        self.assertEqual(self.other_int.value, 9)
+        self.controller.undo()
+        self.assertEqual(self.obj.i, 5)
+        self.assertEqual(self.other_int.value, 5)
 
     def test_adding_command_under_invalid_timing_key(self):
-        obj = Integer_Owner(i=0)
-        other_int = OtherInt()
         controller = Controller()
-
         composed_command = Composed_Increment()
-        def get_cmd(data:IncrementIntData)->Increment_Other_Int:
-            return Increment_Other_Int(other_int, data.obj)
-        
-        self.assertRaises(KeyError, composed_command.add, 'test', get_cmd, 'invalid key')
+
+        self.assertRaises(KeyError, composed_command.add, 'test', self.get_cmd, 'invalid key')
 
 
 
