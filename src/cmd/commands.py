@@ -1,3 +1,4 @@
+from __future__ import annotations
 import abc
 from typing import List, Any, Callable, OrderedDict, Literal, Dict, Type, Tuple
 import dataclasses
@@ -45,11 +46,12 @@ class Controller:
 
 @dataclasses.dataclass
 class Command_Data(abc.ABC):
-    pass
+    def __init__(self,*args,**kwargs)->None: pass
 
 
 Creators_Dict = OrderedDict[str, Callable]
 Timing = Literal['before','after']
+
 
 class External_Commands:
 
@@ -97,3 +99,30 @@ class External_Commands:
     def _get_cmd(self,on:str,data:Command_Data)->Command:
         command_class = self.__options[on]
         return command_class(data)
+
+
+class Composed_Command:
+
+    @abc.abstractstaticmethod
+    def cmd_type(*args)->Type[Command]: return Command
+
+    def __init__(self,controller:Controller)->None:
+        self.controller = controller
+        self.pre:Dict[str,Callable[[Any],Command]] = dict()
+        self.post:Dict[str,Callable[[Any],Command]] = dict()
+
+    @abc.abstractmethod
+    def execute(self,data:Any)->None:
+        self.controller.run(
+            *[p(data) for p in self.pre.values()],
+            self.cmd_type()(data),
+            *[p(data) for p in self.post.values()]
+        )
+
+    @abc.abstractmethod
+    def add_pre(self, owner_id:str, creator_func:Callable[[Any],Command])->None:
+        self.pre[owner_id] = creator_func
+
+    @abc.abstractmethod
+    def add_post(self, owner_id:str, creator_func:Callable[[Any],Command])->None:
+        self.post[owner_id] = creator_func
