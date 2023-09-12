@@ -182,6 +182,17 @@ class Test_Composed_Command(unittest.TestCase):
         self.assertEqual(obj.i, 5)
         self.assertEqual(other_int.value, 5)
 
+    def test_adding_command_under_invalid_timing_key(self):
+        obj = Integer_Owner(i=0)
+        other_int = OtherInt()
+        controller = Controller()
+
+        composed_command = Composed_Increment()
+        def get_cmd(data:IncrementIntData)->Increment_Other_Int:
+            return Increment_Other_Int(other_int, data.obj)
+        
+        self.assertRaises(KeyError, composed_command.add, 'test', get_cmd, 'invalid key')
+
 
 
 if __name__=="__main__": unittest.main()
