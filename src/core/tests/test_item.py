@@ -114,11 +114,13 @@ class Test_NULL_Item(unittest.TestCase):
 
     
 
-
+from typing import Any
 class Attribute_Mock:
     
     @property
     def value(self)->str: return "Default_Value"
+
+    def set(self,value:Any)->None: return
 
 
 class Test_Accessing_Item_Attributes(unittest.TestCase):
@@ -748,6 +750,24 @@ class Test_Store_New_Parent_Name(unittest.TestCase):
         mg.undo()
         self.assertEqual(child.parent, parent_A)
         self.assertEqual(paper.parent_name, "Parent A")
+
+
+from src.core.attributes import Attribute
+
+
+class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
+
+    def test_undo_and_redo_setting_attribute_values(self):
+        mg = ItemManager()
+        item = mg.new("Water",{"Volume":Attribute('integer')}) 
+        item.set_attr("Volume",5)
+        item.set_attr("Volume",10)
+        self.assertEqual(item.value("Volume"),10)
+
+        mg.undo()
+        self.assertEqual(item.value("Volume"),5)
+        mg.redo()
+        self.assertEqual(item.value("Volume"),10)
 
 
 if __name__=="__main__": unittest.main()

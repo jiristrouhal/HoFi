@@ -12,6 +12,8 @@ class Attribute(Protocol): # pragma: no cover
     @property
     def value(self)->Any: ...
 
+    def set(self,value:Any)->None: ...
+
 
 class ItemManager:
     def __init__(self)->None:
@@ -137,8 +139,41 @@ class PassToNewParent_Composed(Composed_Command):
         super().add(owner_id,creator_func=func,timing=timing)
 
 
+@dataclasses.dataclass
+class Set_Attr_Data:
+    item:Item
+    attr_label:str
+    value:Any
+
+
+@dataclasses.dataclass
+class Set_Attr(Command):
+    data:Set_Attr_Data
+    prev_value:Any = dataclasses.field(init=False)
+
+    def run(self)->None:
+        self.prev_value = self.data.item.value(self.data.attr_label)
+        self.data.item.attribute(self.data.attr_label).set(self.data.value)
+    def undo(self)->None:
+        self.data.item.attribute(self.data.attr_label).set(self.prev_value)
+    def redo(self)->None:
+        self.data.item.attribute(self.data.attr_label).set(self.data.value)
+
+
+class Set_Attr_Composed(Composed_Command):
+    @staticmethod
+    def cmd_type(): return Set_Attr
+
+    def __call__(self, data:Set_Attr_Data):
+        return super().__call__(data)
+    
+    def add(self, owner:str, func:Callable[[Set_Attr_Data],Command],timing:Timing)->None:
+        super().add(owner,func,timing)
+    
+
+
 from typing import Literal
-Command_Type = Literal['adopt','pass_to_new_parent','rename']
+Command_Type = Literal['adopt','pass_to_new_parent','rename','set_attr']
 class Item(abc.ABC): # pragma: no cover
     
     def __init__(self,name:str,attributes:Dict[str,Attribute],controller:Controller)->None:
@@ -157,6 +192,9 @@ class Item(abc.ABC): # pragma: no cover
 
     @abc.abstractmethod
     def adopt(self,child:Item)->None: pass
+    
+    @abc.abstractmethod
+    def attribute(self,label:str)->Attribute: pass
 
     @abc.abstractmethod
     def on_adoption(self,owner:str,func:Callable[[Adoption_Data],Command],timing:Timing)->None: pass
@@ -184,6 +222,12 @@ class Item(abc.ABC): # pragma: no cover
     def rename(self,name:str)->None: pass
 
     @abc.abstractmethod
+    def set_attr(self, attribute_name:str, value:Any)->None: pass
+
+    @abc.abstractmethod
+    def value(self, attribute_name)->Any: pass
+
+    @abc.abstractmethod
     def _adopt(self, child:Item)->None: pass
 
     @abc.abstractmethod
@@ -205,6 +249,7 @@ class Item(abc.ABC): # pragma: no cover
     class AdoptingNULL(Exception): pass
     class BlankName(Exception): pass
     class ItemAdoptsItself(Exception): pass
+    class NonexistentAttribute(Exception): pass
     class NonexistentCommandType(Exception): pass
 
 
@@ -228,6 +273,7 @@ class ItemImpl(Item):
 
         def adopt(self,child:Item)->None: 
             child.parent.pass_to_new_parent(child,self)
+        def attribute(self,label:str)->Attribute: raise Item.NonexistentAttribute
         def on_adoption(self,*args)->None: pass # pragma: no cover
         def on_passing_to_new_parent(self,*args)->None: pass # pragma: no cover
         def on_renaming(self,*args)->None: pass # pragma: no cover
@@ -238,6 +284,8 @@ class ItemImpl(Item):
         def pass_to_new_parent(self, child:Item, new_parent:Item)->None: 
             new_parent.adopt(child)
         def rename(self,name:str)->None: return
+        def set_attr(self,attr_name:str,value:Any)->None: return
+        def value(self, attribute_name)->Any: return
         def _adopt(self, child:Item)->None: return
         def _accept_parent(self,item:Item)->None: raise Item.AdoptingNULL
         def _can_be_parent_of(self,item:Item)->bool: return True   # pragma: no cover
@@ -251,8 +299,9 @@ class ItemImpl(Item):
     def __init__(self,name:str,attributes:Dict[str,Attribute], controller:Controller)->None:
         self.command:Dict[Command_Type,Composed_Command] = {
             'adopt':Adopt_Composed(),
+            'pass_to_new_parent':PassToNewParent_Composed(),
             'rename':Rename_Composed(),
-            'pass_to_new_parent':PassToNewParent_Composed()
+            'set_attr':Set_Attr_Composed()
         }
         self._controller = controller
         self.__attributes = attributes
@@ -279,6 +328,11 @@ class ItemImpl(Item):
     @property
     def root(self)->Item: 
         return self if self.__parent is self.NULL else self.__parent.root
+    
+    def attribute(self,label:str)->Attribute:
+        if not label in self.__attributes: raise Item.NonexistentAttribute
+        else:
+            return self.__attributes[label]
 
     def adopt(self,item:Item)->None:
         if self._can_be_parent_of(item):
@@ -292,6 +346,9 @@ class ItemImpl(Item):
 
     def rename(self,name:str)->None:
         self._controller.run(self.command['rename'](Renaming_Data(self,name)))
+
+    def set_attr(self,attrib_label:str, value:Any)->None:
+        self._controller.run(self.command['set_attr'](Set_Attr_Data(self,attrib_label,value)))
 
     def on_adoption(self,owner:str,func:Callable[[Adoption_Data],Command],timing:Timing)->None:
         self.command['adopt'].add(owner, func, timing)
@@ -318,6 +375,9 @@ class ItemImpl(Item):
             item = item.parent
             if item==self: return True
             elif item==self.NULL: return False
+
+    def value(self,attrib_label:str)->Any:
+        return self.__attributes[attrib_label].value
 
     def _accept_parent(self,item:Item)->None:
         if self.parent is self.NULL: self.__parent = item
