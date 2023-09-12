@@ -67,8 +67,8 @@ class Rename_Composed(Composed_Command):
     @staticmethod
     def cmd_type(): return Rename
 
-    def execute(self, controller:Controller, data:Renaming_Data) -> None:
-        super().execute(controller, data)
+    def __call__(self, data:Renaming_Data):
+        return super().__call__(data)
 
     def add(self, owner_id:str, func:Callable[[Renaming_Data],Command],timing:Timing)->None:
         super().add(owner_id,creator_func=func,timing=timing)
@@ -94,8 +94,8 @@ class Adopt_Composed(Composed_Command):
     @staticmethod
     def cmd_type(): return Adopt
 
-    def execute(self, controller:Controller, data:Adoption_Data) -> None:
-        super().execute(controller, data)
+    def __call__(self, data:Adoption_Data):
+        return super().__call__(data)
 
     def add(self, owner_id:str, func:Callable[[Adoption_Data],Command],timing:Timing)->None:
         super().add(owner_id,creator_func=func,timing=timing)
@@ -125,8 +125,8 @@ class PassToNewParent_Composed(Composed_Command):
     @staticmethod
     def cmd_type(): return PassToNewParent
 
-    def execute(self, controller:Controller, data:Pass_To_New_Parrent_Data) -> None:
-        super().execute(controller, data)
+    def __call__(self, data:Pass_To_New_Parrent_Data):
+        return super().__call__(data)
 
     def add(
         self, 
@@ -291,17 +291,16 @@ class ItemImpl(Item):
 
     def adopt(self,item:Item)->None:
         if self._can_be_parent_of(item):
-            self.command['adopt'].execute(self._controller,Adoption_Data(self,item))
+            self._controller.run(*self.command['adopt'](Adoption_Data(self,item)))
 
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
         if new_parent._can_be_parent_of(child):
-            self.command['pass_to_new_parent'].execute(
-                self._controller,
-                Pass_To_New_Parrent_Data(self,child,new_parent)
+            self._controller.run(
+                self.command['pass_to_new_parent'](Pass_To_New_Parrent_Data(self,child,new_parent))
             )
 
     def rename(self,name:str)->None:
-        self.command['rename'].execute(self._controller,Renaming_Data(self,name))
+        self._controller.run(self.command['rename'](Renaming_Data(self,name)))
 
     def get_copy(self)->Item:
         item_copy = ItemImpl(self.name, self.attributes, self._controller)

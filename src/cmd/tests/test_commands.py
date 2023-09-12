@@ -129,8 +129,8 @@ class Composed_Increment(Composed_Command):
     @staticmethod
     def cmd_type(): return IncrementIntAttribute
 
-    def execute(self, controller:Controller, data:IncrementIntData) -> None:
-        super().execute(controller, data)
+    def __call__(self, data:IncrementIntData):
+        return super().__call__(data)
 
     def add(self,owner_id:str,func:Callable[[IncrementIntData],Command],timing:Timing)->None:
         super().add(owner_id,func,timing)
@@ -168,10 +168,10 @@ class Test_Composed_Command(unittest.TestCase):
         composed_command = Composed_Increment()
         
         composed_command.add('test', self.get_cmd, 'post')
-        composed_command.execute(self.controller,IncrementIntData(self.obj,step=5))
+        self.controller.run(*composed_command(IncrementIntData(self.obj,step=5)))
         self.assertEqual(self.obj.i, 5)
         self.assertEqual(self.other_int.value, 5)
-        composed_command.execute(self.controller,IncrementIntData(self.obj,step=4))
+        self.controller.run(*composed_command(IncrementIntData(self.obj,step=4)))
         self.assertEqual(self.obj.i, 9)
         self.assertEqual(self.other_int.value, 9)
         self.controller.undo()
@@ -187,7 +187,6 @@ class Test_Composed_Command(unittest.TestCase):
     def test_adding_command_under_invalid_timing_key(self):
         controller = Controller()
         composed_command = Composed_Increment()
-
         self.assertRaises(KeyError, composed_command.add, 'test', self.get_cmd, 'invalid key')
 
 

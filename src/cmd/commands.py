@@ -13,6 +13,7 @@ class Command(abc.ABC): # pragma: no cover
     def redo(self)->None: pass
     
 
+import itertools
 class Controller:
 
     def __init__(self)->None:
@@ -25,9 +26,14 @@ class Controller:
     def any_redo(self)->bool: return bool(self.__redo_stack)
 
     
-    def run(self,*cmds:Command)->None:
-        for cmd in cmds: cmd.run()
-        self.__undo_stack.append(list(cmds))
+    def run(self,*cmds:Command|Tuple[Command,...])->None:
+        cmd_list:List[Command] = []
+        for item in cmds: 
+            if isinstance(item,tuple): cmd_list.extend(item)
+            else: cmd_list.append(item)
+
+        for cmd in cmd_list: cmd.run()
+        self.__undo_stack.append(cmd_list)
         self.__redo_stack.clear()
 
     def undo(self)->None:
@@ -44,6 +50,7 @@ class Controller:
 
 
 Timing = Literal['pre','post']
+from typing import Tuple
 class Composed_Command(abc.ABC):
 
     @abc.abstractstaticmethod
@@ -54,12 +61,8 @@ class Composed_Command(abc.ABC):
         self.post:Dict[str,Callable[[Any],Command]] = dict()
 
     @abc.abstractmethod
-    def execute(self,controller:Controller,data:Any)->None:
-        controller.run(
-            *[p(data) for p in self.pre.values()],
-            self.cmd_type()(data),
-            *[p(data) for p in self.post.values()]
-        )
+    def __call__(self,data:Any)->Tuple[Command,...]:
+        return *[p(data) for p in self.pre.values()], self.cmd_type()(data), *[p(data) for p in self.post.values()]
 
     @abc.abstractmethod
     def add(self, owner_id:str, creator_func:Callable[[Any],Command], timing:Timing)->None:
