@@ -54,7 +54,6 @@ class Test_Naming_The_Item(unittest.TestCase):
 class Test_NULL_Item(unittest.TestCase):
 
     def test_properties(self):
-        self.assertDictEqual(NullItem.attribute_values, {})
         self.assertDictEqual(NullItem.attributes, {})
         self.assertEqual(NullItem.name, "")
         self.assertEqual(NullItem.parent, NullItem)

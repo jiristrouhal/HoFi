@@ -143,8 +143,6 @@ class Item(abc.ABC): # pragma: no cover
     @abc.abstractproperty
     def attributes(self)->Dict[str,Attribute]: pass
     @abc.abstractproperty
-    def attribute_values(self)->Dict[str,Any]: pass
-    @abc.abstractproperty
     def name(self)->str: pass
     @abc.abstractproperty
     def parent(self)->Item: pass
@@ -221,8 +219,6 @@ class ItemImpl(Item):
         @property
         def attributes(self)->Dict[str,Attribute]: return {}
         @property
-        def attribute_values(self)->Dict[str,Any]: return {}
-        @property
         def name(self)->str: return ""
         @property
         def parent(self)->Item: return self
@@ -269,10 +265,6 @@ class ItemImpl(Item):
     @property
     def attributes(self)->Dict[str,Attribute]: 
         return self.__attributes.copy()
-    
-    @property
-    def attribute_values(self)->Dict[str,Any]: 
-        return {key:attr.value for key,attr in self.__attributes.items()}
     
     @property
     def name(self)->str: 
