@@ -190,6 +190,17 @@ class Test_Dependent_Attributes(unittest.TestCase):
         self.assertEqual(volume.value,1)
         self.assertEqual(max_n_of_items.value,10)
 
+    def test_adding_second_dependency_raises_exception(self):
+        x = self.fac.new('integer','x')
+        y = self.fac.new('integer','y')
+        def x_squared(x:int)->int: return x*x # pragma: no cover
+        y.add_dependency(x_squared,x)
+        self.assertRaises(Attribute.MultipleDependencies, y.add_dependency, x_squared,x)
+        # after breaking dependency, it is possible to reassign new dependency
+        y.break_dependency()
+        y.add_dependency(x_squared,x)
+        self.assertRaises(Attribute.MultipleDependencies, y.add_dependency, x_squared,x)
+
     def test_calling_set_method_on_dependent_attribute_has_no_effect(self)->None:
         a = self.fac.new('integer','a')
         b = self.fac.new('integer', 'b')
@@ -212,7 +223,7 @@ class Test_Dependent_Attributes(unittest.TestCase):
         a.set(2)
         self.assertEqual(b.value,4)
 
-        b.remove_dependencies()
+        b.break_dependency()
         a.set(1)
         self.assertEqual(b.value,4)
 
@@ -235,6 +246,16 @@ class Test_Dependent_Attributes(unittest.TestCase):
         b.add_dependency(equal_to,c)
         with self.assertRaises(Attribute.CyclicDependency):
             c.add_dependency(equal_to, a)
+
+
+class Test_Correspondence_Between_Dependency_Arguments_And_Attributes(unittest.TestCase):
+
+    def test_checking_the_input_attributes_types(self):
+        fac = Attribute_Factory(Controller())
+        x = fac.new('integer',"x")
+        y = fac.new('integer',"y")
+        def y_of_x(x:int)->int: return x*x # pragma: no cover
+        y.add_dependency(y_of_x,x)
 
 
 

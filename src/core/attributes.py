@@ -101,6 +101,7 @@ class Attribute(abc.ABC):
                 self._check_for_dependency_cycle(attr._dependencies,path + ' -> ' + attr._name)
 
     def add_dependency(self,dependency:Callable[[Any],Any], *attributes:Attribute)->None:
+        if self._dependencies: raise Attribute.MultipleDependencies
         self._check_for_dependency_cycle(set(attributes),path=self._name)
         this_id = str(id(self))
         def set_dependent_attr(data:Set_Attr_Data)->Any:
@@ -109,7 +110,7 @@ class Attribute(abc.ABC):
             attribute.on_set(this_id, set_dependent_attr, 'post')
             self._dependencies.add(attribute)
 
-    def remove_dependencies(self)->None:
+    def break_dependency(self)->None:
         for attribute_affecting_this_one in self._dependencies: 
             attribute_affecting_this_one.command['set'].post.pop(self._id)
         self._dependencies.clear()
@@ -127,13 +128,14 @@ class Attribute(abc.ABC):
     class InvalidAttributeType(Exception): pass
     class InvalidDefaultValue(Exception): pass
     class InvalidValueType(Exception): pass
+    class MultipleDependencies(Exception): pass
 
 
 from typing import Type
 @dataclasses.dataclass
 class Attribute_Factory:
     controller:Controller
-    types:Dict[str,Type[Attribute]] = dataclasses.field(default_factory=dict)
+    types:Dict[str,Type[Attribute]] = dataclasses.field(default_factory=dict,init=False)
     def __post_init__(self)->None:
         self.types['text'] = Text_Attribute
         self.types['integer'] = Integer_Attribute
