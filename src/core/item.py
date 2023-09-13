@@ -3,7 +3,7 @@ from typing import Dict, Any, Set, Callable
 import dataclasses
 from src.cmd.commands import Command, Controller, Composed_Command, Timing
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
-from src.core.attributes import Attribute, Attribute_Type, new_attribute
+from src.core.attributes import attribute_factory, Attribute
 import abc
 
 
@@ -11,11 +11,12 @@ import abc
 class ItemManager:
     def __init__(self)->None:
         self._controller = Controller()
+        self._attrfac = attribute_factory(self._controller)
 
-    def new(self,name:str,attr_info:Dict[str,Attribute_Type]={})->Item:
+    def new(self,name:str,attr_info:Dict[str,str]={})->Item:
         attributes = {}
         for label, attr_type in attr_info.items():
-            attributes[label] = new_attribute(self._controller,attr_type,name=label) 
+            attributes[label] = self._attrfac.new(attr_type,name=label) 
         return ItemImpl(name,attributes,self._controller)
     
     def undo(self):

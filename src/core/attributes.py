@@ -57,12 +57,12 @@ class Set_Dependent_Attr(Command):
         self.attribute._run_set_command(self.new_value)
 
 
-Attribute_Type = Literal['text','integer']
+
 Command_Type = Literal['set']
 from typing import Set
 class Attribute(abc.ABC):
     
-    def __init__(self,controller:Controller,atype:Attribute_Type='text',name:str="")->None:
+    def __init__(self,controller:Controller,atype:str='text',name:str="")->None:
         self._name = name
         self._type = atype
         self._value = ""
@@ -74,7 +74,7 @@ class Attribute(abc.ABC):
         self._id = str(id(self))
 
     @property
-    def type(self)->Attribute_Type: return self._type
+    def type(self)->str: return self._type
 
     @property 
     def value(self)->Any: return self._value
@@ -82,7 +82,7 @@ class Attribute(abc.ABC):
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
         self.command['set'].add(owner, func, timing)
 
-    def set(self,value:Any)->None:
+    def set(self,value:Any)->None: 
         if self._dependencies: 
             return
         else:
@@ -95,13 +95,8 @@ class Attribute(abc.ABC):
         if not self.is_valid(value): raise Attribute.InvalidValueType
         else: self._value = value
     
-    def is_valid(self, value:Any)->bool: 
-        if self._type=='integer':
-            try: 
-                int(value+1)
-                return True
-            except: return False
-        return True
+    @abc.abstractmethod
+    def is_valid(self, value:Any)->bool: pass # pragma: no cover
     
     def _check_for_dependency_cycle(self, attributes:Set[Attribute],path:str)->None:
         if self in attributes: 
@@ -111,14 +106,10 @@ class Attribute(abc.ABC):
                 self._check_for_dependency_cycle(attr._dependencies,path + ' -> ' + attr._name)
 
     def add_dependency(self,dependency:Callable[[Any],Any], *attributes:Attribute)->None:
-
         self._check_for_dependency_cycle(set(attributes),path=self._name)
-        
         this_id = str(id(self))
-
         def set_dependent_attr(data:Set_Attr_Data)->Any:
             return Set_Dependent_Attr(self,dependency,attributes)
-
         for attribute in attributes:
             attribute.on_set(this_id, set_dependent_attr, 'post')
             self._dependencies.add(attribute)
@@ -133,12 +124,37 @@ class Attribute(abc.ABC):
     class InvalidValueType(Exception): pass
 
 
+class Text_Attribute(Attribute):
+    def is_valid(self, value: Any) -> bool:
+        return isinstance(value,str)
 
-def new_attribute(controller:Controller, attr_type:Attribute_Type='text',name:str="")->Attribute:
-    if attr_type not in typing.get_args(Attribute_Type): 
-        raise Attribute.InvalidAttributeType(attr_type)
 
-    return Attribute(controller, attr_type, name)
+class Integer_Attribute(Attribute):
+    def is_valid(self, value: Any) -> bool:
+        try: 
+            int(value+1)
+            return True
+        except: 
+            return False
+
+
+from typing import Type
+@dataclasses.dataclass
+class Attribute_Factory:
+    controller:Controller
+    types:Dict[str,Type[Attribute]] = dataclasses.field(default_factory=dict)
+    def __post_init__(self)->None:
+        self.types['text'] = Text_Attribute
+        self.types['integer'] = Integer_Attribute
+
+    def new(self,atype:str='text',name:str="")->Attribute:
+        if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
+        else:
+            return self.types[atype](self.controller,atype,name)
+
+
+def attribute_factory(controller:Controller)->Attribute_Factory:
+    return Attribute_Factory(controller)
 
 
 
