@@ -267,4 +267,26 @@ class Test_Correspondence_Between_Dependency_And_Attributes(unittest.TestCase):
             y.add_dependency(y_of_x,x)
 
 
+from src.core.attributes import Dependency
+from math import inf
+import math
+class Test_Dependency_Object(unittest.TestCase):
+
+    def test_dependency_with_function_taking_any_real_number(self):
+        def square(x:int)->int: return x*x
+        dep = Dependency(square)
+        self.assertEqual(dep(2),4)
+        self.assertEqual(dep(0),0)
+        self.assertEqual(dep(inf), inf)
+        self.assertEqual(dep(0),0)
+
+    def test_dependency_with_function_taking_positive_real_numbers(self):
+        def square_root(x:int)->float: return math.sqrt(x)
+        dep = Dependency(square_root)
+        self.assertEqual(dep(4),2)
+        self.assertEqual(dep(0),0)
+        self.assertEqual(dep(inf), inf)
+        self.assertTrue(math.isnan(dep(-1)))
+
+
 if __name__=="__main__": unittest.main()

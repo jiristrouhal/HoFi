@@ -1,12 +1,24 @@
 from __future__ import annotations
 
 from typing import Literal, Any, Callable
-import typing
 import abc
 import dataclasses
 
 from src.cmd.commands import Command, Composed_Command, Timing, Dict, Controller
 
+
+@dataclasses.dataclass
+class Dependency:
+    func:Callable[[Any],Any]
+    
+    def __call__(self,*values)->Any: 
+        try:
+            result = self.func(*values)
+            return result
+        except ValueError:
+            return float('nan')
+        except:
+            return None
 
 @dataclasses.dataclass
 class Set_Attr_Data:
@@ -138,8 +150,9 @@ class Attribute(abc.ABC):
         result = None
         try:
             result = dependency(*values)
-        except:
+        except TypeError:
             raise Attribute.WrongAttributeTypeForDependencyInput
+        
         if not self.is_valid(result):
             raise Attribute.WrongAttributeTypeForDependencyOutput
 
