@@ -46,6 +46,7 @@ class Set_Dependent_Attr(Command):
     attributes:Tuple[Attribute,...]
     old_value:Any = dataclasses.field(init=False)
     new_value:Any = dataclasses.field(init=False)
+
     def run(self)->None:
         self.old_value = self.attribute.value
         values = [a.value for a in self.attributes]
@@ -93,27 +94,31 @@ class Attribute(abc.ABC):
     
     @abc.abstractmethod
     def is_valid(self, value:Any)->bool: pass # pragma: no cover
-    
-    def _check_for_dependency_cycle(self, attributes:Set[Attribute],path:str)->None:
-        if self in attributes: raise Attribute.CyclicDependency(path + ' -> ' + self._name)
-        else:
-            for attr in attributes:
-                self._check_for_dependency_cycle(attr._dependencies,path + ' -> ' + attr._name)
 
     def add_dependency(self,dependency:Callable[[Any],Any], *attributes:Attribute)->None:
-        if self._dependencies: raise Attribute.MultipleDependencies
-        self._check_for_dependency_cycle(set(attributes),path=self._name)
-        this_id = str(id(self))
+        self.__check_attribute_types_for_dependency(dependency, attributes)
+        self.__check_for_existing_dependency()
+        self.__check_for_dependency_cycle(set(attributes),path=self._name)
+
         def set_dependent_attr(data:Set_Attr_Data)->Any:
             return Set_Dependent_Attr(self,dependency,attributes)
         for attribute in attributes:
-            attribute.on_set(this_id, set_dependent_attr, 'post')
+            attribute.on_set(self._id, set_dependent_attr, 'post')
             self._dependencies.add(attribute)
 
     def break_dependency(self)->None:
         for attribute_affecting_this_one in self._dependencies: 
             attribute_affecting_this_one.command['set'].post.pop(self._id)
         self._dependencies.clear()
+
+    def __check_for_dependency_cycle(self, attributes:Set[Attribute],path:str)->None:
+        if self in attributes: raise Attribute.CyclicDependency(path + ' -> ' + self._name)
+        else:
+            for attr in attributes:
+                self.__check_for_dependency_cycle(attr._dependencies,path + ' -> ' + attr._name)
+
+    def __check_for_existing_dependency(self)->None:
+        if self._dependencies: raise Attribute.MultipleDependencies
 
     def __set_to_default_value(self)->None:
         if self.is_valid(self.default_value): # pragma: no cover
@@ -122,13 +127,29 @@ class Attribute(abc.ABC):
             raise Attribute.InvalidDefaultValue(
                 f"Invalid default value ({self.default_value}) for attribute of type '{self.type}'."
             ) # pragma: no cover
-
         
+    def __check_attribute_types_for_dependency(
+        self,
+        dependency:Callable[[Any],Any],
+        attributes:Tuple[Attribute,...]
+        )->None:
+
+        values = [a.value for a in attributes]
+        result = None
+        try:
+            result = dependency(*values)
+        except:
+            raise Attribute.WrongAttributeTypeForDependencyInput
+        if not self.is_valid(result):
+            raise Attribute.WrongAttributeTypeForDependencyOutput
+
     class CyclicDependency(Exception): pass
     class InvalidAttributeType(Exception): pass
     class InvalidDefaultValue(Exception): pass
     class InvalidValueType(Exception): pass
     class MultipleDependencies(Exception): pass
+    class WrongAttributeTypeForDependencyInput(Exception): pass
+    class WrongAttributeTypeForDependencyOutput(Exception): pass
 
 
 from typing import Type

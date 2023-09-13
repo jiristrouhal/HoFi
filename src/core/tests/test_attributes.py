@@ -248,15 +248,23 @@ class Test_Dependent_Attributes(unittest.TestCase):
             c.add_dependency(equal_to, a)
 
 
-class Test_Correspondence_Between_Dependency_Arguments_And_Attributes(unittest.TestCase):
+class Test_Correspondence_Between_Dependency_And_Attributes(unittest.TestCase):
 
-    def test_checking_the_input_attributes_types(self):
+    def test_assigning_invalid_attribute_type_for_dependency_function_argument_raises_exception(self):
         fac = Attribute_Factory(Controller())
-        x = fac.new('integer',"x")
+        x = fac.new('text',"x")
         y = fac.new('integer',"y")
         def y_of_x(x:int)->int: return x*x # pragma: no cover
-        y.add_dependency(y_of_x,x)
+        with self.assertRaises(Attribute.WrongAttributeTypeForDependencyInput):
+            y.add_dependency(y_of_x,x)
 
+    def test_adding_dependency_with_return_type_not_matching_the_dependent_attribute_raises_exception(self):
+        fac = Attribute_Factory(Controller())
+        x = fac.new('integer',"x")
+        y = fac.new('text',"y")
+        def y_of_x(x:int)->int: return x*x # pragma: no cover
+        with self.assertRaises(Attribute.WrongAttributeTypeForDependencyOutput):
+            y.add_dependency(y_of_x,x)
 
 
 if __name__=="__main__": unittest.main()
