@@ -40,6 +40,7 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
     def test_valid_value(self)->None:
         a = self.attrfac.new('integer')
         self.assertTrue(a.is_valid(5))
+        self.assertFalse(a.is_valid(0.5))
         self.assertFalse(a.is_valid("abc"))
         self.assertFalse(a.is_valid("5"))
         self.assertFalse(a.is_valid(""))

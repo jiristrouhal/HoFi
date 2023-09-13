@@ -176,8 +176,7 @@ class Integer_Attribute(Attribute):
 
     def is_valid(self, value:Any) -> bool:
         try: 
-            int(value+1)
-            return True
+            return int(value) is value
         except: 
             return False
 
