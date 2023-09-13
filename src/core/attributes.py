@@ -58,7 +58,7 @@ class Set_Dependent_Attr(Command):
 
 Attribute_Type = Literal['text','integer']
 Command_Type = Literal['set']
-from typing import Set, List
+from typing import Set
 class Attribute(abc.ABC):
     
     def __init__(self,controller:Controller,atype:Attribute_Type='text',name:str="")->None:
@@ -75,13 +75,13 @@ class Attribute(abc.ABC):
     @property
     def type(self)->Attribute_Type: return self._type
 
-    @property
+    @property 
     def value(self)->Any: return self._value
 
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
         self.command['set'].add(owner, func, timing)
 
-    def set(self,value:Any)->None: 
+    def set(self,value:Any)->None:
         if self._dependencies: 
             return
         else:
