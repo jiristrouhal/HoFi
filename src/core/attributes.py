@@ -17,6 +17,8 @@ class Dependency:
             return result
         except ValueError:
             return float('nan')
+        except ZeroDivisionError:
+            return float('nan')
         except TypeError:
             raise self.InvalidArgumentType
         except: # pragma: no cover
@@ -58,7 +60,7 @@ from typing import Tuple
 @dataclasses.dataclass
 class Set_Dependent_Attr(Command):
     attribute:Attribute
-    func:Callable[[Any],Any]
+    func:Callable[[Any],Any]|Dependency
     attributes:Tuple[Attribute,...]
     old_value:Any = dataclasses.field(init=False)
     new_value:Any = dataclasses.field(init=False)
@@ -111,16 +113,20 @@ class Attribute(abc.ABC):
     @abc.abstractmethod
     def is_valid(self, value:Any)->bool: pass # pragma: no cover
 
-    def add_dependency(self,dependency:Callable[[Any],Any], *attributes:Attribute)->None:
+    def add_dependency(self,dependency:Callable[[Any],Any]|Dependency, *attributes:Attribute)->None:
         self.__check_attribute_types_for_dependency(dependency, attributes)
         self.__check_for_existing_dependency()
         self.__check_for_dependency_cycle(set(attributes),path=self._name)
+
+        command = Set_Dependent_Attr(self,dependency,attributes)
+        command.run()
 
         def set_dependent_attr(data:Set_Attr_Data)->Any:
             return Set_Dependent_Attr(self,dependency,attributes)
         for attribute in attributes:
             attribute.on_set(self._id, set_dependent_attr, 'post')
             self._dependencies.add(attribute)
+        
 
     def break_dependency(self)->None:
         for attribute_affecting_this_one in self._dependencies: 
@@ -146,7 +152,7 @@ class Attribute(abc.ABC):
         
     def __check_attribute_types_for_dependency(
         self,
-        dependency:Callable[[Any],Any],
+        dependency:Callable[[Any],Any]|Dependency,
         attributes:Tuple[Attribute,...]
         )->None:
 
@@ -156,9 +162,11 @@ class Attribute(abc.ABC):
             result = dependency(*values)
         except TypeError:
             raise Attribute.WrongAttributeTypeForDependencyInput
-        
+        except Dependency.InvalidArgumentType:
+            raise Attribute.WrongAttributeTypeForDependencyInput
+
         if not self.is_valid(result):
-            raise Attribute.WrongAttributeTypeForDependencyOutput
+            raise Attribute.WrongAttributeTypeForDependencyOutput(result)
 
     class CyclicDependency(Exception): pass
     class InvalidAttributeType(Exception): pass
@@ -177,6 +185,7 @@ class Attribute_Factory:
     def __post_init__(self)->None:
         self.types['text'] = Text_Attribute
         self.types['integer'] = Integer_Attribute
+        self.types['real'] = Real_Attribute
 
     def new(self,atype:str='text',name:str="")->Attribute:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
@@ -212,6 +221,19 @@ class Integer_Attribute(Attribute):
     def is_valid(self, value:Any) -> bool:
         try: 
             return int(value) is value
+        except: 
+            return False
+        
+    
+import math
+class Real_Attribute(Attribute):
+    default_value = 0
+
+    def is_valid(self, value:Any) -> bool:
+        try: 
+            if float(value)==value: return True
+            elif math.isnan(value): return True
+            else: return False
         except: 
             return False
 

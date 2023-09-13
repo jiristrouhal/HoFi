@@ -247,6 +247,17 @@ class Test_Dependent_Attributes(unittest.TestCase):
         with self.assertRaises(Attribute.CyclicDependency):
             c.add_dependency(equal_to, a)
 
+    def test_dependent_attribute_is_updated_immediatelly_after_adding_the_dependency(self):
+        x = self.fac.new('integer','x')
+        x.set(2)
+        y = self.fac.new('integer','y')
+        y.set(0)
+        def double(x:int)->int: return 2*x
+
+        self.assertEqual(y.value,0)
+        y.add_dependency(double,x)
+        self.assertEqual(y.value,4)
+
 
 class Test_Correspondence_Between_Dependency_And_Attributes(unittest.TestCase):
 
@@ -297,7 +308,41 @@ class Test_Dependency_Object(unittest.TestCase):
 
 class Test_Using_Dependency_Object_To_Handle_Invalid_Input_Values(unittest.TestCase):
 
-    pass
+    def setUp(self) -> None:
+        self.fac = Attribute_Factory(Controller())
+    
+    def test_raise_exception_when_using_attribute_with_incorrect_type(self):
+        x = self.fac.new('text',"x")
+        y = self.fac.new('integer',"y")
+        def y_of_x(x:int)->int: return x*x # pragma: no cover
+        with self.assertRaises(Attribute.WrongAttributeTypeForDependencyInput):
+            y.add_dependency(Dependency(y_of_x),x)
+
+    def test_handle_input_outside_of_the_function_domain_in_dependent_attribute_calculation(self):
+        x = self.fac.new('integer',"x")
+        y = self.fac.new('real',"y")
+        def y_of_x(x:int)->float: return math.sqrt(x) # pragma: no cover
+        y.add_dependency(Dependency(y_of_x),x)
+        x.set(-1)
+        self.assertTrue(math.isnan(y.value))
+
+    def test_handle_input_outside_of_the_function_when_adding_the_dependency(self):
+        x = self.fac.new('integer',"x")
+        x.set(-1)
+        y = self.fac.new('real',"y")
+
+        def y_of_x(x:int)->float: return math.sqrt(x) # pragma: no cover
+        y.add_dependency(Dependency(y_of_x),x)
+        self.assertTrue(math.isnan(y.value))
+
+    def test_division_by_zero(self)->None:
+        x = self.fac.new('real',"x")
+        x.set(0)
+        y = self.fac.new('real',"y")
+
+        def y_of_x(x:float)->float: return 1/x 
+        y.add_dependency(Dependency(y_of_x),x)
+        self.assertTrue(math.isnan(y.value))
 
 
 if __name__=="__main__": unittest.main()
