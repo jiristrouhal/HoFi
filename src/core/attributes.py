@@ -61,30 +61,19 @@ class Set_Dependent_Attr(Command):
 Command_Type = Literal['set']
 from typing import Set
 class Attribute(abc.ABC):
-
     default_value:Any = ""
 
     def __init__(self,controller:Controller,atype:str='text',name:str="")->None:
         self._name = name
         self._type = atype
-
-        if self.is_valid(self.default_value): # pragma: no cover
-            self._value = self.default_value # pragma: no cover
-        else: # pragma: no cover
-            raise Attribute.InvalidDefaultValue(
-                f"Invalid default value ({self.default_value}) for attribute of type '{atype}'."
-            ) # pragma: no cover
-
-        self.command:Dict[Command_Type,Composed_Command] = {
-            'set':Set_Attr_Composed()
-        }
+        self.command:Dict[Command_Type,Composed_Command] = {'set':Set_Attr_Composed()}
         self._controller = controller
         self._dependencies:Set[Attribute] = set()
         self._id = str(id(self))
+        self.__set_to_default_value()
 
     @property
     def type(self)->str: return self._type
-
     @property 
     def value(self)->Any: return self._value
 
@@ -92,10 +81,8 @@ class Attribute(abc.ABC):
         self.command['set'].add(owner, func, timing)
 
     def set(self,value:Any)->None: 
-        if self._dependencies: 
-            return
-        else:
-            self._run_set_command(value)
+        if self._dependencies: return
+        else: self._run_set_command(value)
 
     def _run_set_command(self,value:Any)->None:
         self._controller.run(self.command['set'](Set_Attr_Data(self,value)))
@@ -108,8 +95,7 @@ class Attribute(abc.ABC):
     def is_valid(self, value:Any)->bool: pass # pragma: no cover
     
     def _check_for_dependency_cycle(self, attributes:Set[Attribute],path:str)->None:
-        if self in attributes: 
-            raise Attribute.CyclicDependency(path + ' -> ' + self._name)
+        if self in attributes: raise Attribute.CyclicDependency(path + ' -> ' + self._name)
         else:
             for attr in attributes:
                 self._check_for_dependency_cycle(attr._dependencies,path + ' -> ' + attr._name)
@@ -127,6 +113,15 @@ class Attribute(abc.ABC):
         for attribute_affecting_this_one in self._dependencies: 
             attribute_affecting_this_one.command['set'].post.pop(self._id)
         self._dependencies.clear()
+
+    def __set_to_default_value(self)->None:
+        if self.is_valid(self.default_value): # pragma: no cover
+            self._value = self.default_value # pragma: no cover
+        else: # pragma: no cover
+            raise Attribute.InvalidDefaultValue(
+                f"Invalid default value ({self.default_value}) for attribute of type '{self.type}'."
+            ) # pragma: no cover
+
         
     class CyclicDependency(Exception): pass
     class InvalidAttributeType(Exception): pass
