@@ -86,7 +86,8 @@ class Attribute(abc.ABC):
         self._name = name
         self._type = atype
         self.command:Dict[Command_Type,Composed_Command] = {'set':Set_Attr_Composed()}
-        self._dependencies:Set[Attribute] = set()
+        self._depends_on:Set[Attribute] = set()
+        self._dependency:Callable[[Any],Any]|Dependency|None = None
         self._id = str(id(self))
         self.__set_to_default_value()
         self._factory = factory
@@ -95,30 +96,7 @@ class Attribute(abc.ABC):
     def type(self)->str: return self._type
     @property 
     def value(self)->Any: return self._value
-
-    def copy(self)->Attribute:
-        the_copy = self._factory.new(self._type, self._name)
-        the_copy._value = self._value
-        
-        return the_copy
-
-    def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
-        self.command['set'].add(owner, func, timing)
-
-    def set(self,value:Any)->None: 
-        if self._dependencies: return
-        else: self._run_set_command(value)
-
-    def _run_set_command(self,value:Any)->None:
-        self._factory.controller.run(self.command['set'](Set_Attr_Data(self,value)))
-
-    def _check_and_set_value(self,value:Any)->None:
-        if not self.is_valid(value): raise Attribute.InvalidValueType
-        else: self._value = value
     
-    @abc.abstractmethod
-    def is_valid(self, value:Any)->bool: pass # pragma: no cover
-
     def add_dependency(self,dependency:Callable[[Any],Any]|Dependency, *attributes:Attribute)->None:
         self.__check_dependency_has_at_least_one_input(attributes)
         self.__check_attribute_types_for_dependency(dependency, attributes)
@@ -130,15 +108,39 @@ class Attribute(abc.ABC):
 
         def set_dependent_attr(data:Set_Attr_Data)->Any:
             return Set_Dependent_Attr(self,dependency,attributes)
+        
         for attribute in attributes:
             attribute.on_set(self._id, set_dependent_attr, 'post')
-            self._dependencies.add(attribute)
-        
+            self._depends_on.add(attribute)
+        self._dependency = dependency
 
     def break_dependency(self)->None:
-        for attribute_affecting_this_one in self._dependencies: 
+        for attribute_affecting_this_one in self._depends_on: 
             attribute_affecting_this_one.command['set'].post.pop(self._id)
-        self._dependencies.clear()
+        self._depends_on.clear()
+        self._dependency = None
+
+    def copy(self)->Attribute:
+        the_copy = self._factory.new(self._type, self._name)
+        self.__set_value_of_the_copy(the_copy)
+        return the_copy
+
+    def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
+        self.command['set'].add(owner, func, timing)
+
+    def set(self,value:Any)->None: 
+        if self._depends_on: return
+        else: self._run_set_command(value)
+    
+    @abc.abstractmethod
+    def is_valid(self, value:Any)->bool: pass # pragma: no cover
+
+    def _run_set_command(self,value:Any)->None:
+        self._factory.controller.run(self.command['set'](Set_Attr_Data(self,value)))
+
+    def _check_and_set_value(self,value:Any)->None:
+        if not self.is_valid(value): raise Attribute.InvalidValueType
+        else: self._value = value
 
     def __check_dependency_has_at_least_one_input(self,inputs:Tuple[Attribute,...])->None:
         if not inputs: raise Attribute.NoInputsForDependency
@@ -147,10 +149,10 @@ class Attribute(abc.ABC):
         if self in attributes: raise Attribute.CyclicDependency(path + ' -> ' + self._name)
         else:
             for attr in attributes:
-                self.__check_for_dependency_cycle(attr._dependencies,path + ' -> ' + attr._name)
+                self.__check_for_dependency_cycle(attr._depends_on,path + ' -> ' + attr._name)
 
     def __check_for_existing_dependency(self)->None:
-        if self._dependencies: raise Attribute.MultipleDependencies
+        if self._depends_on: raise Attribute.MultipleDependencies
         
     def __check_attribute_types_for_dependency(
         self,
@@ -177,6 +179,12 @@ class Attribute(abc.ABC):
             raise Attribute.InvalidDefaultValue(
                 f"Invalid default value ({self.default_value}) for attribute of type '{self.type}'."
             ) # pragma: no cover
+        
+    def __set_value_of_the_copy(self,the_copy:Attribute)->None:
+        if self._dependency is not None:
+            the_copy.add_dependency(self._dependency, *self._depends_on)
+        else:
+            the_copy._value = self._value
 
     class CyclicDependency(Exception): pass
     class InvalidAttributeType(Exception): pass

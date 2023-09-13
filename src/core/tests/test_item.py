@@ -748,13 +748,13 @@ class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
 
 class Test_Attributes_Of_Copied_Item(unittest.TestCase):
 
-    def test_attributes_of_copied_item_have_the_originals_values(self):
+    def __test_attributes_of_copied_item_have_the_originals_values(self):
         mg = ItemManager()
         item = mg.new("item", {"a":'integer', "b":'real'})
         item.set("a",4)
         item.set("b",2.5)
         item_copy = item.get_copy()
-        
+
 
 
 

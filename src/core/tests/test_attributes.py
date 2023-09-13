@@ -161,7 +161,7 @@ class Test_Dependent_Attributes(unittest.TestCase):
     def test_dependent_attribute_must_depend_at_least_on_one_attribute(self):
         x = self.fac.new("integer")
         y = self.fac.new("integer")
-        def invalid_dependency(): return 5
+        def invalid_dependency(): return 5 # pragma: no cover
         self.assertRaises(Attribute.NoInputsForDependency, y.add_dependency, invalid_dependency)
 
     def test_setting_dependency_of_one_attribute_on_another(self):
@@ -374,9 +374,11 @@ class Test_Using_Dependency_Object_To_Handle_Invalid_Input_Values(unittest.TestC
 
 class Test_Copying_Attribute(unittest.TestCase):
 
+    def setUp(self)->None:
+        self.fac = attribute_factory(Controller())
+
     def test_copy_independent_attribute(self)->None:
-        fac = attribute_factory(Controller())
-        x = fac.new("integer", 'x')
+        x = self.fac.new("integer", 'x')
         x.set(5)
 
         self.assertEqual(x.value, 5)
@@ -385,16 +387,81 @@ class Test_Copying_Attribute(unittest.TestCase):
         self.assertEqual(x_copy.type, 'integer')
         self.assertTrue(x_copy._id != x._id)
     
-    def __test_copy_of_dependent_attribute_has_the_same_dependencies(self)->None:
-        fac = attribute_factory(Controller())
-        x = fac.new("integer", 'x')
-        y = fac.new("integer", 'y')
-        def add_one(x:int)->int: return x+1
-        y.add_dependency(Dependency(add_one),x)
+    def test_copying_the_attribute_also_copies_its_dependencies(self)->None:
+        x = self.fac.new("integer", 'x')
+        x.set(2)
+        y = self.fac.new("integer", 'y')
+        def double(x:int)->int: return 2*x
 
-        self.assertSetEqual(y._dependencies,{x})
+        y.add_dependency(Dependency(double),x)
+
+        self.assertSetEqual(y._depends_on,{x})
         y_copy = y.copy()
-        self.assertSetEqual(y_copy._dependencies,{x})
+        self.assertSetEqual(y_copy._depends_on,{x}) 
+
+        # test that both y are affected by change in x value
+        x.set(2)
+        self.assertEqual(y.value,4)
+        self.assertEqual(y_copy.value,4)
+        #test breaking the original y dependency
+        y.break_dependency()
+        x.set(3)
+        self.assertEqual(y.value,4)
+        self.assertEqual(y_copy.value,6)
+
+
+    @dataclasses.dataclass
+    class Message:
+        text:str = ""
+    
+    @dataclasses.dataclass
+    class Write_Value_To_Message_Text:
+        attr:Attribute
+        message:Test_Copying_Attribute.Message
+        prev_text:str = dataclasses.field(init=False)
+        new_text:str = dataclasses.field(init=False)
+        def run(self):
+            self.prev_text = self.message.text
+            self.message.text = str(self.attr.value)
+            self.new_text = self.message.text
+        def undo(self): # pragma: no cover
+            self.message.text = self.prev_text
+        def redo(self): # pragma: no cover
+            self.message.text = self.new_text
+
+    def test_copying_the_attribute_does_not_copy_those_commands_added_after_the_original_attribute_initialization(self):
+        x = self.fac.new("integer", 'x')
+        x.set(2)
+        message = self.Message()
+        def write_value_to_message_txt(data:Set_Attr_Data)->Test_Copying_Attribute.Write_Value_To_Message_Text:
+            return self.Write_Value_To_Message_Text(x,message)
+        x.command['set'].add('test',write_value_to_message_txt,'post')
+
+        x_copy = x.copy()
+        x.set(5)
+        self.assertEqual(message.text,"5")
+        x_copy.set(511651654547)
+        self.assertEqual(message.text,"5")
+
+    def test_attribute_basic_commands_are_not_identical_to_those_of_its_copy(self):
+        x = self.fac.new("integer", 'x')
+        x_copy = x.copy()
+        for label in x.command:
+            self.assertTrue(x.command[label] is not x_copy.command[label])
+    
+    def test_copying_attribute_that_some_other_depends_on_does_not_copy_the_dependency_relationship(self):
+        x = self.fac.new("integer")
+        y = self.fac.new("integer")
+        def square(x:int)->int: return x*x
+        y.add_dependency(Dependency(square),x)
+
+        x.set(3)
+        self.assertEqual(y.value,9)
+
+        x_copy = x.copy()
+        x_copy.set(4)
+        self.assertEqual(y.value,9)
+
 
 
 if __name__=="__main__": unittest.main()
