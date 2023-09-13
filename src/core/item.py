@@ -141,7 +141,7 @@ Command_Type = Literal['adopt','pass_to_new_parent','rename','set_attr']
 class Item(abc.ABC): # pragma: no cover
     
     def __init__(self,name:str,attributes:Dict[str,Attribute],controller:Controller)->None:
-        pass
+        self._controller = controller
 
     @abc.abstractproperty
     def attributes(self)->Dict[str,Attribute]: pass
@@ -215,6 +215,7 @@ class Item(abc.ABC): # pragma: no cover
     class NonexistentCommandType(Exception): pass
 
 
+from typing import Tuple
 class ItemImpl(Item):
 
     class __ItemNull(Item):
@@ -315,9 +316,15 @@ class ItemImpl(Item):
         self.command['rename'].add(owner, func, timing)
 
     def get_copy(self)->Item:
-        item_copy = ItemImpl(self.name, self.attributes, self._controller)
+        item_copy = ItemImpl(self.name, self.__attributes_copy(), self._controller)
         self.parent.adopt(item_copy)
         return item_copy
+    
+    def __attributes_copy(self)->Dict[str,Attribute]:
+        the_copy:Dict[str,Attribute] = {}
+        for label, attr in self.attributes.items():
+            the_copy[label] = attr.copy()
+        return the_copy
 
     def has_children(self)->bool:
         return bool(self.__children)

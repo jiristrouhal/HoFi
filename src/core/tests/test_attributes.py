@@ -158,6 +158,12 @@ class Test_Dependent_Attributes(unittest.TestCase):
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
 
+    def test_dependent_attribute_must_depend_at_least_on_one_attribute(self):
+        x = self.fac.new("integer")
+        y = self.fac.new("integer")
+        def invalid_dependency(): return 5
+        self.assertRaises(Attribute.NoInputsForDependency, y.add_dependency, invalid_dependency)
+
     def test_setting_dependency_of_one_attribute_on_another(self):
         DENSITY = 1000
         volume = self.fac.new('integer', "volume")
@@ -364,6 +370,31 @@ class Test_Using_Dependency_Object_To_Handle_Invalid_Input_Values(unittest.TestC
         def y_of_x(x:float)->float: return 1/x 
         y.add_dependency(Dependency(y_of_x),x)
         self.assertTrue(math.isnan(y.value))
+
+
+class Test_Copying_Attribute(unittest.TestCase):
+
+    def test_copy_independent_attribute(self)->None:
+        fac = attribute_factory(Controller())
+        x = fac.new("integer", 'x')
+        x.set(5)
+
+        self.assertEqual(x.value, 5)
+        x_copy = x.copy()
+        self.assertEqual(x_copy.value, 5)
+        self.assertEqual(x_copy.type, 'integer')
+        self.assertTrue(x_copy._id != x._id)
+    
+    def __test_copy_of_dependent_attribute_has_the_same_dependencies(self)->None:
+        fac = attribute_factory(Controller())
+        x = fac.new("integer", 'x')
+        y = fac.new("integer", 'y')
+        def add_one(x:int)->int: return x+1
+        y.add_dependency(Dependency(add_one),x)
+
+        self.assertSetEqual(y._dependencies,{x})
+        y_copy = y.copy()
+        self.assertSetEqual(y_copy._dependencies,{x})
 
 
 if __name__=="__main__": unittest.main()

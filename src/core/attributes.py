@@ -82,19 +82,25 @@ from typing import Set
 class Attribute(abc.ABC):
     default_value:Any = ""
 
-    def __init__(self,controller:Controller,atype:str='text',name:str="")->None:
+    def __init__(self,factory:Attribute_Factory, atype:str='text',name:str="")->None:
         self._name = name
         self._type = atype
         self.command:Dict[Command_Type,Composed_Command] = {'set':Set_Attr_Composed()}
-        self._controller = controller
         self._dependencies:Set[Attribute] = set()
         self._id = str(id(self))
         self.__set_to_default_value()
+        self._factory = factory
 
     @property
     def type(self)->str: return self._type
     @property 
     def value(self)->Any: return self._value
+
+    def copy(self)->Attribute:
+        the_copy = self._factory.new(self._type, self._name)
+        the_copy._value = self._value
+        
+        return the_copy
 
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
         self.command['set'].add(owner, func, timing)
@@ -104,7 +110,7 @@ class Attribute(abc.ABC):
         else: self._run_set_command(value)
 
     def _run_set_command(self,value:Any)->None:
-        self._controller.run(self.command['set'](Set_Attr_Data(self,value)))
+        self._factory.controller.run(self.command['set'](Set_Attr_Data(self,value)))
 
     def _check_and_set_value(self,value:Any)->None:
         if not self.is_valid(value): raise Attribute.InvalidValueType
@@ -114,6 +120,7 @@ class Attribute(abc.ABC):
     def is_valid(self, value:Any)->bool: pass # pragma: no cover
 
     def add_dependency(self,dependency:Callable[[Any],Any]|Dependency, *attributes:Attribute)->None:
+        self.__check_dependency_has_at_least_one_input(attributes)
         self.__check_attribute_types_for_dependency(dependency, attributes)
         self.__check_for_existing_dependency()
         self.__check_for_dependency_cycle(set(attributes),path=self._name)
@@ -133,6 +140,9 @@ class Attribute(abc.ABC):
             attribute_affecting_this_one.command['set'].post.pop(self._id)
         self._dependencies.clear()
 
+    def __check_dependency_has_at_least_one_input(self,inputs:Tuple[Attribute,...])->None:
+        if not inputs: raise Attribute.NoInputsForDependency
+
     def __check_for_dependency_cycle(self, attributes:Set[Attribute],path:str)->None:
         if self in attributes: raise Attribute.CyclicDependency(path + ' -> ' + self._name)
         else:
@@ -141,14 +151,6 @@ class Attribute(abc.ABC):
 
     def __check_for_existing_dependency(self)->None:
         if self._dependencies: raise Attribute.MultipleDependencies
-
-    def __set_to_default_value(self)->None:
-        if self.is_valid(self.default_value): # pragma: no cover
-            self._value = self.default_value # pragma: no cover
-        else: # pragma: no cover
-            raise Attribute.InvalidDefaultValue(
-                f"Invalid default value ({self.default_value}) for attribute of type '{self.type}'."
-            ) # pragma: no cover
         
     def __check_attribute_types_for_dependency(
         self,
@@ -167,12 +169,21 @@ class Attribute(abc.ABC):
 
         if not self.is_valid(result):
             raise Attribute.WrongAttributeTypeForDependencyOutput(result)
+        
+    def __set_to_default_value(self)->None:
+        if self.is_valid(self.default_value): # pragma: no cover
+            self._value = self.default_value # pragma: no cover
+        else: # pragma: no cover
+            raise Attribute.InvalidDefaultValue(
+                f"Invalid default value ({self.default_value}) for attribute of type '{self.type}'."
+            ) # pragma: no cover
 
     class CyclicDependency(Exception): pass
     class InvalidAttributeType(Exception): pass
     class InvalidDefaultValue(Exception): pass
     class InvalidValueType(Exception): pass
     class MultipleDependencies(Exception): pass
+    class NoInputsForDependency(Exception): pass
     class WrongAttributeTypeForDependencyInput(Exception): pass
     class WrongAttributeTypeForDependencyOutput(Exception): pass
 
@@ -190,7 +201,7 @@ class Attribute_Factory:
     def new(self,atype:str='text',name:str="")->Attribute:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         else:
-            return self.types[atype](self.controller,atype,name)
+            return self.types[atype](self,atype,name)
         
     def add(self,label:str,new_attribute_class:Type[Attribute])->None:
         if label in self.types:
