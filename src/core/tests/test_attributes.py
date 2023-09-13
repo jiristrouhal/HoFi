@@ -110,8 +110,8 @@ class Test_Dependent_Attributes(unittest.TestCase):
         DENSITY = 1000
         volume = Attribute(controller, 'integer', "volume")
         mass = Attribute(controller, 'integer', "mass")
-        def dependency(volume_attr:Attribute)->int:
-            return volume_attr.value*DENSITY
+        def dependency(volume:int)->int:
+            return volume*DENSITY
         
         mass.add_dependency(dependency, volume)
 
@@ -134,10 +134,10 @@ class Test_Dependent_Attributes(unittest.TestCase):
         volume = Attribute(controller, 'integer', 'volume')
         max_n_of_items = Attribute(controller, 'integer', 'max number of items')
 
-        def calc_volume(side:Attribute)->int:
-            return side.value**3
-        def calc_max_items(volume:Attribute)->int:
-            return int(volume.value/0.1)
+        def calc_volume(side:int)->int:
+            return side**3
+        def calc_max_items(volume:int)->int:
+            return int(volume/0.1)
         
         volume.add_dependency(calc_volume,side)
         max_n_of_items.add_dependency(calc_max_items,volume)
@@ -164,8 +164,8 @@ class Test_Dependent_Attributes(unittest.TestCase):
         controller = Controller()
         a = Attribute(controller,'integer','a')
         b = Attribute(controller, 'integer', 'b')
-        def b_double_of_a(a:Attribute)->int: 
-            return 2*a.value
+        def b_double_of_a(a:int)->int: 
+            return 2*a
         b.add_dependency(b_double_of_a, a)
         
         a.set(2)
@@ -177,8 +177,8 @@ class Test_Dependent_Attributes(unittest.TestCase):
         controller = Controller()
         a = Attribute(controller,'integer','a')
         b = Attribute(controller, 'integer', 'b')
-        def b_double_of_a(a:Attribute)->int: 
-            return 2*a.value
+        def b_double_of_a(a:int)->int: 
+            return 2*a
         b.add_dependency(b_double_of_a, a)
 
         a.set(2)
@@ -194,8 +194,8 @@ class Test_Dependent_Attributes(unittest.TestCase):
     def test_attribute_cannot_depend_on_itself(self):
         controller = Controller()
         a = Attribute(controller, 'integer', 'a')
-        def triple(a:Attribute)->int:  # pragma: no cover
-            return 2*a.value
+        def triple(a:int)->int:  # pragma: no cover
+            return 2*a
         self.assertRaises(Attribute.CyclicDependency, a.add_dependency, triple, a)
 
     def test_attribute_indirectly_depending_on_itself_raises_exception(self):
@@ -203,12 +203,15 @@ class Test_Dependent_Attributes(unittest.TestCase):
         a = Attribute(controller, 'integer', 'a')
         b = Attribute(controller, 'integer', 'b')
         c = Attribute(controller, 'integer', 'c')
-        def equal_to(x:Attribute)->int: # pragma: no cover
-            return x.value
+        def equal_to(x:int)->int: # pragma: no cover
+            return x
         a.add_dependency(equal_to,b)
         b.add_dependency(equal_to,c)
         with self.assertRaises(Attribute.CyclicDependency):
             c.add_dependency(equal_to, a)
+
+    
+
 
 
 

@@ -42,13 +42,14 @@ from typing import Tuple
 @dataclasses.dataclass
 class Set_Dependent_Attr(Command):
     attribute:Attribute
-    func:Callable[[Attribute],Any]
+    func:Callable[[Any],Any]
     attributes:Tuple[Attribute,...]
     old_value:Any = dataclasses.field(init=False)
     new_value:Any = dataclasses.field(init=False)
     def run(self)->None:
         self.old_value = self.attribute.value
-        self.attribute._run_set_command(self.func(*self.attributes))
+        values = [a.value for a in self.attributes]
+        self.attribute._run_set_command(self.func(*values))
         self.new_value = self.attribute.value
     def undo(self)->None:
         self.attribute._run_set_command(self.old_value)
@@ -109,7 +110,7 @@ class Attribute(abc.ABC):
             for attr in attributes:
                 self._check_for_dependency_cycle(attr._dependencies,path + ' -> ' + attr._name)
 
-    def add_dependency(self,dependency:Callable[[Attribute],Any], *attributes:Attribute)->None:
+    def add_dependency(self,dependency:Callable[[Any],Any], *attributes:Attribute)->None:
 
         self._check_for_dependency_cycle(set(attributes),path=self._name)
         
