@@ -5,8 +5,11 @@ sys.path.insert(1,"src")
 
 
 import unittest
-from src.core.attributes import attribute_factory, Attribute
-from src.cmd.commands import Controller
+import dataclasses
+from typing import Any
+
+from src.core.attributes import attribute_factory, Attribute, Set_Attr_Data
+from src.cmd.commands import Controller, Command
 
 
 class Test_Accessing_Item_Attributes(unittest.TestCase):
@@ -54,10 +57,36 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
         self.assertRaises(Attribute.InvalidValueType, a.set, "invalid value")
 
 
-from src.core.attributes import Attribute, Set_Attr_Data
-import dataclasses
-from src.cmd.commands import Command
-from typing import Any
+from src.core.attributes import Attribute_Factory
+class Test_Defining_Custom_Attribute_Type(unittest.TestCase):
+
+    class Positive_Integer_Attribute(Attribute):
+        default_value = 1
+        def is_valid(self, value: Any) -> bool:
+            try:
+                x = int(value)
+                return x is value and x>0
+            except: 
+                return False
+            
+    def test_defining_positive_integer_attribute(self):
+        attrfac = attribute_factory(Controller())
+        attrfac.add('positive integer', self.Positive_Integer_Attribute)
+        attr = attrfac.new('positive integer')
+        attr.set(5)
+        self.assertEqual(attr.value, 5)
+        self.assertFalse(attr.is_valid("abc"))
+        self.assertFalse(attr.is_valid(0))
+        self.assertFalse(attr.is_valid(-1))
+        self.assertFalse(attr.is_valid(0.5))
+        self.assertRaises(Attribute.InvalidValueType, attr.set, 0)
+        self.assertRaises(Attribute.InvalidValueType, attr.set, -1)
+        self.assertRaises(Attribute.InvalidValueType, attr.set, 0.5)
+
+    def test_adding_new_attribute_type_under_already_taken_label_raises_exception(self):
+        attrfac = attribute_factory(Controller())
+        with self.assertRaises(Attribute_Factory.TypeAlreadyDefined):
+            attrfac.add('integer', self.Positive_Integer_Attribute)
 
 
 class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
@@ -104,7 +133,6 @@ class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
 
 
 class Test_Dependent_Attributes(unittest.TestCase):
-
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
 

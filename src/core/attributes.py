@@ -147,6 +147,16 @@ class Attribute_Factory:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         else:
             return self.types[atype](self.controller,atype,name)
+        
+    def add(self,label:str,new_attribute_class:Type[Attribute])->None:
+        if label in self.types:
+            raise Attribute_Factory.TypeAlreadyDefined(
+                f"Label '{label}' already assigned to attribute class '{self.types[label]}'."
+            )
+        else:
+            self.types[label] = new_attribute_class
+
+    class TypeAlreadyDefined(Exception): pass
 
 
 def attribute_factory(controller:Controller)->Attribute_Factory:
