@@ -103,7 +103,6 @@ class Test_NULL_Item(unittest.TestCase):
         NullItem.adopt(child)
         self.assertTrue(NullItem.is_parent_of(child))
         self.assertFalse(parent.is_parent_of(child))
-
         
     def test_renaming(self):
         NullItem.rename("New Name")
@@ -112,9 +111,6 @@ class Test_NULL_Item(unittest.TestCase):
         self.assertEqual(NullItem.name,"")
 
     
-
-from typing import Any
-
 class Test_Accessing_Item_Attributes(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -237,6 +233,9 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
             self.parent.pass_to_new_parent, 
             self.child,grandchild
         )
+    
+    def test_adopting_item_by_its_own_parent(self)->None:
+        self.parent.adopt(self.child)
 
 class Test_Name_Collisions_Of_Items_With_Common_Parent(unittest.TestCase):
 
@@ -748,13 +747,24 @@ class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
 
 class Test_Attributes_Of_Copied_Item(unittest.TestCase):
 
-    def __test_attributes_of_copied_item_have_the_originals_values(self):
-        mg = ItemManager()
-        item = mg.new("item", {"a":'integer', "b":'real'})
-        item.set("a",4)
-        item.set("b",2.5)
-        item_copy = item.get_copy()
+    def setUp(self) -> None:
+        self.mg = ItemManager()
+        self.item = self.mg.new("item", {"a":'integer', "b":'real'})
+        self.item.set("a",4)
+        self.item.set("b",2.5)
 
+    def test_attributes_of_copied_item_have_the_originals_values(self):
+        item_copy = self.item.get_copy()
+        self.assertEqual(item_copy("a"),4)
+        self.assertEqual(item_copy("b"),2.5)
+
+    def test_attributes_of_copied_item_are_independent_on_the_originals_attributes(self):
+        item_copy = self.item.get_copy()
+        self.item.set("a",8)
+        self.item.set("b",-1.23)
+        self.assertEqual(self.item("a"),8)
+        self.assertEqual(item_copy("a"),4)
+        self.assertEqual(item_copy("b"),2.5)
 
 
 

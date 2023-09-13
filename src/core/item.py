@@ -233,6 +233,7 @@ class ItemImpl(Item):
         def root(self)->Item: return self
 
         def adopt(self,child:Item)->None: 
+            if child.parent is self: return
             child.parent.pass_to_new_parent(child,self)
         def attribute(self,label:str)->Attribute: raise Item.NonexistentAttribute
         def on_adoption(self,*args)->None: pass # pragma: no cover
@@ -291,6 +292,7 @@ class ItemImpl(Item):
             return self.__attributes[label]
 
     def adopt(self,item:Item)->None:
+        if self is item.parent: return
         if self._can_be_parent_of(item):
             self._controller.run(*self.command['adopt'](Adoption_Data(self,item)))
 
