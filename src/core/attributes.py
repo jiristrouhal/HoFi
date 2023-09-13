@@ -61,11 +61,20 @@ class Set_Dependent_Attr(Command):
 Command_Type = Literal['set']
 from typing import Set
 class Attribute(abc.ABC):
-    
+
+    default_value:Any = ""
+
     def __init__(self,controller:Controller,atype:str='text',name:str="")->None:
         self._name = name
         self._type = atype
-        self._value = ""
+
+        if self.is_valid(self.default_value): # pragma: no cover
+            self._value = self.default_value # pragma: no cover
+        else: # pragma: no cover
+            raise Attribute.InvalidDefaultValue(
+                f"Invalid default value ({self.default_value}) for attribute of type '{atype}'."
+            ) # pragma: no cover
+
         self.command:Dict[Command_Type,Composed_Command] = {
             'set':Set_Attr_Composed()
         }
@@ -121,21 +130,8 @@ class Attribute(abc.ABC):
         
     class CyclicDependency(Exception): pass
     class InvalidAttributeType(Exception): pass
+    class InvalidDefaultValue(Exception): pass
     class InvalidValueType(Exception): pass
-
-
-class Text_Attribute(Attribute):
-    def is_valid(self, value: Any) -> bool:
-        return isinstance(value,str)
-
-
-class Integer_Attribute(Attribute):
-    def is_valid(self, value: Any) -> bool:
-        try: 
-            int(value+1)
-            return True
-        except: 
-            return False
 
 
 from typing import Type
@@ -157,5 +153,22 @@ def attribute_factory(controller:Controller)->Attribute_Factory:
     return Attribute_Factory(controller)
 
 
+
+class Text_Attribute(Attribute):
+    default_value = ""
+
+    def is_valid(self, value:Any) -> bool:
+        return isinstance(value,str)
+
+
+class Integer_Attribute(Attribute):
+    default_value = 0
+
+    def is_valid(self, value:Any) -> bool:
+        try: 
+            int(value+1)
+            return True
+        except: 
+            return False
 
 
