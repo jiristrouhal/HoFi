@@ -231,9 +231,9 @@ class Real_Attribute(Attribute):
 
     def is_valid(self, value:Any) -> bool:
         try: 
-            if float(value)==value: return True
-            elif math.isnan(value): return True
-            else: return False
+            if math.isnan(value): return True
+            float(value)==value
+            return True
         except: 
             return False
 

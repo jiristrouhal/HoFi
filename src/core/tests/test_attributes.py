@@ -57,6 +57,27 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
         a = self.attrfac.new('integer')
         self.assertRaises(Attribute.InvalidValueType, a.set, "invalid value")
 
+    def test_real_attribute_valid_inputs(self):
+        x = self.attrfac.new('real')
+        self.assertTrue(x.is_valid(0))
+        self.assertTrue(x.is_valid(1))
+        self.assertTrue(x.is_valid(-1))
+        self.assertTrue(x.is_valid(0.5))
+        self.assertTrue(x.is_valid(1/5))
+        self.assertTrue(x.is_valid(math.e))
+        self.assertTrue(x.is_valid(math.nan))
+        self.assertTrue(x.is_valid(math.inf))
+
+        self.assertFalse(x.is_valid(None))
+        self.assertFalse(x.is_valid(""))
+        self.assertFalse(x.is_valid(" "))
+        self.assertFalse(x.is_valid("5"))
+        self.assertFalse(x.is_valid("0.5"))
+        self.assertFalse(x.is_valid("a"))
+        self.assertFalse(x.is_valid(complex(1,2)))
+        self.assertFalse(x.is_valid(complex(1,0)))
+
+
 
 from src.core.attributes import Attribute_Factory
 class Test_Defining_Custom_Attribute_Type(unittest.TestCase):
