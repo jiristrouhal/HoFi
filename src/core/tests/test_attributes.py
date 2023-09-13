@@ -203,7 +203,7 @@ class Test_Dependent_Attributes(unittest.TestCase):
         a = Attribute(controller, 'integer', 'a')
         b = Attribute(controller, 'integer', 'b')
         c = Attribute(controller, 'integer', 'c')
-        def equal_to(x:Attribute)->int:
+        def equal_to(x:Attribute)->int: # pragma: no cover
             return x.value
         a.add_dependency(equal_to,b)
         b.add_dependency(equal_to,c)

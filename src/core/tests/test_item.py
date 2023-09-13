@@ -736,9 +736,14 @@ class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
         item = mg.new("Water",{"Volume":'integer'}) 
         self.assertRaises(Item.NonexistentAttribute, item.set, "Nonexistent attribute",5)
         self.assertRaises(Item.NonexistentAttribute, item, "Nonexistent attribute")
+        self.assertRaises(Item.NonexistentAttribute, item.attribute, "Nonexistent attribute")
 
-
-
+    def test_accessing_existing_attribute(self):
+        mg = ItemManager()
+        item = mg.new("Water",{"Volume":'integer'}) 
+        item.set("Volume",5)
+        self.assertEqual(item("Volume"),5)
+        self.assertEqual(item.attribute("Volume").value,5)
 
 if __name__=="__main__": unittest.main()
 
