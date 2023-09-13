@@ -288,5 +288,16 @@ class Test_Dependency_Object(unittest.TestCase):
         self.assertEqual(dep(inf), inf)
         self.assertTrue(math.isnan(dep(-1)))
 
+    def test_passing_invalid_argument_type_to_dependency(self):
+        def square(x:int)->int: return x*x
+        dep = Dependency(square)
+        self.assertRaises(Dependency.InvalidArgumentType, dep, "abc")
+
+
+
+class Test_Using_Dependency_Object_To_Handle_Invalid_Input_Values(unittest.TestCase):
+
+    pass
+
 
 if __name__=="__main__": unittest.main()

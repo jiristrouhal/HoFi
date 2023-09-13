@@ -17,8 +17,12 @@ class Dependency:
             return result
         except ValueError:
             return float('nan')
+        except TypeError:
+            raise self.InvalidArgumentType
         except: # pragma: no cover
             return None # pragma: no cover
+        
+    class InvalidArgumentType(Exception): pass
 
 @dataclasses.dataclass
 class Set_Attr_Data:
