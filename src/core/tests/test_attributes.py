@@ -45,7 +45,7 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
         self.assertFalse(a.is_valid("5"))
         self.assertFalse(a.is_valid(""))
 
-    def test_for_text_attribute_any_value_is_valid(self):
+    def test_for_text_attribute_any_string_value_is_valid(self):
         a = self.attrfac.new('text')
         self.assertFalse(a.is_valid(5))
         self.assertTrue(a.is_valid("abc"))
