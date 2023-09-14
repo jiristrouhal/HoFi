@@ -601,4 +601,29 @@ class Test_Choice_Attribute(unittest.TestCase):
         self.assertFalse(self.c.is_option("C"))
 
 
+class Test_Make_Choice_Attribute_Dependent(unittest.TestCase):
+
+    def test_choice_describing_result_of_comparison_of_two_integers(self):
+        fac = attribute_factory(Controller())
+        a = fac.new('integer', "a")
+        b = fac.new('integer', "b")
+        comp = fac.new('choice')
+        comp.add_options("a is greater than b","a is equal to b","a is less than b")
+        def comparison(a:int, b:int):
+            if a>b: return "a is greater than b"
+            elif a<b: return "a is less than b"
+            else: return "a is equal to b"
+        comp.add_dependency(comparison,a,b)
+        a.set(5)
+        b.set(7)
+        self.assertEqual(comp.value, "a is less than b")
+        a.set(8)
+        b.set(1)
+        self.assertEqual(comp.value, "a is greater than b")  
+        # test the dependent choice can't be set manually
+        comp.set("a is equal to b")
+        self.assertEqual(comp.value, "a is greater than b")
+
+
+
 if __name__=="__main__": unittest.main()
