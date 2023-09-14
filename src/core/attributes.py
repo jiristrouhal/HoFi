@@ -129,8 +129,8 @@ class Attribute(abc.ABC):
         self.command['set'].add(owner, func, timing)
 
     def print(self, **options)->str:
-        for option in options: 
-            if option not in self.printops: raise Attribute.UnknownOption(option)
+        for op in options:
+            if op not in self.printops: raise Attribute.UnknownOption
         return self._str_value(self._value,**options)
         
     @abc.abstractmethod
@@ -143,6 +143,13 @@ class Attribute(abc.ABC):
     
     @abc.abstractmethod
     def is_valid(self, value:Any)->bool: pass # pragma: no cover
+
+    @classmethod
+    def _pick_format_option(cls,option,options:Dict[str,Any])->Any:
+        if option in cls.printops:
+            if option in options: return options[option]
+            else: return cls.printops[option]
+        else: raise Attribute.UnknownOption
 
     def _run_set_command(self,value:Any)->None:
         self._factory.controller.run(self.__get_set_command(value))
@@ -234,6 +241,7 @@ class Attribute_Factory:
         self.types['integer'] = Integer_Attribute
         self.types['real'] = Real_Attribute
         self.types['choice'] = Choice_Attribute
+        self.types['date'] = Date_Attribute
 
     def new(self,atype:str='text',name:str="")->Attribute:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
@@ -301,11 +309,8 @@ class Real_Attribute(Attribute):
 
     @classmethod
     def _str_value(cls, value, **options) -> str:
-        ops = cls.printops.copy()
-        for op in options: 
-            if op in ops: ops[op] = options[op]
-
-        return format(value, f'.{max(0,ops["prec"])}f')
+        precision = cls._pick_format_option('prec',options)
+        return format(value, f'.{precision}f')
     
 
 class Choice_Attribute(Attribute):
@@ -355,3 +360,21 @@ class Choice_Attribute(Attribute):
     class NonexistentOption(Exception): pass
     class OptionsNotDefined(Exception): pass
 
+
+import datetime
+class Date_Attribute(Attribute):
+    default_value = datetime.date.today()
+    printops = {'local_code':'default'}
+    __date_formats = {
+        'cs_cz':'%d.%m.%y',
+        'default':'%y-%m-%d'
+    }
+
+    def is_valid(self, value: Any) -> bool:
+        return isinstance(value, datetime.date)
+
+    @classmethod
+    def _str_value(cls, value: Any, **options) -> str:
+        local_code = cls._pick_format_option('local_code',options)
+        date_format = cls.__date_formats[local_code]
+        return datetime.date.strftime(value,date_format)

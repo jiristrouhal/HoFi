@@ -626,6 +626,13 @@ class Test_Make_Choice_Attribute_Dependent(unittest.TestCase):
         self.assertEqual(comp.value, "a is greater than b")
 
 
+import datetime
+class Test_Date_Attribute(unittest.TestCase):
+
+    def test_date_attribute(self):
+        fac = attribute_factory(Controller())
+        date = fac.new("date")
+        
 
 
 if __name__=="__main__": unittest.main()
