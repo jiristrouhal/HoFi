@@ -233,6 +233,7 @@ class Attribute_Factory:
         self.types['text'] = Text_Attribute
         self.types['integer'] = Integer_Attribute
         self.types['real'] = Real_Attribute
+        self.types['choice'] = Choice_Attribute
 
     def new(self,atype:str='text',name:str="")->Attribute:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
@@ -296,5 +297,27 @@ class Real_Attribute(Attribute):
             if op in ops: ops[op] = options[op]
 
         return format(self._value, f'.{max(0,ops["prec"])}f')
+    
 
+class Choice_Attribute(Attribute):
+    default_value = ""
+    printopts:Dict[str,Any] = {}
 
+    def __init__(self, factory:Attribute_Factory, atype:str, name:str=""):
+        self.options:List[Any] = list()
+        super().__init__(factory, atype, name)
+
+    def set(self,value:Any)->None:
+        if not self.options: raise Choice_Attribute.OptionsNotDefined
+        super().set(value)
+
+    def is_valid(self, value:Any) -> bool:
+        if self.options and value not in self.options: 
+            raise Choice_Attribute.InvalidOption(value, f"available options: {self.options}")
+        return True
+    
+    def _str_value(self, **options) -> str:
+        return self._value
+
+    class InvalidOption(Exception): pass
+    class OptionsNotDefined(Exception): pass

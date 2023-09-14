@@ -557,7 +557,15 @@ class Test_Attribute_Value_Formatting(unittest.TestCase):
         fac = attribute_factory(Controller())
         x = fac.new('real')
         with self.assertRaises(Attribute.UnknownOption):
-            x.print(invalid_options='__')
+            x.print(invalid_option='__')
+
+
+class Test_Choice_Attribute(unittest.TestCase):
+
+    def test_setting_attribute_always_raises_excpetion_before_defining_options(self):
+        fac = attribute_factory(Controller())
+        c = fac.new('choice')
+        self.assertRaises(c.OptionsNotDefined, c.set, " ")
 
 
 if __name__=="__main__": unittest.main()
