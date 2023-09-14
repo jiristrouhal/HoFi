@@ -91,8 +91,9 @@ class Test_Defining_Custom_Attribute_Type(unittest.TestCase):
             except: 
                 return False
             
-        def _str_value(self, **options) -> str: # pragma: no cover
-            return str(self._value)
+        @classmethod
+        def _str_value(cls, value, **options) -> str: # pragma: no cover
+            return str(value)
             
     def test_defining_positive_integer_attribute(self):
         attrfac = attribute_factory(Controller())
@@ -565,7 +566,7 @@ class Test_Choice_Attribute(unittest.TestCase):
 
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
-        self.c:Choice_Attribute = self.fac.new('choice')
+        self.c:Choice_Attribute = self.fac.choice()
 
     def test_setting_attribute_always_raises_excpetion_before_defining_options(self):
         self.assertRaises(self.c.OptionsNotDefined, self.c.set, " ")
@@ -607,7 +608,7 @@ class Test_Make_Choice_Attribute_Dependent(unittest.TestCase):
         fac = attribute_factory(Controller())
         a = fac.new('integer', "a")
         b = fac.new('integer', "b")
-        comp = fac.new('choice')
+        comp = fac.choice()
         comp.add_options("a is greater than b","a is equal to b","a is less than b")
         def comparison(a:int, b:int):
             if a>b: return "a is greater than b"
@@ -623,6 +624,7 @@ class Test_Make_Choice_Attribute_Dependent(unittest.TestCase):
         # test the dependent choice can't be set manually
         comp.set("a is equal to b")
         self.assertEqual(comp.value, "a is greater than b")
+
 
 
 

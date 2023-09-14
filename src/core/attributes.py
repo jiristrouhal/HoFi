@@ -240,6 +240,9 @@ class Attribute_Factory:
         else:
             return self.types[atype](self,atype,name)
         
+    def choice(self, name:str="")->Choice_Attribute:
+        return Choice_Attribute(self,'choice',name)
+        
     def add(self,label:str,new_attribute_class:Type[Attribute])->None:
         if label in self.types:
             raise Attribute_Factory.TypeAlreadyDefined(
@@ -327,8 +330,10 @@ class Choice_Attribute(Attribute):
     def remove_options(self,*options:Any)->None:
         if self._value in options: raise Choice_Attribute.CannotRemoveChosenOption
         for op in options:
-            if op in self.options: self.options.remove(op)
-            else: raise Choice_Attribute.NonexistentOption
+            if op in self.options: 
+                self.options.remove(op)
+            else: 
+                raise Choice_Attribute.NonexistentOption
 
     def set(self,value:Any)->None:
         if not self.options: raise Choice_Attribute.OptionsNotDefined
