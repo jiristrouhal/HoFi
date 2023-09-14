@@ -560,12 +560,44 @@ class Test_Attribute_Value_Formatting(unittest.TestCase):
             x.print(invalid_option='__')
 
 
+from src.core.attributes import Choice_Attribute
 class Test_Choice_Attribute(unittest.TestCase):
 
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.c:Choice_Attribute = self.fac.new('choice')
+
     def test_setting_attribute_always_raises_excpetion_before_defining_options(self):
-        fac = attribute_factory(Controller())
-        c = fac.new('choice')
-        self.assertRaises(c.OptionsNotDefined, c.set, " ")
+        self.assertRaises(self.c.OptionsNotDefined, self.c.set, " ")
+        self.c.add_options("A", "B")
+        self.c.set("A")
+
+    def test_exception_is_raised_when_setting_to_nonexistent_option(self):
+        self.c.add_options("A","B")
+        self.assertRaises(Choice_Attribute.NonexistentOption, self.c.set, "C")
+
+    def test_removing_options(self):
+        self.c.add_options("A","B")
+        self.c.remove_options("A")
+        self.assertRaises(Choice_Attribute.NonexistentOption, self.c.set, "A")
+
+    def test_accessing_value_before_defining_options_raises_exception(self):
+        with self.assertRaises(Choice_Attribute.OptionsNotDefined):
+            self.c.value
+
+    def test_currently_chosen_option_cannot_be_removed(self)->None:
+        self.c.add_options("A","B")
+        self.c.set("B")
+        self.assertRaises(Choice_Attribute.CannotRemoveChosenOption, self.c.remove_options, "B")
+
+    def test_print_options_as_a_tuple(self)->None:
+        self.c.add_options(123, 456, 203)
+        self.assertEqual(self.c.print_options(), ("123", "456", "203"))
+
+    def test_check_value_is_in_options(self):
+        self.c.add_options("A","B")
+        self.assertTrue(self.c.is_option("A"))
+        self.assertFalse(self.c.is_option("C"))
 
 
 if __name__=="__main__": unittest.main()

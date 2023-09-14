@@ -80,7 +80,7 @@ Command_Type = Literal['set']
 from typing import Set, List
 class Attribute(abc.ABC):
     default_value:Any = ""
-    printops:Dict[str,Any] = dict()
+    printops:Dict[str,Any] = {}
 
     def __init__(self,factory:Attribute_Factory, atype:str='text',name:str="")->None:
         self._name = name
@@ -131,10 +131,10 @@ class Attribute(abc.ABC):
     def print(self, **options)->str:
         for option in options: 
             if option not in self.printops: raise Attribute.UnknownOption(option)
-        return self._str_value(**options)
+        return self._str_value(self._value,**options)
         
     @abc.abstractmethod
-    def _str_value(self,**options)->str: # pragma: no cover
+    def _str_value(cls, value:Any,**options)->str: # pragma: no cover
         pass
 
     def set(self,value:Any)->None: 
@@ -258,16 +258,19 @@ def attribute_factory(controller:Controller)->Attribute_Factory:
 
 class Text_Attribute(Attribute):
     default_value = ""
+    printopts:Dict[str,Any] = {}
 
     def is_valid(self, value:Any) -> bool:
         return isinstance(value,str)
     
-    def _str_value(self, **options) -> str:
-        return self._value
+    @classmethod
+    def _str_value(cls, value:Any, **options:Any)->str:
+        return str(value)
 
 
 class Integer_Attribute(Attribute):
     default_value = 0
+    printopts:Dict[str,Any] = {}
 
     def is_valid(self, value:Any) -> bool:
         try: 
@@ -275,14 +278,16 @@ class Integer_Attribute(Attribute):
         except: 
             return False
     
-    def _str_value(self, **options) -> str:
-        return str(self._value)
+    @classmethod
+    def _str_value(cls, value:Any, **options) -> str:
+        return str(value)
         
     
 import math
 class Real_Attribute(Attribute):
     default_value = 0
     printops:Dict[str,Any] = {'prec':30}
+
     def is_valid(self, value:Any) -> bool:
         try: 
             if math.isnan(value): return True
@@ -291,33 +296,57 @@ class Real_Attribute(Attribute):
         except: 
             return False
 
-    def _str_value(self, **options) -> str:
-        ops = self.printops.copy()
+    @classmethod
+    def _str_value(cls, value, **options) -> str:
+        ops = cls.printops.copy()
         for op in options: 
             if op in ops: ops[op] = options[op]
 
-        return format(self._value, f'.{max(0,ops["prec"])}f')
+        return format(value, f'.{max(0,ops["prec"])}f')
     
 
 class Choice_Attribute(Attribute):
     default_value = ""
     printopts:Dict[str,Any] = {}
 
-    def __init__(self, factory:Attribute_Factory, atype:str, name:str=""):
+    def __init__(self, factory:Attribute_Factory, atype:str, name:str="")->None:
         self.options:List[Any] = list()
         super().__init__(factory, atype, name)
+
+    @property
+    def value(self)->Any: 
+        if self.options: return self._value
+        else: raise Choice_Attribute.OptionsNotDefined
+
+    def add_options(self, *options:Any)->None:
+        self.options.extend(options)
+
+    def print_options(self, **format_options)->Tuple[str,...]:
+        return tuple([self._str_value(op) for op in self.options])
+
+    def remove_options(self,*options:Any)->None:
+        if self._value in options: raise Choice_Attribute.CannotRemoveChosenOption
+        for op in options:
+            if op in self.options: self.options.remove(op)
+            else: raise Choice_Attribute.NonexistentOption
 
     def set(self,value:Any)->None:
         if not self.options: raise Choice_Attribute.OptionsNotDefined
         super().set(value)
 
+    def is_option(self, value:Any)->bool:
+        return value in self.options
+
     def is_valid(self, value:Any) -> bool:
         if self.options and value not in self.options: 
-            raise Choice_Attribute.InvalidOption(value, f"available options: {self.options}")
+            raise Choice_Attribute.NonexistentOption(value, f"available options: {self.options}")
         return True
     
-    def _str_value(self, **options) -> str:
-        return self._value
+    @classmethod
+    def _str_value(cls, value, **format_options) -> str:
+        return str(value)
 
-    class InvalidOption(Exception): pass
+    class CannotRemoveChosenOption(Exception): pass
+    class NonexistentOption(Exception): pass
     class OptionsNotDefined(Exception): pass
+
