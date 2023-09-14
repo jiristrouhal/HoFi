@@ -560,6 +560,12 @@ class Test_Attribute_Value_Formatting(unittest.TestCase):
         with self.assertRaises(Attribute.UnknownOption):
             x.print(invalid_option='__')
 
+    def test_picking_nonexistent_format_option(self):
+        fac = attribute_factory(Controller())
+        x = fac.new('real')
+        with self.assertRaises(Attribute.UnknownOption):
+            x._pick_format_option('nonexistent_format_option', {})
+
 
 from src.core.attributes import Choice_Attribute
 class Test_Choice_Attribute(unittest.TestCase):
