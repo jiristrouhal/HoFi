@@ -364,10 +364,11 @@ class Choice_Attribute(Attribute):
 import datetime
 class Date_Attribute(Attribute):
     default_value = datetime.date.today()
-    printops = {'local_code':'default'}
+    printops = {'locale_code':'default'}
+    # all locale codes must be entered in lower case 
     __date_formats = {
-        'cs_cz':'%d.%m.%y',
-        'default':'%y-%m-%d'
+        'cs_cz':'%d.%m.%Y',
+        'default':'%Y-%m-%d'
     }
 
     def is_valid(self, value: Any) -> bool:
@@ -375,6 +376,10 @@ class Date_Attribute(Attribute):
 
     @classmethod
     def _str_value(cls, value: Any, **options) -> str:
-        local_code = cls._pick_format_option('local_code',options)
-        date_format = cls.__date_formats[local_code]
+        locale_code = str(cls._pick_format_option('locale_code',options)).lower()
+
+        if locale_code not in cls.__date_formats: raise cls.UnknownLocaleCode
+        date_format = cls.__date_formats[locale_code]
         return datetime.date.strftime(value,date_format)
+    
+    class UnknownLocaleCode(Exception): pass

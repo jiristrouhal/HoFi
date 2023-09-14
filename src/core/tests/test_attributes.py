@@ -627,12 +627,26 @@ class Test_Make_Choice_Attribute_Dependent(unittest.TestCase):
 
 
 import datetime
+from src.core.attributes import Date_Attribute
 class Test_Date_Attribute(unittest.TestCase):
 
     def test_date_attribute(self):
         fac = attribute_factory(Controller())
         date = fac.new("date")
-        
+        date.set(datetime.date(2023,9,15))
+        self.assertEqual(date.value, datetime.date(2023,9,15))
+        self.assertEqual(date.print(locale_code='cs_cz'),"15.09.2023")
+        self.assertEqual(date.print(locale_code='default'),"2023-09-15")
+        self.assertEqual(date.print(),"2023-09-15")
+        with self.assertRaises(Date_Attribute.UnknownLocaleCode):
+            date.print(locale_code="!$_<>")
+
+    def test_locale_code_is_not_case_sensitive(self):
+        fac = attribute_factory(Controller())
+        date = fac.new("date")
+        date.set(datetime.date(2023,9,15))
+        self.assertEqual(date.print(locale_code='cs_cz'),"15.09.2023")
+        self.assertEqual(date.print(locale_code='CS_CZ'),"15.09.2023")
 
 
 if __name__=="__main__": unittest.main()
