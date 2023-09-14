@@ -76,12 +76,11 @@ class Set_Dependent_Attr(Command):
         self.attribute._run_set_command(self.new_value)
 
 
-
 Command_Type = Literal['set']
 from typing import Set, List
 class Attribute(abc.ABC):
     default_value:Any = ""
-    printops:Set[Any] = set()
+    printops:Dict[str,Any] = dict()
 
     def __init__(self,factory:Attribute_Factory, atype:str='text',name:str="")->None:
         self._name = name
@@ -135,7 +134,7 @@ class Attribute(abc.ABC):
         return self._str_value(**options)
         
     @abc.abstractmethod
-    def _str_value(self,**options)->str:
+    def _str_value(self,**options)->str: # pragma: no cover
         pass
 
     def set(self,value:Any)->None: 
@@ -282,7 +281,7 @@ class Integer_Attribute(Attribute):
 import math
 class Real_Attribute(Attribute):
     default_value = 0
-    printops = {'prec'}
+    printops:Dict[str,Any] = {'prec':30}
     def is_valid(self, value:Any) -> bool:
         try: 
             if math.isnan(value): return True
@@ -292,8 +291,10 @@ class Real_Attribute(Attribute):
             return False
 
     def _str_value(self, **options) -> str:
-        if 'prec' in options:
-            prec = options['prec']
-            return format(self._value, f'.{max(0,prec)}f')
-        return str(self._value)
+        ops = self.printops.copy()
+        for op in options: 
+            if op in ops: ops[op] = options[op]
+
+        return format(self._value, f'.{max(0,ops["prec"])}f')
+
 

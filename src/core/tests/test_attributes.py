@@ -531,12 +531,21 @@ class Test_Setting_Multiple_Independent_Attributes_At_Once(unittest.TestCase):
 
 class Test_Attribute_Value_Formatting(unittest.TestCase):
 
-    def test_decimal_attribute(self):
+    def test_real_attribute(self):
         fac = attribute_factory(Controller())
         x = fac.new('real')
         x.set(math.pi)
         self.assertEqual(x.value, math.pi)
         self.assertEqual(x.print(prec=2), '3.14')
+        x.set(150.254)
+        self.assertEqual(x.print(prec=0), '150')
+        self.assertEqual(x.print(prec=5), '150.25400')
+
+    def test_invalid_printop_raises_exception(self):
+        fac = attribute_factory(Controller())
+        x = fac.new('real')
+        with self.assertRaises(Attribute.UnknownOption):
+            x.print(invalid_options='__')
 
 
 if __name__=="__main__": unittest.main()
