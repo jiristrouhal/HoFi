@@ -508,7 +508,22 @@ class Test_Setting_Multiple_Independent_Attributes_At_Once(unittest.TestCase):
         Attribute.set_multiple({y:0, z:1})
         self.assertEqual(y.value, 4)
         self.assertEqual(z.value, 1)
-        
+
+    def test_setting_attributes_from_multiple_factories_with_different_controllers(self):
+        fac1 = attribute_factory(Controller())
+        fac2 = attribute_factory(Controller())
+        x1 = fac1.new('integer')
+        x2 = fac2.new('integer')
+        Attribute.set_multiple({x1:0,x2:1})
+        Attribute.set_multiple({x1:10,x2:8})
+        self.assertEqual(x1.value,10)
+        self.assertEqual(x2.value,8)
+        fac1.controller.undo()
+        self.assertEqual(x1.value,0)
+        self.assertEqual(x2.value,8)
+        fac2.controller.undo()
+        self.assertEqual(x1.value,0)
+        self.assertEqual(x2.value,1)
 
 
 class Test_Attribute_Value_Formatting(unittest.TestCase):

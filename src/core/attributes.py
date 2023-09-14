@@ -191,26 +191,20 @@ class Attribute(abc.ABC):
 
     @staticmethod
     def set_multiple(new_values:Dict[Attribute,Any])->None:
-        fac = Attribute.__single_common_factory(list(new_values.keys()))
-
-        cmds:List[Command] = list()
+        facs:List[Attribute_Factory] = list()
+        cmds:List[List[Command]] = list()
         for attr,value in new_values.items():
             if attr._dependency is not None: continue #ignore dependent attributes
-            cmds.extend(attr.__get_set_command(value))
-        fac.controller.run(*cmds)
+            if not attr._factory in facs:
+                facs.append(attr._factory)
+                cmds.append(list())
+            cmds[facs.index(attr._factory)].extend(attr.__get_set_command(value))
         
-    @staticmethod
-    def __single_common_factory(attributes:List[Attribute])->Attribute_Factory:
-        if not attributes: raise Attribute.EmptyAttributeList
-        fac = attributes[-1]._factory
-        for a in attributes[:-1]:
-            if a._factory is not fac: 
-                raise Attribute.GroupingAttributesFromDifferentFactories
-        return fac
+        for fac, cmd_list in zip(facs,cmds):
+            fac.controller.run(*cmd_list)
 
     class CyclicDependency(Exception): pass
     class DependencyAlreadyAssigned(Exception): pass
-    class EmptyAttributeList(Exception): pass
     class GroupingAttributesFromDifferentFactories(Exception): pass
     class InvalidAttributeType(Exception): pass
     class InvalidDefaultValue(Exception): pass
