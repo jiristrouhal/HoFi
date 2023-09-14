@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Any, Set, Callable
+from typing import Dict, Any, Set, Callable, List
 import dataclasses
 from src.cmd.commands import Command, Controller, Composed_Command, Timing
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
@@ -166,7 +166,7 @@ class Item(abc.ABC): # pragma: no cover
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None: pass
 
     @abc.abstractmethod
-    def get_copy(self)->Item: pass
+    def copy(self)->Item: pass
 
     @abc.abstractmethod
     def has_children(self)->bool: pass
@@ -206,6 +206,9 @@ class Item(abc.ABC): # pragma: no cover
 
     @abc.abstractmethod
     def _rename(self,name:str)->None: pass
+
+    @abc.abstractmethod
+    def _single_item_copy(self,assigned_parent:Item)->Item: pass
         
     class AdoptionOfAncestor(Exception): pass
     class AdoptingNULL(Exception): pass
@@ -239,7 +242,7 @@ class ItemImpl(Item):
         def on_adoption(self,*args)->None: pass # pragma: no cover
         def on_passing_to_new_parent(self,*args)->None: pass # pragma: no cover
         def on_renaming(self,*args)->None: pass # pragma: no cover
-        def get_copy(self) -> Item: return self
+        def copy(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
         def is_ancestor_of(self, child:Item)->bool: return child==self
@@ -254,6 +257,7 @@ class ItemImpl(Item):
         def _leave_child(self,child:Item)->None: return
         def _leave_parent(self,parent:Item)->None: return
         def _rename(self,name:str)->None: return
+        def _single_item_copy(self,assigned_parent:Item)->Item: return self # pragma: no cover
 
 
     NULL = __ItemNull()
@@ -317,17 +321,9 @@ class ItemImpl(Item):
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None:
         self.command['rename'].add(owner, func, timing)
 
-    def get_copy(self)->Item:
-        item_copy = ItemImpl(self.name, self.__attributes_copy(), self._controller)
-        self.parent.adopt(item_copy)
-        return item_copy
+    def copy(self)->Item:
+        return self._single_item_copy(self.parent)
     
-    def __attributes_copy(self)->Dict[str,Attribute]:
-        the_copy:Dict[str,Attribute] = {}
-        for label, attr in self.attributes.items():
-            the_copy[label] = attr.copy()
-        return the_copy
-
     def has_children(self)->bool:
         return bool(self.__children)
 
@@ -371,6 +367,25 @@ class ItemImpl(Item):
             self.__parent._leave_child(self)
             self.__parent = self.NULL
 
+    def _rename(self,name:str)->None:
+        name = strip_and_join_spaces(name)
+        self.__raise_if_name_is_blank(name)
+        self.__name = name
+
+    def _single_item_copy(self,assigned_parent:Item)->Item:
+        item_copy = ItemImpl(self.name, self.__attributes_copy(), self._controller)
+        for child in self.__children:
+            child._single_item_copy(item_copy)
+        assigned_parent.adopt(item_copy)
+        return item_copy
+
+    
+    def __attributes_copy(self)->Dict[str,Attribute]:
+        the_copy:Dict[str,Attribute] = {}
+        for label, attr in self.attributes.items():
+            the_copy[label] = attr.copy()
+        return the_copy
+    
     def __make_child_to_rename_if_its_name_already_taken(self, child:Item):
         names = [c.name for c in self.__children]
         cname = child.name
@@ -378,13 +393,9 @@ class ItemImpl(Item):
             names.remove(cname)
             cname = adjust_taken_name(cname)
             child._rename(cname)
-
-    def _rename(self,name:str)->None:
-        name = strip_and_join_spaces(name)
-        self.__raise_if_name_is_blank(name)
-        self.__name = name
     
     def __raise_if_name_is_blank(self,name:str)->None:
         if name=="": raise self.BlankName
+
 
         

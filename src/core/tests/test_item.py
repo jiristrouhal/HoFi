@@ -72,7 +72,7 @@ class Test_NULL_Item(unittest.TestCase):
         NullItem.pass_to_new_parent(child,parent)
         self.assertEqual(child.parent, parent)
 
-        self.assertEqual(NullItem.get_copy(), NullItem)
+        self.assertEqual(NullItem.copy(), NullItem)
 
     def test_leaving_child_has_no_effect(self):
         mg = ItemManager()
@@ -370,7 +370,7 @@ class Test_Child_Copy(unittest.TestCase):
         self.parent = self.mg.new("Parent")
         self.child = self.mg.new("Child")
         self.parent.adopt(self.child)
-        self.copy = self.child.get_copy()
+        self.copy = self.child.copy()
 
     def test_child_copy_has_the_same_parent_as_the_original(self):
         self.assertTrue(self.parent.is_parent_of(self.copy))
@@ -399,7 +399,7 @@ class Test_Undo_And_Redo_Multiple_Operations(unittest.TestCase):
         parent = mg.new("Parent")
         child = mg.new("Child")
         parent.adopt(child)
-        child_copy = child.get_copy()
+        child_copy = child.copy()
         child_copy.rename("Second child")
 
         for _ in range(3):
@@ -754,18 +754,32 @@ class Test_Attributes_Of_Copied_Item(unittest.TestCase):
         self.item.set("b",2.5)
 
     def test_attributes_of_copied_item_have_the_originals_values(self):
-        item_copy = self.item.get_copy()
+        item_copy = self.item.copy()
         self.assertEqual(item_copy("a"),4)
         self.assertEqual(item_copy("b"),2.5)
 
     def test_attributes_of_copied_item_are_independent_on_the_originals_attributes(self):
-        item_copy = self.item.get_copy()
+        item_copy = self.item.copy()
         self.item.set("a",8)
         self.item.set("b",-1.23)
         self.assertEqual(self.item("a"),8)
         self.assertEqual(item_copy("a"),4)
         self.assertEqual(item_copy("b"),2.5)
 
+
+class Test_Children_Of_Copied_Item(unittest.TestCase):
+
+    def test_item_is_copied_with_its_children(self)->None:
+        mg = ItemManager()
+        parent = mg.new("parent")
+        child = mg.new("child")
+        grandchild = mg.new("grandchild")
+        parent.adopt(child)
+        child.adopt(grandchild)
+        
+        child_copy = child.copy()
+        self.assertTrue(child_copy.has_children())
+    
 
 
 if __name__=="__main__": unittest.main()
