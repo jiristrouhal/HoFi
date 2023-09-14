@@ -702,4 +702,33 @@ class Test_Date_Attribute(unittest.TestCase):
             self.assertRaises(Date_Attribute.CannotExtractDate,date.read,d)
 
 
+
+from src.core.attributes import Monetary_Attribute
+class Test_Monetary_Attribute(unittest.TestCase):
+
+    def test_defining_monetary_attribute_and_setting_its_value(self):
+        fac = attribute_factory(Controller())
+        mon:Monetary_Attribute = fac.new("money")
+        mon.set(45)
+        self.assertEqual(mon.value, 45)
+        mon.set(45.12446656)
+        self.assertEqual(mon.value, 45.12446656)
+        mon.set(-8)
+        self.assertEqual(mon.value, -8)
+        mon.set(0)
+        self.assertEqual(mon.value,0)
+
+        self.assertRaises(Attribute.InvalidValueType, mon.set, "45")
+        self.assertRaises(Attribute.InvalidValueType, mon.set, "45 $")
+        self.assertRaises(Attribute.InvalidValueType, mon.set, "$45")
+
+    def test_currency_needs_to_be_specified_before_printing_money_value_as_a_string(self):
+        fac = attribute_factory(Controller())
+        mon:Monetary_Attribute = fac.new("money")
+        mon.set(12)
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD"), "12 $")
+        self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "$12")
+
+
+
 if __name__=="__main__": unittest.main()

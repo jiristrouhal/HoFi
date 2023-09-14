@@ -158,7 +158,8 @@ class Attribute(abc.ABC):
         return self.command['set'](Set_Attr_Data(self,value))
 
     def _check_and_set_value(self,value:Any)->None:
-        if not self.is_valid(value): raise Attribute.InvalidValueType
+        if not self.is_valid(value): 
+            raise Attribute.InvalidValueType(value)
         else: self._value = value
 
     def __check_dependency_has_at_least_one_input(self,inputs:Tuple[Attribute,...])->None:
@@ -242,6 +243,7 @@ class Attribute_Factory:
         self.types['real'] = Real_Attribute
         self.types['choice'] = Choice_Attribute
         self.types['date'] = Date_Attribute
+        self.types['money'] = Monetary_Attribute
 
     def new(self,atype:str='text',name:str="")->Attribute:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
@@ -411,3 +413,36 @@ class Date_Attribute(Attribute):
     
     class UnknownLocaleCode(Exception): pass
     class CannotExtractDate(Exception): pass
+
+
+class Monetary_Attribute(Attribute):
+    default_value = 0.0
+    printops = {'locale_code':'default', 'currency':'USD'}
+    __curr_symbols = {
+        'USD':'$'
+    }
+    __symbol_after_value = {"cs_cz",}
+
+    def _str_value(cls, value: Any, **options) -> str:
+        currency = cls._pick_format_option('currency',options)
+        if currency in cls.__curr_symbols:
+            symbol = cls.__curr_symbols[currency]
+        else: 
+            raise cls.UndefinedCurrencySymbol
+        
+        locale_code = cls._pick_format_option('locale_code',options)
+        symbol_after_value = locale_code in cls.__symbol_after_value
+
+        if symbol_after_value:
+            return str(value) + ' ' + symbol
+        else:
+            return symbol+str(value)
+
+    
+    def is_valid(self, value: Any) -> bool:
+        try:
+            return float(value) == value
+        except:
+            return False
+
+    class UndefinedCurrencySymbol(Exception): pass
