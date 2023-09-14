@@ -362,6 +362,7 @@ class Choice_Attribute(Attribute):
 
 
 import datetime
+import re
 class Date_Attribute(Attribute):
     default_value = datetime.date.today()
     printops = {'locale_code':'default'}
@@ -370,6 +371,14 @@ class Date_Attribute(Attribute):
         'cs_cz':'%d.%m.%Y',
         'default':'%Y-%m-%d'
     }
+    OTHER_SEPARATORS = (".",",","_")
+    YEARPATT = "[0-9]{3,4}"
+    MONTHPATT = "(0?[1-9]|1[0-2])"
+    DAYPATT = "(0?[1-9]|[12][0-9]|3[01])"
+    SEPARATOR = "-"
+
+    YMD_PATT = YEARPATT + SEPARATOR + MONTHPATT + SEPARATOR + DAYPATT
+    DMY_PATT = DAYPATT + SEPARATOR + MONTHPATT + SEPARATOR + YEARPATT
 
     def is_valid(self, value: Any) -> bool:
         return isinstance(value, datetime.date)
@@ -382,4 +391,23 @@ class Date_Attribute(Attribute):
         date_format = cls.__date_formats[locale_code]
         return datetime.date.strftime(value,date_format)
     
+    def read(self,text:str)->None:
+        text = self.__remove_spaces(text)
+        for sep in self.OTHER_SEPARATORS: 
+            text = text.replace(sep, self.SEPARATOR)
+        if re.fullmatch(self.YMD_PATT, text): 
+            raw = list(map(int,text.split(self.SEPARATOR)))
+            date = datetime.date(year=raw[0],month=raw[1],day=raw[2])
+        elif re.fullmatch(self.DMY_PATT, text):
+            raw = list(map(int,text.split(self.SEPARATOR)))
+            date = datetime.date(year=raw[2],month=raw[1],day=raw[0]) 
+        else: 
+            raise Date_Attribute.CannotExtractDate
+        self.set(date)
+
+
+    def __remove_spaces(self,text:str)->str: return text.replace(" ", "")
+
+    
     class UnknownLocaleCode(Exception): pass
+    class CannotExtractDate(Exception): pass

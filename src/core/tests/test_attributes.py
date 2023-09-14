@@ -634,6 +634,7 @@ class Test_Make_Choice_Attribute_Dependent(unittest.TestCase):
 
 import datetime
 from src.core.attributes import Date_Attribute
+import re
 class Test_Date_Attribute(unittest.TestCase):
 
     def test_date_attribute(self):
@@ -653,6 +654,52 @@ class Test_Date_Attribute(unittest.TestCase):
         date.set(datetime.date(2023,9,15))
         self.assertEqual(date.print(locale_code='cs_cz'),"15.09.2023")
         self.assertEqual(date.print(locale_code='CS_CZ'),"15.09.2023")
+    
+    def test_year_pattern(self):
+        VALID_YEARS = ("2023", "1567", "2000", "0456")
+        for y in VALID_YEARS:
+            self.assertTrue(re.fullmatch(Date_Attribute.YEARPATT, y))
+        INVALID_YEARS = ("sdf", "-456", "20000000", "20000", " ")
+        for y in INVALID_YEARS:
+            self.assertFalse(re.fullmatch(Date_Attribute.YEARPATT, y))
+
+    def test_month_pattern(self):
+        VALID_MONTHS = [
+            '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 
+            '11', '12', '01', '02', '03', '04', '05', '06', '07', '08', '09']
+        for m in VALID_MONTHS:
+            self.assertTrue(re.fullmatch(Date_Attribute.MONTHPATT, m))
+        INVALID_MONTHS = ('13', '0', '-2', '1000', "a", "00", "", "  ")
+        for m in INVALID_MONTHS:
+            self.assertFalse(re.fullmatch(Date_Attribute.MONTHPATT, m))  
+
+    def test_day_pattern(self):
+        VALID_DAYS = [
+            '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 
+            '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', 
+            '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', 
+            '31', '01', '02', '03', '04', '05', '06', '07', '08', '09']
+        for d in VALID_DAYS:
+            self.assertTrue(re.fullmatch(Date_Attribute.DAYPATT, d))
+        INVALID_DAYS =  ('32', '0', '-2', '1000', "a", "00", "", "  ")
+        for d in INVALID_DAYS:
+            self.assertFalse(re.fullmatch(Date_Attribute.DAYPATT, d))  
+
+    def test_reading_date_from_string(self):
+        fac = attribute_factory(Controller())
+        date:Date_Attribute = fac.new("date")
+        valid_examples = (
+            "2023-9-15","2023,9,15", "2023-9-15", "2023_9_15", "2023_09_15",
+            "15-9-2023","15,9,2023", "15.9.2023", "15_9_2023", "15_09_2023",
+            "2023 - 9 - 15","2023 , 9 , 15", "2023 - 9 - 15", "2023 _ 9 _ 15", "2023 _ 09 _ 15"
+        )
+        for d in valid_examples:
+            date.read(d)
+            self.assertEqual(date.value,datetime.date(2023,9,15))
+
+        invalid_examples = ("45661", "", "  ", "2023 9 15", "15..9.2023")
+        for d in invalid_examples:
+            self.assertRaises(Date_Attribute.CannotExtractDate,date.read,d)
 
 
 if __name__=="__main__": unittest.main()
