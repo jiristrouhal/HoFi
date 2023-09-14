@@ -580,6 +580,7 @@ class Test_Choice_Attribute(unittest.TestCase):
         self.c.add_options("A","B")
         self.c.remove_options("A")
         self.assertRaises(Choice_Attribute.NonexistentOption, self.c.set, "A")
+        self.assertRaises(Choice_Attribute.NonexistentOption, self.c.remove_options, "A")
 
     def test_accessing_value_before_defining_options_raises_exception(self):
         with self.assertRaises(Choice_Attribute.OptionsNotDefined):
