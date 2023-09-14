@@ -323,13 +323,6 @@ class ItemImpl(Item):
         the_duplicate = self._duplicate()
         self.parent.adopt(the_duplicate)
         return the_duplicate
-    
-    def _duplicate(self)->Item:
-        item_duplicate = ItemImpl(self.name, self.__attributes_copy(), self._controller)
-        for child in self.__children:
-            child_duplicate = child._duplicate()
-            item_duplicate._adopt(child_duplicate)
-        return item_duplicate
 
     def has_children(self)->bool:
         return bool(self.__children)
@@ -362,6 +355,13 @@ class ItemImpl(Item):
         if item.is_ancestor_of(self): raise Item.AdoptionOfAncestor
         elif item==self: raise Item.ItemAdoptsItself
         else: return True
+    
+    def _duplicate(self)->Item:
+        item_duplicate = ItemImpl(self.name, self.__attributes_copy(), self._controller)
+        for child in self.__children:
+            child_duplicate = child._duplicate()
+            item_duplicate._adopt(child_duplicate)
+        return item_duplicate
 
     def _leave_child(self,child:Item)->None:
         if child in self.__children:
