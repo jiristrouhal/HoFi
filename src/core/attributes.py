@@ -201,7 +201,7 @@ class Attribute(abc.ABC):
         
     @staticmethod
     def __single_common_factory(attributes:List[Attribute])->Attribute_Factory:
-        if not attributes: raise Attribute.NoAttributesProvided
+        if not attributes: raise Attribute.EmptyAttributeList
         fac = attributes[-1]._factory
         for a in attributes[:-1]:
             if a._factory is not fac: 
@@ -210,7 +210,7 @@ class Attribute(abc.ABC):
 
     class CyclicDependency(Exception): pass
     class DependencyAlreadyAssigned(Exception): pass
-    class NoAttributesProvided(Exception): pass
+    class EmptyAttributeList(Exception): pass
     class GroupingAttributesFromDifferentFactories(Exception): pass
     class InvalidAttributeType(Exception): pass
     class InvalidDefaultValue(Exception): pass
