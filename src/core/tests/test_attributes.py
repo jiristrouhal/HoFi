@@ -91,7 +91,7 @@ class Test_Defining_Custom_Attribute_Type(unittest.TestCase):
             except: 
                 return False
             
-        def _str_value(self, **options) -> str:
+        def _str_value(self, **options) -> str: # pragma: no cover
             return str(self._value)
             
     def test_defining_positive_integer_attribute(self):
@@ -540,6 +540,18 @@ class Test_Attribute_Value_Formatting(unittest.TestCase):
         x.set(150.254)
         self.assertEqual(x.print(prec=0), '150')
         self.assertEqual(x.print(prec=5), '150.25400')
+
+    def test_text_attribute(self):
+        fac = attribute_factory(Controller())
+        message = fac.new('text')
+        message.set("Test text attribute")
+        self.assertEqual(message.print(), "Test text attribute")
+
+    def test_integer_attribute(self):
+        fac = attribute_factory(Controller())
+        i = fac.new('integer')
+        i.set(8)
+        self.assertEqual(i.print(), "8")
 
     def test_invalid_printop_raises_exception(self):
         fac = attribute_factory(Controller())
