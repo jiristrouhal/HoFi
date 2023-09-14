@@ -222,11 +222,11 @@ class Test_Dependent_Attributes(unittest.TestCase):
         y = self.fac.new('integer','y')
         def x_squared(x:int)->int: return x*x # pragma: no cover
         y.add_dependency(x_squared,x)
-        self.assertRaises(Attribute.MultipleDependencies, y.add_dependency, x_squared,x)
+        self.assertRaises(Attribute.DependencyAlreadyAssigned, y.add_dependency, x_squared,x)
         # after breaking dependency, it is possible to reassign new dependency
         y.break_dependency()
         y.add_dependency(x_squared,x)
-        self.assertRaises(Attribute.MultipleDependencies, y.add_dependency, x_squared,x)
+        self.assertRaises(Attribute.DependencyAlreadyAssigned, y.add_dependency, x_squared,x)
 
     def test_calling_set_method_on_dependent_attribute_has_no_effect(self)->None:
         a = self.fac.new('integer','a')
@@ -462,6 +462,64 @@ class Test_Copying_Attribute(unittest.TestCase):
         x_copy.set(4)
         self.assertEqual(y.value,9)
 
+
+class Test_Setting_Multiple_Independent_Attributes_At_Once(unittest.TestCase):
+
+    def test_set_multiple_attributes(self):
+        fac = attribute_factory(Controller())
+        x1 = fac.new('integer')
+        x2 = fac.new('integer')
+        message = fac.new('text')
+
+        Attribute.set_multiple({x1:5, x2:-2, message:'XYZ'})
+        Attribute.set_multiple({x1:10, x2:-15, message:'ABC'})
+        self.assertEqual(x1.value,10)
+        self.assertEqual(x2.value,-15)
+        self.assertEqual(message.value, "ABC")
+
+        fac.controller.undo()
+        self.assertEqual(x1.value,5)
+        self.assertEqual(x2.value,-2)
+        self.assertEqual(message.value, "XYZ")
+    
+        fac.controller.redo()
+        self.assertEqual(x1.value,10)
+        self.assertEqual(x2.value,-15)
+        self.assertEqual(message.value, "ABC")
+
+        fac.controller.undo()
+        self.assertEqual(x1.value,5)
+        self.assertEqual(x2.value,-2)
+        self.assertEqual(message.value, "XYZ")
+
+    def test_dependent_attributes_are_ignored(self):
+        fac = attribute_factory(Controller())
+        x = fac.new('integer')
+        y = fac.new('integer')
+        z = fac.new('integer')
+        x.set(2)
+        y.set(0)
+        z.set(0)
+        def square(x:int)->int: return x*x
+        y.add_dependency(square,x)
+
+        self.assertEqual(y.value, 4)
+        self.assertEqual(z.value, 0)
+        Attribute.set_multiple({y:0, z:1})
+        self.assertEqual(y.value, 4)
+        self.assertEqual(z.value, 1)
+        
+
+
+class Test_Attribute_Value_Formatting(unittest.TestCase):
+
+    def __test_decimal_attribute(self):
+        fac = attribute_factory(Controller())
+        x = fac.new('real')
+        x.set(math.pi)
+        self.assertEqual(x.value, math.pi)
+
+        self.assertEqual()
 
 
 if __name__=="__main__": unittest.main()

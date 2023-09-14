@@ -78,7 +78,7 @@ class Set_Dependent_Attr(Command):
 
 
 Command_Type = Literal['set']
-from typing import Set
+from typing import Set, List
 class Attribute(abc.ABC):
     default_value:Any = ""
 
@@ -136,7 +136,10 @@ class Attribute(abc.ABC):
     def is_valid(self, value:Any)->bool: pass # pragma: no cover
 
     def _run_set_command(self,value:Any)->None:
-        self._factory.controller.run(self.command['set'](Set_Attr_Data(self,value)))
+        self._factory.controller.run(self.__get_set_command(value))
+
+    def __get_set_command(self,value:Any)->Tuple[Command,...]:
+        return self.command['set'](Set_Attr_Data(self,value))
 
     def _check_and_set_value(self,value:Any)->None:
         if not self.is_valid(value): raise Attribute.InvalidValueType
@@ -152,7 +155,7 @@ class Attribute(abc.ABC):
                 self.__check_for_dependency_cycle(attr._depends_on,path + ' -> ' + attr._name)
 
     def __check_for_existing_dependency(self)->None:
-        if self._depends_on: raise Attribute.MultipleDependencies
+        if self._depends_on: raise Attribute.DependencyAlreadyAssigned
         
     def __check_attribute_types_for_dependency(
         self,
@@ -186,11 +189,32 @@ class Attribute(abc.ABC):
         else:
             the_copy._value = self._value
 
+    @staticmethod
+    def set_multiple(new_values:Dict[Attribute,Any])->None:
+        fac = Attribute.__single_common_factory(list(new_values.keys()))
+
+        cmds:List[Command] = list()
+        for attr,value in new_values.items():
+            if attr._dependency is not None: continue #ignore dependent attributes
+            cmds.extend(attr.__get_set_command(value))
+        fac.controller.run(*cmds)
+        
+    @staticmethod
+    def __single_common_factory(attributes:List[Attribute])->Attribute_Factory:
+        if not attributes: raise Attribute.NoAttributesProvided
+        fac = attributes[-1]._factory
+        for a in attributes[:-1]:
+            if a._factory is not fac: 
+                raise Attribute.GroupingAttributesFromDifferentFactories
+        return fac
+
     class CyclicDependency(Exception): pass
+    class DependencyAlreadyAssigned(Exception): pass
+    class NoAttributesProvided(Exception): pass
+    class GroupingAttributesFromDifferentFactories(Exception): pass
     class InvalidAttributeType(Exception): pass
     class InvalidDefaultValue(Exception): pass
     class InvalidValueType(Exception): pass
-    class MultipleDependencies(Exception): pass
     class NoInputsForDependency(Exception): pass
     class WrongAttributeTypeForDependencyInput(Exception): pass
     class WrongAttributeTypeForDependencyOutput(Exception): pass
