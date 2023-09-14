@@ -779,7 +779,66 @@ class Test_Children_Of_Copied_Item(unittest.TestCase):
         
         child_copy = child.copy()
         self.assertTrue(child_copy.has_children())
-    
+        self.assertEqual(child_copy.name, "child (1)")
+
+
+class Test_Undo_And_Redo_Copying_Item(unittest.TestCase):
+
+    def test_copying_a_single_child(self):
+        mg = ItemManager()
+        parent = mg.new("Parent")
+        child = mg.new("Child")
+        parent.adopt(child)
+
+        child_copy = child.copy()
+        self.assertTrue(parent.is_parent_of(child_copy))
+        self.assertEqual(child_copy.name, "Child (1)")
+        mg.undo()
+        self.assertFalse(parent.is_parent_of(child_copy))
+        self.assertEqual(child_copy.name, "Child")
+        mg.redo()
+        self.assertTrue(parent.is_parent_of(child_copy))
+        self.assertEqual(child_copy.name, "Child (1)")
+        mg.undo()
+        self.assertFalse(parent.is_parent_of(child_copy))
+        self.assertEqual(child_copy.name, "Child")
+
+    def test_the_parent_with_single_child(self):
+        mg = ItemManager()
+        parent = mg.new("Parent")
+        child = mg.new("Child")
+        parent.adopt(child)
+
+        parent_copy = parent.copy()
+        self.assertTrue(parent_copy.has_children())
+        self.assertEqual(parent_copy.name, "Parent")
+        mg.undo()
+        self.assertFalse(parent_copy.has_children())
+        self.assertEqual(parent_copy.name, "Parent")
+        mg.redo()
+        self.assertTrue(parent_copy.has_children())
+        self.assertEqual(parent_copy.name, "Parent")
+        mg.undo()
+        self.assertFalse(parent_copy.has_children())
+        self.assertEqual(parent_copy.name, "Parent")
+
+    def __test_copying_item_with_arbitrary_tree_of_descendants_behaves_like_single_command(self):
+        mg = ItemManager()
+        parent = mg.new("Parent")
+        child = mg.new("Child")
+        grandchild = mg.new("Grandchild")
+        parent.adopt(child)
+        child.adopt(grandchild)
+
+        parent.rename("The Parent")
+        self.assertEqual(parent.name, "The Parent")
+        child_copy = child.copy()
+        
+        mg.undo() # this undo reverts the copy operation
+        mg.undo() # this undo reverts the renaming    
+        self.assertEqual(parent.name, "Parent")
+
+        
 
 
 if __name__=="__main__": unittest.main()

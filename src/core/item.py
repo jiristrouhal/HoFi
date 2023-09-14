@@ -27,6 +27,10 @@ class ItemManager:
 
 
 @dataclasses.dataclass
+class Copy_Data:
+    item:Item
+
+@dataclasses.dataclass
 class Renaming_Data:
     item:Item
     new_name:str
@@ -44,6 +48,32 @@ class Pass_To_New_Parrent_Data:
     child:Item
     new_parent:Item
 
+
+@dataclasses.dataclass
+class Copy(Command):
+    data:Copy_Data
+    the_copy:Item = dataclasses.field(init=False)
+    parent:Item = dataclasses.field(init=False)
+
+    def run(self):
+        self.parent = self.data.item.parent
+        self.the_copy = self.data.item._copy(assigned_parent=self.parent)
+    def undo(self):
+        self.the_copy._leave_parent(self.parent)
+    def redo(self):
+        self.parent._adopt(self.the_copy)
+
+
+@dataclasses.dataclass
+class Copy_Composed(Composed_Command):
+    @staticmethod
+    def cmd_type(): return Copy
+
+    def __call__(self, data:Copy_Data):
+        return super().__call__(data)
+    
+    def add(self, owner_id:str, func:Callable[[Copy_Data],Command],timing:Timing)->None:
+        super().add(owner_id,creator_func=func,timing=timing)
 
 
 @dataclasses.dataclass
@@ -137,7 +167,7 @@ class PassToNewParent_Composed(Composed_Command):
 
 
 from typing import Literal
-Command_Type = Literal['adopt','pass_to_new_parent','rename','set_attr']
+Command_Type = Literal['adopt','pass_to_new_parent','rename','copy']
 class Item(abc.ABC): # pragma: no cover
     
     def __init__(self,name:str,attributes:Dict[str,Attribute],controller:Controller)->None:
@@ -208,7 +238,7 @@ class Item(abc.ABC): # pragma: no cover
     def _rename(self,name:str)->None: pass
 
     @abc.abstractmethod
-    def _single_item_copy(self,assigned_parent:Item)->Item: pass
+    def _copy(self,assigned_parent:Item)->Item: pass
         
     class AdoptionOfAncestor(Exception): pass
     class AdoptingNULL(Exception): pass
@@ -218,7 +248,6 @@ class Item(abc.ABC): # pragma: no cover
     class NonexistentCommandType(Exception): pass
 
 
-from typing import Tuple
 class ItemImpl(Item):
 
     class __ItemNull(Item):
@@ -257,7 +286,7 @@ class ItemImpl(Item):
         def _leave_child(self,child:Item)->None: return
         def _leave_parent(self,parent:Item)->None: return
         def _rename(self,name:str)->None: return
-        def _single_item_copy(self,assigned_parent:Item)->Item: return self # pragma: no cover
+        def _copy(self,assigned_parent:Item)->Item: return self # pragma: no cover
 
 
     NULL = __ItemNull()
@@ -266,7 +295,8 @@ class ItemImpl(Item):
         self.command:Dict[Command_Type,Composed_Command] = {
             'adopt':Adopt_Composed(),
             'pass_to_new_parent':PassToNewParent_Composed(),
-            'rename':Rename_Composed()
+            'rename':Rename_Composed(),
+            'copy':Copy_Composed()
         }
         self._controller = controller
         self.__attributes = attributes
@@ -322,8 +352,16 @@ class ItemImpl(Item):
         self.command['rename'].add(owner, func, timing)
 
     def copy(self)->Item:
-        return self._single_item_copy(self.parent)
+        return self._copy(self.parent)
     
+    def _copy(self,assigned_parent:Item)->Item:
+        item_copy = ItemImpl(self.name, self.__attributes_copy(), self._controller)
+        for child in self.__children:
+            child._copy(item_copy)
+
+        assigned_parent.adopt(item_copy)
+        return item_copy
+
     def has_children(self)->bool:
         return bool(self.__children)
 
@@ -371,13 +409,6 @@ class ItemImpl(Item):
         name = strip_and_join_spaces(name)
         self.__raise_if_name_is_blank(name)
         self.__name = name
-
-    def _single_item_copy(self,assigned_parent:Item)->Item:
-        item_copy = ItemImpl(self.name, self.__attributes_copy(), self._controller)
-        for child in self.__children:
-            child._single_item_copy(item_copy)
-        assigned_parent.adopt(item_copy)
-        return item_copy
 
     
     def __attributes_copy(self)->Dict[str,Attribute]:
