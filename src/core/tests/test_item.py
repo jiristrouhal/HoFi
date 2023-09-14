@@ -72,7 +72,7 @@ class Test_NULL_Item(unittest.TestCase):
         NullItem.pass_to_new_parent(child,parent)
         self.assertEqual(child.parent, parent)
 
-        self.assertEqual(NullItem.copy(), NullItem)
+        self.assertEqual(NullItem.duplicate(), NullItem)
 
     def test_leaving_child_has_no_effect(self):
         mg = ItemManager()
@@ -363,64 +363,64 @@ class Test_Undo_And_Redo_Setting_Parent_Child_Relationship(unittest.TestCase):
         self.assertEqual(A_child.name, "Child (1)")
 
 
-class Test_Child_Copy(unittest.TestCase):
+class Test_Child_Duplicate(unittest.TestCase):
 
     def setUp(self) -> None:
         self.mg = ItemManager()
         self.parent = self.mg.new("Parent")
         self.child = self.mg.new("Child")
         self.parent.adopt(self.child)
-        self.copy = self.child.copy()
+        self.duplicate = self.child.duplicate()
 
-    def test_child_copy_has_the_same_parent_as_the_original(self):
-        self.assertTrue(self.parent.is_parent_of(self.copy))
-        self.assertEqual(self.copy.parent, self.parent)
-        self.assertEqual(self.copy.name, "Child (1)")
+    def test_child_duplicate_has_the_same_parent_as_the_original(self):
+        self.assertTrue(self.parent.is_parent_of(self.duplicate))
+        self.assertEqual(self.duplicate.parent, self.parent)
+        self.assertEqual(self.duplicate.name, "Child (1)")
 
-    def test_undo_and_redo_copying(self):
+    def test_undo_and_redo_duplicating(self):
         self.mg.undo()
-        self.assertFalse(self.parent.is_parent_of(self.copy))
-        self.assertTrue(self.copy.parent, NullItem)
-        self.assertEqual(self.copy.name, "Child")
+        self.assertFalse(self.parent.is_parent_of(self.duplicate))
+        self.assertTrue(self.duplicate.parent, NullItem)
+        self.assertEqual(self.duplicate.name, "Child")
 
         self.mg.redo()
-        self.assertTrue(self.parent.is_parent_of(self.copy))
-        self.assertEqual(self.copy.name, "Child (1)")
+        self.assertTrue(self.parent.is_parent_of(self.duplicate))
+        self.assertEqual(self.duplicate.name, "Child (1)")
 
         self.mg.undo()
-        self.assertFalse(self.parent.is_parent_of(self.copy))
-        self.assertEqual(self.copy.name, "Child")
+        self.assertFalse(self.parent.is_parent_of(self.duplicate))
+        self.assertEqual(self.duplicate.name, "Child")
 
 
 class Test_Undo_And_Redo_Multiple_Operations(unittest.TestCase):
 
-    def test_copying_and_renaming(self):
+    def test_duplicating_and_renaming(self):
         mg = ItemManager()
         parent = mg.new("Parent")
         child = mg.new("Child")
         parent.adopt(child)
-        child_copy = child.copy()
-        child_copy.rename("Second child")
+        child_duplicate = child.duplicate()
+        child_duplicate.rename("Second child")
 
         for _ in range(3):
             mg.undo()
             mg.undo()
             mg.undo()
-            self.assertEqual(child_copy.parent,NullItem)
-            self.assertFalse(parent.is_parent_of(child_copy))
-            self.assertEqual(child_copy.name, "Child")
+            self.assertEqual(child_duplicate.parent,NullItem)
+            self.assertFalse(parent.is_parent_of(child_duplicate))
+            self.assertEqual(child_duplicate.name, "Child")
             self.assertEqual(child.parent, NullItem)
             self.assertFalse(parent.is_parent_of(child))
             mg.redo()
             self.assertEqual(child.parent, parent)
             self.assertTrue(parent.is_parent_of(child))
-            self.assertEqual(child_copy.parent,NullItem)
+            self.assertEqual(child_duplicate.parent,NullItem)
             mg.redo()
-            self.assertEqual(child_copy.parent,parent)
-            self.assertEqual(child_copy.name, "Child (1)")
+            self.assertEqual(child_duplicate.parent,parent)
+            self.assertEqual(child_duplicate.name, "Child (1)")
             mg.redo()
-            self.assertEqual(child_copy.parent,parent)
-            self.assertEqual(child_copy.name, "Second child")
+            self.assertEqual(child_duplicate.parent,parent)
+            self.assertEqual(child_duplicate.name, "Second child")
 
     def test_undo_and_executing_new_command_erases_redo_command(self):
         mg = ItemManager()
@@ -745,7 +745,7 @@ class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
         self.assertEqual(item.attribute("Volume").value,5)
 
 
-class Test_Attributes_Of_Copied_Item(unittest.TestCase):
+class Test_Attributes_Of_Duplicated_Item(unittest.TestCase):
 
     def setUp(self) -> None:
         self.mg = ItemManager()
@@ -754,20 +754,20 @@ class Test_Attributes_Of_Copied_Item(unittest.TestCase):
         self.item.set("b",2.5)
 
     def test_attributes_of_copied_item_have_the_originals_values(self):
-        item_copy = self.item.copy()
-        self.assertEqual(item_copy("a"),4)
-        self.assertEqual(item_copy("b"),2.5)
+        item_duplicate = self.item.duplicate()
+        self.assertEqual(item_duplicate("a"),4)
+        self.assertEqual(item_duplicate("b"),2.5)
 
     def test_attributes_of_copied_item_are_independent_on_the_originals_attributes(self):
-        item_copy = self.item.copy()
+        item_duplicate = self.item.duplicate()
         self.item.set("a",8)
         self.item.set("b",-1.23)
         self.assertEqual(self.item("a"),8)
-        self.assertEqual(item_copy("a"),4)
-        self.assertEqual(item_copy("b"),2.5)
+        self.assertEqual(item_duplicate("a"),4)
+        self.assertEqual(item_duplicate("b"),2.5)
 
 
-class Test_Children_Of_Copied_Item(unittest.TestCase):
+class Test_Children_Of_Duplicated_Item(unittest.TestCase):
 
     def test_item_is_copied_with_its_children(self)->None:
         mg = ItemManager()
@@ -777,34 +777,34 @@ class Test_Children_Of_Copied_Item(unittest.TestCase):
         parent.adopt(child)
         child.adopt(grandchild)
         
-        child_copy = child.copy()
-        self.assertTrue(child_copy.has_children())
-        self.assertEqual(child_copy.name, "child (1)")
+        child_duplicate = child.duplicate()
+        self.assertTrue(child_duplicate.has_children())
+        self.assertEqual(child_duplicate.name, "child (1)")
 
 
-class Test_Undo_And_Redo_Copying_Item(unittest.TestCase):
+class Test_Undo_And_Redo_Duplicating_Item(unittest.TestCase):
 
-    def test_copying_a_single_child(self):
+    def test_duplicating_a_single_child(self):
         mg = ItemManager()
         parent = mg.new("Parent")
         child = mg.new("Child")
         parent.adopt(child)
 
-        child_copy = child.copy()
-        self.assertTrue(parent.is_parent_of(child_copy))
-        self.assertEqual(child_copy.name, "Child (1)")
+        child_duplicate = child.duplicate()
+        self.assertTrue(parent.is_parent_of(child_duplicate))
+        self.assertEqual(child_duplicate.name, "Child (1)")
         mg.undo()
-        self.assertFalse(parent.is_parent_of(child_copy))
-        self.assertEqual(child_copy.name, "Child")
+        self.assertFalse(parent.is_parent_of(child_duplicate))
+        self.assertEqual(child_duplicate.name, "Child")
         mg.redo()
-        self.assertTrue(parent.is_parent_of(child_copy))
-        self.assertEqual(child_copy.name, "Child (1)")
+        self.assertTrue(parent.is_parent_of(child_duplicate))
+        self.assertEqual(child_duplicate.name, "Child (1)")
         mg.undo()
-        self.assertFalse(parent.is_parent_of(child_copy))
-        self.assertEqual(child_copy.name, "Child")
+        self.assertFalse(parent.is_parent_of(child_duplicate))
+        self.assertEqual(child_duplicate.name, "Child")
 
 
-    def test_copying_item_with_arbitrary_tree_of_descendants_behaves_like_single_command(self):
+    def test_duplicating_item_with_arbitrary_tree_of_descendants_behaves_like_single_command(self):
         mg = ItemManager()
         parent = mg.new("Parent")
         child = mg.new("Child")
@@ -814,20 +814,20 @@ class Test_Undo_And_Redo_Copying_Item(unittest.TestCase):
 
         parent.rename("The Parent")
         self.assertEqual(parent.name, "The Parent")
-        child_copy = child.copy()
+        child_duplicate = child.duplicate()
         
-        mg.undo() # this undo reverts the copy operation
+        mg.undo() # this undo reverts the duplicate operation
         mg.undo() # this undo reverts the renaming    
         self.assertEqual(parent.name, "Parent")
-        self.assertFalse(parent.is_parent_of(child_copy))
+        self.assertFalse(parent.is_parent_of(child_duplicate))
         mg.redo() 
         mg.redo() 
         self.assertEqual(parent.name, "The Parent")
-        self.assertTrue(parent.is_parent_of(child_copy))
+        self.assertTrue(parent.is_parent_of(child_duplicate))
         mg.undo() 
         mg.undo() 
         self.assertEqual(parent.name, "Parent")
-        self.assertFalse(parent.is_parent_of(child_copy))
+        self.assertFalse(parent.is_parent_of(child_duplicate))
         
 
 

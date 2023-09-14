@@ -165,7 +165,7 @@ class Item(abc.ABC): # pragma: no cover
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None: pass
 
     @abc.abstractmethod
-    def copy(self)->Item: pass
+    def duplicate(self)->Item: pass
 
     @abc.abstractmethod
     def has_children(self)->bool: pass
@@ -207,7 +207,7 @@ class Item(abc.ABC): # pragma: no cover
     def _rename(self,name:str)->None: pass
 
     @abc.abstractmethod
-    def _copy(self)->Item: pass
+    def _duplicate(self)->Item: pass
         
     class AdoptionOfAncestor(Exception): pass
     class AdoptingNULL(Exception): pass
@@ -240,7 +240,7 @@ class ItemImpl(Item):
         def on_adoption(self,*args)->None: pass # pragma: no cover
         def on_passing_to_new_parent(self,*args)->None: pass # pragma: no cover
         def on_renaming(self,*args)->None: pass # pragma: no cover
-        def copy(self) -> Item: return self
+        def duplicate(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
         def is_ancestor_of(self, child:Item)->bool: return child==self
@@ -255,7 +255,7 @@ class ItemImpl(Item):
         def _leave_child(self,child:Item)->None: return
         def _leave_parent(self,parent:Item)->None: return
         def _rename(self,name:str)->None: return
-        def _copy(self)->Item: return self # pragma: no cover
+        def _duplicate(self)->Item: return self # pragma: no cover
 
 
     NULL = __ItemNull()
@@ -319,17 +319,17 @@ class ItemImpl(Item):
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None:
         self.command['rename'].add(owner, func, timing)
 
-    def copy(self)->Item:
-        the_copy = self._copy()
-        self.parent.adopt(the_copy)
-        return the_copy
+    def duplicate(self)->Item:
+        the_duplicate = self._duplicate()
+        self.parent.adopt(the_duplicate)
+        return the_duplicate
     
-    def _copy(self)->Item:
-        item_copy = ItemImpl(self.name, self.__attributes_copy(), self._controller)
+    def _duplicate(self)->Item:
+        item_duplicate = ItemImpl(self.name, self.__attributes_copy(), self._controller)
         for child in self.__children:
-            child_copy = child._copy()
-            item_copy._adopt(child_copy)
-        return item_copy
+            child_duplicate = child._duplicate()
+            item_duplicate._adopt(child_duplicate)
+        return item_duplicate
 
     def has_children(self)->bool:
         return bool(self.__children)
@@ -381,10 +381,10 @@ class ItemImpl(Item):
 
     
     def __attributes_copy(self)->Dict[str,Attribute]:
-        the_copy:Dict[str,Attribute] = {}
+        attr_copy:Dict[str,Attribute] = {}
         for label, attr in self.attributes.items():
-            the_copy[label] = attr.copy()
-        return the_copy
+            attr_copy[label] = attr.copy()
+        return attr_copy
     
     def __make_child_to_rename_if_its_name_already_taken(self, child:Item):
         names = [c.name for c in self.__children]
