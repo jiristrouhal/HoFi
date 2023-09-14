@@ -81,6 +81,7 @@ Command_Type = Literal['set']
 from typing import Set, List
 class Attribute(abc.ABC):
     default_value:Any = ""
+    printops:Set[Any] = set()
 
     def __init__(self,factory:Attribute_Factory, atype:str='text',name:str="")->None:
         self._name = name
@@ -127,6 +128,15 @@ class Attribute(abc.ABC):
 
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
         self.command['set'].add(owner, func, timing)
+
+    def print(self, **options)->str:
+        for option in options: 
+            if option not in self.printops: raise Attribute.UnknownOption(option)
+        return self._str_value(**options)
+        
+    @abc.abstractmethod
+    def _str_value(self,**options)->str:
+        pass
 
     def set(self,value:Any)->None: 
         if self._depends_on: return
@@ -195,7 +205,7 @@ class Attribute(abc.ABC):
         cmds:List[List[Command]] = list()
         for attr,value in new_values.items():
             if attr._dependency is not None: continue #ignore dependent attributes
-            if not attr._factory in facs:
+            if not attr._factory in facs: # Attribute_Factory is not hashable, two lists circumvent the problem
                 facs.append(attr._factory)
                 cmds.append(list())
             cmds[facs.index(attr._factory)].extend(attr.__get_set_command(value))
@@ -210,6 +220,7 @@ class Attribute(abc.ABC):
     class InvalidDefaultValue(Exception): pass
     class InvalidValueType(Exception): pass
     class NoInputsForDependency(Exception): pass
+    class UnknownOption(Exception): pass
     class WrongAttributeTypeForDependencyInput(Exception): pass
     class WrongAttributeTypeForDependencyOutput(Exception): pass
 
@@ -250,6 +261,9 @@ class Text_Attribute(Attribute):
 
     def is_valid(self, value:Any) -> bool:
         return isinstance(value,str)
+    
+    def _str_value(self, **options) -> str:
+        return self._value
 
 
 class Integer_Attribute(Attribute):
@@ -260,12 +274,15 @@ class Integer_Attribute(Attribute):
             return int(value) is value
         except: 
             return False
+    
+    def _str_value(self, **options) -> str:
+        return str(self._value)
         
     
 import math
 class Real_Attribute(Attribute):
     default_value = 0
-
+    printops = {'prec'}
     def is_valid(self, value:Any) -> bool:
         try: 
             if math.isnan(value): return True
@@ -274,4 +291,9 @@ class Real_Attribute(Attribute):
         except: 
             return False
 
+    def _str_value(self, **options) -> str:
+        if 'prec' in options:
+            prec = options['prec']
+            return format(self._value, f'.{max(0,prec)}f')
+        return str(self._value)
 

@@ -91,6 +91,9 @@ class Test_Defining_Custom_Attribute_Type(unittest.TestCase):
             except: 
                 return False
             
+        def _str_value(self, **options) -> str:
+            return str(self._value)
+            
     def test_defining_positive_integer_attribute(self):
         attrfac = attribute_factory(Controller())
         attrfac.add('positive integer', self.Positive_Integer_Attribute)
@@ -528,13 +531,12 @@ class Test_Setting_Multiple_Independent_Attributes_At_Once(unittest.TestCase):
 
 class Test_Attribute_Value_Formatting(unittest.TestCase):
 
-    def __test_decimal_attribute(self):
+    def test_decimal_attribute(self):
         fac = attribute_factory(Controller())
         x = fac.new('real')
         x.set(math.pi)
         self.assertEqual(x.value, math.pi)
-
-        self.assertEqual()
+        self.assertEqual(x.print(prec=2), '3.14')
 
 
 if __name__=="__main__": unittest.main()
