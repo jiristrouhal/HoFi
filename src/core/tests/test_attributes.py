@@ -703,7 +703,7 @@ class Test_Date_Attribute(unittest.TestCase):
 
 
 
-from src.core.attributes import Monetary_Attribute
+from src.core.attributes import Monetary_Attribute, Decimal
 class Test_Monetary_Attribute(unittest.TestCase):
 
     def test_defining_monetary_attribute_and_setting_its_value(self):
@@ -712,7 +712,7 @@ class Test_Monetary_Attribute(unittest.TestCase):
         mon.set(45)
         self.assertEqual(mon.value, 45)
         mon.set(45.12446656)
-        self.assertEqual(mon.value, 45.12446656)
+        self.assertEqual(mon.value, Decimal('45.12446656'))
         mon.set(-8)
         self.assertEqual(mon.value, -8)
         mon.set(0)
@@ -726,9 +726,42 @@ class Test_Monetary_Attribute(unittest.TestCase):
         fac = attribute_factory(Controller())
         mon:Monetary_Attribute = fac.new("money")
         mon.set(12)
-        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD"), "12 $")
-        self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "$12")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD"), "12,00 $")
+        self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "$12.00")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="JPY"), "12 ¥")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD", zero_decimals=False), "12 $")
 
+        mon.set(11.5)
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD"), "11,50 $")
+        self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "$11.50")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="JPY"), "12 ¥")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD", zero_decimals=False), "11,50 $")
+
+    def test_bankers_rounding_is_correctly_used(self):
+        fac = attribute_factory(Controller())
+        mon:Monetary_Attribute = fac.new("money")
+        mon.set(12.5) 
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="JPY"), "12 ¥")
+
+        mon.set(1.455)
+        self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "$1.46")
+        mon.set(1.445)
+        self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "$1.44")
+        mon.set(0.001)
+        self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "$0.00")
+
+    def test_sign_is_always_put_right_on_the_beginning_of_the_string(self):
+        fac = attribute_factory(Controller())
+        mon:Monetary_Attribute = fac.new("money")
+        mon.set(-5.01)
+        self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "-$5.01")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD"), "-5,01 $")
+
+    def test_plus_sign_can_be_enforced(self):
+        fac = attribute_factory(Controller())
+        mon:Monetary_Attribute = fac.new("money")
+        mon.set(8.45)
+        self.assertEqual(mon.print(locale_code="en_us", currency="USD", include_plus=True), "+$8.45")
 
 
 if __name__=="__main__": unittest.main()

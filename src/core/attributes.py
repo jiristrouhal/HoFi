@@ -130,7 +130,7 @@ class Attribute(abc.ABC):
 
     def print(self, **options)->str:
         for op in options:
-            if op not in self.printops: raise Attribute.UnknownOption
+            if op not in self.printops: raise Attribute.UnknownOption(op, f"\nAvailable options are: {self.printops.keys()}")
         return self._str_value(self._value,**options)
         
     @abc.abstractmethod
@@ -409,40 +409,80 @@ class Date_Attribute(Attribute):
 
 
     def __remove_spaces(self,text:str)->str: return text.replace(" ", "")
-
     
     class UnknownLocaleCode(Exception): pass
     class CannotExtractDate(Exception): pass
 
 
+from decimal import Decimal, Context, ROUND_HALF_EVEN
 class Monetary_Attribute(Attribute):
-    default_value = 0.0
-    printops = {'locale_code':'default', 'currency':'USD'}
+    default_value = Decimal('0')
+    printops = {
+        'locale_code':'default', 
+        'currency':'USD', 
+        'zero_decimals':True, 
+        'enforce_plus':False
+    }
     __curr_symbols = {
-        'USD':'$'
+        'USD':'$',
+        'JPY':'¥'
     }
     __symbol_after_value = {"cs_cz",}
+    __comma_separator = {"cs_cz",}
+    __special_decimal_places = {'JPY':0}
+    __DEFAULT_DECIMALS = 2
+
+    def set(self,value:float|Decimal)->None:
+        # For the sake of clarity, the input to the set method has to be kept in the same type as the 
+        # '_value' attribute.
+
+        # The string must then be explicitly excluded from input types, as it would normally be 
+        # accepted by the Decimal.
+        if isinstance(value, str): raise Attribute.InvalidValueType
+        super().set(Decimal(str(value)))
 
     def _str_value(cls, value: Any, **options) -> str:
         currency = cls._pick_format_option('currency',options)
-        if currency in cls.__curr_symbols:
-            symbol = cls.__curr_symbols[currency]
-        else: 
-            raise cls.UndefinedCurrencySymbol
-        
         locale_code = cls._pick_format_option('locale_code',options)
-        symbol_after_value = locale_code in cls.__symbol_after_value
-
-        if symbol_after_value:
-            return str(value) + ' ' + symbol
+        zero_decimals = cls._pick_format_option('zero_decimals',options)
+        if not zero_decimals and int(value)==value: 
+            n_places = 0
         else:
-            return symbol+str(value)
-
+            if currency in cls.__special_decimal_places:
+                n_places = cls.__special_decimal_places[currency]
+            else:
+                n_places = cls.__DEFAULT_DECIMALS
+        value_str = format(round(value,n_places), '.'+str(n_places)+'f')
+        value_str = cls.__adjust_decimal_separator(value_str,locale_code)
+        value_str = cls.__add_symbol(value_str, locale_code, currency)
+        if cls._pick_format_option('enforce_plus',options) and value>0: 
+            value_str = '+'+value_str
+        return value_str
     
-    def is_valid(self, value: Any) -> bool:
-        try:
-            return float(value) == value
-        except:
-            return False
+    def is_valid(self, value: Any)->bool:
+        try: return Decimal(value) == value
+        except: return False
+
+    @classmethod 
+    def __adjust_decimal_separator(cls,value:str,locale_code:str)->str:
+        use_comma_decimal_separator = locale_code in cls.__comma_separator
+        if use_comma_decimal_separator:
+            value = value.replace('.',',')
+        return value
+    
+    @classmethod
+    def __add_symbol(cls,value:str,locale_code:str, currency:str)->str:
+        if currency in cls.__curr_symbols: symbol = cls.__curr_symbols[currency]
+        else: raise cls.UndefinedCurrencySymbol
+        symbol = cls.__curr_symbols[currency]
+
+        if locale_code in cls.__symbol_after_value: 
+            value_str = value + ' ' + symbol
+        else: 
+            if value[0]=='-' or value[0]=='+':
+                value_str = value[0] + symbol + value[1:]
+            else:
+                value_str = symbol + value
+        return value_str
 
     class UndefinedCurrencySymbol(Exception): pass
