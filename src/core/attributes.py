@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Any, Callable
+from typing import Literal, Any, Callable, get_args
 import abc
 import dataclasses
 
@@ -365,11 +365,13 @@ class Choice_Attribute(Attribute):
 
 import datetime
 import re
+
+Locale_Codes = ('cs_cz','en_us','default')
 class Date_Attribute(Attribute):
     default_value = datetime.date.today()
     printops = {'locale_code':'default'}
     # all locale codes must be entered in lower case 
-    __date_formats = {
+    __date_formats:Dict[str,str] = {
         'cs_cz':'%d.%m.%Y',
         'default':'%Y-%m-%d'
     }
@@ -414,7 +416,7 @@ class Date_Attribute(Attribute):
     class CannotExtractDate(Exception): pass
 
 
-from decimal import Decimal, Context, ROUND_HALF_EVEN
+from decimal import Decimal
 class Monetary_Attribute(Attribute):
     default_value = Decimal('0')
     printops = {
@@ -425,10 +427,11 @@ class Monetary_Attribute(Attribute):
     }
     __curr_symbols = {
         'USD':'$',
-        'JPY':'¥'
+        'JPY':'¥',
+        'CZK': 'Kč'
     }
-    __symbol_after_value = {"cs_cz",}
-    __comma_separator = {"cs_cz",}
+    __symbol_after_value:Set[str] = {"cs_cz",}
+    __comma_separator:Set[str] = {"cs_cz",}
     __special_decimal_places = {'JPY':0}
     __DEFAULT_DECIMALS = 2
 
@@ -444,6 +447,7 @@ class Monetary_Attribute(Attribute):
     def _str_value(cls, value: Any, **options) -> str:
         currency = cls._pick_format_option('currency',options)
         locale_code = cls._pick_format_option('locale_code',options)
+        if locale_code not in Locale_Codes: raise cls.UnknownLocaleCode
         zero_decimals = cls._pick_format_option('zero_decimals',options)
         if not zero_decimals and int(value)==value: 
             n_places = 0
@@ -462,6 +466,26 @@ class Monetary_Attribute(Attribute):
     def is_valid(self, value: Any)->bool:
         try: return Decimal(value) == value
         except: return False
+
+    def read(self,text:str)->None:
+        text = text.strip()
+        value = "0"
+        if re.fullmatch("[^\s\d]+[0-9]+([\.\,][0-9]*)?", text):
+            k = 0
+            while re.fullmatch("[^\s\d]",text[k]): k+=1
+            symbol = text[:k]
+            value = text[k:].replace(",",".")
+        elif re.fullmatch("[0-9]+([\.\,][0-9]+)?[ \t]?[^\s\d]+",text):
+            k = -1
+            while re.fullmatch("[^\s\d]",text[k]): k-=1
+            symbol = text[k+1:]
+            value = text[:k+1].replace(",",".")
+        else:
+            raise Monetary_Attribute.CannotExtractValue
+        if symbol not in self.__curr_symbols.values():
+            raise Monetary_Attribute.UndefinedCurrencySymbol
+        self.set(Decimal(value))
+
 
     @classmethod 
     def __adjust_decimal_separator(cls,value:str,locale_code:str)->str:
@@ -485,4 +509,6 @@ class Monetary_Attribute(Attribute):
                 value_str = symbol + value
         return value_str
 
+    class CannotExtractValue(Exception): pass
+    class UnknownLocaleCode(Exception): pass
     class UndefinedCurrencySymbol(Exception): pass

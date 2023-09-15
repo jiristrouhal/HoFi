@@ -761,7 +761,56 @@ class Test_Monetary_Attribute(unittest.TestCase):
         fac = attribute_factory(Controller())
         mon:Monetary_Attribute = fac.new("money")
         mon.set(8.45)
-        self.assertEqual(mon.print(locale_code="en_us", currency="USD", include_plus=True), "+$8.45")
+        self.assertEqual(mon.print(locale_code="en_us", currency="USD", enforce_plus=True), "+$8.45")
+
+    def test_raise_exception_on_invalid_locale_code_or_currency_value(self):
+        fac = attribute_factory(Controller())
+        mon:Monetary_Attribute = fac.new("money")
+        mon.set(8.45)
+        with self.assertRaises(Monetary_Attribute.UndefinedCurrencySymbol):
+            mon.print(locale_code="en_us", currency="!$X")
+        with self.assertRaises(Monetary_Attribute.UnknownLocaleCode):
+            mon.print(locale_code="!$_<>", currency="USD")
+
+    def test_reading_monetary_value_from_string(self):
+        fac = attribute_factory(Controller())
+        mon:Monetary_Attribute = fac.new("money")
+        mon.read("$20")
+        self.assertEqual(mon.value, Decimal('20'))
+        mon.read("$20.561")
+        self.assertEqual(mon.value, Decimal('20.561'))
+        mon.read("$14,561")
+        self.assertEqual(mon.value, Decimal('14.561'))
+        mon.read("$0,561")
+        self.assertEqual(mon.value, Decimal('0.561'))
+        mon.read("$5,")
+        self.assertEqual(mon.value, Decimal('5'))
+
+        mon.read("20 $")
+        self.assertEqual(mon.value, Decimal('20'))
+        mon.read("15$")
+        self.assertEqual(mon.value, Decimal('15'))
+        mon.read("14\t$")
+        self.assertEqual(mon.value, Decimal('14'))
+        mon.read("20.561 $")
+        self.assertEqual(mon.value, Decimal('20.561'))
+        mon.read("14,561 $")
+        self.assertEqual(mon.value, Decimal('14.561'))
+        mon.read("45,12 Kč")
+        self.assertEqual(mon.value, Decimal('45.12'))
+
+        INVALID_VALUES = (
+            "", "  ", 
+            "20", "20.561", #missing currency symbol
+        )
+        for value in INVALID_VALUES:
+            self.assertRaises(Monetary_Attribute.CannotExtractValue, mon.read, value)
+        
+        UNKNOWN_SYMBOLS = (
+            "20 A", "20 klm", "25 $$", "$$45"
+        )
+        for value in UNKNOWN_SYMBOLS:
+            self.assertRaises(Monetary_Attribute.UndefinedCurrencySymbol, mon.read, value)
 
 
 if __name__=="__main__": unittest.main()
