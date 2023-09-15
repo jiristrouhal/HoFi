@@ -134,7 +134,7 @@ class Attribute(abc.ABC):
         return self._str_value(self._value,**options)
     
     @abc.abstractmethod
-    def read(self,text:str)->None:
+    def read(self,text:str)->None: # pragma: no cover
         pass
         
     @abc.abstractmethod
@@ -339,6 +339,8 @@ class Real_Attribute(Attribute):
     
     class CannotExtractNumber(Exception): pass
 
+
+from src.utils.naming import strip_and_join_spaces
 class Choice_Attribute(Attribute):
     default_value = ""
     printopts:Dict[str,Any] = {}
@@ -353,7 +355,17 @@ class Choice_Attribute(Attribute):
         else: raise Choice_Attribute.OptionsNotDefined
 
     def add_options(self, *options:Any)->None:
-        self.options.extend(options)
+        for op in options:
+            if isinstance(op,str):
+                op = strip_and_join_spaces(op)
+            if op not in self.options: # prevent duplicities
+                self.options.append(op)
+        # finding duplicate after converting all options to strings 
+        # means the same option occured, only with different type 
+        stringified_ops = set(map(str,self.options))
+        if len(stringified_ops)<len(self.options): 
+            raise Choice_Attribute.DuplicateOfDifferentType
+
 
     def print_options(self, **format_options)->Tuple[str,...]:
         return tuple([self._str_value(op) for op in self.options])
@@ -361,9 +373,10 @@ class Choice_Attribute(Attribute):
     def read(self, text:str)->None:
         text = text.strip()
         for op in self.options:
-            if str(op)==text: self.set(op)
-        else:
-            raise Choice_Attribute.CannotExtractOption
+            if str(op)==text: 
+                self.set(op) 
+                return
+        raise Choice_Attribute.NonexistentOption
 
     def remove_options(self,*options:Any)->None:
         if self._value in options: raise Choice_Attribute.CannotRemoveChosenOption
@@ -389,8 +402,8 @@ class Choice_Attribute(Attribute):
     def _str_value(cls, value, **format_options) -> str:
         return str(value)
 
-    class CannotExtractOption(Exception): pass
     class CannotRemoveChosenOption(Exception): pass
+    class DuplicateOfDifferentType(Exception): pass
     class NonexistentOption(Exception): pass
     class OptionsNotDefined(Exception): pass
 

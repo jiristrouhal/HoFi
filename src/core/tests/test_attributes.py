@@ -611,6 +611,43 @@ class Test_Choice_Attribute(unittest.TestCase):
         self.assertFalse(self.c.is_option("C"))
 
 
+class Test_Duplicity_In_Added_Options_For_Choice_Attribute(unittest.TestCase):
+
+    def test_duplicity_of_the_same_type_is_ignored(self):
+        fac = attribute_factory(Controller())
+        c = fac.choice()
+        c.add_options(45, 56, 45, 78)
+        self.assertEqual(c.print_options(),('45', '56', '78'))
+
+    def test_duplicity_of_the_different_type_raises_exception(self):
+        fac = attribute_factory(Controller())
+        c = fac.choice()
+        self.assertRaises(Choice_Attribute.DuplicateOfDifferentType, c.add_options, 45, 56, "45")
+
+    def test_string_options_differing_in_trailing_and_leading_spaces_or_aggregated_spaces_are_considered_to_be_duplicates(self):
+        fac = attribute_factory(Controller())
+        c = fac.choice()
+        c.add_options(
+            "AA B", "AA    B", "   AA B   ", # these are considered to be identical
+            "A AB",
+        )
+        self.assertEqual(c.print_options(),('AA B', 'A AB'))
+
+
+class Test_Reading_Choice_From_Text(unittest.TestCase):
+
+    def test_read_choice_from_text(self):
+        fac = attribute_factory(Controller())
+        c = fac.choice()
+        c.add_options(45, 23, 78, "abc")
+        c.read("45")
+        self.assertEqual(c.value, 45)
+        c.read("   78  ")
+        self.assertEqual(c.value, 78)
+        c.read("abc")
+        self.assertEqual(c.value, "abc")
+
+
 class Test_Make_Choice_Attribute_Dependent(unittest.TestCase):
 
     def test_choice_describing_result_of_comparison_of_two_integers(self):
@@ -834,6 +871,7 @@ class Test_Monetary_Attribute(unittest.TestCase):
         self.assertFalse(mon.is_valid("20"))
         self.assertFalse(mon.is_valid("20.45"))
         self.assertFalse(mon.is_valid("-45"))
+
 
 
 if __name__=="__main__": unittest.main()
