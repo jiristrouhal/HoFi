@@ -812,5 +812,25 @@ class Test_Monetary_Attribute(unittest.TestCase):
         for value in UNKNOWN_SYMBOLS:
             self.assertRaises(Monetary_Attribute.UndefinedCurrencySymbol, mon.read, value)
 
+    def test_monetary_attribute_validation(self):
+        fac = attribute_factory(Controller())
+        mon:Monetary_Attribute = fac.new("money")
+        self.assertTrue(mon.is_valid(1))
+        self.assertTrue(mon.is_valid(1.56))
+        self.assertTrue(mon.is_valid(-45))
+        self.assertTrue(mon.is_valid(0))
+        self.assertTrue(mon.is_valid(5/7))
+        self.assertTrue(mon.is_valid(math.e))
+
+        self.assertFalse(mon.is_valid(""))
+        self.assertFalse(mon.is_valid("  "))
+        self.assertFalse(mon.is_valid("asdf"))
+        self.assertFalse(mon.is_valid("$"))
+        self.assertFalse(mon.is_valid("20 $"))
+        self.assertFalse(mon.is_valid("$ 20"))
+        self.assertFalse(mon.is_valid("20"))
+        self.assertFalse(mon.is_valid("20.45"))
+        self.assertFalse(mon.is_valid("-45"))
+
 
 if __name__=="__main__": unittest.main()
