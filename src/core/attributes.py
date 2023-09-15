@@ -134,7 +134,8 @@ class Attribute(abc.ABC):
 
     def print(self, **options)->str:
         for op in options:
-            if op not in self.printops: raise Attribute.UnknownOption(op, f"\nAvailable options are: {self.printops.keys()}")
+            if op not in self.printops: 
+                raise Attribute.UnknownOption(op, f"\nAvailable options are: {self.printops.keys()}")
         return self._str_value(self._value,**options)
     
     @abc.abstractmethod
@@ -157,7 +158,8 @@ class Attribute(abc.ABC):
         if option in cls.printops:
             if option in options: return options[option]
             else: return cls.printops[option]
-        else: raise Attribute.UnknownOption
+        else: 
+            raise Attribute.UnknownOption(option)
 
     def _run_set_command(self,value:Any)->None:
         self._factory.controller.run(self.__get_set_command(value))
@@ -279,7 +281,7 @@ def attribute_factory(controller:Controller)->Attribute_Factory:
 
 class Text_Attribute(Attribute):
     default_value = ""
-    printopts:Dict[str,Any] = {}
+    printops:Dict[str,Any] = {}
 
     def is_valid(self, value:Any) -> bool:
         return isinstance(value,str)
@@ -294,7 +296,7 @@ class Text_Attribute(Attribute):
 
 class Integer_Attribute(Attribute):
     default_value = 0
-    printopts:Dict[str,Any] = {}
+    printops:Dict[str,Any] = {}
 
     def is_valid(self, value:Any) -> bool:
         try: return int(value) == value
@@ -349,10 +351,8 @@ class Real_Attribute(Attribute):
     def _str_value(cls, value, **options) -> str:
         precision = cls._pick_format_option('prec',options)
         trailing_zeros = cls._pick_format_option('trailing_zeros',options)
-        if not trailing_zeros:
-            str_value = str(value)
-        else:
-            str_value = format(value, f'.{precision}f')
+        if not trailing_zeros: str_value = str(value)
+        else: str_value = format(value, f'.{precision}f')
         return str_value
     
     class CannotExtractNumber(Exception): pass
@@ -361,7 +361,7 @@ class Real_Attribute(Attribute):
 from src.utils.naming import strip_and_join_spaces
 class Choice_Attribute(Attribute):
     default_value = ""
-    printopts:Dict[str,Any] = {}
+    printops:Dict[str,Any] = {'lower_case':False}
 
     def __init__(self, factory:Attribute_Factory, atype:str, name:str="")->None:
         self.options:List[Any] = list()
@@ -384,9 +384,11 @@ class Choice_Attribute(Attribute):
         if len(stringified_ops)<len(self.options): 
             raise Choice_Attribute.DuplicateOfDifferentType
 
+    def clear_options(self)->None:
+        self.options.clear()
 
     def print_options(self, **format_options)->Tuple[str,...]:
-        return tuple([self._str_value(op) for op in self.options])
+        return tuple([self._str_value(op, **format_options) for op in self.options])
 
     def read(self, text:str)->None:
         text = text.strip()
@@ -418,7 +420,11 @@ class Choice_Attribute(Attribute):
     
     @classmethod
     def _str_value(cls, value, **format_options) -> str:
-        return str(value)
+        lower_case = cls._pick_format_option('lower_case',format_options)
+        if lower_case:
+            return str(value).lower()
+        else:
+            return str(value)
 
     class CannotRemoveChosenOption(Exception): pass
     class DuplicateOfDifferentType(Exception): pass

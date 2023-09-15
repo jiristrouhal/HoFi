@@ -692,6 +692,10 @@ class Test_Choice_Attribute(unittest.TestCase):
     def test_print_options_as_a_tuple(self)->None:
         self.c.add_options(123, 456, 203)
         self.assertEqual(self.c.print_options(), ("123", "456", "203"))
+        self.c.clear_options()
+        self.c.add_options("America", "Europe", "Antarctica")
+        self.assertEqual(self.c.print_options(), ("America", "Europe", "Antarctica"))
+        self.assertEqual(self.c.print_options(lower_case=True), ("america", "europe", "antarctica"))
 
     def test_check_value_is_in_options(self):
         self.c.add_options("A","B")
