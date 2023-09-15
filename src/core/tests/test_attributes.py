@@ -91,6 +91,9 @@ class Test_Defining_Custom_Attribute_Type(unittest.TestCase):
             except: 
                 return False
             
+        def read(self,text:str)->None: # pragma: no cover
+            pass
+            
         @classmethod
         def _str_value(cls, value, **options) -> str: # pragma: no cover
             return str(value)

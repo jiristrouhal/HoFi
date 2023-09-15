@@ -132,6 +132,10 @@ class Attribute(abc.ABC):
         for op in options:
             if op not in self.printops: raise Attribute.UnknownOption(op, f"\nAvailable options are: {self.printops.keys()}")
         return self._str_value(self._value,**options)
+    
+    @abc.abstractmethod
+    def read(self,text:str)->None:
+        pass
         
     @abc.abstractmethod
     def _str_value(cls, value:Any,**options)->str: # pragma: no cover
@@ -276,6 +280,9 @@ class Text_Attribute(Attribute):
     def is_valid(self, value:Any) -> bool:
         return isinstance(value,str)
     
+    def read(self, text:str)->None:
+        self.set(text)
+    
     @classmethod
     def _str_value(cls, value:Any, **options:Any)->str:
         return str(value)
@@ -290,10 +297,19 @@ class Integer_Attribute(Attribute):
             return int(value) is value
         except: 
             return False
+        
+    def read(self,text:str)->None:
+        text = text.strip()
+        if re.fullmatch("[0-9]+",text):
+            self.set(int(text))
+        else:
+            raise Integer_Attribute.CannotExtractNumber(text)
     
     @classmethod
     def _str_value(cls, value:Any, **options) -> str:
         return str(value)
+
+    class CannotExtractNumber(Exception): pass
         
     
 import math
@@ -308,12 +324,20 @@ class Real_Attribute(Attribute):
             return True
         except: 
             return False
+        
+    def read(self, text:str)->None:
+        text = text.strip()
+        if re.fullmatch("[0-9]*\.[0-9]*",text):
+            self.set(float(text))
+        else:
+            raise Real_Attribute.CannotExtractNumber
 
     @classmethod
     def _str_value(cls, value, **options) -> str:
         precision = cls._pick_format_option('prec',options)
         return format(value, f'.{precision}f')
     
+    class CannotExtractNumber(Exception): pass
 
 class Choice_Attribute(Attribute):
     default_value = ""
@@ -333,6 +357,13 @@ class Choice_Attribute(Attribute):
 
     def print_options(self, **format_options)->Tuple[str,...]:
         return tuple([self._str_value(op) for op in self.options])
+
+    def read(self, text:str)->None:
+        text = text.strip()
+        for op in self.options:
+            if str(op)==text: self.set(op)
+        else:
+            raise Choice_Attribute.CannotExtractOption
 
     def remove_options(self,*options:Any)->None:
         if self._value in options: raise Choice_Attribute.CannotRemoveChosenOption
@@ -358,6 +389,7 @@ class Choice_Attribute(Attribute):
     def _str_value(cls, value, **format_options) -> str:
         return str(value)
 
+    class CannotExtractOption(Exception): pass
     class CannotRemoveChosenOption(Exception): pass
     class NonexistentOption(Exception): pass
     class OptionsNotDefined(Exception): pass
