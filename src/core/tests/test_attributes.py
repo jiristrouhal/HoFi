@@ -933,7 +933,7 @@ class Test_Monetary_Attribute(unittest.TestCase):
 
     def test_monetary_attribute_validation(self):
         fac = attribute_factory(Controller())
-        mon:Monetary_Attribute = fac.new("money")
+        mon = fac.new("money")
         self.assertTrue(mon.is_valid(1))
         self.assertTrue(mon.is_valid(1.56))
         self.assertTrue(mon.is_valid(-45))
@@ -950,6 +950,20 @@ class Test_Monetary_Attribute(unittest.TestCase):
         self.assertFalse(mon.is_valid("20"))
         self.assertFalse(mon.is_valid("20.45"))
         self.assertFalse(mon.is_valid("-45"))
+
+    def test_precision_of_large_number_of_arithmetic_operations(self)->None:
+        fac = attribute_factory(Controller())
+        mon:Monetary_Attribute = fac.new("money")
+        mon.set(0)
+        for _ in range(int(10000)):
+            mon.add(0.0001)
+        self.assertEqual(mon.value, 1)
+        for _ in range(int(10000)):
+            mon.subtract(0.0001)
+        self.assertEqual(mon.value, 0)
+
+        self.assertRaises(Monetary_Attribute.InvalidIncrement, mon.add, "x")
+        self.assertRaises(Monetary_Attribute.InvalidDecrement, mon.subtract, "x")
 
 
 

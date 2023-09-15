@@ -494,6 +494,14 @@ class Monetary_Attribute(Attribute):
         if isinstance(value, str): raise Attribute.InvalidValueType
         super().set(Decimal(str(value)))
 
+    def add(self,value:Decimal|float|int)->None:
+        try: self.set(self.value + Decimal(str(value)))
+        except: raise Monetary_Attribute.InvalidIncrement
+
+    def subtract(self,value:Decimal|float|int)->None:
+        try: self.set(self.value - Decimal(str(value)))
+        except: raise Monetary_Attribute.InvalidDecrement
+
     def _str_value(cls, value: Any, **options) -> str:
         currency = cls._pick_format_option('currency',options)
         locale_code = cls._pick_format_option('locale_code',options)
@@ -566,5 +574,7 @@ class Monetary_Attribute(Attribute):
         return value_str
 
     class CannotExtractValue(Exception): pass
+    class InvalidDecrement(Exception): pass
+    class InvalidIncrement(Exception): pass
     class UnknownLocaleCode(Exception): pass
     class UndefinedCurrencySymbol(Exception): pass
