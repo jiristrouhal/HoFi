@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Any, Callable, get_args
+from typing import Literal, Any, Callable
 import abc
 import dataclasses
 
