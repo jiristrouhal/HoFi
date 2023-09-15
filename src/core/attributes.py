@@ -7,6 +7,10 @@ import dataclasses
 from src.cmd.commands import Command, Composed_Command, Timing, Dict, Controller
 
 
+from decimal import Decimal, getcontext
+getcontext().prec = 28
+
+
 @dataclasses.dataclass
 class Dependency:
     func:Callable[[Any],Any]
@@ -297,7 +301,7 @@ class Integer_Attribute(Attribute):
         except: return False
         
     def read(self,text:str)->None:
-        text = text.strip()
+        text = text.strip().replace(",",".")
         try:
             float_value = float(text)
             if int(float_value)==float_value:
@@ -318,7 +322,7 @@ class Integer_Attribute(Attribute):
 import math
 class Real_Attribute(Attribute):
     default_value = 0
-    printops:Dict[str,Any] = {'prec':30}
+    printops:Dict[str,Any] = {'prec': 28, 'trailing_zeros':True}
 
     def is_valid(self, value:Any) -> bool:
         try: 
@@ -328,19 +332,28 @@ class Real_Attribute(Attribute):
         except: 
             return False
         
+    def set(self,value:Decimal|float|int)->None:
+        value = Decimal(str(value))
+        super().set(value)
+        
     def read(self, text:str)->None:
-        text = text.strip()
+        text = text.strip().replace(",",".")
         try:
-            float_value = float(text)
-            self.is_valid(float_value)
-            self.set(float_value)
+            decimal_value = Decimal(text)
+            self.is_valid(decimal_value)
+            self.set(decimal_value)
         except:
             raise Real_Attribute.CannotExtractNumber(text)
 
     @classmethod
     def _str_value(cls, value, **options) -> str:
         precision = cls._pick_format_option('prec',options)
-        return format(value, f'.{precision}f')
+        trailing_zeros = cls._pick_format_option('trailing_zeros',options)
+        if not trailing_zeros:
+            str_value = str(value)
+        else:
+            str_value = format(value, f'.{precision}f')
+        return str_value
     
     class CannotExtractNumber(Exception): pass
 
@@ -466,7 +479,6 @@ class Date_Attribute(Attribute):
     class CannotExtractDate(Exception): pass
 
 
-from decimal import Decimal
 class Monetary_Attribute(Attribute):
     default_value = Decimal('0')
     printops = {

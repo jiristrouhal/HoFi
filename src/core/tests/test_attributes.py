@@ -539,7 +539,7 @@ class Test_Attribute_Value_Formatting(unittest.TestCase):
         fac = attribute_factory(Controller())
         x = fac.new('real')
         x.set(math.pi)
-        self.assertEqual(x.value, math.pi)
+        self.assertEqual(x.value, Decimal(str(math.pi)))
         self.assertEqual(x.print(prec=2), '3.14')
         x.set(150.254)
         self.assertEqual(x.print(prec=0), '150')
@@ -600,17 +600,17 @@ class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase)
         self.__common_tests_for_int_and_real(attr)
         
         attr.read("0.001")
-        self.assertEqual(attr.value, 0.001)
+        self.assertEqual(attr.value, Decimal(str(0.001)))
         attr.read("1e+21")
         self.assertEqual(attr.value, 1000000000000000000000)
         attr.read("04e-05")
-        self.assertEqual(attr.value, 0.00004)
+        self.assertEqual(attr.value, Decimal(str(0.00004)))
         attr.read("-04e-05")
-        self.assertEqual(attr.value, -0.00004)
+        self.assertEqual(attr.value, Decimal(str(-0.00004)))
         attr.read("+05e-05")
-        self.assertEqual(attr.value, 0.00005)
+        self.assertEqual(attr.value, Decimal(str(0.00005)))
         attr.read("+01E-02")
-        self.assertEqual(attr.value, 0.01)
+        self.assertEqual(attr.value, Decimal(str(0.01)))
 
         self.assertRaises(Real_Attribute.CannotExtractNumber, attr.read, "5/7")
         self.assertRaises(Real_Attribute.CannotExtractNumber, attr.read, " ")
@@ -638,6 +638,24 @@ class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase)
         self.assertEqual(attr.value, 2)
         attr.read("  1.564e+03  ")
         self.assertEqual(attr.value, 1564)
+        attr.read("  1,564e+03  ")
+        self.assertEqual(attr.value, 1564)
+
+
+class Test_Printing_Real_Attribute_Value(unittest.TestCase):
+
+    def test_printing_real_value(self):
+        fac = attribute_factory(Controller())
+        attr = fac.new("real")
+        attr.set(5.3)
+        self.assertEqual(attr.print(trailing_zeros=False), "5.3")
+        self.assertEqual(attr.print(prec=5), "5.30000")
+
+        attr.set(5.45)
+        self.assertEqual(attr.print(prec=1), "5.4")
+        attr.set(5.55)
+        self.assertEqual(attr.print(prec=1), "5.6")
+
 
 
 from src.core.attributes import Choice_Attribute
