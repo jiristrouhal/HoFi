@@ -592,6 +592,7 @@ class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase)
         self.assertRaises(Integer_Attribute.CannotExtractInteger, attr.read, "")
         self.assertRaises(Integer_Attribute.CannotExtractInteger, attr.read, "   ")
         self.assertRaises(Integer_Attribute.CannotExtractInteger, attr.read, "asdfd ")
+        self.assertRaises(Integer_Attribute.CannotExtractInteger, attr.read, "1.25")
 
     def test_reading_real_from_text(self):
         fac = attribute_factory(Controller())
@@ -602,6 +603,15 @@ class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase)
         self.assertEqual(attr.value, 0.001)
         attr.read("1e+21")
         self.assertEqual(attr.value, 1000000000000000000000)
+        attr.read("04e-05")
+        self.assertEqual(attr.value, 0.00004)
+        attr.read("-04e-05")
+        self.assertEqual(attr.value, -0.00004)
+        attr.read("+05e-05")
+        self.assertEqual(attr.value, 0.00005)
+        attr.read("+01E-02")
+        self.assertEqual(attr.value, 0.01)
+
         self.assertRaises(Real_Attribute.CannotExtractNumber, attr.read, "5/7")
         self.assertRaises(Real_Attribute.CannotExtractNumber, attr.read, " ")
         self.assertRaises(Real_Attribute.CannotExtractNumber, attr.read, "asdfd ")
@@ -626,8 +636,8 @@ class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase)
         large_int = 2*10**100
         attr.read(f"  {large_int}e-100  ")
         self.assertEqual(attr.value, 2)
-
-
+        attr.read("  1.564e+03  ")
+        self.assertEqual(attr.value, 1564)
 
 
 from src.core.attributes import Choice_Attribute
@@ -706,6 +716,7 @@ class Test_Reading_Choice_From_Text(unittest.TestCase):
         self.assertEqual(c.value, 78)
         c.read("abc")
         self.assertEqual(c.value, "abc")
+        self.assertRaises(Choice_Attribute.NonexistentOption, c.read, "not an option")
 
 
 class Test_Make_Choice_Attribute_Dependent(unittest.TestCase):

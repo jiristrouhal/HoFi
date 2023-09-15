@@ -291,7 +291,6 @@ class Text_Attribute(Attribute):
 class Integer_Attribute(Attribute):
     default_value = 0
     printopts:Dict[str,Any] = {}
-    INTPATT = "[+-]?[0-9]+([eE][+-]?[0-9]+)?"
 
     def is_valid(self, value:Any) -> bool:
         try: return int(value) == value
@@ -299,11 +298,14 @@ class Integer_Attribute(Attribute):
         
     def read(self,text:str)->None:
         text = text.strip()
-        if re.fullmatch(Integer_Attribute.INTPATT,text):
+        try:
             float_value = float(text)
-            if self.is_valid(float_value):
-                self.set(int(float_value))
-        else:
+            if int(float_value)==float_value:
+                self.is_valid(float_value)
+                self.set(float_value)
+            else:
+                raise
+        except:
             raise Integer_Attribute.CannotExtractInteger(text)
     
     @classmethod
