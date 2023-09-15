@@ -866,6 +866,8 @@ class Test_Monetary_Attribute(unittest.TestCase):
 
         mon.set(11.5)
         self.assertEqual(mon.print(locale_code="cs_cz", currency="USD"), "11,50 $")
+        # the locale code is not case sensitive
+        self.assertEqual(mon.print(locale_code="CS_cz", currency="USD"), "11,50 $")
         self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "$11.50")
         self.assertEqual(mon.print(locale_code="cs_cz", currency="JPY"), "12 ¥")
         self.assertEqual(mon.print(locale_code="cs_cz", currency="USD", zero_decimals=False), "11,50 $")

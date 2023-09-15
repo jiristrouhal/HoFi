@@ -522,7 +522,7 @@ class Monetary_Attribute(Attribute):
 
     def _str_value(cls, value: Any, **options) -> str:
         currency = cls._pick_format_option('currency',options)
-        locale_code = cls._pick_format_option('locale_code',options)
+        locale_code = str(cls._pick_format_option('locale_code',options)).lower()
         if locale_code not in Locale_Codes: raise cls.UnknownLocaleCode
         zero_decimals = cls._pick_format_option('zero_decimals',options)
         if not zero_decimals and int(value)==value: 
