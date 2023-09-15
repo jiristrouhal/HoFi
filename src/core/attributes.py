@@ -520,12 +520,18 @@ class Monetary_Attribute(Attribute):
     def read(self,text:str)->None:
         text = text.strip()
         value = "0"
-        if re.fullmatch("[^\s\d]+[0-9]+([\.\,][0-9]*)?", text):
+        sgn = 1
+        if re.fullmatch("[+-]?[^\s\d]+[0-9]+([\.\,][0-9]*)?", text):
+            if text[0]=="+":
+                text = text[1:]
+            elif text[0]=="-":  
+                sgn = -1
+                text = text[1:]
             k = 0
             while re.fullmatch("[^\s\d]",text[k]): k+=1
             symbol = text[:k]
             value = text[k:].replace(",",".")
-        elif re.fullmatch("[0-9]+([\.\,][0-9]+)?[ \t]?[^\s\d]+",text):
+        elif re.fullmatch("[+-]?[0-9]+([\.\,][0-9]+)?[ \t]?[^\s\d]+",text):
             k = -1
             while re.fullmatch("[^\s\d]",text[k]): k-=1
             symbol = text[k+1:]
@@ -534,7 +540,7 @@ class Monetary_Attribute(Attribute):
             raise Monetary_Attribute.CannotExtractValue
         if symbol not in self.__curr_symbols.values():
             raise Monetary_Attribute.UndefinedCurrencySymbol
-        self.set(Decimal(value))
+        self.set(sgn*Decimal(value))
 
 
     @classmethod 

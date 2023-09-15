@@ -896,6 +896,10 @@ class Test_Monetary_Attribute(unittest.TestCase):
         self.assertEqual(mon.value, Decimal('0.561'))
         mon.read("$5,")
         self.assertEqual(mon.value, Decimal('5'))
+        mon.read("-$5,")
+        self.assertEqual(mon.value, Decimal('-5'))
+        mon.read("+$5,")
+        self.assertEqual(mon.value, Decimal('5'))
 
         mon.read("20 $")
         self.assertEqual(mon.value, Decimal('20'))
@@ -909,6 +913,10 @@ class Test_Monetary_Attribute(unittest.TestCase):
         self.assertEqual(mon.value, Decimal('14.561'))
         mon.read("45,12 Kč")
         self.assertEqual(mon.value, Decimal('45.12'))
+        mon.read("+45,12 Kč")
+        self.assertEqual(mon.value, Decimal('45.12'))
+        mon.read("-45,12 Kč")
+        self.assertEqual(mon.value, Decimal('-45.12'))
 
         INVALID_VALUES = (
             "", "  ", 
