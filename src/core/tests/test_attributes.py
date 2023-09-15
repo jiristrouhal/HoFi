@@ -570,6 +570,44 @@ class Test_Attribute_Value_Formatting(unittest.TestCase):
             x._pick_format_option('nonexistent_format_option', {})
 
 
+
+class Test_Reading_Text_Attribute_Value_From_Text(unittest.TestCase):
+
+    def test_any_string_can_be_read(self):
+        fac = attribute_factory(Controller())
+        attr = fac.new('text')
+        attr.read("This is some random text.")
+        self.assertEqual(attr.value, "This is some random text.")
+        attr.read("")
+        self.assertEqual(attr.value, "")
+
+
+class Test_Reading_Integer_Attribute_Value_From_Text(unittest.TestCase):
+
+    def test_reading_integer_from_text(self):
+        fac = attribute_factory(Controller())
+        attr = fac.new("integer")
+        attr.read("789")
+        self.assertEqual(attr.value, 789)
+        attr.read("-78")
+        self.assertEqual(attr.value, -78)
+        attr.read("  -20   ")
+        self.assertEqual(attr.value, -20)
+        attr.read("  00001   ")
+        self.assertEqual(attr.value, 1)
+        attr.read("  1e03  ")
+        self.assertEqual(attr.value, 1000)
+        attr.read("  2e+03  ")
+        self.assertEqual(attr.value, 2000)
+        attr.read("  4000e-03  ")
+        self.assertEqual(attr.value, 4)
+        attr.read("  1000000000e-09  ")
+        self.assertEqual(attr.value, 1)
+        large_int = 2*10**100
+        attr.read(f"  {large_int}e-100  ")
+        self.assertEqual(attr.value, 2)
+
+
 from src.core.attributes import Choice_Attribute
 class Test_Choice_Attribute(unittest.TestCase):
 

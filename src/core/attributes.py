@@ -294,22 +294,24 @@ class Integer_Attribute(Attribute):
 
     def is_valid(self, value:Any) -> bool:
         try: 
-            return int(value) is value
+            return int(value) == value
         except: 
             return False
         
     def read(self,text:str)->None:
         text = text.strip()
-        if re.fullmatch("[0-9]+",text):
-            self.set(int(text))
+        if re.fullmatch("[+-]?[0-9]+([eE][+-]?[0-9]+)?",text):
+            float_value = float(text)
+            if self.is_valid(float_value):
+                self.set(int(float_value))
         else:
-            raise Integer_Attribute.CannotExtractNumber(text)
+            raise Integer_Attribute.CannotExtractInteger(text)
     
     @classmethod
     def _str_value(cls, value:Any, **options) -> str:
         return str(value)
 
-    class CannotExtractNumber(Exception): pass
+    class CannotExtractInteger(Exception): pass
         
     
 import math
