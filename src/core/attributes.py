@@ -139,7 +139,7 @@ class Attribute(abc.ABC):
     def print(self, **options)->str:
         for op in options:
             if op not in self.printops: 
-                raise Attribute.UnknownOption(op, f"\nAvailable options are: {self.printops.keys()}")
+                raise Attribute.UnknownOption(op, f"Available options are: {tuple(self.printops.keys())}")
         return self._str_value(self._value,**options)
     
     @abc.abstractmethod
@@ -300,7 +300,7 @@ class Text_Attribute(Attribute):
 
 class Integer_Attribute(Attribute):
     default_value = 0
-    printops:Dict[str,Any] = {}
+    printops:Dict[str,Any] = {'thousands_sep':False}
 
     def is_valid(self, value:Any) -> bool:
         try: return int(value) == value
@@ -320,6 +320,9 @@ class Integer_Attribute(Attribute):
     
     @classmethod
     def _str_value(cls, value:Any, **options) -> str:
+        str_value = str(value)
+        if cls._pick_format_option('thousands_sep',options):
+            return f'{value:,}'.replace(",",u"\u00A0")
         return str(value)
 
     class CannotExtractInteger(Exception): pass
@@ -328,7 +331,12 @@ class Integer_Attribute(Attribute):
 import math
 class Real_Attribute(Attribute):
     default_value = 0
-    printops:Dict[str,Any] = {'prec':28, 'trailing_zeros':True, 'locale_code':'default'}
+    printops:Dict[str,Any] = {
+        'prec':28, 
+        'trailing_zeros':True, 
+        'locale_code':'default',
+        'thousands_sep':False
+    }
 
     def is_valid(self, value:Any) -> bool:
         try: 
@@ -356,9 +364,19 @@ class Real_Attribute(Attribute):
         prec = cls._pick_format_option('prec',options)
         trail_0 = cls._pick_format_option('trailing_zeros',options)
         locale = cls._pick_format_option('locale_code',options)
-        
-        if trail_0: str_value = format(value, f'.{prec}f')
-        else: str_value = str(value).rstrip('0').rstrip('.')
+        thousands_sep = cls._pick_format_option('thousands_sep',options)
+        if trail_0: 
+            if thousands_sep:
+                str_value = format(value, f',.{prec}f').replace(",",u"\u00A0")
+            else:
+                str_value = format(value, f'.{prec}f')
+        else: 
+            if thousands_sep:
+                str_value = format(value, f',.{prec}f').replace(",",u"\u00A0")
+            else:
+                str_value = str(value)
+            str_value = str_value.rstrip('0').rstrip('.')
+
         if _use_comma_as_decimal_separator(locale): str_value = str_value.replace('.',',')
         return str_value
     
@@ -501,7 +519,8 @@ class Monetary_Attribute(Attribute):
         'locale_code':'default', 
         'currency':'USD', 
         'zero_decimals':True, 
-        'enforce_plus':False
+        'enforce_plus':False,
+        'thousands_separator':False
     }
     __curr_symbols = {
         'USD':'$',
@@ -534,6 +553,7 @@ class Monetary_Attribute(Attribute):
         locale_code = str(cls._pick_format_option('locale_code',options)).lower()
         if locale_code not in Locale_Codes: raise cls.UnknownLocaleCode
         zero_decimals = cls._pick_format_option('zero_decimals',options)
+
         if not zero_decimals and int(value)==value: 
             n_places = 0
         else:
@@ -541,7 +561,11 @@ class Monetary_Attribute(Attribute):
                 n_places = cls.__special_decimal_places[currency]
             else:
                 n_places = cls.__DEFAULT_DECIMALS
-        value_str = format(round(value,n_places), '.'+str(n_places)+'f')
+
+        if cls._pick_format_option('thousands_separator',options):
+            value_str = format(round(value,n_places), ',.'+str(n_places)+'f').replace(',',u"\u00A0")
+        else:
+            value_str = format(round(value,n_places), '.'+str(n_places)+'f')
         value_str = cls.__adjust_decimal_separator(value_str,locale_code)
         value_str = cls.__add_symbol(value_str, locale_code, currency)
         if cls._pick_format_option('enforce_plus',options) and value>0: 

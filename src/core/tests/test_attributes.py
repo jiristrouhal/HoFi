@@ -665,8 +665,6 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
         self.assertEqual(attr.print(locale_code="cs_cz",trailing_zeros=False), "5")
         attr.set(0.0)
         self.assertEqual(attr.print(locale_code="cs_cz",trailing_zeros=False), "0")
-        attr.set(0.0)
-        self.assertEqual(attr.print(locale_code="cs_cz",trailing_zeros=False), "0")
 
     def test_is_int(self)->None:
         self.assertTrue(Real_Attribute.is_int(12.0))
@@ -677,7 +675,41 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
         self.assertFalse(Real_Attribute.is_int(12.1))
         self.assertFalse(Real_Attribute.is_int(math.pi))
         self.assertFalse(Real_Attribute.is_int(-12.1))
-    
+
+
+class Test_Thousands_Separator(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.nbsp = u"\u00A0"
+        self.fac = attribute_factory(Controller())
+
+    def test_thousands_separator_for_integers(self):
+        attr = self.fac.new("integer")
+        nbsp = self.nbsp
+        attr.set(12000)
+        self.assertEqual(attr.print(thousands_sep=True), f'12{nbsp}000')
+        attr.set(1000)
+        self.assertEqual(attr.print(thousands_sep=True), f'1{nbsp}000')
+        attr.set(10000000)
+        self.assertEqual(attr.print(thousands_sep=True), f'10{nbsp}000{nbsp}000') 
+
+    def test_thousands_separator_for_reals(self):
+        nbsp = self.nbsp
+        attr = self.fac.new("real")
+
+        attr.set(12000)
+        self.assertEqual(attr.print(thousands_sep=True, trailing_zeros=False), f'12{nbsp}000')
+        attr.set(1000)
+        self.assertEqual(attr.print(thousands_sep=True, trailing_zeros=False), f'1{nbsp}000')
+        attr.set(10000000)
+        self.assertEqual(attr.print(thousands_sep=True, trailing_zeros=False), f'10{nbsp}000{nbsp}000') 
+
+        attr.set(12000.00505)
+        self.assertEqual(attr.print(thousands_sep=True, trailing_zeros=False), f'12{nbsp}000.00505')
+
+        attr.set(12000.000)
+        self.assertEqual(attr.print(prec=5, thousands_sep=True), f'12{nbsp}000.00000')
+
 
 from src.core.attributes import Choice_Attribute
 class Test_Choice_Attribute(unittest.TestCase):
@@ -1010,6 +1042,43 @@ class Test_Monetary_Attribute(unittest.TestCase):
         self.assertRaises(Monetary_Attribute.InvalidIncrement, mon.add, "x")
         self.assertRaises(Monetary_Attribute.InvalidDecrement, mon.subtract, "x")
 
+    def test_print_with_space_as_thousands_separator(self):
+        fac = attribute_factory(Controller())
+        mon:Monetary_Attribute = fac.new("money")
+        nbsp = u"\u00A0"
+
+        mon.set(4100300)
+        self.assertEqual(
+            mon.print(
+                thousands_separator=True,
+                locale_code="en_us", 
+                currency="USD",
+                zero_decimals=False
+            ), 
+            f"$4{nbsp}100{nbsp}300"
+        )
+
+        mon.set(0)
+        self.assertEqual(
+            mon.print(
+                thousands_separator=True,
+                locale_code="en_us", 
+                currency="USD",
+                zero_decimals=False
+            ), 
+            f"$0"
+        )
+
+        mon.set(-4100300)
+        self.assertEqual(
+            mon.print(
+                thousands_separator=True,
+                locale_code="en_us", 
+                currency="USD",
+                zero_decimals=False
+            ), 
+            f"-$4{nbsp}100{nbsp}300"
+        )
 
 
 if __name__=="__main__": unittest.main()
