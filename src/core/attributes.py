@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Any, Callable
+from typing import Literal, Any, Callable, get_args
 import abc
 import dataclasses
 
@@ -9,7 +9,13 @@ from src.cmd.commands import Command, Composed_Command, Timing, Dict, Controller
 
 from decimal import Decimal, getcontext
 getcontext().prec = 28
-Locale_Codes = ('cs_cz','en_us','default')
+Locale_Code = Literal['cs_cz','en_us','default']
+class UnknownLocaleCode(Exception): pass
+def verify_and_format_locale_code(locale_code:Locale_Code)->str:
+    locale = locale_code.lower()
+    if not locale in get_args(Locale_Code): raise UnknownLocaleCode(locale)
+    return locale.lower()
+
 __Comma_Separator:Set[str] = {"cs_cz",}
 
 def _use_comma_as_decimal_separator(locale_code:str)->bool:
@@ -136,18 +142,15 @@ class Attribute(abc.ABC):
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
         self.command['set'].add(owner, func, timing)
 
-    def print(self, **options)->str:
-        for op in options:
-            if op not in self.printops: 
-                raise Attribute.UnknownOption(op, f"Available options are: {tuple(self.printops.keys())}")
-        return self._str_value(self._value,**options)
+    def print(self, *options)->str:
+        return self._str_value(self._value,*options)
     
     @abc.abstractmethod
     def read(self,text:str)->None: # pragma: no cover
         pass
         
     @abc.abstractmethod
-    def _str_value(cls, value:Any,**options)->str: # pragma: no cover
+    def _str_value(cls, value:Any, *options:Any)->str: # pragma: no cover
         pass
 
     def set(self,value:Any)->None: 
@@ -156,14 +159,6 @@ class Attribute(abc.ABC):
     
     @abc.abstractmethod
     def is_valid(self, value:Any)->bool: pass # pragma: no cover
-
-    @classmethod
-    def _pick_format_option(cls,option,options:Dict[str,Any])->Any:
-        if option in cls.printops:
-            if option in options: return options[option]
-            else: return cls.printops[option]
-        else: 
-            raise Attribute.UnknownOption(option)
 
     def _run_set_command(self,value:Any)->None:
         self._factory.controller.run(self.__get_set_command(value))
@@ -241,7 +236,6 @@ class Attribute(abc.ABC):
     class InvalidDefaultValue(Exception): pass
     class InvalidValueType(Exception): pass
     class NoInputsForDependency(Exception): pass
-    class UnknownOption(Exception): pass
     class WrongAttributeTypeForDependencyInput(Exception): pass
     class WrongAttributeTypeForDependencyOutput(Exception): pass
 
@@ -294,18 +288,20 @@ class Text_Attribute(Attribute):
         self.set(text)
     
     @classmethod
-    def _str_value(cls, value:Any, **options:Any)->str:
+    def _str_value(cls, value:Any, *options)->str:
         return str(value)
 
 
 class Integer_Attribute(Attribute):
     default_value = 0
-    printops:Dict[str,Any] = {'thousands_sep':False}
 
     def is_valid(self, value:Any) -> bool:
         try: return int(value) == value
         except: return False
         
+    def print(self, thousands_sep:bool=False, *options)->str:
+        return super().print(thousands_sep, *options)
+
     def read(self,text:str)->None:
         text = text.strip().replace(",",".")
         try:
@@ -319,9 +315,8 @@ class Integer_Attribute(Attribute):
             raise Integer_Attribute.CannotExtractInteger(text)
     
     @classmethod
-    def _str_value(cls, value:Any, **options) -> str:
-        str_value = str(value)
-        if cls._pick_format_option('thousands_sep',options):
+    def _str_value(cls, value:Any, thousands_sep:bool=False, *options) -> str:
+        if thousands_sep:
             return f'{value:,}'.replace(",",u"\u00A0")
         return str(value)
 
@@ -346,9 +341,22 @@ class Real_Attribute(Attribute):
         except: 
             return False
         
-    def set(self,value:Decimal|float|int)->None:
-        value = Decimal(str(value))
-        super().set(value)
+    def print(
+        self,
+        prec:int=28,
+        trailing_zeros:bool=True,
+        locale_code:Locale_Code = "en_us",
+        thousands_sep:bool=False,
+        *options:Any
+        )->str:
+        
+        return self._str_value(
+            value=self._value,
+            prec=prec,
+            trail_0=trailing_zeros,
+            locale_code=locale_code,
+            thousands_sep=thousands_sep
+        )
         
     def read(self, text:str)->None:
         text = text.strip().replace(",",".")
@@ -358,13 +366,22 @@ class Real_Attribute(Attribute):
             self.set(decimal_value)
         except:
             raise Real_Attribute.CannotExtractNumber(text)
+        
+    def set(self,value:Decimal|float|int)->None:
+        value = Decimal(str(value))
+        super().set(value)
 
     @classmethod
-    def _str_value(cls, value, **options) -> str:
-        prec = cls._pick_format_option('prec',options)
-        trail_0 = cls._pick_format_option('trailing_zeros',options)
-        locale = cls._pick_format_option('locale_code',options)
-        thousands_sep = cls._pick_format_option('thousands_sep',options)
+    def _str_value(
+        cls, 
+        value, 
+        prec:int = 28,
+        trail_0:bool=False,
+        thousands_sep:bool=False,
+        locale_code:Locale_Code="en_us",
+        *options
+        ) -> str:
+
         if trail_0: 
             if thousands_sep:
                 str_value = format(value, f',.{prec}f').replace(",",u"\u00A0")
@@ -377,7 +394,7 @@ class Real_Attribute(Attribute):
                 str_value = str(value)
             str_value = str_value.rstrip('0').rstrip('.')
 
-        if _use_comma_as_decimal_separator(locale): str_value = str_value.replace('.',',')
+        if _use_comma_as_decimal_separator(locale_code): str_value = str_value.replace('.',',')
         return str_value
     
 
@@ -416,8 +433,8 @@ class Choice_Attribute(Attribute):
     def clear_options(self)->None:
         self.options.clear()
 
-    def print_options(self, **format_options)->Tuple[str,...]:
-        return tuple([self._str_value(op, **format_options) for op in self.options])
+    def print_options(self, lower_case:bool=False)->Tuple[str,...]:
+        return tuple([self._str_value(op, lower_case) for op in self.options])
 
     def read(self, text:str)->None:
         text = text.strip()
@@ -448,8 +465,7 @@ class Choice_Attribute(Attribute):
         return True
     
     @classmethod
-    def _str_value(cls, value, **format_options) -> str:
-        lower_case = cls._pick_format_option('lower_case',format_options)
+    def _str_value(cls, value, lower_case:bool=False, *format_options) -> str:
         if lower_case:
             return str(value).lower()
         else:
@@ -466,11 +482,10 @@ import re
 
 class Date_Attribute(Attribute):
     default_value = datetime.date.today()
-    printops = {'locale_code':'default'}
     # all locale codes must be entered in lower case 
     __date_formats:Dict[str,str] = {
         'cs_cz':'%d.%m.%Y',
-        'default':'%Y-%m-%d'
+        'en_us':'%Y-%m-%d'
     }
     OTHER_SEPARATORS = (".",",","_")
     YEARPATT = "[0-9]{3,4}"
@@ -483,13 +498,24 @@ class Date_Attribute(Attribute):
 
     def is_valid(self, value: Any) -> bool:
         return isinstance(value, datetime.date)
+    
+    def print(self, locale_code:Locale_Code="en_us",*options)->str:
+        return self._str_value(
+            self._value, 
+            locale_code,
+            *options
+        )
 
     @classmethod
-    def _str_value(cls, value: Any, **options) -> str:
-        locale_code = str(cls._pick_format_option('locale_code',options)).lower()
-
-        if locale_code not in cls.__date_formats: raise cls.UnknownLocaleCode
-        date_format = cls.__date_formats[locale_code]
+    def _str_value(
+        cls, 
+        value: Any, 
+        locale_code:Locale_Code = "en_us", 
+        *options
+        )->str:
+        
+        locale = verify_and_format_locale_code(locale_code)
+        date_format = cls.__date_formats[locale]
         return datetime.date.strftime(value,date_format)
     
     def read(self,text:str)->None:
@@ -515,13 +541,6 @@ class Date_Attribute(Attribute):
 
 class Monetary_Attribute(Attribute):
     default_value = Decimal('0')
-    printops = {
-        'locale_code':'default', 
-        'currency':'USD', 
-        'zero_decimals':True, 
-        'enforce_plus':False,
-        'thousands_separator':False
-    }
     __curr_symbols = {
         'USD':'$',
         'JPY':'¥',
@@ -548,12 +567,37 @@ class Monetary_Attribute(Attribute):
         try: self.set(self.value - Decimal(str(value)))
         except: raise Monetary_Attribute.InvalidDecrement
 
-    def _str_value(cls, value: Any, **options) -> str:
-        currency = cls._pick_format_option('currency',options)
-        locale_code = str(cls._pick_format_option('locale_code',options)).lower()
-        if locale_code not in Locale_Codes: raise cls.UnknownLocaleCode
-        zero_decimals = cls._pick_format_option('zero_decimals',options)
+    def print(
+        self,
+        locale_code:Locale_Code = 'en_us',
+        currency:str = "USD",
+        zero_decimals:bool = True,
+        enforce_plus:bool = False,
+        thousands_separator:bool = False,
+        *options:Any
+        )->str:
+    
+        return self._str_value(
+            self._value,
+            locale_code=locale_code,
+            currency=currency,
+            zero_decimals=zero_decimals,
+            enforce_plus=enforce_plus,
+            thousands_separator=thousands_separator
+        )
 
+    def _str_value(
+        cls, 
+        value: Any, 
+        locale_code:Locale_Code = 'en_us',
+        currency:str = "USD",
+        zero_decimals:bool = True,
+        enforce_plus:bool = False,
+        thousands_separator:bool = False,
+        *options
+        ) -> str:
+
+        locale = verify_and_format_locale_code(locale_code)
         if not zero_decimals and int(value)==value: 
             n_places = 0
         else:
@@ -562,13 +606,13 @@ class Monetary_Attribute(Attribute):
             else:
                 n_places = cls.__DEFAULT_DECIMALS
 
-        if cls._pick_format_option('thousands_separator',options):
+        if thousands_separator:
             value_str = format(round(value,n_places), ',.'+str(n_places)+'f').replace(',',u"\u00A0")
         else:
             value_str = format(round(value,n_places), '.'+str(n_places)+'f')
-        value_str = cls.__adjust_decimal_separator(value_str,locale_code)
-        value_str = cls.__add_symbol(value_str, locale_code, currency)
-        if cls._pick_format_option('enforce_plus',options) and value>0: 
+        value_str = cls.__adjust_decimal_separator(value_str,locale)
+        value_str = cls.__add_symbol(value_str, locale, currency)
+        if enforce_plus and value>0: 
             value_str = '+'+value_str
         return value_str
     
@@ -576,18 +620,16 @@ class Monetary_Attribute(Attribute):
         try: return Decimal(value) == value
         except: return False
 
-
     def read(self,text:str)->None:
         text = text.strip()
         self.__catch_blank(text)
         sign, symbol, value = self.__extract_sign_symbol_and_value(text)
         if symbol not in self.__curr_symbols.values():
-            raise self.UndefinedCurrencySymbol(symbol)
+            raise self.UnknownCurrencySymbol(symbol)
         self.set(Decimal(sign+value))
 
     def __catch_blank(self,text:str)->None:
         if text=="":  raise self.ReadingBlankText
-
 
     SYMBOL_PATTERN = "(?P<symbol>[^\s\d\.\,]+)"
     VALUE_PATTERN = "(?P<value>[0-9]+([\.\,][0-9]*)?)"
@@ -615,7 +657,7 @@ class Monetary_Attribute(Attribute):
     @classmethod
     def __add_symbol(cls,value:str,locale_code:str, currency:str)->str:
         if currency in cls.__curr_symbols: symbol = cls.__curr_symbols[currency]
-        else: raise cls.UndefinedCurrencySymbol
+        else: raise cls.UnknownCurrencySymbol
         symbol = cls.__curr_symbols[currency]
 
         if locale_code in cls.__symbol_after_value: 
@@ -632,5 +674,4 @@ class Monetary_Attribute(Attribute):
     class InvalidDecrement(Exception): pass
     class InvalidIncrement(Exception): pass
     class ReadingBlankText(Exception): pass
-    class UnknownLocaleCode(Exception): pass
-    class UndefinedCurrencySymbol(Exception): pass
+    class UnknownCurrencySymbol(Exception): pass

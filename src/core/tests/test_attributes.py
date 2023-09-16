@@ -8,7 +8,7 @@ import unittest
 import dataclasses
 from typing import Any
 
-from src.core.attributes import attribute_factory, Attribute, Set_Attr_Data
+from src.core.attributes import attribute_factory, Attribute, Set_Attr_Data, UnknownLocaleCode
 from src.cmd.commands import Controller, Command
 
 
@@ -557,19 +557,6 @@ class Test_Attribute_Value_Formatting(unittest.TestCase):
         i.set(8)
         self.assertEqual(i.print(), "8")
 
-    def test_invalid_printop_raises_exception(self):
-        fac = attribute_factory(Controller())
-        x = fac.new('real')
-        with self.assertRaises(Attribute.UnknownOption):
-            x.print(invalid_option='__')
-
-    def test_picking_nonexistent_format_option(self):
-        fac = attribute_factory(Controller())
-        x = fac.new('real')
-        with self.assertRaises(Attribute.UnknownOption):
-            x._pick_format_option('nonexistent_format_option', {})
-
-
 
 class Test_Reading_Text_Attribute_Value_From_Text(unittest.TestCase):
 
@@ -829,9 +816,9 @@ class Test_Date_Attribute(unittest.TestCase):
         date.set(datetime.date(2023,9,15))
         self.assertEqual(date.value, datetime.date(2023,9,15))
         self.assertEqual(date.print(locale_code='cs_cz'),"15.09.2023")
-        self.assertEqual(date.print(locale_code='default'),"2023-09-15")
+        self.assertEqual(date.print(locale_code='en_us'),"2023-09-15")
         self.assertEqual(date.print(),"2023-09-15")
-        with self.assertRaises(Date_Attribute.UnknownLocaleCode):
+        with self.assertRaises(UnknownLocaleCode):
             date.print(locale_code="!$_<>")
 
     def test_locale_code_is_not_case_sensitive(self):
@@ -955,9 +942,9 @@ class Test_Monetary_Attribute(unittest.TestCase):
         fac = attribute_factory(Controller())
         mon:Monetary_Attribute = fac.new("money")
         mon.set(8.45)
-        with self.assertRaises(Monetary_Attribute.UndefinedCurrencySymbol):
+        with self.assertRaises(Monetary_Attribute.UnknownCurrencySymbol):
             mon.print(locale_code="en_us", currency="!$X")
-        with self.assertRaises(Monetary_Attribute.UnknownLocaleCode):
+        with self.assertRaises(UnknownLocaleCode):
             mon.print(locale_code="!$_<>", currency="USD")
 
     def test_reading_monetary_value_from_string(self):
@@ -1006,7 +993,7 @@ class Test_Monetary_Attribute(unittest.TestCase):
             "20 A", "20 klm", "25 $$", "$$45"
         )
         for value in UNKNOWN_SYMBOLS:
-            self.assertRaises(Monetary_Attribute.UndefinedCurrencySymbol, mon.read, value)
+            self.assertRaises(Monetary_Attribute.UnknownCurrencySymbol, mon.read, value)
 
     def test_monetary_attribute_validation(self):
         fac = attribute_factory(Controller())
