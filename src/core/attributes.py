@@ -9,17 +9,14 @@ from src.cmd.commands import Command, Composed_Command, Timing, Dict, Controller
 
 from decimal import Decimal, getcontext
 getcontext().prec = 28
-Locale_Code = Literal['cs_cz','en_us','default']
+Locale_Code = Literal['cs_cz','en_us']
 class UnknownLocaleCode(Exception): pass
 def verify_and_format_locale_code(locale_code:Locale_Code)->str:
     locale = locale_code.lower()
     if not locale in get_args(Locale_Code): raise UnknownLocaleCode(locale)
     return locale.lower()
 
-__Comma_Separator:Set[str] = {"cs_cz",}
 
-def _use_comma_as_decimal_separator(locale_code:str)->bool:
-    return locale_code in __Comma_Separator
 
 @dataclasses.dataclass
 class Dependency:
@@ -322,16 +319,15 @@ class Integer_Attribute(Attribute):
 
     class CannotExtractInteger(Exception): pass
         
+
+__Comma_Separator:Set[str] = {"cs_cz",}
+def _use_comma_as_decimal_separator(locale_code:str)->bool:
+    return locale_code in __Comma_Separator
+
     
 import math
 class Real_Attribute(Attribute):
     default_value = 0
-    printops:Dict[str,Any] = {
-        'prec':28, 
-        'trailing_zeros':True, 
-        'locale_code':'default',
-        'thousands_sep':False
-    }
 
     def is_valid(self, value:Any) -> bool:
         try: 
@@ -352,8 +348,8 @@ class Real_Attribute(Attribute):
         
         return self._str_value(
             value=self._value,
-            prec=prec,
-            trail_0=trailing_zeros,
+            precision=prec,
+            trailing_zeros=trailing_zeros,
             locale_code=locale_code,
             thousands_sep=thousands_sep
         )
@@ -361,9 +357,7 @@ class Real_Attribute(Attribute):
     def read(self, text:str)->None:
         text = text.strip().replace(",",".")
         try:
-            decimal_value = Decimal(text)
-            self.is_valid(decimal_value)
-            self.set(decimal_value)
+            self.set(Decimal(text))
         except:
             raise Real_Attribute.CannotExtractNumber(text)
         
@@ -375,29 +369,19 @@ class Real_Attribute(Attribute):
     def _str_value(
         cls, 
         value, 
-        prec:int = 28,
-        trail_0:bool=False,
+        precision:int = 28,
+        trailing_zeros:bool=False,
         thousands_sep:bool=False,
         locale_code:Locale_Code="en_us",
         *options
         ) -> str:
 
-        if trail_0: 
-            if thousands_sep:
-                str_value = format(value, f',.{prec}f').replace(",",u"\u00A0")
-            else:
-                str_value = format(value, f'.{prec}f')
-        else: 
-            if thousands_sep:
-                str_value = format(value, f',.{prec}f').replace(",",u"\u00A0")
-            else:
-                str_value = str(value)
-            str_value = str_value.rstrip('0').rstrip('.')
-
+        tsep = u"\u00A0" if thousands_sep else ''
+        str_value = format(value, f',.{precision}f').replace(",",tsep)
+        if not trailing_zeros: str_value = str_value.rstrip('0').rstrip('.')
         if _use_comma_as_decimal_separator(locale_code): str_value = str_value.replace('.',',')
         return str_value
     
-
     @staticmethod
     def is_int(value)->bool: return int(value)==value
     
@@ -466,10 +450,7 @@ class Choice_Attribute(Attribute):
     
     @classmethod
     def _str_value(cls, value, lower_case:bool=False, *format_options) -> str:
-        if lower_case:
-            return str(value).lower()
-        else:
-            return str(value)
+        return str(value).lower() if lower_case else str(value)
 
     class CannotRemoveChosenOption(Exception): pass
     class DuplicateOfDifferentType(Exception): pass
