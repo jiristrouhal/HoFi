@@ -9,7 +9,11 @@ from src.cmd.commands import Command, Composed_Command, Timing, Dict, Controller
 
 from decimal import Decimal, getcontext
 getcontext().prec = 28
+Locale_Codes = ('cs_cz','en_us','default')
+__Comma_Separator:Set[str] = {"cs_cz",}
 
+def _use_comma_as_decimal_separator(locale_code:str)->bool:
+    return locale_code in __Comma_Separator
 
 @dataclasses.dataclass
 class Dependency:
@@ -324,7 +328,7 @@ class Integer_Attribute(Attribute):
 import math
 class Real_Attribute(Attribute):
     default_value = 0
-    printops:Dict[str,Any] = {'prec': 28, 'trailing_zeros':True}
+    printops:Dict[str,Any] = {'prec':28, 'trailing_zeros':True, 'locale_code':'default'}
 
     def is_valid(self, value:Any) -> bool:
         try: 
@@ -349,11 +353,18 @@ class Real_Attribute(Attribute):
 
     @classmethod
     def _str_value(cls, value, **options) -> str:
-        precision = cls._pick_format_option('prec',options)
-        trailing_zeros = cls._pick_format_option('trailing_zeros',options)
-        if not trailing_zeros: str_value = str(value)
-        else: str_value = format(value, f'.{precision}f')
+        prec = cls._pick_format_option('prec',options)
+        trail_0 = cls._pick_format_option('trailing_zeros',options)
+        locale = cls._pick_format_option('locale_code',options)
+        
+        if trail_0: str_value = format(value, f'.{prec}f')
+        else: str_value = str(value).rstrip('0').rstrip('.')
+        if _use_comma_as_decimal_separator(locale): str_value = str_value.replace('.',',')
         return str_value
+    
+
+    @staticmethod
+    def is_int(value)->bool: return int(value)==value
     
     class CannotExtractNumber(Exception): pass
 
@@ -435,7 +446,6 @@ class Choice_Attribute(Attribute):
 import datetime
 import re
 
-Locale_Codes = ('cs_cz','en_us','default')
 class Date_Attribute(Attribute):
     default_value = datetime.date.today()
     printops = {'locale_code':'default'}
@@ -499,7 +509,6 @@ class Monetary_Attribute(Attribute):
         'CZK': 'Kč'
     }
     __symbol_after_value:Set[str] = {"cs_cz",}
-    __comma_separator:Set[str] = {"cs_cz",}
     __special_decimal_places = {'JPY':0}
     __DEFAULT_DECIMALS = 2
 
@@ -571,8 +580,7 @@ class Monetary_Attribute(Attribute):
 
     @classmethod 
     def __adjust_decimal_separator(cls,value:str,locale_code:str)->str:
-        use_comma_decimal_separator = locale_code in cls.__comma_separator
-        if use_comma_decimal_separator:
+        if _use_comma_as_decimal_separator(locale_code):
             value = value.replace('.',',')
         return value
     

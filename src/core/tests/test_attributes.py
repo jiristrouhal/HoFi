@@ -656,7 +656,28 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
         attr.set(5.55)
         self.assertEqual(attr.print(prec=1), "5.6")
 
+    def test_printing_real_values_with_locale_code_specified(self):
+        fac = attribute_factory(Controller())
+        attr = fac.new("real")
+        attr.set(5.3)
+        self.assertEqual(attr.print(locale_code="cs_cz",trailing_zeros=False), "5,3")
+        attr.set(5)
+        self.assertEqual(attr.print(locale_code="cs_cz",trailing_zeros=False), "5")
+        attr.set(0.0)
+        self.assertEqual(attr.print(locale_code="cs_cz",trailing_zeros=False), "0")
+        attr.set(0.0)
+        self.assertEqual(attr.print(locale_code="cs_cz",trailing_zeros=False), "0")
 
+    def test_is_int(self)->None:
+        self.assertTrue(Real_Attribute.is_int(12.0))
+        self.assertTrue(Real_Attribute.is_int(0.0))
+        self.assertTrue(Real_Attribute.is_int(-1))
+        self.assertTrue(Real_Attribute.is_int(math.pi-math.pi))
+
+        self.assertFalse(Real_Attribute.is_int(12.1))
+        self.assertFalse(Real_Attribute.is_int(math.pi))
+        self.assertFalse(Real_Attribute.is_int(-12.1))
+    
 
 from src.core.attributes import Choice_Attribute
 class Test_Choice_Attribute(unittest.TestCase):
