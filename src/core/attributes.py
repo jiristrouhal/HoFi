@@ -588,18 +588,18 @@ class Monetary_Attribute(Attribute):
     def __catch_blank(self,text:str)->None:
         if text=="":  raise self.ReadingBlankText
 
+
+    SYMBOL_PATTERN = "(?P<symbol>[^\s\d\.\,]+)"
+    VALUE_PATTERN = "(?P<value>[0-9]+([\.\,][0-9]*)?)"
+    SYMBOL_FIRST = f"({SYMBOL_PATTERN}{VALUE_PATTERN})"
+    VALUE_FIRST = f"({VALUE_PATTERN}[ \t]?{SYMBOL_PATTERN})"
+
     def __extract_sign_symbol_and_value(self,text:str)->Tuple[str,str,str]:
-        symbol = ""
         sign, text = self.__extract_sign(text)
-        if self.__symbol_first(text):
-            while self.__symbol_character(text[0]): 
-                symbol, text = symbol + text[0], text[1:]
-        elif self.__value_first(text):
-            while self.__symbol_character(text[-1]): 
-                symbol, text = text[-1]+symbol, text[:-1]
-        else: 
-            raise self.CannotExtractValue(text)
-        return sign, symbol, text.replace(",",".")
+        thematch = re.match(self.SYMBOL_FIRST ,text)
+        if thematch is None: thematch = re.match(self.VALUE_FIRST ,text)
+        if thematch is None: raise self.CannotExtractValue
+        return sign, thematch['symbol'], thematch['value'].replace(",",".")
 
     def __extract_sign(self,text:str)->Tuple[str,str]:
         if text[0] in ("+","-"): sign,text = text[0],text[1:]
@@ -626,24 +626,7 @@ class Monetary_Attribute(Attribute):
             else:
                 value_str = symbol + value
         return value_str
-    
 
-    __SYMBOL_CHAR_PATT = "[^\s\d]"
-    __SYMBOL_PATT = __SYMBOL_CHAR_PATT+"+"
-    __VALUE_PATT = "[0-9]+"+"([\.\,][0-9]*)?"
-    SYMBOL_BEFORE_VALUE = __SYMBOL_PATT + __VALUE_PATT
-    SYMBOL_AFTER_VALUE = __VALUE_PATT + "[ \t]?" + __SYMBOL_PATT
-    @classmethod
-    def __symbol_first(cls,text)->bool:
-        return bool(re.fullmatch(cls.SYMBOL_BEFORE_VALUE, text))
-
-    @classmethod
-    def __value_first(cls,text)->bool:
-        return bool(re.fullmatch(cls.SYMBOL_AFTER_VALUE, text))
-    
-    @staticmethod
-    def __symbol_character(char:str)->bool:
-        return bool(re.match(Monetary_Attribute.__SYMBOL_CHAR_PATT, char))
 
     class CannotExtractValue(Exception): pass
     class InvalidDecrement(Exception): pass
