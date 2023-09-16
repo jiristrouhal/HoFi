@@ -532,10 +532,8 @@ class Date_Attribute(Attribute):
             raise Date_Attribute.CannotExtractDate
         self.set(date)
 
-
     def __remove_spaces(self,text:str)->str: return text.replace(" ", "")
     
-    class UnknownLocaleCode(Exception): pass
     class CannotExtractDate(Exception): pass
 
 
