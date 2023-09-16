@@ -995,8 +995,8 @@ class Test_Monetary_Attribute(unittest.TestCase):
         mon.read("-45,12 Kč")
         self.assertEqual(mon.value, Decimal('-45.12'))
 
+        self.assertRaises(Monetary_Attribute.ReadingBlankText, mon.read, "  ")
         INVALID_VALUES = (
-            "", "  ", 
             "20", "20.561", #missing currency symbol
         )
         for value in INVALID_VALUES:

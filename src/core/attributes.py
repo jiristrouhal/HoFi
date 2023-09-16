@@ -525,7 +525,7 @@ class Monetary_Attribute(Attribute):
     __curr_symbols = {
         'USD':'$',
         'JPY':'¥',
-        'CZK': 'Kč'
+        'CZK': 'Kč',
     }
     __symbol_after_value:Set[str] = {"cs_cz",}
     __special_decimal_places = {'JPY':0}
@@ -576,34 +576,38 @@ class Monetary_Attribute(Attribute):
         try: return Decimal(value) == value
         except: return False
 
+
     def read(self,text:str)->None:
         text = text.strip()
-        value = "0"
-        sgn = 1
-        if re.fullmatch("[+-]?[^\s\d]+[0-9]+([\.\,][0-9]*)?", text):
-            if text[0]=="+":
-                text = text[1:]
-            elif text[0]=="-":  
-                sgn = -1
-                text = text[1:]
-            k = 0
-            while re.fullmatch("[^\s\d]",text[k]): k+=1
-            symbol = text[:k]
-            value = text[k:].replace(",",".")
-        elif re.fullmatch("[+-]?[0-9]+([\.\,][0-9]+)?[ \t]?[^\s\d]+",text):
-            k = -1
-            while re.fullmatch("[^\s\d]",text[k]): k-=1
-            symbol = text[k+1:]
-            value = text[:k+1].replace(",",".")
-        else:
-            raise Monetary_Attribute.CannotExtractValue
+        self.__catch_blank(text)
+        sign, symbol, value = self.__extract_sign_symbol_and_value(text)
         if symbol not in self.__curr_symbols.values():
-            raise Monetary_Attribute.UndefinedCurrencySymbol
-        self.set(sgn*Decimal(value))
+            raise self.UndefinedCurrencySymbol(symbol)
+        self.set(Decimal(sign+value))
 
+    def __catch_blank(self,text:str)->None:
+        if text=="":  raise self.ReadingBlankText
 
-    @classmethod 
-    def __adjust_decimal_separator(cls,value:str,locale_code:str)->str:
+    def __extract_sign_symbol_and_value(self,text:str)->Tuple[str,str,str]:
+        symbol = ""
+        sign, text = self.__extract_sign(text)
+        if self.__symbol_first(text):
+            while self.__symbol_character(text[0]): 
+                symbol, text = symbol + text[0], text[1:]
+        elif self.__value_first(text):
+            while self.__symbol_character(text[-1]): 
+                symbol, text = text[-1]+symbol, text[:-1]
+        else: 
+            raise self.CannotExtractValue(text)
+        return sign, symbol, text.replace(",",".")
+
+    def __extract_sign(self,text:str)->Tuple[str,str]:
+        if text[0] in ("+","-"): sign,text = text[0],text[1:]
+        else: sign = "+"
+        return sign, text
+
+    @staticmethod
+    def __adjust_decimal_separator(value:str,locale_code:str)->str:
         if _use_comma_as_decimal_separator(locale_code):
             value = value.replace('.',',')
         return value
@@ -622,9 +626,28 @@ class Monetary_Attribute(Attribute):
             else:
                 value_str = symbol + value
         return value_str
+    
+
+    __SYMBOL_CHAR_PATT = "[^\s\d]"
+    __SYMBOL_PATT = __SYMBOL_CHAR_PATT+"+"
+    __VALUE_PATT = "[0-9]+"+"([\.\,][0-9]*)?"
+    SYMBOL_BEFORE_VALUE = __SYMBOL_PATT + __VALUE_PATT
+    SYMBOL_AFTER_VALUE = __VALUE_PATT + "[ \t]?" + __SYMBOL_PATT
+    @classmethod
+    def __symbol_first(cls,text)->bool:
+        return bool(re.fullmatch(cls.SYMBOL_BEFORE_VALUE, text))
+
+    @classmethod
+    def __value_first(cls,text)->bool:
+        return bool(re.fullmatch(cls.SYMBOL_AFTER_VALUE, text))
+    
+    @staticmethod
+    def __symbol_character(char:str)->bool:
+        return bool(re.match(Monetary_Attribute.__SYMBOL_CHAR_PATT, char))
 
     class CannotExtractValue(Exception): pass
     class InvalidDecrement(Exception): pass
     class InvalidIncrement(Exception): pass
+    class ReadingBlankText(Exception): pass
     class UnknownLocaleCode(Exception): pass
     class UndefinedCurrencySymbol(Exception): pass
