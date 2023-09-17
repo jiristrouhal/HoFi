@@ -146,7 +146,6 @@ class Attribute(abc.ABC):
     def print(
         self, 
         locale_code:Locale_Code = "en_us",
-        *options
         )->str: 
         
         pass # pragma: no cover
@@ -252,7 +251,6 @@ class Number_Attribute(Attribute):
         self, 
         locale_code:Locale_Code = "en_us",
         use_thousands_separator:bool=False, 
-        *options
         )->str:
 
         pass
@@ -293,8 +291,7 @@ class Integer_Attribute(Number_Attribute):
     def print(
         self, 
         locale_code:Locale_Code = "en_us",
-        use_thousands_separator:bool=False, 
-        *options
+        use_thousands_separator:bool=False
         )->str:
 
         value_str = f'{self._value:,}'
@@ -320,8 +317,7 @@ class Real_Attribute(Number_Attribute):
         locale_code:Locale_Code = "en_us",
         use_thousands_separator:bool=False,
         precision:int=28,
-        trailing_zeros:bool=True,
-        *options:Any
+        trailing_zeros:bool=True
         )->str:
         
         str_value = format(self._value, f',.{precision}f')
@@ -355,34 +351,23 @@ class Monetary_Attribute(Number_Attribute):
         if isinstance(value, str): raise Attribute.InvalidValueType
         super().set(Decimal(str(value)))
 
-    def add(self,value:Decimal|float|int)->None:
-        try: self.set(self.value + Decimal(str(value)))
-        except: raise Monetary_Attribute.InvalidIncrement
-
-    def subtract(self,value:Decimal|float|int)->None:
-        try: self.set(self.value - Decimal(str(value)))
-        except: raise Monetary_Attribute.InvalidDecrement
-
     def print(
         self,
         locale_code:Locale_Code = 'en_us',
         use_thousands_separator:bool = False,
         currency:str = "USD",
         trailing_zeros:bool = True,
-        enforce_plus:bool = False,
-        *options:Any
+        enforce_plus:bool = False
         )->str:
     
-        value = self._value
-
         locale = verify_and_format_locale_code(locale_code)
-        if not trailing_zeros and int(value)==value: n_places = 0
+        if not trailing_zeros and int(self._value)==self._value: n_places = 0
         else: n_places = self.__n_of_decimals(currency)
-        value_str = format(round(value,n_places), ',.'+str(n_places)+'f')
+        value_str = format(round(self._value,n_places), ',.'+str(n_places)+'f')
         value_str = self._set_thousands_separator(value_str, use_thousands_separator)
         value_str = self._adjust_decimal_separator(value_str,locale)
         value_str = self.__add_symbol(value_str, locale, currency)
-        if enforce_plus and value>0: value_str = '+'+value_str
+        if enforce_plus and self._value>0: value_str = '+'+value_str
         return value_str
 
     def is_valid(self, value: Any)->bool:
@@ -391,20 +376,16 @@ class Monetary_Attribute(Number_Attribute):
 
     def read(self,text:str)->None:
         text = text.strip()
-        self.__catch_blank(text)
+        if text=="":  raise self.ReadingBlankText
         sign, symbol, value = self.__extract_sign_symbol_and_value(text)
         if symbol not in self.__curr_symbols.values():
             raise self.UnknownCurrencySymbol(symbol)
         self.set(Decimal(sign+value))
 
-    def __catch_blank(self,text:str)->None:
-        if text=="":  raise self.ReadingBlankText
-
     SYMBOL_PATTERN = "(?P<symbol>[^\s\d\.\,]+)"
     VALUE_PATTERN = "(?P<value>[0-9]+([\.\,][0-9]*)?)"
     SYMBOL_FIRST = f"({SYMBOL_PATTERN}{VALUE_PATTERN})"
     VALUE_FIRST = f"({VALUE_PATTERN}[ \t{NBSP}]?{SYMBOL_PATTERN})"
-
     def __extract_sign_symbol_and_value(self,text:str)->Tuple[str,str,str]:
         sign, text = self.__extract_sign(text)
         thematch = re.match(self.SYMBOL_FIRST ,text)
@@ -471,9 +452,9 @@ class Date_Attribute(Attribute):
         'en_us':'%Y-%m-%d'
     }
     OTHER_SEPARATORS = (".",",","_")
-    YEARPATT = "[0-9]{3,4}"
-    MONTHPATT = "(0?[1-9]|1[0-2])"
-    DAYPATT = "(0?[1-9]|[12][0-9]|3[01])"
+    YEARPATT = "(?P<year>[0-9]{3,4})"
+    MONTHPATT = "(?P<month>0?[1-9]|1[0-2])"
+    DAYPATT = "(?P<day>0?[1-9]|[12][0-9]|3[01])"
     SEPARATOR = "-"
 
     YMD_PATT = YEARPATT + SEPARATOR + MONTHPATT + SEPARATOR + DAYPATT
@@ -491,15 +472,12 @@ class Date_Attribute(Attribute):
         text = self.__remove_spaces(text)
         for sep in self.OTHER_SEPARATORS: 
             text = text.replace(sep, self.SEPARATOR)
-        if re.fullmatch(self.YMD_PATT, text): 
-            raw = list(map(int,text.split(self.SEPARATOR)))
-            date = datetime.date(year=raw[0],month=raw[1],day=raw[2])
-        elif re.fullmatch(self.DMY_PATT, text):
-            raw = list(map(int,text.split(self.SEPARATOR)))
-            date = datetime.date(year=raw[2],month=raw[1],day=raw[0]) 
-        else: 
-            raise Date_Attribute.CannotExtractDate
-        self.set(date)
+        date_match = re.fullmatch(self.YMD_PATT, text)
+        if date_match is None: date_match = re.fullmatch(self.DMY_PATT, text)
+        if date_match is None: raise Date_Attribute.CannotExtractDate
+        date = date_match.groupdict()
+        year, month, day = map(int,(date['year'], date['month'], date['day']))
+        self.set(datetime.date(year, month, day))
 
     def __remove_spaces(self,text:str)->str: return text.replace(" ", "")
     
@@ -540,11 +518,10 @@ class Choice_Attribute(Attribute):
     def print(
         self,
         locale_code:Locale_Code = "en_us",
-        lower_case:bool = False, 
-        *format_options
+        lower_case:bool = False
         )->str:
 
-        return self._str_value(self._value,lower_case,*format_options)
+        return self._str_value(self._value,lower_case)
 
     def print_options(self, lower_case:bool=False)->Tuple[str,...]:
         result = tuple([self._str_value(op, lower_case) for op in self.options])
