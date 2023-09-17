@@ -14,10 +14,10 @@ from decimal import Decimal, getcontext
 getcontext().prec = 28
 Locale_Code = Literal['cs_cz','en_us']
 class UnknownLocaleCode(Exception): pass
-def verify_and_format_locale_code(locale_code:Locale_Code)->str:
-    locale = locale_code.lower()
-    if not locale in get_args(Locale_Code): raise UnknownLocaleCode(locale)
-    return locale.lower()
+def verify_and_format_locale_code(locale_code:Locale_Code)->Locale_Code:
+    if not locale_code.lower() in get_args(Locale_Code): raise UnknownLocaleCode(locale_code)
+    code:Locale_Code = locale_code.lower()
+    return code
 
 
 
@@ -331,16 +331,29 @@ class Real_Attribute(Number_Attribute):
         super().set(value)
     
 
+
+Currency_Code = Literal['USD','EUR','CZK','JPY']
+Currency_Symbol = Literal['$','€','Kč','¥']
+@dataclasses.dataclass
+class Currency:
+    code:Currency_Code
+    symbol:Currency_Symbol
+    decimals:Literal[0,2] = 2
+    symbol_before_value:bool = True
+
+
 class Monetary_Attribute(Number_Attribute):
 
-    __curr_symbols = {
-        'USD':'$',
-        'JPY':'¥',
-        'CZK': 'Kč',
+    __currencies:Dict[Currency_Code,Currency] = {
+        'USD':Currency('USD','$'),
+        'EUR':Currency('EUR','€'),
+        'CZK':Currency('CZK','Kč',symbol_before_value=False),
+        'JPY':Currency('JPY','¥',decimals=0)
     }
-    __symbol_before_value:Set[str] = {"en_us",}
-    __special_decimal_places = {'JPY':0}
-    __DEFAULT_DECIMALS = 2
+    @staticmethod
+    def preferred_symbol_before_value(locale_code:Locale_Code)->bool:
+        preferred_by:Set[Locale_Code] = {'en_us'}
+        return locale_code in preferred_by
 
     def set(self,value:float|Decimal)->None:
         # For the sake of clarity, the input to the set method has to be kept in the same type as the 
@@ -355,14 +368,17 @@ class Monetary_Attribute(Number_Attribute):
         self,
         locale_code:Locale_Code = 'en_us',
         use_thousands_separator:bool = False,
-        currency:str = "USD",
+        currency_code:Currency_Code = "USD",
         trailing_zeros:bool = True,
         enforce_plus:bool = False
         )->str:
     
-        locale = verify_and_format_locale_code(locale_code)
+        locale:Locale_Code = verify_and_format_locale_code(locale_code)
+        if not currency_code in self.__currencies: raise self.CurrencyNotDefined
+        currency = self.__currencies[currency_code]
+        
         if not trailing_zeros and int(self._value)==self._value: n_places = 0
-        else: n_places = self.__n_of_decimals(currency)
+        else: n_places = self.__currencies[currency_code].decimals
         value_str = format(round(self._value,n_places), ',.'+str(n_places)+'f')
         value_str = self._set_thousands_separator(value_str, use_thousands_separator)
         value_str = self._adjust_decimal_separator(value_str,locale)
@@ -378,53 +394,46 @@ class Monetary_Attribute(Number_Attribute):
         text = text.strip()
         if text=="":  raise self.ReadingBlankText
         sign, symbol, value = self.__extract_sign_symbol_and_value(text)
-        if symbol not in self.__curr_symbols.values():
-            raise self.UnknownCurrencySymbol(symbol)
         self.set(Decimal(sign+value))
 
     SYMBOL_PATTERN = "(?P<symbol>[^\s\d\.\,]+)"
     VALUE_PATTERN = "(?P<value>[0-9]+([\.\,][0-9]*)?)"
     SYMBOL_FIRST = f"({SYMBOL_PATTERN}{VALUE_PATTERN})"
     VALUE_FIRST = f"({VALUE_PATTERN}[ \t{NBSP}]?{SYMBOL_PATTERN})"
-    def __extract_sign_symbol_and_value(self,text:str)->Tuple[str,str,str]:
-        sign, text = self.__extract_sign(text)
-        thematch = re.match(self.SYMBOL_FIRST ,text)
-        if thematch is None: thematch = re.match(self.VALUE_FIRST ,text)
-        if thematch is None: raise self.CannotExtractValue
+
+    @staticmethod
+    def __extract_sign_symbol_and_value(text:str)->Tuple[str,str,str]:
+        sign, text = Monetary_Attribute.__extract_sign(text)
+        thematch = re.match(Monetary_Attribute.SYMBOL_FIRST ,text)
+        if thematch is None: thematch = re.match(Monetary_Attribute.VALUE_FIRST ,text)
+        if thematch is None: 
+            raise Monetary_Attribute.CannotExtractValue
+        if thematch['symbol'] not in get_args(Currency_Symbol): 
+            raise Monetary_Attribute.UnknownCurrencySymbol
         return sign, thematch['symbol'], thematch['value'].replace(",",".")
 
-    def __extract_sign(self,text:str)->Tuple[str,str]:
+    @staticmethod
+    def __extract_sign(text:str)->Tuple[str,str]:
         if text[0] in ("+","-"): sign,text = text[0],text[1:]
         else: sign = "+"
         return sign, text
 
     @classmethod
-    def __add_symbol(cls,value:str,locale_code:str, currency:str)->str:
-        if currency in cls.__curr_symbols: symbol = cls.__curr_symbols[currency]
-        else: raise cls.UnknownCurrencySymbol
-        symbol = cls.__curr_symbols[currency]
-
-        if locale_code in cls.__symbol_before_value: 
-            if value[0] in ('-','+'): value_str = value[0] + symbol + value[1:]
-            else: value_str = symbol + value
+    def __add_symbol(cls,value:str,locale_code:Locale_Code, currency:Currency)->str:
+        if cls.preferred_symbol_before_value(locale_code) and currency.symbol_before_value: 
+            if value[0] in ('-','+'): value_str = value[0] + currency.symbol + value[1:]
+            else: value_str = currency.symbol + value
         else: 
-            value_str = value + NBSP + symbol
+            value_str = value + NBSP + currency.symbol
         return value_str
     
-    @classmethod
-    def __n_of_decimals(cls,currency:str)->int:
-        if currency in cls.__special_decimal_places:
-            return cls.__special_decimal_places[currency]
-        else:
-           return cls.__DEFAULT_DECIMALS
-
 
     class CannotExtractValue(Exception): pass
+    class CurrencyNotDefined(Exception): pass
     class InvalidDecrement(Exception): pass
     class InvalidIncrement(Exception): pass
     class ReadingBlankText(Exception): pass
     class UnknownCurrencySymbol(Exception): pass
-
 
 
 class Text_Attribute(Attribute):
@@ -451,11 +460,12 @@ class Date_Attribute(Attribute):
         'cs_cz':'%d.%m.%Y',
         'en_us':'%Y-%m-%d'
     }
-    OTHER_SEPARATORS = (".",",","_")
+
+    DEFAULT_SEPARATOR = "-"
+    SEPARATOR = "[\.\,\-_]"
     YEARPATT = "(?P<year>[0-9]{3,4})"
     MONTHPATT = "(?P<month>0?[1-9]|1[0-2])"
     DAYPATT = "(?P<day>0?[1-9]|[12][0-9]|3[01])"
-    SEPARATOR = "-"
 
     YMD_PATT = YEARPATT + SEPARATOR + MONTHPATT + SEPARATOR + DAYPATT
     DMY_PATT = DAYPATT + SEPARATOR + MONTHPATT + SEPARATOR + YEARPATT
@@ -470,8 +480,6 @@ class Date_Attribute(Attribute):
     
     def read(self,text:str)->None:
         text = self.__remove_spaces(text)
-        for sep in self.OTHER_SEPARATORS: 
-            text = text.replace(sep, self.SEPARATOR)
         date_match = re.fullmatch(self.YMD_PATT, text)
         if date_match is None: date_match = re.fullmatch(self.DMY_PATT, text)
         if date_match is None: raise Date_Attribute.CannotExtractDate
