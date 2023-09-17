@@ -8,7 +8,7 @@ import unittest
 import dataclasses
 from typing import Any
 
-from src.core.attributes import attribute_factory, Attribute, Set_Attr_Data, UnknownLocaleCode
+from src.core.attributes import attribute_factory, Attribute, Set_Attr_Data, UnknownLocaleCode, NBSP
 from src.cmd.commands import Controller, Command
 
 
@@ -91,12 +91,11 @@ class Test_Defining_Custom_Attribute_Type(unittest.TestCase):
             except: 
                 return False
             
+        def print(self,*options)->str:
+            return str(self._value)
+            
         def read(self,text:str)->None: # pragma: no cover
             pass
-            
-        @classmethod
-        def _str_value(cls, value, **options) -> str: # pragma: no cover
-            return str(value)
             
     def test_defining_positive_integer_attribute(self):
         attrfac = attribute_factory(Controller())
@@ -540,10 +539,10 @@ class Test_Attribute_Value_Formatting(unittest.TestCase):
         x = fac.new('real')
         x.set(math.pi)
         self.assertEqual(x.value, Decimal(str(math.pi)))
-        self.assertEqual(x.print(prec=2), '3.14')
+        self.assertEqual(x.print(precision=2), '3.14')
         x.set(150.254)
-        self.assertEqual(x.print(prec=0), '150')
-        self.assertEqual(x.print(prec=5), '150.25400')
+        self.assertEqual(x.print(precision=0), '150')
+        self.assertEqual(x.print(precision=5), '150.25400')
 
     def test_text_attribute(self):
         fac = attribute_factory(Controller())
@@ -636,12 +635,12 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
         attr = fac.new("real")
         attr.set(5.3)
         self.assertEqual(attr.print(trailing_zeros=False), "5.3")
-        self.assertEqual(attr.print(prec=5), "5.30000")
+        self.assertEqual(attr.print(precision=5), "5.30000")
 
         attr.set(5.45)
-        self.assertEqual(attr.print(prec=1), "5.4")
+        self.assertEqual(attr.print(precision=1), "5.4")
         attr.set(5.55)
-        self.assertEqual(attr.print(prec=1), "5.6")
+        self.assertEqual(attr.print(precision=1), "5.6")
 
     def test_printing_real_values_with_locale_code_specified(self):
         fac = attribute_factory(Controller())
@@ -695,7 +694,7 @@ class Test_Thousands_Separator(unittest.TestCase):
         self.assertEqual(attr.print(thousands_sep=True, trailing_zeros=False), f'12{nbsp}000.00505')
 
         attr.set(12000.000)
-        self.assertEqual(attr.print(prec=5, thousands_sep=True), f'12{nbsp}000.00000')
+        self.assertEqual(attr.print(precision=5, thousands_sep=True), f'12{nbsp}000.00000')
 
 
 from src.core.attributes import Choice_Attribute
@@ -899,24 +898,24 @@ class Test_Monetary_Attribute(unittest.TestCase):
         fac = attribute_factory(Controller())
         mon:Monetary_Attribute = fac.new("money")
         mon.set(12)
-        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD"), "12,00 $")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD"), f"12,00{NBSP}$")
         self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "$12.00")
-        self.assertEqual(mon.print(locale_code="cs_cz", currency="JPY"), "12 ¥")
-        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD", zero_decimals=False), "12 $")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="JPY"), f"12{NBSP}¥")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD", trailing_zeros=False), f"12{NBSP}$")
 
         mon.set(11.5)
-        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD"), "11,50 $")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD"), f"11,50{NBSP}$")
         # the locale code is not case sensitive
-        self.assertEqual(mon.print(locale_code="CS_cz", currency="USD"), "11,50 $")
+        self.assertEqual(mon.print(locale_code="CS_cz", currency="USD"), f"11,50{NBSP}$")
         self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "$11.50")
-        self.assertEqual(mon.print(locale_code="cs_cz", currency="JPY"), "12 ¥")
-        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD", zero_decimals=False), "11,50 $")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="JPY"), f"12{NBSP}¥")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD", trailing_zeros=False), f"11,50{NBSP}$")
 
     def test_bankers_rounding_is_correctly_used(self):
         fac = attribute_factory(Controller())
         mon:Monetary_Attribute = fac.new("money")
         mon.set(12.5) 
-        self.assertEqual(mon.print(locale_code="cs_cz", currency="JPY"), "12 ¥")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="JPY"), f"12{NBSP}¥")
 
         mon.set(1.455)
         self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "$1.46")
@@ -930,7 +929,7 @@ class Test_Monetary_Attribute(unittest.TestCase):
         mon:Monetary_Attribute = fac.new("money")
         mon.set(-5.01)
         self.assertEqual(mon.print(locale_code="en_us", currency="USD"), "-$5.01")
-        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD"), "-5,01 $")
+        self.assertEqual(mon.print(locale_code="cs_cz", currency="USD"), f"-5,01{NBSP}$")
 
     def test_plus_sign_can_be_enforced(self):
         fac = attribute_factory(Controller())
@@ -967,6 +966,8 @@ class Test_Monetary_Attribute(unittest.TestCase):
 
         mon.read("20 $")
         self.assertEqual(mon.value, Decimal('20'))
+        mon.read(f"28{NBSP}$")
+        self.assertEqual(mon.value, Decimal('28'))
         mon.read("15$")
         self.assertEqual(mon.value, Decimal('15'))
         mon.read("14\t$")
@@ -1037,10 +1038,10 @@ class Test_Monetary_Attribute(unittest.TestCase):
         mon.set(4100300)
         self.assertEqual(
             mon.print(
-                thousands_separator=True,
+                use_thousands_separator=True,
                 locale_code="en_us", 
                 currency="USD",
-                zero_decimals=False
+                trailing_zeros=False
             ), 
             f"$4{nbsp}100{nbsp}300"
         )
@@ -1048,10 +1049,10 @@ class Test_Monetary_Attribute(unittest.TestCase):
         mon.set(0)
         self.assertEqual(
             mon.print(
-                thousands_separator=True,
+                use_thousands_separator=True,
                 locale_code="en_us", 
                 currency="USD",
-                zero_decimals=False
+                trailing_zeros=False
             ), 
             f"$0"
         )
@@ -1059,10 +1060,10 @@ class Test_Monetary_Attribute(unittest.TestCase):
         mon.set(-4100300)
         self.assertEqual(
             mon.print(
-                thousands_separator=True,
+                use_thousands_separator=True,
                 locale_code="en_us", 
                 currency="USD",
-                zero_decimals=False
+                trailing_zeros=False
             ), 
             f"-$4{nbsp}100{nbsp}300"
         )
