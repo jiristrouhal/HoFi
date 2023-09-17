@@ -257,6 +257,7 @@ class Number_Attribute(Attribute):
 
     def read(self, text:str)->None:
         text = text.strip().replace(",",".")
+        text = self.remove_thousands_separators(text)
         try:
             value = Decimal(text)
             if not self.is_valid(value): raise
@@ -278,6 +279,11 @@ class Number_Attribute(Attribute):
 
     @staticmethod
     def is_int(value)->bool: return int(value)==value
+
+    @staticmethod
+    def remove_thousands_separators(value_str:str)->str:
+        for sep in (' ',NBSP,'\t'):  value_str = value_str.replace(sep,'')
+        return value_str
 
 
 class Integer_Attribute(Number_Attribute):
@@ -393,6 +399,7 @@ class Monetary_Attribute(Number_Attribute):
 
     def read(self,text:str)->None:
         text = text.strip()
+        text = self.remove_thousands_separators(text)
         if text=="":  raise self.ReadingBlankText
         sign, symbol, value = self.__extract_sign_symbol_and_value(text)
         self.set(Decimal(sign+value))

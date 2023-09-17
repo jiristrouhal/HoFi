@@ -666,35 +666,47 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
 class Test_Thousands_Separator(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.nbsp = u"\u00A0"
         self.fac = attribute_factory(Controller())
 
     def test_thousands_separator_for_integers(self):
         attr = self.fac.new("integer")
-        nbsp = self.nbsp
         attr.set(12000)
-        self.assertEqual(attr.print(use_thousands_separator=True), f'12{nbsp}000')
+        self.assertEqual(attr.print(use_thousands_separator=True), f'12{NBSP}000')
         attr.set(1000)
-        self.assertEqual(attr.print(use_thousands_separator=True), f'1{nbsp}000')
+        self.assertEqual(attr.print(use_thousands_separator=True), f'1{NBSP}000')
         attr.set(10000000)
-        self.assertEqual(attr.print(use_thousands_separator=True), f'10{nbsp}000{nbsp}000') 
+        self.assertEqual(attr.print(use_thousands_separator=True), f'10{NBSP}000{NBSP}000') 
 
     def test_thousands_separator_for_reals(self):
-        nbsp = self.nbsp
         attr = self.fac.new("real")
 
         attr.set(12000)
-        self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'12{nbsp}000')
+        self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'12{NBSP}000')
         attr.set(1000)
-        self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'1{nbsp}000')
+        self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'1{NBSP}000')
         attr.set(10000000)
-        self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'10{nbsp}000{nbsp}000') 
+        self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'10{NBSP}000{NBSP}000') 
 
         attr.set(12000.00505)
-        self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'12{nbsp}000.00505')
+        self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'12{NBSP}000.00505')
 
         attr.set(12000.000)
-        self.assertEqual(attr.print(precision=5, use_thousands_separator=True), f'12{nbsp}000.00000')
+        self.assertEqual(attr.print(precision=5, use_thousands_separator=True), f'12{NBSP}000.00000')
+
+
+class Test_Reading_Value_With_Space_As_Thousands_Separator(unittest.TestCase):
+
+    def test_reading_value_with_space_as_thousands_separator(self):
+        fac = attribute_factory(Controller())
+        attr = fac.new("real")
+        attr.read("12 000")
+        self.assertEqual(attr.value, 12000)
+        attr.read(f"100{NBSP}000")
+        self.assertEqual(attr.value, 100000)
+        attr.read(f"-15\t000")
+        self.assertEqual(attr.value, -15000)
+        attr.read(f"4 230.560")
+        self.assertEqual(attr.value, Decimal('4230.560'))
 
 
 from src.core.attributes import Choice_Attribute
@@ -1040,7 +1052,7 @@ class Test_Monetary_Attribute(unittest.TestCase):
                 currency_code="USD",
                 trailing_zeros=False
             ), 
-            f"$4{nbsp}100{nbsp}300"
+            f"$4{NBSP}100{NBSP}300"
         )
 
         mon.set(0)
@@ -1062,8 +1074,21 @@ class Test_Monetary_Attribute(unittest.TestCase):
                 currency_code="USD",
                 trailing_zeros=False
             ), 
-            f"-$4{nbsp}100{nbsp}300"
+            f"-$4{NBSP}100{NBSP}300"
         )
+
+
+class Test_Reading_Monetary_Value_With_Space_As_Thousands_Separator(unittest.TestCase):
+
+    def test_reading_value_with_space_as_thousands_separator(self):
+        fac = attribute_factory(Controller())
+        attr = fac.new("money")
+        attr.read("12 000 $")
+        self.assertEqual(attr.value, 12000)
+        attr.read(f"100{NBSP}000 $")
+        self.assertEqual(attr.value, 100000)
+        attr.read(f"-$15\t000")
+        self.assertEqual(attr.value, -15000)
 
 
 if __name__=="__main__": unittest.main()
