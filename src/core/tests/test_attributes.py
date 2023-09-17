@@ -598,9 +598,9 @@ class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase)
         attr.read("+01E-02")
         self.assertEqual(attr.value, Decimal(str(0.01)))
 
-        self.assertRaises(Real_Attribute.CannotExtractNumber, attr.read, "5/7")
-        self.assertRaises(Real_Attribute.CannotExtractNumber, attr.read, " ")
-        self.assertRaises(Real_Attribute.CannotExtractNumber, attr.read, "asdfd ")
+        self.assertRaises(Real_Attribute.CannotExtractReal, attr.read, "5/7")
+        self.assertRaises(Real_Attribute.CannotExtractReal, attr.read, " ")
+        self.assertRaises(Real_Attribute.CannotExtractReal, attr.read, "asdfd ")
 
     def __common_tests_for_int_and_real(self,attr:Attribute)->None:
         attr.read("789")

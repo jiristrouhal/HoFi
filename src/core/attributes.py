@@ -244,6 +244,8 @@ class Attribute(abc.ABC):
 
 class Number_Attribute(Attribute):
     default_value = 0
+    class CannotExtractNumber(Exception): pass
+    _reading_exception:Type[Exception] = CannotExtractNumber
 
     @abc.abstractmethod # pragma: no cover
     def print(
@@ -255,14 +257,34 @@ class Number_Attribute(Attribute):
 
         pass
 
-        
+    def read(self, text:str)->None:
+        text = text.strip().replace(",",".")
+        try:
+            value = Decimal(text)
+            if not self.is_valid(value): raise
+            else: self.set(value)
+        except:
+            raise self._reading_exception
+
+    __Comma_Separator:Set[str] = {"cs_cz",}
     @staticmethod
-    def set_thousands_separator(value_str:str,use_thousands_separator:bool)->str:
+    def _adjust_decimal_separator(value:str,locale_code:str)->str:
+        if locale_code in Number_Attribute.__Comma_Separator:
+            value = value.replace('.',',')
+        return value
+
+    @staticmethod
+    def _set_thousands_separator(value_str:str,use_thousands_separator:bool)->str:
         if use_thousands_separator: return value_str.replace(',',NBSP)
         else: return value_str.replace(',','')
 
+    @staticmethod
+    def is_int(value)->bool: return int(value)==value
+
 
 class Integer_Attribute(Number_Attribute):
+    class CannotExtractInteger(Exception): pass
+    _reading_exception:Type[Exception] = CannotExtractInteger
 
     def is_valid(self, value:Any) -> bool:
         try: return int(value) == value
@@ -276,31 +298,14 @@ class Integer_Attribute(Number_Attribute):
         )->str:
 
         value_str = f'{self._value:,}'
-        value_str = self.set_thousands_separator(value_str, use_thousands_separator)
+        value_str = self._set_thousands_separator(value_str, use_thousands_separator)
         return value_str
-
-    def read(self,text:str)->None:
-        text = text.strip().replace(",",".")
-        try:
-            float_value = float(text)
-            if int(float_value)==float_value:
-                self.is_valid(float_value)
-                self.set(float_value)
-            else:
-                raise
-        except:
-            raise Integer_Attribute.CannotExtractInteger(text)
-
-    class CannotExtractInteger(Exception): pass
-        
-
-__Comma_Separator:Set[str] = {"cs_cz",}
-def _use_comma_as_decimal_separator(locale_code:str)->bool:
-    return locale_code in __Comma_Separator
 
     
 import math
 class Real_Attribute(Number_Attribute):
+    class CannotExtractReal(Exception): pass
+    _reading_exception:Type[Exception] = CannotExtractReal
 
     def is_valid(self, value:Any) -> bool:
         try: 
@@ -320,27 +325,15 @@ class Real_Attribute(Number_Attribute):
         )->str:
         
         str_value = format(self._value, f',.{precision}f')
-        str_value = self.set_thousands_separator(str_value, use_thousands_separator)
+        str_value = self._set_thousands_separator(str_value, use_thousands_separator)
         if not trailing_zeros: str_value = str_value.rstrip('0').rstrip('.')
-        if _use_comma_as_decimal_separator(locale_code): str_value = str_value.replace('.',',')
+        str_value = self._adjust_decimal_separator(str_value, locale_code)
         return str_value
-        
-    def read(self, text:str)->None:
-        text = text.strip().replace(",",".")
-        try:
-            self.set(Decimal(text))
-        except:
-            raise Real_Attribute.CannotExtractNumber(text)
         
     def set(self,value:Decimal|float|int)->None:
         value = Decimal(str(value))
         super().set(value)
     
-    @staticmethod
-    def is_int(value)->bool: return int(value)==value
-    
-    class CannotExtractNumber(Exception): pass
-
 
 class Monetary_Attribute(Number_Attribute):
 
@@ -386,8 +379,8 @@ class Monetary_Attribute(Number_Attribute):
         if not trailing_zeros and int(value)==value: n_places = 0
         else: n_places = self.__n_of_decimals(currency)
         value_str = format(round(value,n_places), ',.'+str(n_places)+'f')
-        value_str = self.set_thousands_separator(value_str, use_thousands_separator)
-        value_str = self.__adjust_decimal_separator(value_str,locale)
+        value_str = self._set_thousands_separator(value_str, use_thousands_separator)
+        value_str = self._adjust_decimal_separator(value_str,locale)
         value_str = self.__add_symbol(value_str, locale, currency)
         if enforce_plus and value>0: value_str = '+'+value_str
         return value_str
@@ -424,12 +417,6 @@ class Monetary_Attribute(Number_Attribute):
         else: sign = "+"
         return sign, text
 
-    @staticmethod
-    def __adjust_decimal_separator(value:str,locale_code:str)->str:
-        if _use_comma_as_decimal_separator(locale_code):
-            value = value.replace('.',',')
-        return value
-    
     @classmethod
     def __add_symbol(cls,value:str,locale_code:str, currency:str)->str:
         if currency in cls.__curr_symbols: symbol = cls.__curr_symbols[currency]
