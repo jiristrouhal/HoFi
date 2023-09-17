@@ -331,7 +331,6 @@ class Real_Attribute(Number_Attribute):
         super().set(value)
     
 
-
 Currency_Code = Literal['USD','EUR','CZK','JPY']
 Currency_Symbol = Literal['$','€','Kč','¥']
 @dataclasses.dataclass
@@ -376,13 +375,15 @@ class Monetary_Attribute(Number_Attribute):
         locale:Locale_Code = verify_and_format_locale_code(locale_code)
         if not currency_code in self.__currencies: raise self.CurrencyNotDefined
         currency = self.__currencies[currency_code]
-        
+
         if not trailing_zeros and int(self._value)==self._value: n_places = 0
         else: n_places = self.__currencies[currency_code].decimals
         value_str = format(round(self._value,n_places), ',.'+str(n_places)+'f')
         value_str = self._set_thousands_separator(value_str, use_thousands_separator)
+        # decimal separator is adjusted AFTER setting thousands separator to avoid collisions when comma 
+        # is used for one or the other
         value_str = self._adjust_decimal_separator(value_str,locale)
-        value_str = self.__add_symbol(value_str, locale, currency)
+        value_str = self.__add_symbol_to_printed_value(value_str, locale, currency)
         if enforce_plus and self._value>0: value_str = '+'+value_str
         return value_str
 
@@ -419,7 +420,13 @@ class Monetary_Attribute(Number_Attribute):
         return sign, text
 
     @classmethod
-    def __add_symbol(cls,value:str,locale_code:Locale_Code, currency:Currency)->str:
+    def __add_symbol_to_printed_value(
+        cls,
+        value:str,
+        locale_code:Locale_Code, 
+        currency:Currency
+        )->str:
+        
         if cls.preferred_symbol_before_value(locale_code) and currency.symbol_before_value: 
             if value[0] in ('-','+'): value_str = value[0] + currency.symbol + value[1:]
             else: value_str = currency.symbol + value
