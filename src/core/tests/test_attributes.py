@@ -91,7 +91,7 @@ class Test_Defining_Custom_Attribute_Type(unittest.TestCase):
             except: 
                 return False
             
-        def print(self,*options)->str:
+        def print(self,*options)->str: # pragma: no cover
             return str(self._value)
             
         def read(self,text:str)->None: # pragma: no cover
@@ -704,6 +704,12 @@ class Test_Choice_Attribute(unittest.TestCase):
         self.fac = attribute_factory(Controller())
         self.c:Choice_Attribute = self.fac.choice()
 
+    def test_zeroth_option_is_selected_if_attribute_initially_contains_no_options(self):
+        self.c.add_options("A","B","C")
+        self.assertEqual(self.c.value, "A")
+        self.c.add_options("C", "D")
+        self.assertEqual(self.c.value, "A")
+
     def test_setting_attribute_always_raises_excpetion_before_defining_options(self):
         self.assertRaises(self.c.OptionsNotDefined, self.c.set, " ")
         self.c.add_options("A", "B")
@@ -715,9 +721,9 @@ class Test_Choice_Attribute(unittest.TestCase):
 
     def test_removing_options(self):
         self.c.add_options("A","B")
-        self.c.remove_options("A")
-        self.assertRaises(Choice_Attribute.NonexistentOption, self.c.set, "A")
-        self.assertRaises(Choice_Attribute.NonexistentOption, self.c.remove_options, "A")
+        self.c.remove_options("B")
+        self.assertRaises(Choice_Attribute.NonexistentOption, self.c.set, "B")
+        self.assertRaises(Choice_Attribute.NonexistentOption, self.c.remove_options, "B")
 
     def test_accessing_value_before_defining_options_raises_exception(self):
         with self.assertRaises(Choice_Attribute.OptionsNotDefined):
@@ -740,6 +746,10 @@ class Test_Choice_Attribute(unittest.TestCase):
         self.c.add_options("A","B")
         self.assertTrue(self.c.is_option("A"))
         self.assertFalse(self.c.is_option("C"))
+
+    def test_printing_single_options(self):
+        self.c.add_options("A","B")
+        self.assertTrue(self.c.print(lower_case=True),"A")
 
 
 class Test_Duplicity_In_Added_Options_For_Choice_Attribute(unittest.TestCase):

@@ -557,6 +557,7 @@ class Choice_Attribute(Attribute):
         stringified_ops = set(map(str,self.options))
         if len(stringified_ops)<len(self.options): 
             raise Choice_Attribute.DuplicateOfDifferentType
+        if self._value=='': self._value = options[0]
 
     def clear_options(self)->None:
         self.options.clear()
@@ -565,7 +566,8 @@ class Choice_Attribute(Attribute):
         return self._str_value(self._value,lower_case,*format_options)
 
     def print_options(self, lower_case:bool=False)->Tuple[str,...]:
-        return tuple([self._str_value(op, lower_case) for op in self.options])
+        result = tuple([self._str_value(op, lower_case) for op in self.options])
+        return result
 
     def read(self, text:str)->None:
         text = text.strip()
