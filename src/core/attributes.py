@@ -143,7 +143,13 @@ class Attribute(abc.ABC):
         self.command['set'].add(owner, func, timing)
 
     @abc.abstractmethod
-    def print(self, *options)->str: pass # pragma: no cover
+    def print(
+        self, 
+        locale_code:Locale_Code = "en_us",
+        *options
+        )->str: 
+        
+        pass # pragma: no cover
     
     @abc.abstractmethod
     def read(self,text:str)->None: # pragma: no cover
@@ -236,53 +242,42 @@ class Attribute(abc.ABC):
     class WrongAttributeTypeForDependencyOutput(Exception): pass
 
 
-from typing import Type
-@dataclasses.dataclass
-class Attribute_Factory:
-    controller:Controller
-    types:Dict[str,Type[Attribute]] = dataclasses.field(default_factory=dict,init=False)
-    def __post_init__(self)->None:
-        self.types['text'] = Text_Attribute
-        self.types['integer'] = Integer_Attribute
-        self.types['real'] = Real_Attribute
-        self.types['choice'] = Choice_Attribute
-        self.types['date'] = Date_Attribute
-        self.types['money'] = Monetary_Attribute
-
-    def new(self,atype:str='text',name:str="")->Attribute:
-        if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
-        else:
-            return self.types[atype](self,atype,name)
-        
-    def choice(self, name:str="")->Choice_Attribute:
-        return Choice_Attribute(self,'choice',name)
-        
-    def add(self,label:str,new_attribute_class:Type[Attribute])->None:
-        if label in self.types:
-            raise Attribute_Factory.TypeAlreadyDefined(
-                f"Label '{label}' already assigned to attribute class '{self.types[label]}'."
-            )
-        else:
-            self.types[label] = new_attribute_class
-
-    class TypeAlreadyDefined(Exception): pass
-
-
-def attribute_factory(controller:Controller)->Attribute_Factory:
-    return Attribute_Factory(controller)
-
-
-class Integer_Attribute(Attribute):
+class Number_Attribute(Attribute):
     default_value = 0
+
+    @abc.abstractmethod # pragma: no cover
+    def print(
+        self, 
+        locale_code:Locale_Code = "en_us",
+        use_thousands_separator:bool=False, 
+        *options
+        )->str:
+
+        pass
+
+        
+    @staticmethod
+    def set_thousands_separator(value_str:str,use_thousands_separator:bool)->str:
+        if use_thousands_separator: return value_str.replace(',',NBSP)
+        else: return value_str.replace(',','')
+
+
+class Integer_Attribute(Number_Attribute):
 
     def is_valid(self, value:Any) -> bool:
         try: return int(value) == value
         except: return False
         
-    def print(self, thousands_sep:bool=False, *options)->str:
-        if thousands_sep:
-            return f'{self._value:,}'.replace(",",NBSP)
-        return str(self._value)
+    def print(
+        self, 
+        locale_code:Locale_Code = "en_us",
+        use_thousands_separator:bool=False, 
+        *options
+        )->str:
+
+        value_str = f'{self._value:,}'
+        value_str = self.set_thousands_separator(value_str, use_thousands_separator)
+        return value_str
 
     def read(self,text:str)->None:
         text = text.strip().replace(",",".")
@@ -305,8 +300,7 @@ def _use_comma_as_decimal_separator(locale_code:str)->bool:
 
     
 import math
-class Real_Attribute(Attribute):
-    default_value = 0
+class Real_Attribute(Number_Attribute):
 
     def is_valid(self, value:Any) -> bool:
         try: 
@@ -318,15 +312,15 @@ class Real_Attribute(Attribute):
         
     def print(
         self,
+        locale_code:Locale_Code = "en_us",
+        use_thousands_separator:bool=False,
         precision:int=28,
         trailing_zeros:bool=True,
-        locale_code:Locale_Code = "en_us",
-        thousands_sep:bool=False,
         *options:Any
         )->str:
         
-        tsep = NBSP if thousands_sep else ''
-        str_value = format(self._value, f',.{precision}f').replace(",",tsep)
+        str_value = format(self._value, f',.{precision}f')
+        str_value = self.set_thousands_separator(str_value, use_thousands_separator)
         if not trailing_zeros: str_value = str_value.rstrip('0').rstrip('.')
         if _use_comma_as_decimal_separator(locale_code): str_value = str_value.replace('.',',')
         return str_value
@@ -348,8 +342,8 @@ class Real_Attribute(Attribute):
     class CannotExtractNumber(Exception): pass
 
 
-class Monetary_Attribute(Attribute):
-    default_value = Decimal('0')
+class Monetary_Attribute(Number_Attribute):
+
     __curr_symbols = {
         'USD':'$',
         'JPY':'¥',
@@ -379,10 +373,10 @@ class Monetary_Attribute(Attribute):
     def print(
         self,
         locale_code:Locale_Code = 'en_us',
+        use_thousands_separator:bool = False,
         currency:str = "USD",
         trailing_zeros:bool = True,
         enforce_plus:bool = False,
-        use_thousands_separator:bool = False,
         *options:Any
         )->str:
     
@@ -392,7 +386,7 @@ class Monetary_Attribute(Attribute):
         if not trailing_zeros and int(value)==value: n_places = 0
         else: n_places = self.__n_of_decimals(currency)
         value_str = format(round(value,n_places), ',.'+str(n_places)+'f')
-        value_str = self.__set_thousands_separator(value_str, use_thousands_separator)
+        value_str = self.set_thousands_separator(value_str, use_thousands_separator)
         value_str = self.__adjust_decimal_separator(value_str,locale)
         value_str = self.__add_symbol(value_str, locale, currency)
         if enforce_plus and value>0: value_str = '+'+value_str
@@ -447,12 +441,6 @@ class Monetary_Attribute(Attribute):
             else: value_str = symbol + value
         else: 
             value_str = value + NBSP + symbol
-        return value_str
-
-    @classmethod
-    def __set_thousands_separator(cls,value_str:str,use_thousands_separator:bool)->str:
-        if use_thousands_separator: value_str = value_str.replace(',',NBSP)
-        else: value_str = value_str.replace(',','')
         return value_str
     
     @classmethod
@@ -562,7 +550,13 @@ class Choice_Attribute(Attribute):
     def clear_options(self)->None:
         self.options.clear()
 
-    def print(self,lower_case:bool = False, *format_options)->str:
+    def print(
+        self,
+        locale_code:Locale_Code = "en_us",
+        lower_case:bool = False, 
+        *format_options
+        )->str:
+
         return self._str_value(self._value,lower_case,*format_options)
 
     def print_options(self, lower_case:bool=False)->Tuple[str,...]:
@@ -605,3 +599,39 @@ class Choice_Attribute(Attribute):
     class DuplicateOfDifferentType(Exception): pass
     class NonexistentOption(Exception): pass
     class OptionsNotDefined(Exception): pass
+
+
+from typing import Type
+@dataclasses.dataclass
+class Attribute_Factory:
+    controller:Controller
+    types:Dict[str,Type[Attribute]] = dataclasses.field(default_factory=dict,init=False)
+    def __post_init__(self)->None:
+        self.types['text'] = Text_Attribute
+        self.types['integer'] = Integer_Attribute
+        self.types['real'] = Real_Attribute
+        self.types['choice'] = Choice_Attribute
+        self.types['date'] = Date_Attribute
+        self.types['money'] = Monetary_Attribute
+
+    def new(self,atype:str='text',name:str="")->Attribute:
+        if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
+        else:
+            return self.types[atype](self,atype,name)
+        
+    def choice(self, name:str="")->Choice_Attribute:
+        return Choice_Attribute(self,'choice',name)
+        
+    def add(self,label:str,new_attribute_class:Type[Attribute])->None:
+        if label in self.types:
+            raise Attribute_Factory.TypeAlreadyDefined(
+                f"Label '{label}' already assigned to attribute class '{self.types[label]}'."
+            )
+        else:
+            self.types[label] = new_attribute_class
+
+    class TypeAlreadyDefined(Exception): pass
+
+
+def attribute_factory(controller:Controller)->Attribute_Factory:
+    return Attribute_Factory(controller)

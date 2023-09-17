@@ -673,28 +673,28 @@ class Test_Thousands_Separator(unittest.TestCase):
         attr = self.fac.new("integer")
         nbsp = self.nbsp
         attr.set(12000)
-        self.assertEqual(attr.print(thousands_sep=True), f'12{nbsp}000')
+        self.assertEqual(attr.print(use_thousands_separator=True), f'12{nbsp}000')
         attr.set(1000)
-        self.assertEqual(attr.print(thousands_sep=True), f'1{nbsp}000')
+        self.assertEqual(attr.print(use_thousands_separator=True), f'1{nbsp}000')
         attr.set(10000000)
-        self.assertEqual(attr.print(thousands_sep=True), f'10{nbsp}000{nbsp}000') 
+        self.assertEqual(attr.print(use_thousands_separator=True), f'10{nbsp}000{nbsp}000') 
 
     def test_thousands_separator_for_reals(self):
         nbsp = self.nbsp
         attr = self.fac.new("real")
 
         attr.set(12000)
-        self.assertEqual(attr.print(thousands_sep=True, trailing_zeros=False), f'12{nbsp}000')
+        self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'12{nbsp}000')
         attr.set(1000)
-        self.assertEqual(attr.print(thousands_sep=True, trailing_zeros=False), f'1{nbsp}000')
+        self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'1{nbsp}000')
         attr.set(10000000)
-        self.assertEqual(attr.print(thousands_sep=True, trailing_zeros=False), f'10{nbsp}000{nbsp}000') 
+        self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'10{nbsp}000{nbsp}000') 
 
         attr.set(12000.00505)
-        self.assertEqual(attr.print(thousands_sep=True, trailing_zeros=False), f'12{nbsp}000.00505')
+        self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'12{nbsp}000.00505')
 
         attr.set(12000.000)
-        self.assertEqual(attr.print(precision=5, thousands_sep=True), f'12{nbsp}000.00000')
+        self.assertEqual(attr.print(precision=5, use_thousands_separator=True), f'12{nbsp}000.00000')
 
 
 from src.core.attributes import Choice_Attribute
