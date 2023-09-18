@@ -112,17 +112,11 @@ class Attribute(abc.ABC):
     def value(self)->Any: return self._value
     
     def add_dependency(self,dependency:Callable[[Any],Any]|Dependency, *attributes:Attribute)->None:
-        self.__check_dependency_has_at_least_one_input(attributes)
-        self.__check_attribute_types_for_dependency(dependency, attributes)
-        self.__check_for_existing_dependency()
-        self.__check_for_dependency_cycle(set(attributes),path=self._name)
-
+        self.__check_dependency(dependency,*attributes)
         command = Set_Dependent_Attr(self,dependency,attributes)
         command.run()
-
         def set_dependent_attr(data:Set_Attr_Data)->Any:
-            return Set_Dependent_Attr(self,dependency,attributes)
-        
+            return command
         for attribute in attributes:
             attribute.on_set(self._id, set_dependent_attr, 'post')
             self._depends_on.add(attribute)
@@ -133,6 +127,12 @@ class Attribute(abc.ABC):
             attribute_affecting_this_one.command['set'].post.pop(self._id)
         self._depends_on.clear()
         self._dependency = None
+
+    def __check_dependency(self,dependency:Callable[[Any],Any]|Dependency,*attributes:Attribute)->None:
+        self.__check_dependency_has_at_least_one_input(attributes)
+        self.__check_attribute_types_for_dependency(dependency, attributes)
+        self.__check_for_existing_dependency()
+        self.__check_for_dependency_cycle(set(attributes),path=self._name)
 
     def copy(self)->Attribute:
         the_copy = self._factory.new(self._type, self._name)
