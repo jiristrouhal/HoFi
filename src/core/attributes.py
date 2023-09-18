@@ -14,9 +14,9 @@ from decimal import Decimal, getcontext
 getcontext().prec = 28
 Locale_Code = Literal['cs_cz','en_us']
 class UnknownLocaleCode(Exception): pass
-def verify_and_format_locale_code(locale_code:Locale_Code)->Locale_Code:
+def verify_and_format_locale_code(locale_code:Locale_Code)->str:
     if not locale_code.lower() in get_args(Locale_Code): raise UnknownLocaleCode(locale_code)
-    code:Locale_Code = locale_code.lower()
+    code = locale_code.lower()
     return code
 
 
@@ -52,11 +52,11 @@ class Set_Attr(Command):
 
     def run(self)->None:
         self.prev_value = self.data.attr.value
-        self.data.attr._check_and_set_value(self.data.value)
+        self.data.attr._value = self.data.value
     def undo(self)->None:
-        self.data.attr._check_and_set_value(self.prev_value)
+        self.data.attr._value = self.prev_value
     def redo(self)->None:
-        self.data.attr._check_and_set_value(self.data.value)
+        self.data.attr._value = self.data.value
 
 
 class Set_Attr_Composed(Composed_Command):
@@ -103,7 +103,7 @@ class Attribute(abc.ABC):
         self._depends_on:Set[Attribute] = set()
         self._dependency:Callable[[Any],Any]|Dependency|None = None
         self._id = str(id(self))
-        self.__set_to_default_value()
+        self._value = self.default_value
         self._factory = factory
 
     @property
@@ -156,21 +156,26 @@ class Attribute(abc.ABC):
         
     def set(self,value:Any)->None: 
         if self._depends_on: return
-        else: self._run_set_command(value)
+        elif self.is_valid(value): 
+            self._run_set_command(value)
+        else:
+            raise Attribute.InvalidValue(value)
+
+    def is_valid(self, value:Any)->bool: 
+        self._check_input_type(value)
+        return self._is_value_valid(value)
     
     @abc.abstractmethod
-    def is_valid(self, value:Any)->bool: pass # pragma: no cover
+    def _check_input_type(self,value:Any)->None: pass # pragma: no cover
+
+    @abc.abstractmethod
+    def _is_value_valid(self,value:Any)->bool: pass # pragma: no cover
 
     def _run_set_command(self,value:Any)->None:
         self._factory.controller.run(self.__get_set_command(value))
 
     def __get_set_command(self,value:Any)->Tuple[Command,...]:
         return self.command['set'](Set_Attr_Data(self,value))
-
-    def _check_and_set_value(self,value:Any)->None:
-        if not self.is_valid(value): 
-            raise Attribute.InvalidValueType(value)
-        else: self._value = value
 
     def __check_dependency_has_at_least_one_input(self,inputs:Tuple[Attribute,...])->None:
         if not inputs: raise Attribute.NoInputsForDependency
@@ -201,15 +206,7 @@ class Attribute(abc.ABC):
 
         if not self.is_valid(result):
             raise Attribute.WrongAttributeTypeForDependencyOutput(result)
-        
-    def __set_to_default_value(self)->None:
-        if self.is_valid(self.default_value): # pragma: no cover
-            self._value = self.default_value # pragma: no cover
-        else: # pragma: no cover
-            raise Attribute.InvalidDefaultValue(
-                f"Invalid default value ({self.default_value}) for attribute of type '{self.type}'."
-            ) # pragma: no cover
-        
+
     def __set_value_of_the_copy(self,the_copy:Attribute)->None:
         if self._dependency is not None:
             the_copy.add_dependency(self._dependency, *self._depends_on)
@@ -236,6 +233,7 @@ class Attribute(abc.ABC):
     class InvalidAttributeType(Exception): pass
     class InvalidDefaultValue(Exception): pass
     class InvalidValueType(Exception): pass
+    class InvalidValue(Exception): pass
     class NoInputsForDependency(Exception): pass
     class WrongAttributeTypeForDependencyInput(Exception): pass
     class WrongAttributeTypeForDependencyOutput(Exception): pass
@@ -246,11 +244,15 @@ class Number_Attribute(Attribute):
     class CannotExtractNumber(Exception): pass
     _reading_exception:Type[Exception] = CannotExtractNumber
 
+    @abc.abstractmethod
+    def _check_input_type(self, value: Any) -> None:  # pragma: no cover
+        return super()._check_input_type(value)
+
     @abc.abstractmethod # pragma: no cover
     def print(
         self, 
         locale_code:Locale_Code = "en_us",
-        use_thousands_separator:bool=False, 
+        use_thousands_separator:bool=False
         )->str:
 
         pass
@@ -290,9 +292,12 @@ class Integer_Attribute(Number_Attribute):
     class CannotExtractInteger(Exception): pass
     _reading_exception:Type[Exception] = CannotExtractInteger
 
-    def is_valid(self, value:Any) -> bool:
-        try: return int(value) == value
-        except: return False
+    def _check_input_type(self, value: Any) -> None:
+        try: 
+            if not int(value)==value: raise
+        except: raise Attribute.InvalidValueType(type(value))
+
+    def _is_value_valid(self, value:Any)->bool: return True
         
     def print(
         self, 
@@ -310,14 +315,16 @@ class Real_Attribute(Number_Attribute):
     class CannotExtractReal(Exception): pass
     _reading_exception:Type[Exception] = CannotExtractReal
 
-    def is_valid(self, value:Any) -> bool:
+    def _check_input_type(self, value: Decimal|float|int) -> None:
         try: 
-            if math.isnan(value): return True
-            float(value)==value
-            return True
+            if math.isnan(float(value)): return
+            elif not Decimal(value)==value: raise
         except: 
-            return False
-        
+            raise Attribute.InvalidValueType(type(value))
+
+    def _is_value_valid(self, value:Any)->bool:
+        return True
+
     def print(
         self,
         locale_code:Locale_Code = "en_us",
@@ -333,8 +340,11 @@ class Real_Attribute(Number_Attribute):
         return str_value
         
     def set(self,value:Decimal|float|int)->None:
-        value = Decimal(str(value))
-        super().set(value)
+        if self.is_valid(value):
+            value = Decimal(str(value))
+            self._run_set_command(Decimal(str(value)))
+        else: # pragma: no cover
+            raise Attribute.InvalidValue(value)
     
 
 Currency_Code = Literal['USD','EUR','CZK','JPY']
@@ -356,9 +366,17 @@ class Monetary_Attribute(Number_Attribute):
         'JPY':Currency('JPY','¥',decimals=0)
     }
     @staticmethod
-    def preferred_symbol_before_value(locale_code:Locale_Code)->bool:
+    def preferred_symbol_before_value(locale_code:str)->bool:
         preferred_by:Set[Locale_Code] = {'en_us'}
         return locale_code in preferred_by
+    
+    def _check_input_type(self, value:float|int|Decimal) -> None:
+        try: 
+            if not Decimal(value)==value: raise
+        except: raise Attribute.InvalidValueType(type(value))
+
+    def _is_value_valid(self, value:float|int|Decimal)->bool:
+        return True
 
     def set(self,value:float|Decimal)->None:
         # For the sake of clarity, the input to the set method has to be kept in the same type as the 
@@ -378,7 +396,7 @@ class Monetary_Attribute(Number_Attribute):
         enforce_plus:bool = False
         )->str:
     
-        locale:Locale_Code = verify_and_format_locale_code(locale_code)
+        locale = verify_and_format_locale_code(locale_code)
         if not currency_code in self.__currencies: raise self.CurrencyNotDefined
         currency = self.__currencies[currency_code]
 
@@ -392,10 +410,6 @@ class Monetary_Attribute(Number_Attribute):
         value_str = self.__add_symbol_to_printed_value(value_str, locale, currency)
         if enforce_plus and self._value>0: value_str = '+'+value_str
         return value_str
-
-    def is_valid(self, value: Any)->bool:
-        try: return Decimal(value) == value
-        except: return False
 
     def read(self,text:str)->None:
         text = text.strip()
@@ -417,7 +431,7 @@ class Monetary_Attribute(Number_Attribute):
         if thematch is None: 
             raise Monetary_Attribute.CannotExtractValue
         if thematch['symbol'] not in get_args(Currency_Symbol): 
-            raise Monetary_Attribute.UnknownCurrencySymbol
+            raise Monetary_Attribute.UnknownCurrencySymbol(thematch['symbol'])
         return sign, thematch['symbol'], thematch['value'].replace(",",".")
 
     @staticmethod
@@ -430,7 +444,7 @@ class Monetary_Attribute(Number_Attribute):
     def __add_symbol_to_printed_value(
         cls,
         value:str,
-        locale_code:Locale_Code, 
+        locale_code:str, 
         currency:Currency
         )->str:
         
@@ -451,11 +465,12 @@ class Monetary_Attribute(Number_Attribute):
 
 
 class Text_Attribute(Attribute):
-    default_value = ""
-    printops:Dict[str,Any] = {}
 
-    def is_valid(self, value:Any) -> bool:
-        return isinstance(value,str)
+    def _check_input_type(self, value: Any) -> None:
+        if not isinstance(value,str): raise Attribute.InvalidValueType(type(value))
+
+    def _is_value_valid(self,value:Any)->bool:
+        return True
     
     def print(self, *options)->str:
         return str(self._value)
@@ -484,8 +499,16 @@ class Date_Attribute(Attribute):
     YMD_PATT = YEARPATT + SEPARATOR + MONTHPATT + SEPARATOR + DAYPATT
     DMY_PATT = DAYPATT + SEPARATOR + MONTHPATT + SEPARATOR + YEARPATT
 
+    def _check_input_type(self, value: Any) -> None:
+        if not isinstance(value, datetime.date): 
+            raise Attribute.InvalidValueType(type(value))
+
+    def _is_value_valid(self, value: Any) -> bool:
+        return True
+
     def is_valid(self, value: Any) -> bool:
-        return isinstance(value, datetime.date)
+        self._check_input_type(value)
+        return self._is_value_valid(value)
     
     def print(self, locale_code:Locale_Code="en_us",*options)->str:
         locale = verify_and_format_locale_code(locale_code)
@@ -501,7 +524,9 @@ class Date_Attribute(Attribute):
         year, month, day = map(int,(date['year'], date['month'], date['day']))
         self.set(datetime.date(year, month, day))
 
-    def __remove_spaces(self,text:str)->str: return text.replace(" ", "")
+    def __remove_spaces(self,text:str)->str: 
+        for sp in (" ",NBSP,"\t"): text = text.replace(sp, "")
+        return text
     
     class CannotExtractDate(Exception): pass
 
@@ -512,14 +537,14 @@ class Choice_Attribute(Attribute):
     default_value = ""
     printops:Dict[str,Any] = {'lower_case':False}
 
-    def __init__(self, factory:Attribute_Factory, atype:str, name:str="")->None:
+    def __init__(self, factory:Attribute_Factory, name:str="")->None:
         self.options:List[Any] = list()
-        super().__init__(factory, atype, name)
+        super().__init__(factory, atype='choice', name=name)
 
     @property
     def value(self)->Any: 
         if self.options: return self._value
-        else: raise Choice_Attribute.OptionsNotDefined
+        else: raise Choice_Attribute.UndefinedOption
 
     def add_options(self, *options:Any)->None:
         for op in options:
@@ -536,6 +561,16 @@ class Choice_Attribute(Attribute):
 
     def clear_options(self)->None:
         self.options.clear()
+
+    def _check_input_type(self, value: Any) -> None: 
+        pass
+
+    def _is_value_valid(self,value:Any)->bool: 
+        if value not in self.options: raise Choice_Attribute.UndefinedOption
+        return value in self.options
+
+    def is_option(self, value:Any)->bool:
+        return value in self.options
 
     def print(
         self,
@@ -555,7 +590,7 @@ class Choice_Attribute(Attribute):
             if str(op)==text: 
                 self.set(op) 
                 return
-        raise Choice_Attribute.NonexistentOption
+        raise Choice_Attribute.UndefinedOption
 
     def remove_options(self,*options:Any)->None:
         if self._value in options: raise Choice_Attribute.CannotRemoveChosenOption
@@ -563,28 +598,20 @@ class Choice_Attribute(Attribute):
             if op in self.options: 
                 self.options.remove(op)
             else: 
-                raise Choice_Attribute.NonexistentOption
+                raise Choice_Attribute.UndefinedOption
 
     def set(self,value:Any)->None:
-        if not self.options: raise Choice_Attribute.OptionsNotDefined
+        if not self.options: raise Choice_Attribute.NoOptionsAvailable
         super().set(value)
-
-    def is_option(self, value:Any)->bool:
-        return value in self.options
-
-    def is_valid(self, value:Any) -> bool:
-        if self.options and value not in self.options: 
-            raise Choice_Attribute.NonexistentOption(value, f"available options: {self.options}")
-        return True
     
     @classmethod
-    def _str_value(cls, value, lower_case:bool=False, *format_options) -> str:
+    def _str_value(cls, value, lower_case:bool=False) -> str:
         return str(value).lower() if lower_case else str(value)
 
     class CannotRemoveChosenOption(Exception): pass
     class DuplicateOfDifferentType(Exception): pass
-    class NonexistentOption(Exception): pass
-    class OptionsNotDefined(Exception): pass
+    class NoOptionsAvailable(Exception): pass
+    class UndefinedOption(Exception): pass
 
 
 from typing import Type
@@ -606,7 +633,7 @@ class Attribute_Factory:
             return self.types[atype](self,atype,name)
         
     def choice(self, name:str="")->Choice_Attribute:
-        return Choice_Attribute(self,'choice',name)
+        return Choice_Attribute(self,name)
         
     def add(self,label:str,new_attribute_class:Type[Attribute])->None:
         if label in self.types:

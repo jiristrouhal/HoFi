@@ -40,14 +40,14 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
     def test_valid_value(self)->None:
         a = self.attrfac.new('integer')
         self.assertTrue(a.is_valid(5))
-        self.assertFalse(a.is_valid(0.5))
-        self.assertFalse(a.is_valid("abc"))
-        self.assertFalse(a.is_valid("5"))
-        self.assertFalse(a.is_valid(""))
+        self.assertRaises(Attribute.InvalidValueType, a.is_valid, 0.5)
+        self.assertRaises(Attribute.InvalidValueType, a.is_valid, "abc")
+        self.assertRaises(Attribute.InvalidValueType, a.is_valid, "5")
+        self.assertRaises(Attribute.InvalidValueType, a.is_valid, "")
 
     def test_for_text_attribute_any_string_value_is_valid(self):
         a = self.attrfac.new('text')
-        self.assertFalse(a.is_valid(5))
+        self.assertRaises(Attribute.InvalidValueType, a.is_valid, 5)
         self.assertTrue(a.is_valid("abc"))
         self.assertTrue(a.is_valid("5"))
         self.assertTrue(a.is_valid(""))
@@ -68,28 +68,30 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
         self.assertTrue(x.is_valid(math.nan))
         self.assertTrue(x.is_valid(math.inf))
 
-        self.assertFalse(x.is_valid(None))
-        self.assertFalse(x.is_valid(""))
-        self.assertFalse(x.is_valid(" "))
-        self.assertFalse(x.is_valid("5"))
-        self.assertFalse(x.is_valid("0.5"))
-        self.assertFalse(x.is_valid("a"))
-        self.assertFalse(x.is_valid(complex(1,2)))
-        self.assertFalse(x.is_valid(complex(1,0)))
+        self.assertRaises(Attribute.InvalidValueType, x.is_valid, None)
+        self.assertRaises(Attribute.InvalidValueType, x.is_valid, "")
+        self.assertRaises(Attribute.InvalidValueType, x.is_valid, " ")
+        self.assertRaises(Attribute.InvalidValueType, x.is_valid, "5")
+        self.assertRaises(Attribute.InvalidValueType, x.is_valid, "0.5")
+        self.assertRaises(Attribute.InvalidValueType, x.is_valid, "a")
+        self.assertRaises(Attribute.InvalidValueType, x.is_valid, complex(1,2))
+        self.assertRaises(Attribute.InvalidValueType, x.is_valid, complex(1,0))
 
 
 
-from src.core.attributes import Attribute_Factory
+from src.core.attributes import Attribute_Factory, Number_Attribute
 class Test_Defining_Custom_Attribute_Type(unittest.TestCase):
 
-    class Positive_Integer_Attribute(Attribute):
+    class Positive_Integer_Attribute(Number_Attribute):
         default_value = 1
-        def is_valid(self, value: Any) -> bool:
-            try:
-                x = int(value)
-                return x is value and x>0
+        def _check_input_type(self, value: Any)->None:
+            try: 
+                if not value==int(value): raise
             except: 
-                return False
+                raise Attribute.InvalidValueType(type(value))
+
+        def _is_value_valid(self, value: Any) -> bool:
+            return value>0
             
         def print(self,*options)->str: # pragma: no cover
             return str(self._value)
@@ -103,12 +105,12 @@ class Test_Defining_Custom_Attribute_Type(unittest.TestCase):
         attr = attrfac.new('positive integer')
         attr.set(5)
         self.assertEqual(attr.value, 5)
-        self.assertFalse(attr.is_valid("abc"))
         self.assertFalse(attr.is_valid(0))
         self.assertFalse(attr.is_valid(-1))
-        self.assertFalse(attr.is_valid(0.5))
-        self.assertRaises(Attribute.InvalidValueType, attr.set, 0)
-        self.assertRaises(Attribute.InvalidValueType, attr.set, -1)
+        self.assertRaises(Attribute.InvalidValueType, attr.is_valid, "abc")
+        self.assertRaises(Attribute.InvalidValueType, attr.is_valid, 0.5)
+        self.assertRaises(Attribute.InvalidValue, attr.set, 0)
+        self.assertRaises(Attribute.InvalidValue, attr.set, -1)
         self.assertRaises(Attribute.InvalidValueType, attr.set, 0.5)
 
     def test_adding_new_attribute_type_under_already_taken_label_raises_exception(self):
@@ -307,7 +309,7 @@ class Test_Correspondence_Between_Dependency_And_Attributes(unittest.TestCase):
         x = fac.new('integer',"x")
         y = fac.new('text',"y")
         def y_of_x(x:int)->int: return x*x # pragma: no cover
-        with self.assertRaises(Attribute.WrongAttributeTypeForDependencyOutput):
+        with self.assertRaises(Attribute.InvalidValueType):
             y.add_dependency(y_of_x,x)
 
 
@@ -722,23 +724,23 @@ class Test_Choice_Attribute(unittest.TestCase):
         self.c.add_options("C", "D")
         self.assertEqual(self.c.value, "A")
 
-    def test_setting_attribute_always_raises_excpetion_before_defining_options(self):
-        self.assertRaises(self.c.OptionsNotDefined, self.c.set, " ")
+    def test_setting_attribute_always_raises_exception_before_defining_options(self):
+        self.assertRaises(self.c.NoOptionsAvailable, self.c.set, " ")
         self.c.add_options("A", "B")
         self.c.set("A")
 
     def test_exception_is_raised_when_setting_to_nonexistent_option(self):
         self.c.add_options("A","B")
-        self.assertRaises(Choice_Attribute.NonexistentOption, self.c.set, "C")
+        self.assertRaises(Choice_Attribute.UndefinedOption, self.c.set, "C")
 
     def test_removing_options(self):
         self.c.add_options("A","B")
         self.c.remove_options("B")
-        self.assertRaises(Choice_Attribute.NonexistentOption, self.c.set, "B")
-        self.assertRaises(Choice_Attribute.NonexistentOption, self.c.remove_options, "B")
+        self.assertRaises(Choice_Attribute.UndefinedOption, self.c.set, "B")
+        self.assertRaises(Choice_Attribute.UndefinedOption, self.c.remove_options, "B")
 
     def test_accessing_value_before_defining_options_raises_exception(self):
-        with self.assertRaises(Choice_Attribute.OptionsNotDefined):
+        with self.assertRaises(Choice_Attribute.UndefinedOption):
             self.c.value
 
     def test_currently_chosen_option_cannot_be_removed(self)->None:
@@ -799,7 +801,7 @@ class Test_Reading_Choice_From_Text(unittest.TestCase):
         self.assertEqual(c.value, 78)
         c.read("abc")
         self.assertEqual(c.value, "abc")
-        self.assertRaises(Choice_Attribute.NonexistentOption, c.read, "not an option")
+        self.assertRaises(Choice_Attribute.UndefinedOption, c.read, "not an option")
 
 
 class Test_Make_Choice_Attribute_Dependent(unittest.TestCase):
@@ -841,6 +843,7 @@ class Test_Date_Attribute(unittest.TestCase):
         self.assertEqual(date.print(),"2023-09-15")
         with self.assertRaises(UnknownLocaleCode):
             date.print(locale_code="!$_<>")
+        self.assertRaises(Attribute.InvalidValueType, date.set, "132135561")
 
     def test_locale_code_is_not_case_sensitive(self):
         fac = attribute_factory(Controller())
@@ -1028,15 +1031,15 @@ class Test_Monetary_Attribute(unittest.TestCase):
         self.assertTrue(mon.is_valid(5/7))
         self.assertTrue(mon.is_valid(math.e))
 
-        self.assertFalse(mon.is_valid(""))
-        self.assertFalse(mon.is_valid("  "))
-        self.assertFalse(mon.is_valid("asdf"))
-        self.assertFalse(mon.is_valid("$"))
-        self.assertFalse(mon.is_valid("20 $"))
-        self.assertFalse(mon.is_valid("$ 20"))
-        self.assertFalse(mon.is_valid("20"))
-        self.assertFalse(mon.is_valid("20.45"))
-        self.assertFalse(mon.is_valid("-45"))
+        self.assertRaises(Attribute.InvalidValueType, mon.is_valid, "")
+        self.assertRaises(Attribute.InvalidValueType, mon.is_valid, "  ")
+        self.assertRaises(Attribute.InvalidValueType, mon.is_valid, "asdf")
+        self.assertRaises(Attribute.InvalidValueType, mon.is_valid, "$")
+        self.assertRaises(Attribute.InvalidValueType, mon.is_valid, "20 $")
+        self.assertRaises(Attribute.InvalidValueType, mon.is_valid, "$ 20")
+        self.assertRaises(Attribute.InvalidValueType, mon.is_valid, "20")
+        self.assertRaises(Attribute.InvalidValueType, mon.is_valid, "20.45")
+        self.assertRaises(Attribute.InvalidValueType, mon.is_valid, "-45")
 
 
     def test_print_with_space_as_thousands_separator(self):
