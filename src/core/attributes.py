@@ -354,9 +354,7 @@ class Currency:
     decimals:Literal[0,2] = 2
     symbol_before_value:bool = True
 
-
 class Monetary_Attribute(Number_Attribute):
-
     __currencies:Dict[Currency_Code,Currency] = {
         'USD':Currency('USD','$'),
         'EUR':Currency('EUR','€'),
@@ -453,11 +451,8 @@ class Monetary_Attribute(Number_Attribute):
             value_str = value + NBSP + currency.symbol
         return value_str
     
-
     class CannotExtractValue(Exception): pass
     class CurrencyNotDefined(Exception): pass
-    class InvalidDecrement(Exception): pass
-    class InvalidIncrement(Exception): pass
     class ReadingBlankText(Exception): pass
     class UnknownCurrencySymbol(Exception): pass
 
