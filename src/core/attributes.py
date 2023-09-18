@@ -118,8 +118,6 @@ Command_Type = Literal['set']
 from typing import Set, List
 class Attribute(abc.ABC):
     default_value:Any = ""
-    printops:Dict[str,Any] = {}
-
     def __init__(self,factory:Attribute_Factory, atype:str='text',name:str="")->None:
         self._name = name
         self._type = atype
