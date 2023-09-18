@@ -380,6 +380,7 @@ class Test_Using_Dependency_Object_To_Handle_Invalid_Input_Values(unittest.TestC
         self.assertTrue(math.isnan(y.value))
 
 
+
 class Test_Copying_Attribute(unittest.TestCase):
 
     def setUp(self)->None:

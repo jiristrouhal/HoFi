@@ -203,9 +203,8 @@ class Attribute(abc.ABC):
             raise Attribute.WrongAttributeTypeForDependencyInput
         except Dependency.InvalidArgumentType:
             raise Attribute.WrongAttributeTypeForDependencyInput
-
-        if not self.is_valid(result):
-            raise Attribute.WrongAttributeTypeForDependencyOutput(result)
+        self.is_valid(result)
+            
 
     def __set_value_of_the_copy(self,the_copy:Attribute)->None:
         if self._dependency is not None:
@@ -236,7 +235,6 @@ class Attribute(abc.ABC):
     class InvalidValue(Exception): pass
     class NoInputsForDependency(Exception): pass
     class WrongAttributeTypeForDependencyInput(Exception): pass
-    class WrongAttributeTypeForDependencyOutput(Exception): pass
 
 
 class Number_Attribute(Attribute):
