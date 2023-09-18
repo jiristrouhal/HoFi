@@ -530,7 +530,6 @@ class Date_Attribute(Attribute):
 from src.utils.naming import strip_and_join_spaces
 class Choice_Attribute(Attribute):
     default_value = ""
-    printops:Dict[str,Any] = {'lower_case':False}
 
     def __init__(self, factory:Attribute_Factory, name:str="")->None:
         self.options:List[Any] = list()
