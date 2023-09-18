@@ -31,10 +31,27 @@ class Dependency(abc.ABC):
         if not self.attributes: raise Dependency.NoInputsAttributes
         self.__check_attribute_types()
         self.__check_for_dependency_cycle(self.attr, path=self.attr._name)
-        self.__set_up_command()
+        self.__set_up_command(*self.attributes)
+        
 
     @abc.abstractmethod
     def release(self)->None: pass  # pragma: no cover
+
+    def add_input(self,attr:Attribute)->None:
+        if attr in self.attributes: raise Dependency.InputAlreadyUsed
+        self.attributes.append(attr)
+        self.__check_for_dependency_cycle(self.attr, path=self.attr._name)
+        self.__set_up_command(attr)
+
+    def remove_input(self,attr:Attribute):
+        self._disconnect_inputs(attr)
+        self.attributes.remove(attr)
+        self.__set_dependent_attr().run()
+        
+    def _disconnect_inputs(self,*attrs:Attribute)->None:
+        for attr in attrs: 
+            if attr not in self.attributes: raise Dependency.NonexistentInput
+            attr.command['set'].post.pop(self.attr._id)
 
     def __check_attribute_types(self)->None:
         values = [a.value for a in self.attributes]
@@ -63,15 +80,22 @@ class Dependency(abc.ABC):
         except: # pragma: no cover
             return None # pragma: no cover
         
-    def __set_up_command(self):
-        def set_dependent_attr(*args)->Command: return Set_Dependent_Attr(self)
-        set_dependent_attr().run()
+    def __add_set_up_command_to_driving_attributes(self,*driving_atts:Attribute)->None:
         for attribute in self.attributes:
-            attribute.on_set(self.attr._id, set_dependent_attr, 'post')
+            attribute.on_set(self.attr._id, self.__set_dependent_attr, 'post')
+        
+    def __set_dependent_attr(self,*args)->Command: 
+            return Set_Dependent_Attr(self)
+        
+    def __set_up_command(self,*driving_attributes:Attribute):
+        self.__set_dependent_attr().run()
+        self.__add_set_up_command_to_driving_attributes(*driving_attributes)
         
     class CyclicDependency(Exception): pass
-    class NoInputsAttributes(Exception): pass
+    class InputAlreadyUsed(Exception): pass
     class InvalidArgumentType(Exception): pass
+    class NoInputsAttributes(Exception): pass
+    class NonexistentInput(Exception): pass
     class WrongAttributeTypeForDependencyInput(Exception): pass
 
 
@@ -85,9 +109,7 @@ class DependencyImpl(Dependency):
     NULL = NullDependency()
 
     def release(self)->None:
-        for attr in self.attributes: 
-            attr.command['set'].post.pop(self.attr._id)
-
+        self._disconnect_inputs(*self.attributes) 
 
 
 @dataclasses.dataclass

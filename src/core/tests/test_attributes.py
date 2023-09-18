@@ -1069,4 +1069,39 @@ class Test_Reading_Monetary_Value_With_Space_As_Thousands_Separator(unittest.Tes
         self.assertEqual(attr.value, -15000)
 
 
+class Test_Dependency_With_Variable_Number_Of_Inputs(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.thesum = self.fac.new("integer")
+        self.a1, self.a2 = self.fac.new("integer"), self.fac.new("integer")
+        def sumint(*nums:int)->int: return sum(nums)
+        self.thesum.add_dependency(sumint, self.a1, self.a2)
+
+    def test_sum_over_of_variable_list_of_integer_attributes(self):
+        self.a1.set(2)
+        self.a2.set(3)
+        self.assertEqual(self.thesum.value, 5)
+        a3 = self.fac.new("integer")
+        a3.set(7)
+        self.thesum._dependency.add_input(a3)
+        self.assertEqual(self.thesum.value, 12)
+        self.thesum._dependency.remove_input(self.a2)
+        self.assertEqual(self.thesum.value, 9)
+
+    def test_adding_already_present_attribute_raises_exception(self):
+        self.assertRaises(Dependency.InputAlreadyUsed, self.thesum._dependency.add_input, self.a1)
+
+    def test_adding_dependent_attribute_as_its_own_input_raises_exception(self):
+        self.assertRaises(Dependency.CyclicDependency, self.thesum._dependency.add_input, self.thesum)
+
+    def test_adding_input_of_incorrect_type_raises_exception(self):
+        text_input = self.fac.new("text")
+        self.assertRaises(Dependency.InvalidArgumentType, self.thesum._dependency.add_input, text_input)
+
+    def test_removing_attribute_that_is_not_input_raises_exception(self):
+        some_attribute = self.fac.new("integer")
+        self.assertRaises(Dependency.NonexistentInput, self.thesum._dependency.remove_input, some_attribute)
+
+
 if __name__=="__main__": unittest.main()
