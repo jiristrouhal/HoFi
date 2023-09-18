@@ -20,23 +20,26 @@ def verify_and_format_locale_code(locale_code:Locale_Code)->str:
     return code
 
 
+class Dependency(abc.ABC):
 
-@dataclasses.dataclass
-class Dependency:
-    dependent:Attribute
-    func:Callable[[Any],Any]
-    attributes:List[Attribute]
+    def __init__(self, attr:Attribute, func:Callable[[Any],Any], *attributes:Attribute):
+        self.attr = attr
+        self.func = func
+        self.attributes = list(attributes)
 
-    def __post_init__(self):
-        if self.dependent._depends_on: raise Attribute.DependencyAlreadyAssigned   
+        if self.attr.dependent: raise Attribute.DependencyAlreadyAssigned   
         if not self.attributes: raise Dependency.NoInputsAttributes
         self.__check_attribute_types()
-        self.__check_for_dependency_cycle(self.dependent, path=self.dependent._name)
+        self.__check_for_dependency_cycle(self.attr, path=self.attr._name)
+        self.__set_up_command()
+
+    @abc.abstractmethod
+    def release(self)->None: pass  # pragma: no cover
 
     def __check_attribute_types(self)->None:
         values = [a.value for a in self.attributes]
         try:
-            self.dependent.is_valid(self(*values))
+            self.attr.is_valid(self(*values))
         except Dependency.InvalidArgumentType:
             raise Dependency.WrongAttributeTypeForDependencyInput([type(v) for v in values])
 
@@ -44,7 +47,7 @@ class Dependency:
         if root_attribute in self.attributes: 
             raise Dependency.CyclicDependency(path + ' -> ' + root_attribute._name)  
         for attr in self.attributes:
-            if attr._dependency is None: continue
+            if not attr.dependent: continue
             attr._dependency.__check_for_dependency_cycle(root_attribute, path + ' -> ' + attr._name) 
 
     def __call__(self,*values)->Any: 
@@ -60,10 +63,32 @@ class Dependency:
         except: # pragma: no cover
             return None # pragma: no cover
         
+    def __set_up_command(self):
+        command = Set_Dependent_Attr(self)
+        command.run()
+        def set_dependent_attr(*args)->Any:
+            return command
+        for attribute in self.attributes:
+            attribute.on_set(self.attr._id, set_dependent_attr, 'post')
+        
     class CyclicDependency(Exception): pass
     class NoInputsAttributes(Exception): pass
     class InvalidArgumentType(Exception): pass
     class WrongAttributeTypeForDependencyInput(Exception): pass
+
+
+class DependencyImpl(Dependency):
+    class NullDependency(Dependency):  # pragma: no cover
+        def __init__(self)->None:  
+            self.func:Callable = lambda x: None  
+            self.attributes:List[Attribute] = list()
+        def release(self)->None: pass  
+
+    NULL = NullDependency()
+
+    def release(self)->None:
+        for attr in self.attributes: 
+            attr.command['set'].post.pop(self.attr._id)
 
 
 
@@ -105,27 +130,27 @@ class Set_Dependent_Attr(Command):
     new_value:Any = dataclasses.field(init=False)
 
     def run(self)->None:
-        self.old_value = self.dependency.dependent.value
+        self.old_value = self.dependency.attr.value
         values = [a.value for a in self.dependency.attributes]
-        self.dependency.dependent._run_set_command(self.dependency(*values))
-        self.new_value = self.dependency.dependent.value
+        self.dependency.attr._run_set_command(self.dependency(*values))
+        self.new_value = self.dependency.attr.value
     def undo(self)->None:
-        self.dependency.dependent._run_set_command(self.old_value)
+        self.dependency.attr._run_set_command(self.old_value)
     def redo(self)->None:
-        self.dependency.dependent._run_set_command(self.new_value)
+        self.dependency.attr._run_set_command(self.new_value)
 
 
 Command_Type = Literal['set']
 from typing import Set, List
 class Attribute(abc.ABC):
     default_value:Any = ""
+    NullDependency = DependencyImpl.NULL
 
     def __init__(self,factory:Attribute_Factory, atype:str='text',name:str="")->None:
         self._name = name
         self._type = atype
         self.command:Dict[Command_Type,Composed_Command] = {'set':Set_Attr_Composed()}
-        self._depends_on:Set[Attribute] = set()
-        self._dependency:Dependency|None = None
+        self._dependency:Dependency = self.NullDependency
         self._id = str(id(self))
         self._value = self.default_value
         self._factory = factory
@@ -134,23 +159,16 @@ class Attribute(abc.ABC):
     def type(self)->str: return self._type
     @property 
     def value(self)->Any: return self._value
+    @property 
+    def dependent(self)->bool:
+        return self._dependency is not Attribute.NullDependency
     
     def add_dependency(self,func:Callable[[Any],Any], *attributes:Attribute)->None:
-        dependency = Dependency(self, func, list(attributes))
-        command = Set_Dependent_Attr(dependency)
-        command.run()
-        def set_dependent_attr(data:Set_Attr_Data)->Any:
-            return command
-        for attribute in attributes:
-            attribute.on_set(self._id, set_dependent_attr, 'post')
-            self._depends_on.add(attribute)
-        self._dependency = dependency
+        self._dependency = DependencyImpl(self, func, *attributes)
 
     def break_dependency(self)->None:
-        for attribute_affecting_this_one in self._depends_on: 
-            attribute_affecting_this_one.command['set'].post.pop(self._id)
-        self._depends_on.clear()
-        self._dependency = None
+        if self.dependent: self._dependency.release()
+        self._dependency = self.NullDependency
 
     def copy(self)->Attribute:
         the_copy = self._factory.new(self._type, self._name)
@@ -173,7 +191,7 @@ class Attribute(abc.ABC):
         pass
         
     def set(self,value:Any)->None: 
-        if self._depends_on: return
+        if self.dependent: return
         elif self.is_valid(value): 
             self._run_set_command(value)
         else:
@@ -196,8 +214,8 @@ class Attribute(abc.ABC):
         return self.command['set'](Set_Attr_Data(self,value))
     
     def __set_value_of_the_copy(self,the_copy:Attribute)->None:
-        if self._dependency is not None:
-            the_copy.add_dependency(self._dependency, *self._depends_on)
+        if self.dependent:
+            the_copy.add_dependency(self._dependency.func, *self._dependency.attributes)
         else:
             the_copy._value = self._value
 
@@ -206,7 +224,7 @@ class Attribute(abc.ABC):
         facs:List[Attribute_Factory] = list()
         cmds:List[List[Command]] = list()
         for attr,value in new_values.items():
-            if attr._dependency is not None: continue #ignore dependent attributes
+            if attr.dependent: continue #ignore dependent attributes
             if not attr._factory in facs: # Attribute_Factory is not hashable, two lists circumvent the problem
                 facs.append(attr._factory)
                 cmds.append(list())

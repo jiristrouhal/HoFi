@@ -378,9 +378,9 @@ class Test_Copying_Attribute(unittest.TestCase):
 
         y.add_dependency(double,x)
 
-        self.assertSetEqual(y._depends_on,{x})
+        self.assertListEqual(y._dependency.attributes,[x])
         y_copy = y.copy()
-        self.assertSetEqual(y_copy._depends_on,{x}) 
+        self.assertListEqual(y_copy._dependency.attributes,[x]) 
 
         # test that both y are affected by change in x value
         x.set(2)
