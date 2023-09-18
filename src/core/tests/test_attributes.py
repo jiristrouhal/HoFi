@@ -162,6 +162,7 @@ class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
         self.assertEqual(volume.value,10)
 
 
+from src.core.attributes import Dependency
 class Test_Dependent_Attributes(unittest.TestCase):
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
@@ -170,7 +171,7 @@ class Test_Dependent_Attributes(unittest.TestCase):
         x = self.fac.new("integer")
         y = self.fac.new("integer")
         def invalid_dependency(): return 5 # pragma: no cover
-        self.assertRaises(Attribute.NoInputsForDependency, y.add_dependency, invalid_dependency)
+        self.assertRaises(Dependency.NoInputsAttributes, y.add_dependency, invalid_dependency)
 
     def test_setting_dependency_of_one_attribute_on_another(self):
         DENSITY = 1000
@@ -301,7 +302,7 @@ class Test_Correspondence_Between_Dependency_And_Attributes(unittest.TestCase):
         x = fac.new('text',"x")
         y = fac.new('integer',"y")
         def y_of_x(x:int)->int: return x*x # pragma: no cover
-        with self.assertRaises(Attribute.WrongAttributeTypeForDependencyInput):
+        with self.assertRaises(Dependency.WrongAttributeTypeForDependencyInput):
             y.add_dependency(y_of_x,x)
 
     def test_adding_dependency_with_return_type_not_matching_the_dependent_attribute_raises_exception(self):
@@ -313,34 +314,7 @@ class Test_Correspondence_Between_Dependency_And_Attributes(unittest.TestCase):
             y.add_dependency(y_of_x,x)
 
 
-from src.core.attributes import Dependency
-from math import inf
 import math
-class Test_Dependency_Object(unittest.TestCase):
-
-    def test_dependency_with_function_taking_any_real_number(self):
-        def square(x:int)->int: return x*x
-        dep = Dependency(square)
-        self.assertEqual(dep(2),4)
-        self.assertEqual(dep(0),0)
-        self.assertEqual(dep(inf), inf)
-        self.assertEqual(dep(0),0)
-
-    def test_dependency_with_function_taking_positive_real_numbers(self):
-        def square_root(x:int)->float: return math.sqrt(x)
-        dep = Dependency(square_root)
-        self.assertEqual(dep(4),2)
-        self.assertEqual(dep(0),0)
-        self.assertEqual(dep(inf), inf)
-        self.assertTrue(math.isnan(dep(-1)))
-
-    def test_passing_invalid_argument_type_to_dependency(self):
-        def square(x:int)->int: return x*x
-        dep = Dependency(square)
-        self.assertRaises(Dependency.InvalidArgumentType, dep, "abc")
-
-
-
 class Test_Using_Dependency_Object_To_Handle_Invalid_Input_Values(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -350,14 +324,14 @@ class Test_Using_Dependency_Object_To_Handle_Invalid_Input_Values(unittest.TestC
         x = self.fac.new('text',"x")
         y = self.fac.new('integer',"y")
         def y_of_x(x:int)->int: return x*x # pragma: no cover
-        with self.assertRaises(Attribute.WrongAttributeTypeForDependencyInput):
-            y.add_dependency(Dependency(y_of_x),x)
+        with self.assertRaises(Dependency.WrongAttributeTypeForDependencyInput):
+            y.add_dependency(y_of_x,x)
 
     def test_handle_input_outside_of_the_function_domain_in_dependent_attribute_calculation(self):
         x = self.fac.new('integer',"x")
         y = self.fac.new('real',"y")
         def y_of_x(x:int)->float: return math.sqrt(x) # pragma: no cover
-        y.add_dependency(Dependency(y_of_x),x)
+        y.add_dependency(y_of_x,x)
         x.set(-1)
         self.assertTrue(math.isnan(y.value))
 
@@ -367,7 +341,7 @@ class Test_Using_Dependency_Object_To_Handle_Invalid_Input_Values(unittest.TestC
         y = self.fac.new('real',"y")
 
         def y_of_x(x:int)->float: return math.sqrt(x) # pragma: no cover
-        y.add_dependency(Dependency(y_of_x),x)
+        y.add_dependency(y_of_x,x)
         self.assertTrue(math.isnan(y.value))
 
     def test_division_by_zero(self)->None:
@@ -376,7 +350,7 @@ class Test_Using_Dependency_Object_To_Handle_Invalid_Input_Values(unittest.TestC
         y = self.fac.new('real',"y")
 
         def y_of_x(x:float)->float: return 1/x 
-        y.add_dependency(Dependency(y_of_x),x)
+        y.add_dependency(y_of_x,x)
         self.assertTrue(math.isnan(y.value))
 
 
@@ -402,7 +376,7 @@ class Test_Copying_Attribute(unittest.TestCase):
         y = self.fac.new("integer", 'y')
         def double(x:int)->int: return 2*x
 
-        y.add_dependency(Dependency(double),x)
+        y.add_dependency(double,x)
 
         self.assertSetEqual(y._depends_on,{x})
         y_copy = y.copy()
@@ -462,7 +436,7 @@ class Test_Copying_Attribute(unittest.TestCase):
         x = self.fac.new("integer")
         y = self.fac.new("integer")
         def square(x:int)->int: return x*x
-        y.add_dependency(Dependency(square),x)
+        y.add_dependency(square,x)
 
         x.set(3)
         self.assertEqual(y.value,9)

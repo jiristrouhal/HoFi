@@ -23,8 +23,30 @@ def verify_and_format_locale_code(locale_code:Locale_Code)->str:
 
 @dataclasses.dataclass
 class Dependency:
+    dependent:Attribute
     func:Callable[[Any],Any]
-    
+    attributes:List[Attribute]
+
+    def __post_init__(self):
+        if self.dependent._depends_on: raise Attribute.DependencyAlreadyAssigned   
+        if not self.attributes: raise Dependency.NoInputsAttributes
+        self.__check_attribute_types()
+        self.__check_for_dependency_cycle(self.dependent, path=self.dependent._name)
+
+    def __check_attribute_types(self)->None:
+        values = [a.value for a in self.attributes]
+        try:
+            self.dependent.is_valid(self(*values))
+        except Dependency.InvalidArgumentType:
+            raise Dependency.WrongAttributeTypeForDependencyInput([type(v) for v in values])
+
+    def __check_for_dependency_cycle(self, root_attribute:Attribute, path:str)->None:
+        if root_attribute in self.attributes: 
+            raise Attribute.CyclicDependency(path + ' -> ' + root_attribute._name)  
+        for attr in self.attributes:
+            if attr._dependency is None: continue
+            attr._dependency.__check_for_dependency_cycle(root_attribute, path + ' -> ' + attr._name) 
+
     def __call__(self,*values)->Any: 
         try:
             result = self.func(*values)
@@ -38,7 +60,11 @@ class Dependency:
         except: # pragma: no cover
             return None # pragma: no cover
         
+    class NoInputsAttributes(Exception): pass
     class InvalidArgumentType(Exception): pass
+    class WrongAttributeTypeForDependencyInput(Exception): pass
+
+
 
 @dataclasses.dataclass
 class Set_Attr_Data:
@@ -73,21 +99,19 @@ class Set_Attr_Composed(Composed_Command):
 from typing import Tuple
 @dataclasses.dataclass
 class Set_Dependent_Attr(Command):
-    attribute:Attribute
-    func:Callable[[Any],Any]|Dependency
-    attributes:Tuple[Attribute,...]
+    dependency:Dependency
     old_value:Any = dataclasses.field(init=False)
     new_value:Any = dataclasses.field(init=False)
 
     def run(self)->None:
-        self.old_value = self.attribute.value
-        values = [a.value for a in self.attributes]
-        self.attribute._run_set_command(self.func(*values))
-        self.new_value = self.attribute.value
+        self.old_value = self.dependency.dependent.value
+        values = [a.value for a in self.dependency.attributes]
+        self.dependency.dependent._run_set_command(self.dependency(*values))
+        self.new_value = self.dependency.dependent.value
     def undo(self)->None:
-        self.attribute._run_set_command(self.old_value)
+        self.dependency.dependent._run_set_command(self.old_value)
     def redo(self)->None:
-        self.attribute._run_set_command(self.new_value)
+        self.dependency.dependent._run_set_command(self.new_value)
 
 
 Command_Type = Literal['set']
@@ -101,7 +125,7 @@ class Attribute(abc.ABC):
         self._type = atype
         self.command:Dict[Command_Type,Composed_Command] = {'set':Set_Attr_Composed()}
         self._depends_on:Set[Attribute] = set()
-        self._dependency:Callable[[Any],Any]|Dependency|None = None
+        self._dependency:Dependency|None = None
         self._id = str(id(self))
         self._value = self.default_value
         self._factory = factory
@@ -111,9 +135,9 @@ class Attribute(abc.ABC):
     @property 
     def value(self)->Any: return self._value
     
-    def add_dependency(self,dependency:Callable[[Any],Any]|Dependency, *attributes:Attribute)->None:
-        self.__check_dependency(dependency,*attributes)
-        command = Set_Dependent_Attr(self,dependency,attributes)
+    def add_dependency(self,func:Callable[[Any],Any], *attributes:Attribute)->None:
+        dependency = Dependency(self, func, list(attributes))
+        command = Set_Dependent_Attr(dependency)
         command.run()
         def set_dependent_attr(data:Set_Attr_Data)->Any:
             return command
@@ -127,12 +151,6 @@ class Attribute(abc.ABC):
             attribute_affecting_this_one.command['set'].post.pop(self._id)
         self._depends_on.clear()
         self._dependency = None
-
-    def __check_dependency(self,dependency:Callable[[Any],Any]|Dependency,*attributes:Attribute)->None:
-        self.__check_dependency_has_at_least_one_input(attributes)
-        self.__check_attribute_types_for_dependency(dependency, attributes)
-        self.__check_for_existing_dependency()
-        self.__check_for_dependency_cycle(set(attributes),path=self._name)
 
     def copy(self)->Attribute:
         the_copy = self._factory.new(self._type, self._name)
@@ -176,36 +194,7 @@ class Attribute(abc.ABC):
 
     def __get_set_command(self,value:Any)->Tuple[Command,...]:
         return self.command['set'](Set_Attr_Data(self,value))
-
-    def __check_dependency_has_at_least_one_input(self,inputs:Tuple[Attribute,...])->None:
-        if not inputs: raise Attribute.NoInputsForDependency
-
-    def __check_for_dependency_cycle(self, attributes:Set[Attribute],path:str)->None:
-        if self in attributes: raise Attribute.CyclicDependency(path + ' -> ' + self._name)
-        else:
-            for attr in attributes:
-                self.__check_for_dependency_cycle(attr._depends_on,path + ' -> ' + attr._name)
-
-    def __check_for_existing_dependency(self)->None:
-        if self._depends_on: raise Attribute.DependencyAlreadyAssigned
-        
-    def __check_attribute_types_for_dependency(
-        self,
-        dependency:Callable[[Any],Any]|Dependency,
-        attributes:Tuple[Attribute,...]
-        )->None:
-
-        values = [a.value for a in attributes]
-        result = None
-        try:
-            result = dependency(*values)
-        except TypeError:
-            raise Attribute.WrongAttributeTypeForDependencyInput([type(v) for v in values])
-        except Dependency.InvalidArgumentType:
-            raise Attribute.WrongAttributeTypeForDependencyInput([type(v) for v in values])
-        self.is_valid(result)
-            
-
+    
     def __set_value_of_the_copy(self,the_copy:Attribute)->None:
         if self._dependency is not None:
             the_copy.add_dependency(self._dependency, *self._depends_on)
@@ -233,8 +222,6 @@ class Attribute(abc.ABC):
     class InvalidDefaultValue(Exception): pass
     class InvalidValueType(Exception): pass
     class InvalidValue(Exception): pass
-    class NoInputsForDependency(Exception): pass
-    class WrongAttributeTypeForDependencyInput(Exception): pass
 
 
 class Number_Attribute(Attribute):
