@@ -64,10 +64,8 @@ class Dependency(abc.ABC):
             return None # pragma: no cover
         
     def __set_up_command(self):
-        command = Set_Dependent_Attr(self)
-        command.run()
-        def set_dependent_attr(*args)->Any:
-            return command
+        def set_dependent_attr(*args)->Command: return Set_Dependent_Attr(self)
+        set_dependent_attr().run()
         for attribute in self.attributes:
             attribute.on_set(self.attr._id, set_dependent_attr, 'post')
         
@@ -167,8 +165,9 @@ class Attribute(abc.ABC):
         self._dependency = DependencyImpl(self, func, *attributes)
 
     def break_dependency(self)->None:
-        if self.dependent: self._dependency.release()
-        self._dependency = self.NullDependency
+        if self.dependent: 
+            self._dependency.release()
+            self._dependency = self.NullDependency
 
     def copy(self)->Attribute:
         the_copy = self._factory.new(self._type, self._name)
