@@ -368,6 +368,7 @@ class Monetary_Attribute(Number_Attribute):
     
     def _check_input_type(self, value:float|int|Decimal) -> None:
         try: 
+            if math.isnan(float(value)): return
             if not Decimal(value)==value: raise
         except: raise Attribute.InvalidValueType(type(value))
 

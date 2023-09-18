@@ -1031,6 +1031,7 @@ class Test_Monetary_Attribute(unittest.TestCase):
         self.assertTrue(mon.is_valid(0))
         self.assertTrue(mon.is_valid(5/7))
         self.assertTrue(mon.is_valid(math.e))
+        self.assertTrue(mon.is_valid(math.nan))
 
         self.assertRaises(Attribute.InvalidValueType, mon.is_valid, "")
         self.assertRaises(Attribute.InvalidValueType, mon.is_valid, "  ")
@@ -1046,7 +1047,6 @@ class Test_Monetary_Attribute(unittest.TestCase):
     def test_print_with_space_as_thousands_separator(self):
         fac = attribute_factory(Controller())
         mon:Monetary_Attribute = fac.new("money")
-        nbsp = u"\u00A0"
 
         mon.set(4100300)
         self.assertEqual(
