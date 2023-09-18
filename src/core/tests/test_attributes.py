@@ -270,7 +270,7 @@ class Test_Dependent_Attributes(unittest.TestCase):
         a = self.fac.new('integer', 'a')
         def triple(a:int)->int:  # pragma: no cover
             return 2*a
-        self.assertRaises(Attribute.CyclicDependency, a.add_dependency, triple, a)
+        self.assertRaises(Dependency.CyclicDependency, a.add_dependency, triple, a)
 
     def test_attribute_indirectly_depending_on_itself_raises_exception(self):
         a = self.fac.new('integer', 'a')
@@ -280,7 +280,7 @@ class Test_Dependent_Attributes(unittest.TestCase):
             return x
         a.add_dependency(equal_to,b)
         b.add_dependency(equal_to,c)
-        with self.assertRaises(Attribute.CyclicDependency):
+        with self.assertRaises(Dependency.CyclicDependency):
             c.add_dependency(equal_to, a)
 
     def test_dependent_attribute_is_updated_immediatelly_after_adding_the_dependency(self):

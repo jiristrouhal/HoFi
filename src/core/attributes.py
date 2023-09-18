@@ -42,7 +42,7 @@ class Dependency:
 
     def __check_for_dependency_cycle(self, root_attribute:Attribute, path:str)->None:
         if root_attribute in self.attributes: 
-            raise Attribute.CyclicDependency(path + ' -> ' + root_attribute._name)  
+            raise Dependency.CyclicDependency(path + ' -> ' + root_attribute._name)  
         for attr in self.attributes:
             if attr._dependency is None: continue
             attr._dependency.__check_for_dependency_cycle(root_attribute, path + ' -> ' + attr._name) 
@@ -60,6 +60,7 @@ class Dependency:
         except: # pragma: no cover
             return None # pragma: no cover
         
+    class CyclicDependency(Exception): pass
     class NoInputsAttributes(Exception): pass
     class InvalidArgumentType(Exception): pass
     class WrongAttributeTypeForDependencyInput(Exception): pass
@@ -118,6 +119,7 @@ Command_Type = Literal['set']
 from typing import Set, List
 class Attribute(abc.ABC):
     default_value:Any = ""
+
     def __init__(self,factory:Attribute_Factory, atype:str='text',name:str="")->None:
         self._name = name
         self._type = atype
@@ -213,9 +215,7 @@ class Attribute(abc.ABC):
         for fac, cmd_list in zip(facs,cmds):
             fac.controller.run(*cmd_list)
 
-    class CyclicDependency(Exception): pass
     class DependencyAlreadyAssigned(Exception): pass
-    class GroupingAttributesFromDifferentFactories(Exception): pass
     class InvalidAttributeType(Exception): pass
     class InvalidDefaultValue(Exception): pass
     class InvalidValueType(Exception): pass
