@@ -200,9 +200,9 @@ class Attribute(abc.ABC):
         try:
             result = dependency(*values)
         except TypeError:
-            raise Attribute.WrongAttributeTypeForDependencyInput
+            raise Attribute.WrongAttributeTypeForDependencyInput([type(v) for v in values])
         except Dependency.InvalidArgumentType:
-            raise Attribute.WrongAttributeTypeForDependencyInput
+            raise Attribute.WrongAttributeTypeForDependencyInput([type(v) for v in values])
         self.is_valid(result)
             
 
@@ -381,7 +381,8 @@ class Monetary_Attribute(Number_Attribute):
 
         # The string must then be explicitly excluded from input types, as it would normally be 
         # accepted by the Decimal.
-        if isinstance(value, str): raise Attribute.InvalidValueType
+        if isinstance(value, str): 
+            raise Attribute.InvalidValueType(value)
         super().set(Decimal(str(value)))
 
     def print(
@@ -426,7 +427,7 @@ class Monetary_Attribute(Number_Attribute):
         thematch = re.match(Monetary_Attribute.SYMBOL_FIRST ,text)
         if thematch is None: thematch = re.match(Monetary_Attribute.VALUE_FIRST ,text)
         if thematch is None: 
-            raise Monetary_Attribute.CannotExtractValue
+            raise Monetary_Attribute.CannotExtractValue(text)
         if thematch['symbol'] not in get_args(Currency_Symbol): 
             raise Monetary_Attribute.UnknownCurrencySymbol(thematch['symbol'])
         return sign, thematch['symbol'], thematch['value'].replace(",",".")
@@ -513,7 +514,7 @@ class Date_Attribute(Attribute):
         text = self.__remove_spaces(text)
         date_match = re.fullmatch(self.YMD_PATT, text)
         if date_match is None: date_match = re.fullmatch(self.DMY_PATT, text)
-        if date_match is None: raise Date_Attribute.CannotExtractDate
+        if date_match is None: raise Date_Attribute.CannotExtractDate(text)
         date = date_match.groupdict()
         year, month, day = map(int,(date['year'], date['month'], date['day']))
         self.set(datetime.date(year, month, day))
@@ -538,7 +539,7 @@ class Choice_Attribute(Attribute):
     @property
     def value(self)->Any: 
         if self.options: return self._value
-        else: raise Choice_Attribute.UndefinedOption
+        else: raise Choice_Attribute.NoOptionsAvailable
 
     def add_options(self, *options:Any)->None:
         for op in options:
@@ -550,7 +551,7 @@ class Choice_Attribute(Attribute):
         # means the same option occured, only with different type 
         stringified_ops = set(map(str,self.options))
         if len(stringified_ops)<len(self.options): 
-            raise Choice_Attribute.DuplicateOfDifferentType
+            raise Choice_Attribute.DuplicateOfDifferentType(self.options)
         if self._value=='': self._value = options[0]
 
     def clear_options(self)->None:
@@ -560,7 +561,10 @@ class Choice_Attribute(Attribute):
         pass
 
     def _is_value_valid(self,value:Any)->bool: 
-        if value not in self.options: raise Choice_Attribute.UndefinedOption
+        if value not in self.options: 
+            raise Choice_Attribute.UndefinedOption(
+                f"Unknown option: {value}; available options are: {self.options}"
+            )
         return value in self.options
 
     def is_option(self, value:Any)->bool:
@@ -584,15 +588,20 @@ class Choice_Attribute(Attribute):
             if str(op)==text: 
                 self.set(op) 
                 return
-        raise Choice_Attribute.UndefinedOption
+        raise Choice_Attribute.UndefinedOption(
+            f"Unknown option: {text}; available options are: {self.options}"
+        )
 
     def remove_options(self,*options:Any)->None:
-        if self._value in options: raise Choice_Attribute.CannotRemoveChosenOption
+        if self._value in options: 
+            raise Choice_Attribute.CannotRemoveChosenOption(self._value)
         for op in options:
             if op in self.options: 
                 self.options.remove(op)
             else: 
-                raise Choice_Attribute.UndefinedOption
+                raise Choice_Attribute.UndefinedOption(
+                    f"Unknown option: {op}; available options are: {self.options}"
+                )
 
     def set(self,value:Any)->None:
         if not self.options: raise Choice_Attribute.NoOptionsAvailable

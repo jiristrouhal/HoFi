@@ -741,7 +741,7 @@ class Test_Choice_Attribute(unittest.TestCase):
         self.assertRaises(Choice_Attribute.UndefinedOption, self.c.remove_options, "B")
 
     def test_accessing_value_before_defining_options_raises_exception(self):
-        with self.assertRaises(Choice_Attribute.UndefinedOption):
+        with self.assertRaises(Choice_Attribute.NoOptionsAvailable):
             self.c.value
 
     def test_currently_chosen_option_cannot_be_removed(self)->None:
