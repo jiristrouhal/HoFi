@@ -294,6 +294,10 @@ class Test_Dependent_Attributes(unittest.TestCase):
         y.add_dependency(double,x)
         self.assertEqual(y.value,4)
 
+    def test_breaking_dependency_of_independent_attribute_raises_exception(self):
+        independent_attribute = self.fac.new('integer','x')
+        self.assertRaises(Attribute.NoDependencyIsSet, independent_attribute.break_dependency)
+
 
 class Test_Correspondence_Between_Dependency_And_Attributes(unittest.TestCase):
 
@@ -352,7 +356,6 @@ class Test_Using_Dependency_Object_To_Handle_Invalid_Input_Values(unittest.TestC
         def y_of_x(x:float)->float: return 1/x 
         y.add_dependency(y_of_x,x)
         self.assertTrue(math.isnan(y.value))
-
 
 
 class Test_Copying_Attribute(unittest.TestCase):

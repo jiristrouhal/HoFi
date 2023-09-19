@@ -215,9 +215,9 @@ class Attribute(abc.ABC):
         self._dependency = DependencyImpl(self, func, *attributes)
 
     def break_dependency(self)->None:
-        if self.dependent: 
-            self._dependency.release()
-            self._dependency = self.NullDependency
+        if not self.dependent: raise Attribute.NoDependencyIsSet
+        self._dependency.release()
+        self._dependency = self.NullDependency
 
     def copy(self)->Attribute:
         the_copy = self._factory.new(self._type, self._name)
@@ -287,6 +287,7 @@ class Attribute(abc.ABC):
     class InvalidDefaultValue(Exception): pass
     class InvalidValueType(Exception): pass
     class InvalidValue(Exception): pass
+    class NoDependencyIsSet(Exception): pass
 
 
 class Number_Attribute(Attribute):
