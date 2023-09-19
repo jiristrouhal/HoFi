@@ -26,7 +26,6 @@ class Dependency_Edit_Data:
     edited_input:Attribute
     
 
-
 @dataclasses.dataclass
 class Add_Input(Command):
     data:Dependency_Edit_Data
@@ -42,6 +41,20 @@ class Add_Input(Command):
     def redo(self)->None:
         self.data.dependency.inputs.append(self.data.edited_input)
         self.data.dependency._add_set_up_command_to_input(self.data.edited_input)
+
+
+@dataclasses.dataclass
+class Remove_Input(Command):
+    data:Dependency_Edit_Data
+    prev_value:Any = dataclasses.field(init=False)
+
+    def run(self)->None:
+        self.data.dependency._disconnect_inputs(self.data.edited_input)
+    def undo(self)->None:
+        self.data.dependency.inputs.append(self.data.edited_input)
+        self.data.dependency._add_set_up_command_to_input(self.data.edited_input)
+    def redo(self)->None:
+        self.data.dependency._disconnect_inputs(self.data.edited_input)
 
 
 class Dependency(abc.ABC):
@@ -72,8 +85,10 @@ class Dependency(abc.ABC):
         return input in self.inputs
 
     def remove_input(self,input:Attribute):
-        self._disconnect_inputs(input)
-        self.__set_output_value().run()
+        self.output._factory.controller.run(
+            Remove_Input(Dependency_Edit_Data(self,input)),
+            self.__set_output_value()
+        )
         
     def _disconnect_inputs(self,*inputs:Attribute)->None:
         for input in inputs: 

@@ -1134,12 +1134,50 @@ class Test_Undo_And_Redo_Changing_Dependency_Inputs(unittest.TestCase):
         self.assertFalse(self.thesum._dependency.is_input(self.a3))
         self.assertEqual(self.thesum.value, 5)
 
-    def test_changing_input_after_undoing_its_addition_to_dependency_does_not_affect_the_dependent_attribute(self):
+    def test_changing_input_after_undoing_its_addition_to_dependency_does_not_affect_the_dependency_output(self):
         self.fac.controller.undo()
         self.assertEqual(self.thesum.value, 5)
         # now the a3 is disconnected and setting its value does not affect the 'thesum' attribute
         self.a3.set(5)
         self.assertEqual(self.thesum.value, 5)
+        
+        self.thesum._dependency.add_input(self.a3)
+        self.assertEqual(self.thesum.value, 10)
+
+    def test_undo_and_redo_removing_an_input(self)->None:
+        self.thesum._dependency.remove_input(self.a3)
+        self.assertFalse(self.thesum._dependency.is_input(self.a3))
+        self.assertEqual(self.thesum.value, 5)
+
+        self.fac.controller.undo()
+        self.assertTrue(self.thesum._dependency.is_input(self.a3))
+        self.assertEqual(self.thesum.value, 10)
+        self.fac.controller.redo()
+        self.assertFalse(self.thesum._dependency.is_input(self.a3))
+        self.assertEqual(self.thesum.value, 5)
+        self.fac.controller.undo()
+        self.assertTrue(self.thesum._dependency.is_input(self.a3))
+        self.assertEqual(self.thesum.value, 10)
+
+    def test_changing_input_after_undoing_its_removal_from_dependency_does_affect_the_dependency_output(self):
+        self.thesum._dependency.remove_input(self.a3)
+        self.fac.controller.undo()
+        self.assertEqual(self.thesum.value, 10)
+        self.a3.set(self.a3.value+1)
+        self.assertEqual(self.thesum.value, 11)
+        
+
+# class Test_Removing_All_Dependency_Inputs(unittest.TestCase):
+
+#     def test_remove_depedency_input(self):
+#         fac = attribute_factory(Controller())
+#         x_sum = fac.new("integer")
+#         x_i = fac.new("integer")
+#         def xsum(*x:int)->int: return sum(x)
+#         x_sum.add_dependency(xsum, x_i)
+        
+
+
 
 
 if __name__=="__main__": unittest.main()
