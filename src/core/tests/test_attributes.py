@@ -167,12 +167,6 @@ class Test_Dependent_Attributes(unittest.TestCase):
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
 
-    def test_dependent_attribute_must_depend_at_least_on_one_attribute(self):
-        x = self.fac.new("integer")
-        y = self.fac.new("integer")
-        def invalid_dependency(): return 5 # pragma: no cover
-        self.assertRaises(Dependency.NoInputsAttributes, y.add_dependency, invalid_dependency)
-
     def test_setting_dependency_of_one_attribute_on_another(self):
         DENSITY = 1000
         volume = self.fac.new('integer', "volume")
@@ -1167,17 +1161,93 @@ class Test_Undo_And_Redo_Changing_Dependency_Inputs(unittest.TestCase):
         self.assertEqual(self.thesum.value, 11)
         
 
-# class Test_Removing_All_Dependency_Inputs(unittest.TestCase):
+class Test_Zero_Dependency_Inputs(unittest.TestCase):
 
-#     def test_remove_depedency_input(self):
-#         fac = attribute_factory(Controller())
-#         x_sum = fac.new("integer")
-#         x_i = fac.new("integer")
-#         def xsum(*x:int)->int: return sum(x)
-#         x_sum.add_dependency(xsum, x_i)
+    def test_remove_depedency_input(self):
+        fac = attribute_factory(Controller())
+        x_sum = fac.new("integer")
+        x_i = fac.new("integer")
+        x_i.set(8)
+
+        def xsum(*x:int)->int: return sum(x)
+        x_sum.add_dependency(xsum, x_i)
         
+        x_sum._dependency.remove_input(x_i)
+        self.assertEqual(x_sum.value, 0)
+
+        fac.controller.undo()
+        self.assertEqual(x_sum.value, 8)
+
+    def test_adding_dependency_with_zero_inputs(self):
+        fac = attribute_factory(Controller())
+        thesum = fac.new("integer")
+        def xsum(*x:int)->int: return sum(x)
+        thesum.add_dependency(xsum)
+        
+        summand = fac.new("integer")
+        summand.set(5)
+        thesum._dependency.add_input(summand)
+        self.assertEqual(thesum.value, 5)
 
 
+from typing import List
+class Test_Accepting_List_As_Dependency_Input(unittest.TestCase):
+
+    def test_accepting_list_as_input(self):
+        fac = attribute_factory(Controller())
+        thesum = fac.new("integer")
+        def sumints(x:List[int])->int: return sum(x) 
+        
+        summands = [fac.new("integer") for _ in range(5)]
+        for s in summands: s.set(1)
+
+        thesum.add_dependency(sumints, summands)
+
+
+# class Test_Implemeting_Dot_Product_Using_Dependency(unittest.TestCase):
+
+#     def test_dot_product(self):
+#         fac = attribute_factory(Controller())
+#         dotprod = fac.new("integer")
+#         u = [fac.new("integer") for _ in range(3)]
+#         v = [fac.new("integer") for _ in range(3)]
+#         u[0].set(2) 
+#         u[1].set(0) 
+#         u[2].set(3)
+
+#         v[0].set(3)
+#         v[1].set(1)
+#         v[2].set(2)
+        
+#         def calc_dotprod(u:list[int], v:list[int])->int:
+#             return sum([ui*vi for ui,vi in zip(u,v)])
+        
+#         dotprod.add_dependency(calc_dotprod, u, v)
+#         self.assertEqual(dotprod.value, 12)
+
+#         u[0].set(0)
+#         self.assertEqual(dotprod.value, 6)
+
+#     def test_scaling_sum_of_list_of_integers(self):
+#         fac = attribute_factory(Controller())
+#         scaledsum = fac.new("real")
+#         scale = fac.new("real")
+#         scale.set(1.0)
+#         x = [fac.new("real") for _ in range(5)]
+#         for xi in x: xi.set(1)
+
+#         def getsum(s:float, x:List[float])->float: return s*sum(x)
+
+#         scaledsum.add_dependency(getsum, scale, x)
+
+#         self.assertEqual(scaledsum.value, 5)
+#         scale.set(0.5)
+#         self.assertEqual(scaledsum.value, 2.5)
+#         fac.controller.undo()
+#         self.assertEqual(scaledsum.value, 5)
+
+#         scaledsum._dependency.remove_input(x[1])
+#         self.assertEqual(scaledsum.value, 4)
 
 
 if __name__=="__main__": unittest.main()

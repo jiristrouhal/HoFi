@@ -59,13 +59,12 @@ class Remove_Input(Command):
 
 class Dependency(abc.ABC):
 
-    def __init__(self, output:Attribute, func:Callable[[Any],Any], *inputs:Attribute):
+    def __init__(self, output:Attribute, func:Callable[[Any],Any], *inputs:Attribute|List[Attribute]):
         self.output = output
         self.func = func
         self.inputs = list(inputs)
 
-        if self.output.dependent: raise Attribute.DependencyAlreadyAssigned   
-        if not self.inputs: raise Dependency.NoInputsAttributes
+        if self.output.dependent: raise Attribute.DependencyAlreadyAssigned 
         self.__check_input_types()
         self._check_for_dependency_cycle(self.output, path=self.output._name)
         self.__set_up_command(*self.inputs)
@@ -90,34 +89,54 @@ class Dependency(abc.ABC):
             self.__set_output_value()
         )
         
-    def _disconnect_inputs(self,*inputs:Attribute)->None:
+    def _disconnect_inputs(self,*inputs:Attribute|List[Attribute])->None:
         for input in inputs: 
-            if input not in self.inputs: raise Dependency.NonexistentInput
-            input.command['set'].post.pop(self.output._id)
+            if isinstance(input,list):
+                self._disconnect_inputs(*input)
+            else:
+                if input not in self.inputs: raise Dependency.NonexistentInput
+                input.command['set'].post.pop(self.output._id)
             self.inputs.remove(input)
 
     def __check_input_types(self)->None:
-        values = [a.value for a in self.inputs]
+        values = self.collect_input_values()
         try:
-            self.output.is_valid(self(*values))
+            result = self(*values)
+            self.output.is_valid(result)
         except Dependency.InvalidArgumentType:
             raise Dependency.WrongAttributeTypeForDependencyInput([type(v) for v in values])
+        
+    def collect_input_values(self)->List[Any]:
+        values:List[Any] = list()
+        for input in self.inputs: 
+            if isinstance(input,list): values.append([item.value for item in input])
+            else: values.append(input.value)
+        return values
 
     def _check_for_dependency_cycle(self, output:Attribute, path:str)->None:
         if output in self.inputs: 
             raise Dependency.CyclicDependency(path + ' -> ' + output._name)  
         for input in self.inputs:
-            if not input.dependent: continue
-            input._dependency._check_for_dependency_cycle(output, path + ' -> ' + input._name) 
+            if isinstance(input,list):
+                for item in input:
+                    if not item.dependent: continue
+                    item._dependency._check_for_dependency_cycle(output, path + ' -> ' + item._name)
+            else:
+                if not input.dependent: continue
+                input._dependency._check_for_dependency_cycle(output, path + ' -> ' + input._name)
         
-    def _add_set_up_command_to_input(self,*inputs:Attribute)->None:
+    def _add_set_up_command_to_input(self,*inputs:Attribute|List[Attribute])->None:
         for input in inputs:
-            input.on_set(self.output._id, self.__set_output_value, 'post')
+            if isinstance(input,list):
+                for item in input:
+                    item.on_set(self.output._id, self.__set_output_value, 'post')
+            else:
+                input.on_set(self.output._id, self.__set_output_value, 'post')
         
     def __set_output_value(self,*args)->Command: 
         return Set_Dependent_Attr(self)
         
-    def __set_up_command(self,*inputs:Attribute):
+    def __set_up_command(self,*inputs:Attribute|List[Attribute]):
         self.__set_output_value().run()
         self._add_set_up_command_to_input(*inputs)
 
@@ -137,7 +156,6 @@ class Dependency(abc.ABC):
     class CyclicDependency(Exception): pass
     class InputAlreadyUsed(Exception): pass
     class InvalidArgumentType(Exception): pass
-    class NoInputsAttributes(Exception): pass
     class NonexistentInput(Exception): pass
     class WrongAttributeTypeForDependencyInput(Exception): pass
 
@@ -194,7 +212,7 @@ class Set_Dependent_Attr(Command):
 
     def run(self)->None:
         self.old_value = self.dependency.output.value
-        values = [a.value for a in self.dependency.inputs]
+        values = self.dependency.collect_input_values()
         self.dependency.output._run_set_command(self.dependency(*values))
         self.new_value = self.dependency.output.value
     def undo(self)->None:
@@ -226,7 +244,7 @@ class Attribute(abc.ABC):
     def dependent(self)->bool:
         return self._dependency is not Attribute.NullDependency
     
-    def add_dependency(self,func:Callable[[Any],Any], *attributes:Attribute)->None:
+    def add_dependency(self,func:Callable[[Any],Any], *attributes:Attribute|List[Attribute])->None:
         self._dependency = DependencyImpl(self, func, *attributes)
 
     def break_dependency(self)->None:
