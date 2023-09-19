@@ -378,9 +378,9 @@ class Test_Copying_Attribute(unittest.TestCase):
 
         y.add_dependency(double,x)
 
-        self.assertListEqual(y._dependency.attributes,[x])
+        self.assertListEqual(y._dependency.inputs,[x])
         y_copy = y.copy()
-        self.assertListEqual(y_copy._dependency.attributes,[x]) 
+        self.assertListEqual(y_copy._dependency.inputs,[x]) 
 
         # test that both y are affected by change in x value
         x.set(2)
@@ -1102,6 +1102,41 @@ class Test_Dependency_With_Variable_Number_Of_Inputs(unittest.TestCase):
     def test_removing_attribute_that_is_not_input_raises_exception(self):
         some_attribute = self.fac.new("integer")
         self.assertRaises(Dependency.NonexistentInput, self.thesum._dependency.remove_input, some_attribute)
+
+
+class Test_Undo_And_Redo_Changing_Dependency_Inputs(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.thesum = self.fac.new("integer")
+        self.a1, self.a2 = self.fac.new("integer"), self.fac.new("integer")
+        def sumint(*nums:int)->int: return sum(nums)
+        self.thesum.add_dependency(sumint, self.a1, self.a2)
+        self.a1.set(2)
+        self.a2.set(3)
+
+        self.a3 = self.fac.new('integer')
+        self.a3.set(5)
+        self.thesum._dependency.add_input(self.a3)
+        self.assertEqual(self.thesum.value, 10)
+
+    def test_undo_and_redo_adding_an_input(self):
+        self.fac.controller.undo()
+        self.assertFalse(self.thesum._dependency.is_input(self.a3))
+        self.assertEqual(self.thesum.value, 5)
+        self.fac.controller.redo()
+        self.assertTrue(self.thesum._dependency.is_input(self.a3))
+        self.assertEqual(self.thesum.value, 10)
+        self.fac.controller.undo()
+        self.assertFalse(self.thesum._dependency.is_input(self.a3))
+        self.assertEqual(self.thesum.value, 5)
+
+    def test_changing_input_after_undoing_its_addition_to_dependency_does_not_affect_the_dependent_attribute(self):
+        self.fac.controller.undo()
+        self.assertEqual(self.thesum.value, 5)
+        # now the a3 is disconnected and setting its value does not affect the 'thesum' attribute
+        self.a3.set(5)
+        self.assertEqual(self.thesum.value, 5)
 
 
 if __name__=="__main__": unittest.main()

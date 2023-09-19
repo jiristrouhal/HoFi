@@ -20,52 +20,91 @@ def verify_and_format_locale_code(locale_code:Locale_Code)->str:
     return code
 
 
+@dataclasses.dataclass
+class Dependency_Edit_Data:
+    dependency:Dependency
+    edited_input:Attribute
+    
+
+
+@dataclasses.dataclass
+class Add_Input(Command):
+    data:Dependency_Edit_Data
+    prev_value:Any = dataclasses.field(init=False)
+
+    def run(self)->None:
+        dep = self.data.dependency
+        dep.inputs.append(self.data.edited_input)
+        dep._check_for_dependency_cycle(dep.output, path=dep.output._name)
+        dep._add_set_up_command_to_input(self.data.edited_input)
+    def undo(self)->None:
+        self.data.dependency._disconnect_inputs(self.data.edited_input)
+    def redo(self)->None:
+        self.data.dependency.inputs.append(self.data.edited_input)
+        self.data.dependency._add_set_up_command_to_input(self.data.edited_input)
+
+
 class Dependency(abc.ABC):
 
-    def __init__(self, attr:Attribute, func:Callable[[Any],Any], *attributes:Attribute):
-        self.attr = attr
+    def __init__(self, output:Attribute, func:Callable[[Any],Any], *inputs:Attribute):
+        self.output = output
         self.func = func
-        self.attributes = list(attributes)
+        self.inputs = list(inputs)
 
-        if self.attr.dependent: raise Attribute.DependencyAlreadyAssigned   
-        if not self.attributes: raise Dependency.NoInputsAttributes
-        self.__check_attribute_types()
-        self.__check_for_dependency_cycle(self.attr, path=self.attr._name)
-        self.__set_up_command(*self.attributes)
+        if self.output.dependent: raise Attribute.DependencyAlreadyAssigned   
+        if not self.inputs: raise Dependency.NoInputsAttributes
+        self.__check_input_types()
+        self._check_for_dependency_cycle(self.output, path=self.output._name)
+        self.__set_up_command(*self.inputs)
         
 
     @abc.abstractmethod
     def release(self)->None: pass  # pragma: no cover
 
-    def add_input(self,attr:Attribute)->None:
-        if attr in self.attributes: raise Dependency.InputAlreadyUsed
-        self.attributes.append(attr)
-        self.__check_for_dependency_cycle(self.attr, path=self.attr._name)
-        self.__set_up_command(attr)
+    def add_input(self,input:Attribute)->None:
+        if input in self.inputs: raise Dependency.InputAlreadyUsed
+        self.output._factory.controller.run(
+            Add_Input(Dependency_Edit_Data(self,input)),
+            self.__set_output_value()
+        )
 
-    def remove_input(self,attr:Attribute):
-        self._disconnect_inputs(attr)
-        self.attributes.remove(attr)
-        self.__set_dependent_attr().run()
+    def is_input(self,input:Attribute)->bool:
+        return input in self.inputs
+
+    def remove_input(self,input:Attribute):
+        self._disconnect_inputs(input)
+        self.__set_output_value().run()
         
-    def _disconnect_inputs(self,*attrs:Attribute)->None:
-        for attr in attrs: 
-            if attr not in self.attributes: raise Dependency.NonexistentInput
-            attr.command['set'].post.pop(self.attr._id)
+    def _disconnect_inputs(self,*inputs:Attribute)->None:
+        for input in inputs: 
+            if input not in self.inputs: raise Dependency.NonexistentInput
+            input.command['set'].post.pop(self.output._id)
+            self.inputs.remove(input)
 
-    def __check_attribute_types(self)->None:
-        values = [a.value for a in self.attributes]
+    def __check_input_types(self)->None:
+        values = [a.value for a in self.inputs]
         try:
-            self.attr.is_valid(self(*values))
+            self.output.is_valid(self(*values))
         except Dependency.InvalidArgumentType:
             raise Dependency.WrongAttributeTypeForDependencyInput([type(v) for v in values])
 
-    def __check_for_dependency_cycle(self, root_attribute:Attribute, path:str)->None:
-        if root_attribute in self.attributes: 
-            raise Dependency.CyclicDependency(path + ' -> ' + root_attribute._name)  
-        for attr in self.attributes:
-            if not attr.dependent: continue
-            attr._dependency.__check_for_dependency_cycle(root_attribute, path + ' -> ' + attr._name) 
+    def _check_for_dependency_cycle(self, output:Attribute, path:str)->None:
+        if output in self.inputs: 
+            raise Dependency.CyclicDependency(path + ' -> ' + output._name)  
+        for input in self.inputs:
+            if not input.dependent: continue
+            input._dependency._check_for_dependency_cycle(output, path + ' -> ' + input._name) 
+        
+    def _add_set_up_command_to_input(self,*inputs:Attribute)->None:
+        for input in inputs:
+            input.on_set(self.output._id, self.__set_output_value, 'post')
+        
+    def __set_output_value(self,*args)->Command: 
+        return Set_Dependent_Attr(self)
+        
+    def __set_up_command(self,*inputs:Attribute):
+        self.__set_output_value().run()
+        self._add_set_up_command_to_input(*inputs)
 
     def __call__(self,*values)->Any: 
         try:
@@ -79,17 +118,6 @@ class Dependency(abc.ABC):
             raise self.InvalidArgumentType
         except: # pragma: no cover
             return None # pragma: no cover
-        
-    def __add_set_up_command_to_driving_attributes(self,*driving_atts:Attribute)->None:
-        for attribute in self.attributes:
-            attribute.on_set(self.attr._id, self.__set_dependent_attr, 'post')
-        
-    def __set_dependent_attr(self,*args)->Command: 
-            return Set_Dependent_Attr(self)
-        
-    def __set_up_command(self,*driving_attributes:Attribute):
-        self.__set_dependent_attr().run()
-        self.__add_set_up_command_to_driving_attributes(*driving_attributes)
         
     class CyclicDependency(Exception): pass
     class InputAlreadyUsed(Exception): pass
@@ -109,7 +137,7 @@ class DependencyImpl(Dependency):
     NULL = NullDependency()
 
     def release(self)->None:
-        self._disconnect_inputs(*self.attributes) 
+        self._disconnect_inputs(*self.inputs) 
 
 
 @dataclasses.dataclass
@@ -150,14 +178,14 @@ class Set_Dependent_Attr(Command):
     new_value:Any = dataclasses.field(init=False)
 
     def run(self)->None:
-        self.old_value = self.dependency.attr.value
-        values = [a.value for a in self.dependency.attributes]
-        self.dependency.attr._run_set_command(self.dependency(*values))
-        self.new_value = self.dependency.attr.value
+        self.old_value = self.dependency.output.value
+        values = [a.value for a in self.dependency.inputs]
+        self.dependency.output._run_set_command(self.dependency(*values))
+        self.new_value = self.dependency.output.value
     def undo(self)->None:
-        self.dependency.attr._run_set_command(self.old_value)
+        self.dependency.output._run_set_command(self.old_value)
     def redo(self)->None:
-        self.dependency.attr._run_set_command(self.new_value)
+        self.dependency.output._run_set_command(self.new_value)
 
 
 Command_Type = Literal['set']
@@ -236,7 +264,7 @@ class Attribute(abc.ABC):
     
     def __set_value_of_the_copy(self,the_copy:Attribute)->None:
         if self.dependent:
-            the_copy.add_dependency(self._dependency.func, *self._dependency.attributes)
+            the_copy.add_dependency(self._dependency.func, *self._dependency.inputs)
         else:
             the_copy._value = self._value
 
