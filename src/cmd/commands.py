@@ -13,7 +13,6 @@ class Command(abc.ABC): # pragma: no cover
     def redo(self)->None: pass
     
 
-import itertools
 class Controller:
 
     def __init__(self)->None:

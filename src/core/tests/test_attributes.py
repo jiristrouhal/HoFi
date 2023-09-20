@@ -1190,19 +1190,20 @@ class Test_Zero_Dependency_Inputs(unittest.TestCase):
         self.assertEqual(thesum.value, 5)
 
 
-from typing import List
-class Test_Accepting_List_As_Dependency_Input(unittest.TestCase):
+class Test_Attribute_List(unittest.TestCase):
 
-    def test_accepting_list_as_input(self):
+    def test_attribute_list_is_initially_empty_if_no_item_was_initially_specified(self):
         fac = attribute_factory(Controller())
-        thesum = fac.new("integer")
-        def sumints(x:List[int])->int: return sum(x) 
-        
-        summands = [fac.new("integer") for _ in range(5)]
-        for s in summands: s.set(1)
-
-        thesum.add_dependency(sumints, summands)
-
+        alist = fac.newlist([], 'text')
+        self.assertListEqual(alist.items, [])
+    
+    def test_only_attribute_with_type_specified_by_list_can_be_added(self):
+        fac = attribute_factory(Controller())
+        alist = fac.newlist([],'text')
+        attr = fac.new('text')
+        alist.append(attr)
+        self.assertListEqual(alist.items, [attr])
+    
 
 # class Test_Implemeting_Dot_Product_Using_Dependency(unittest.TestCase):
 
