@@ -365,7 +365,7 @@ class Test_Copying_Attribute(unittest.TestCase):
         x_copy = x.copy()
         self.assertEqual(x_copy.value, 5)
         self.assertEqual(x_copy.type, 'integer')
-        self.assertTrue(x_copy._id != x._id)
+        self.assertTrue(x_copy.id != x.id)
     
     def test_copying_the_attribute_also_copies_its_dependencies(self)->None:
         x = self.fac.new("integer", 'x')
@@ -1106,7 +1106,7 @@ class Test_Undo_And_Redo_Editing_The_Attribute_List(unittest.TestCase):
         self.alist = self.fac.newlist("integer")
 
     def test_undo_adding_item_to_the_list(self):
-        attr = self.fac.new("integer")
+        attr = self.fac.new("integer", "theattr")
         self.alist.append(attr)
 
         self.fac.undo()
@@ -1166,7 +1166,7 @@ class Test_Attribute_List_Set_Method(unittest.TestCase):
         self.fac.undo()
         self.assertEqual(self.counter.count,0)
 
-    def __test_setting_value_of_attribute_in_group_runs_set_command_of_the_attribute_list(self):
+    def test_setting_value_of_attribute_in_list_runs_set_command_of_the_attribute_list(self):
         new_attr = self.fac.new("integer")
         self.alist.append(new_attr)
 
@@ -1175,6 +1175,52 @@ class Test_Attribute_List_Set_Method(unittest.TestCase):
         self.assertEqual(self.counter.count, 1)
         new_attr.set(5)
         self.assertEqual(self.counter.count, 2)
+        new_attr.set(7)
+        self.assertEqual(self.counter.count, 3)
+        self.alist.factory.undo()
+        self.assertEqual(self.counter.count, 2)
+        self.alist.factory.undo()
+        self.alist.factory.undo()
+        self.assertEqual(self.counter.count, 0)
+        self.alist.factory.redo()
+        self.alist.factory.redo()
+        self.alist.factory.redo()
+        self.assertEqual(self.counter.count, 3)
+
+    def test_setting_value_of_attribute_after_undoing_appending_it_to_the_list_does_not_run_set_method(self):
+        new_attr = self.fac.new("integer")
+        self.counter.count = 0
+
+        self.alist.append(new_attr)
+        self.alist.factory.undo()
+
+        self.assertEqual(self.counter.count, 0)
+        new_attr.set(7)
+        self.assertEqual(self.counter.count, 0)
+
+        #this redo is ignored as a new command (set) was run
+        self.alist.factory.redo()
+        new_attr.set(6)
+        self.assertEqual(self.counter.count, 0)
+
+        # only after adding the 'new_attr' again to the list, the counter is again being updated
+        self.alist.append(new_attr)
+        new_attr.set(7)
+        self.assertEqual(self.counter.count, 1)
+
+    def test_setting_value_of_removed_attribute_does_run_the_set_method_of_the_attribute_list_after_calling_the_undo(self):
+        new_attr = self.fac.new("integer")
+        self.counter.count = 0
+        self.alist.append(new_attr)
+        self.alist.remove(new_attr)
+        new_attr.set(5)
+        self.assertEqual(self.counter.count, 0)
+
+        self.fac.undo() # undo setting the item's value to 5
+        self.fac.undo() # undo removal
+        self.assertTrue(new_attr in self.alist.attributes)
+        new_attr.set(5)
+        self.assertEqual(self.counter.count, 1)
 
 
 # class Test_Implemeting_Dot_Product_Using_Dependency(unittest.TestCase):

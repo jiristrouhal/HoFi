@@ -40,8 +40,7 @@ class Dependency(abc.ABC):
     def _disconnect_inputs(self,*inputs:AbstractAttribute)->None:
         for input in inputs: 
             if input not in self.inputs: raise Dependency.NonexistentInput
-            # input.command['set'].post.pop(self.output._id)
-            input.remove_set_command(self.output._id)
+            input.command['set'].post.pop(self.output.id)
             self.inputs.remove(input)
 
     def __check_input_types(self)->None:
@@ -64,7 +63,7 @@ class Dependency(abc.ABC):
         
     def _add_set_up_command_to_input(self,*inputs:AbstractAttribute)->None:
         for input in inputs:
-            input.on_set(self.output._id, self._set_output_value, 'post')
+            input.on_set(self.output.id, self._set_output_value, 'post')
         
     def _set_output_value(self,*args)->Command: 
         return Set_Dependent_Attr(self)
@@ -165,37 +164,78 @@ class Edit_AttrList_Data:
 @dataclasses.dataclass
 class Append_To_Attribute_List(Command):
     data:Edit_AttrList_Data
+    composed_post_set:Tuple[Callable, Composed_Command] = dataclasses.field(init=False)
 
     def run(self)->None:
         self.data.alist._add(self.data.attribute)
+        def get_list_set_data(data:Set_Attr_Data)->Set_Attr_Data:
+            return Set_Attr_Data(
+                self.data.alist, 
+                [data.value]
+            )
+        self.data.attribute.command['set'].add_composed(
+            owner_id = self.data.alist.id,
+            data_converter = get_list_set_data,
+            cmd = self.data.alist.command['set'],
+            timing = 'post'
+        )
+
     def undo(self)->None:
         self.data.alist._remove(self.data.attribute)
+        self.composed_post_set = self.data.attribute.command['set'].composed_post.pop(self.data.alist.id)
+
     def redo(self)->None:
         self.data.alist._add(self.data.attribute)
+        self.data.attribute.command['set'].composed_post[self.data.alist.id] = self.composed_post_set
 
 @dataclasses.dataclass
 class Remove_From_Attribute_List(Command):
     data:Edit_AttrList_Data
+    composed_post_set:Tuple[Callable, Composed_Command] = dataclasses.field(init=False)
 
     def run(self)->None:
         self.data.alist._remove(self.data.attribute)
+        self.composed_post_set = self.data.attribute.command['set'].composed_post.pop(self.data.alist.id)
     def undo(self)->None:
         self.data.alist._add(self.data.attribute)
+        self.data.attribute.command['set'].composed_post[self.data.alist.id] = self.composed_post_set
     def redo(self)->None:
         self.data.alist._remove(self.data.attribute)
+        self.composed_post_set = self.data.attribute.command['set'].composed_post.pop(self.data.alist.id)
 
 
 class AbstractAttribute(abc.ABC):
+    NullDependency = DependencyImpl.NULL
 
+    def __init__(self, factory:Attribute_Factory, atype:str, name:str="")->None:
+        self.__name = name
+        self.__type = atype
+        self.command:Dict[Command_Type,Composed_Command] = {'set':Set_Attr_Composed()}
+        self.__id = str(id(self))
+        self.__factory = factory
+
+    @property
+    def name(self)->str: return self.__name
+    @property 
+    def dependent(self)->bool:
+        return self.dependency is not Attribute.NullDependency
     @abc.abstractproperty
-    def name(self)->str: pass
+    def dependency(self) -> Dependency: pass
     @abc.abstractproperty
     def value(self)->Any: pass
-    @abc.abstractproperty
-    def dependent(self)->bool: pass
-    @abc.abstractproperty
-    def dependency(self)->Dependency: pass
-    
+    @property
+    def factory(self)->Attribute_Factory: return self.__factory
+    @property
+    def id(self)->str: return self.__id
+    @property
+    def type(self)->str: return self.__type
+
+    @abc.abstractmethod
+    def add_dependency(self,func:Callable[[Any],Any], *attributes:AbstractAttribute)->None: pass
+
+    @abc.abstractmethod
+    def break_dependency(self)->None: pass
+
     @abc.abstractmethod
     def set(self,value:Any)->None: pass
 
@@ -204,9 +244,6 @@ class AbstractAttribute(abc.ABC):
 
     @abc.abstractmethod
     def _value_update(self, new_value:Any)->None: pass
-
-    @abc.abstractmethod
-    def remove_set_command(self,cmd_owner:str)->None: pass
 
 
 from typing import Iterator
@@ -217,37 +254,35 @@ class Attribute_List(AbstractAttribute):
         self, 
         factory:Attribute_Factory, 
         atype:str, 
+        name:str="",
         init_attributes:List[Attribute]|None = None, 
-        name:str=""
         )->None:
 
-        self.__name = name
-        self._type = atype
-        self.__attributes:List[Attribute] = init_attributes if init_attributes is not None else list()
-        self.command:Dict[Command_Type,Composed_Command] = {'set':Set_Attr_Composed()}
-        self._factory = factory
-        self.__dependency = DependencyImpl.NULL
-        self._id = str(id(self))
+        super().__init__(factory, atype, name)
+        self.__attributes:List[Attribute] = list()
         self._set_commands:Dict[str,Callable[[Set_Attr_Data],Command]] = dict()
 
-    @property
-    def name(self)->str: return self.__name
+        if init_attributes is not None:
+            for attr in init_attributes: self.append(attr)
+
     @property
     def value(self)->List[Any]: return [attr.value for attr in self.__attributes]
     @property
-    def dependent(self)->bool: return False
-    @property
-    def dependency(self) -> Dependency: return self.__dependency
-    @property
     def attributes(self)->List[Attribute]: return self.__attributes.copy()
+    @property
+    def dependency(self)->Dependency: return DependencyImpl.NULL
+
+    def add_dependency(self,*args)->None: pass
+
+    def break_dependency(self)->None: pass
 
     def append(self,attribute:Attribute)->None:
         self.__check_new_attribute_type(attribute)
-        self._factory.run(Append_To_Attribute_List(Edit_AttrList_Data(self,attribute)))
+        self.factory.run(Append_To_Attribute_List(Edit_AttrList_Data(self,attribute)))
 
     def remove(self,attribute:Attribute)->None:
         if attribute not in self.__attributes: raise Attribute_List.NotInList(attribute)
-        self._factory.run(Remove_From_Attribute_List(Edit_AttrList_Data(self,attribute)))
+        self.factory.run(Remove_From_Attribute_List(Edit_AttrList_Data(self,attribute)))
 
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
         self.command['set'].add(owner, func, timing)
@@ -255,28 +290,29 @@ class Attribute_List(AbstractAttribute):
 
     def set(self,value:Any=None)->None:
         cmds:List[Command] = []
-        self._factory.run(self.command['set'](Set_Attr_Data(self,self.value)))
+        self.factory.run(self.command['set'](Set_Attr_Data(self,self.value)))
 
-    def remove_set_command(self, cmd_owner: str) -> None:
-        pass
-    
-    def _add(self,attributes:Attribute)->None: self.__attributes.append(attributes)
-    def _remove(self,attributes:Attribute)->None: self.__attributes.remove(attributes)
+    def _add(self,attributes:Attribute)->None: 
+        self.__attributes.append(attributes)
+
+    def _remove(self,attributes:Attribute)->None: 
+        self.__attributes.remove(attributes)
+
     def _value_update(self,values:List[Any])->None:
-        if len(values)!=len(self.__attributes): raise Attribute_List.NotMatchingListLengths
-        for value, attribute in zip(values,self.__attributes):
-            attribute._value_update(value)
+        pass
+        # if len(values)!=len(self.__attributes): raise Attribute_List.NotMatchingListLengths
+        # for value, attribute in zip(values,self.__attributes):
+        #     attribute._value_update(value)
    
     def __iter__(self)->Iterator[Attribute]: return self.__attributes.__iter__()
     def __getitem__(self,index:int)->Attribute: return self.__attributes[index]
     def __check_new_attribute_type(self,attr:Attribute)->None:
-        if not attr.type==self._type: raise Attribute_List.WrongAttributeType(
-            f"Type {attr.type} of the attribute does not match the type of the list {self._type}."
+        if not attr.type==self.type: raise Attribute_List.WrongAttributeType(
+            f"Type {attr.type} of the attribute does not match the type of the list {self.type}."
         )    
 
     class NotInList(Exception): pass
     class NotMatchingListLengths(Exception): pass
-    class UnknownModificationType(Exception): pass
     class WrongAttributeType(Exception): pass
 
 
@@ -284,28 +320,16 @@ Command_Type = Literal['set']
 from typing import Set, List
 class Attribute(AbstractAttribute):
     default_value:Any = ""
-    NullDependency = DependencyImpl.NULL
 
-    def __init__(self,factory:Attribute_Factory, atype:str='text',name:str="")->None:
-        self.__name = name
-        self._type = atype
-        self.command:Dict[Command_Type,Composed_Command] = {'set':Set_Attr_Composed()}
-        self.__dependency:Dependency = self.NullDependency
-        self._id = str(id(self))
+    def __init__(self,factory:Attribute_Factory, atype:str='text',name:str="")->None:  
+        super().__init__(factory,atype,name)
         self._value = self.default_value
-        self._factory = factory
+        self.__dependency:Dependency = self.NullDependency
 
-    @property
-    def name(self)->str: return self.__name
-    @property
-    def type(self)->str: return self._type
     @property 
     def value(self)->Any: return self._value
-    @property 
-    def dependent(self)->bool:
-        return self.__dependency is not Attribute.NullDependency
     @property
-    def dependency(self) -> Dependency: return self.__dependency
+    def dependency(self)->Dependency: return self.__dependency
     
     def add_dependency(self,func:Callable[[Any],Any], *attributes:AbstractAttribute)->None:
         self.__dependency = DependencyImpl(self, func, *attributes)
@@ -316,27 +340,21 @@ class Attribute(AbstractAttribute):
         self.__dependency = self.NullDependency
 
     def copy(self)->Attribute:
-        the_copy = self._factory.new(self._type, self.__name)
+        the_copy = self.factory.new(self.type, self.name)
         self.__set_value_of_the_copy(the_copy)
         return the_copy
 
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
         self.command['set'].add(owner, func, timing)
 
-    def remove_set_command(self,cmd_owner:str)->None:
+    def remove_dependency_commands(self,cmd_owner:str)->None:
         self.command['set'].post.pop(cmd_owner)
 
     @abc.abstractmethod
-    def print(
-        self, 
-        locale_code:Locale_Code = "en_us",
-        )->str: 
-        
-        pass # pragma: no cover
+    def print(self, locale_code:Locale_Code = "en_us")->str: pass # pragma: no cover
     
     @abc.abstractmethod
-    def read(self,text:str)->None: # pragma: no cover
-        pass
+    def read(self,text:str)->None: pass # pragma: no cover
         
     def set(self,value:Any)->None: 
         if self.dependent: return
@@ -356,7 +374,7 @@ class Attribute(AbstractAttribute):
     def _is_value_valid(self,value:Any)->bool: pass # pragma: no cover
 
     def _run_set_command(self,value:Any)->None:
-        self._factory.controller.run(self.__get_set_command(value))
+        self.factory.controller.run(self.__get_set_command(value))
     
     def _value_update(self,value:Any)->None:
         self._value = value
@@ -366,7 +384,7 @@ class Attribute(AbstractAttribute):
     
     def __set_value_of_the_copy(self,the_copy:Attribute)->None:
         if self.dependent:
-            the_copy.add_dependency(self.__dependency.func, *self.__dependency.inputs)
+            the_copy.add_dependency(self.dependency.func, *self.dependency.inputs)
         else:
             the_copy._value = self._value
 
@@ -376,10 +394,10 @@ class Attribute(AbstractAttribute):
         cmds:List[List[Command]] = list()
         for attr,value in new_values.items():
             if attr.dependent: continue #ignore dependent attributes
-            if not attr._factory in facs: # Attribute_Factory is not hashable, two lists circumvent the problem
-                facs.append(attr._factory)
+            if not attr.factory in facs: # Attribute_Factory is not hashable, two lists circumvent the problem
+                facs.append(attr.factory)
                 cmds.append(list())
-            cmds[facs.index(attr._factory)].extend(attr.__get_set_command(value))
+            cmds[facs.index(attr.factory)].extend(attr.__get_set_command(value))
         
         for fac, cmd_list in zip(facs,cmds):
             fac.controller.run(*cmd_list)
@@ -787,7 +805,7 @@ class Attribute_Factory:
     def newlist(self,atype:str='text', name:str="", init_items:List[Attribute]|None=None)->Attribute_List:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         if init_items is None: init_items=[]
-        return Attribute_List(self,atype, init_items, name)
+        return Attribute_List(self, atype, init_attributes=init_items, name=name)
 
     def new(self,atype:str='text',name:str="")->Attribute:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
