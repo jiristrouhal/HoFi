@@ -128,7 +128,7 @@ class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
     @dataclasses.dataclass
     class Write_Data:
         logbook:Test_Undo_And_Redo_Setting_Attribute_Values.LogBook
-        attr:Attribute
+        attr:AbstractAttribute
 
     @dataclasses.dataclass
     class Write_Value_To_LogBook(Command):
@@ -156,9 +156,9 @@ class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
         volume.set(10)
         self.assertEqual(volume.value,10)
 
-        fac.controller.undo()
+        fac.undo()
         self.assertEqual(volume.value,5)
-        fac.controller.redo()
+        fac.redo()
         self.assertEqual(volume.value,10)
 
 
@@ -182,11 +182,11 @@ class Test_Dependent_Attributes(unittest.TestCase):
         volume.set(5)
         self.assertEqual(mass.value, 5000)
 
-        self.fac.controller.undo()
+        self.fac.undo()
         self.assertEqual(mass.value, 2000)
-        self.fac.controller.redo()
+        self.fac.redo()
         self.assertEqual(mass.value, 5000)
-        self.fac.controller.undo()
+        self.fac.undo()
         self.assertEqual(mass.value, 2000)
 
     def test_chaining_dependency_of_three_attributes(self):
@@ -210,13 +210,13 @@ class Test_Dependent_Attributes(unittest.TestCase):
         self.assertEqual(volume.value,8)
         self.assertEqual(max_n_of_items.value,80)
 
-        self.fac.controller.undo()
+        self.fac.undo()
         self.assertEqual(volume.value,1)
         self.assertEqual(max_n_of_items.value,10)
-        self.fac.controller.redo()
+        self.fac.redo()
         self.assertEqual(volume.value,8)
         self.assertEqual(max_n_of_items.value,80)
-        self.fac.controller.undo()
+        self.fac.undo()
         self.assertEqual(volume.value,1)
         self.assertEqual(max_n_of_items.value,10)
 
@@ -375,9 +375,9 @@ class Test_Copying_Attribute(unittest.TestCase):
 
         y.add_dependency(double,x)
 
-        self.assertListEqual(y._dependency.inputs,[x])
+        self.assertListEqual(y.dependency.inputs,[x])
         y_copy = y.copy()
-        self.assertListEqual(y_copy._dependency.inputs,[x]) 
+        self.assertListEqual(y_copy.dependency.inputs,[x]) 
 
         # test that both y are affected by change in x value
         x.set(2)
@@ -457,17 +457,17 @@ class Test_Setting_Multiple_Independent_Attributes_At_Once(unittest.TestCase):
         self.assertEqual(x2.value,-15)
         self.assertEqual(message.value, "ABC")
 
-        fac.controller.undo()
+        fac.undo()
         self.assertEqual(x1.value,5)
         self.assertEqual(x2.value,-2)
         self.assertEqual(message.value, "XYZ")
     
-        fac.controller.redo()
+        fac.redo()
         self.assertEqual(x1.value,10)
         self.assertEqual(x2.value,-15)
         self.assertEqual(message.value, "ABC")
 
-        fac.controller.undo()
+        fac.undo()
         self.assertEqual(x1.value,5)
         self.assertEqual(x2.value,-2)
         self.assertEqual(message.value, "XYZ")
@@ -1081,24 +1081,24 @@ class Test_Dependency_With_Variable_Number_Of_Inputs(unittest.TestCase):
         self.assertEqual(self.thesum.value, 5)
         a3 = self.fac.new("integer")
         a3.set(7)
-        self.thesum._dependency.add_input(a3)
+        self.thesum.dependency.add_input(a3)
         self.assertEqual(self.thesum.value, 12)
-        self.thesum._dependency.remove_input(self.a2)
+        self.thesum.dependency.remove_input(self.a2)
         self.assertEqual(self.thesum.value, 9)
 
     def test_adding_already_present_attribute_raises_exception(self):
-        self.assertRaises(Dependency.InputAlreadyUsed, self.thesum._dependency.add_input, self.a1)
+        self.assertRaises(Dependency.InputAlreadyUsed, self.thesum.dependency.add_input, self.a1)
 
     def test_adding_dependent_attribute_as_its_own_input_raises_exception(self):
-        self.assertRaises(Dependency.CyclicDependency, self.thesum._dependency.add_input, self.thesum)
+        self.assertRaises(Dependency.CyclicDependency, self.thesum.dependency.add_input, self.thesum)
 
     def test_adding_input_of_incorrect_type_raises_exception(self):
         text_input = self.fac.new("text")
-        self.assertRaises(Dependency.InvalidArgumentType, self.thesum._dependency.add_input, text_input)
+        self.assertRaises(Dependency.InvalidArgumentType, self.thesum.dependency.add_input, text_input)
 
     def test_removing_attribute_that_is_not_input_raises_exception(self):
         some_attribute = self.fac.new("integer")
-        self.assertRaises(Dependency.NonexistentInput, self.thesum._dependency.remove_input, some_attribute)
+        self.assertRaises(Dependency.NonexistentInput, self.thesum.dependency.remove_input, some_attribute)
 
 
 class Test_Undo_And_Redo_Changing_Dependency_Inputs(unittest.TestCase):
@@ -1114,48 +1114,48 @@ class Test_Undo_And_Redo_Changing_Dependency_Inputs(unittest.TestCase):
 
         self.a3 = self.fac.new('integer')
         self.a3.set(5)
-        self.thesum._dependency.add_input(self.a3)
+        self.thesum.dependency.add_input(self.a3)
         self.assertEqual(self.thesum.value, 10)
 
     def test_undo_and_redo_adding_an_input(self):
-        self.fac.controller.undo()
-        self.assertFalse(self.thesum._dependency.is_input(self.a3))
+        self.fac.undo()
+        self.assertFalse(self.thesum.dependency.is_input(self.a3))
         self.assertEqual(self.thesum.value, 5)
-        self.fac.controller.redo()
-        self.assertTrue(self.thesum._dependency.is_input(self.a3))
+        self.fac.redo()
+        self.assertTrue(self.thesum.dependency.is_input(self.a3))
         self.assertEqual(self.thesum.value, 10)
-        self.fac.controller.undo()
-        self.assertFalse(self.thesum._dependency.is_input(self.a3))
+        self.fac.undo()
+        self.assertFalse(self.thesum.dependency.is_input(self.a3))
         self.assertEqual(self.thesum.value, 5)
 
     def test_changing_input_after_undoing_its_addition_to_dependency_does_not_affect_the_dependency_output(self):
-        self.fac.controller.undo()
+        self.fac.undo()
         self.assertEqual(self.thesum.value, 5)
         # now the a3 is disconnected and setting its value does not affect the 'thesum' attribute
         self.a3.set(5)
         self.assertEqual(self.thesum.value, 5)
         
-        self.thesum._dependency.add_input(self.a3)
+        self.thesum.dependency.add_input(self.a3)
         self.assertEqual(self.thesum.value, 10)
 
     def test_undo_and_redo_removing_an_input(self)->None:
-        self.thesum._dependency.remove_input(self.a3)
-        self.assertFalse(self.thesum._dependency.is_input(self.a3))
+        self.thesum.dependency.remove_input(self.a3)
+        self.assertFalse(self.thesum.dependency.is_input(self.a3))
         self.assertEqual(self.thesum.value, 5)
 
-        self.fac.controller.undo()
-        self.assertTrue(self.thesum._dependency.is_input(self.a3))
+        self.fac.undo()
+        self.assertTrue(self.thesum.dependency.is_input(self.a3))
         self.assertEqual(self.thesum.value, 10)
-        self.fac.controller.redo()
-        self.assertFalse(self.thesum._dependency.is_input(self.a3))
+        self.fac.redo()
+        self.assertFalse(self.thesum.dependency.is_input(self.a3))
         self.assertEqual(self.thesum.value, 5)
-        self.fac.controller.undo()
-        self.assertTrue(self.thesum._dependency.is_input(self.a3))
+        self.fac.undo()
+        self.assertTrue(self.thesum.dependency.is_input(self.a3))
         self.assertEqual(self.thesum.value, 10)
 
     def test_changing_input_after_undoing_its_removal_from_dependency_does_affect_the_dependency_output(self):
-        self.thesum._dependency.remove_input(self.a3)
-        self.fac.controller.undo()
+        self.thesum.dependency.remove_input(self.a3)
+        self.fac.undo()
         self.assertEqual(self.thesum.value, 10)
         self.a3.set(self.a3.value+1)
         self.assertEqual(self.thesum.value, 11)
@@ -1172,10 +1172,10 @@ class Test_Zero_Dependency_Inputs(unittest.TestCase):
         def xsum(*x:int)->int: return sum(x)
         x_sum.add_dependency(xsum, x_i)
         
-        x_sum._dependency.remove_input(x_i)
+        x_sum.dependency.remove_input(x_i)
         self.assertEqual(x_sum.value, 0)
 
-        fac.controller.undo()
+        fac.undo()
         self.assertEqual(x_sum.value, 8)
 
     def test_adding_dependency_with_zero_inputs(self):
@@ -1186,28 +1186,110 @@ class Test_Zero_Dependency_Inputs(unittest.TestCase):
         
         summand = fac.new("integer")
         summand.set(5)
-        thesum._dependency.add_input(summand)
+        thesum.dependency.add_input(summand)
         self.assertEqual(thesum.value, 5)
 
 
 from src.core.attributes import Attribute_List
 class Test_Attribute_List(unittest.TestCase):
 
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+
     def test_attribute_list_is_initially_empty_if_no_item_was_initially_specified(self):
-        fac = attribute_factory(Controller())
-        alist = fac.newlist([], 'text')
-        self.assertListEqual(alist.items, [])
+        alist = self.fac.newlist('text')
+        self.assertListEqual(alist.attributes, [])
     
     def test_only_attribute_with_type_specified_by_list_can_be_added(self):
-        fac = attribute_factory(Controller())
-        alist = fac.newlist([],'text')
-        attr = fac.new('text')
+        alist = self.fac.newlist('text')
+        attr = self.fac.new('text')
         alist.append(attr)
-        self.assertListEqual(alist.items, [attr])
-        int_attr = fac.new('integer')
+        self.assertListEqual(alist.attributes, [attr])
+        int_attr = self.fac.new('integer')
         self.assertRaises(Attribute_List.WrongAttributeType, alist.append, int_attr)
-        
-    
+
+    def test_attributes_can_be_added_at_the_list_initialization(self):
+        some_attr = self.fac.new("text")
+        alist = self.fac.newlist("text", init_items=[some_attr])
+        self.assertListEqual(alist.attributes,[some_attr])
+
+    def test_removing_attributes(self):
+        some_attr = self.fac.new("integer")
+        alist = self.fac.newlist("integer", init_items=[some_attr])
+        alist.remove(some_attr)
+        # removing already removed item raises exception
+        self.assertRaises(Attribute_List.NotInList, alist.remove, some_attr)
+
+
+from src.core.attributes import AbstractAttribute
+class Test_Undo_And_Redo_Editing_The_Attribute_List(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.alist = self.fac.newlist("integer")
+
+    def test_undo_adding_item_to_the_list(self):
+        attr = self.fac.new("integer")
+        self.alist.append(attr)
+
+        self.fac.undo()
+        self.assertListEqual(self.alist.attributes, [])
+        self.fac.redo()
+        self.assertListEqual(self.alist.attributes, [attr])
+        self.fac.undo()
+        self.assertListEqual(self.alist.attributes, [])
+
+    def test_undo_removing_item_from_the_list(self):
+        attr = self.fac.new("integer")
+        self.alist.append(attr)
+
+        self.alist.remove(attr)
+        self.fac.undo()
+        self.assertListEqual(self.alist.attributes, [attr])
+        self.fac.redo()
+        self.assertListEqual(self.alist.attributes, [])
+        self.fac.undo()
+        self.assertListEqual(self.alist.attributes, [attr])
+
+
+class Test_Attribute_List_Set_Method(unittest.TestCase): 
+
+    @dataclasses.dataclass
+    class Set_Cmd_Call_Counter:
+        count:int = 0
+
+    @dataclasses.dataclass
+    class Increment_Attr(Command):
+        counter:Test_Attribute_List_Set_Method.Set_Cmd_Call_Counter
+        def run(self): 
+            self.counter.count += 1
+        def undo(self): 
+            self.counter.count -= 1
+        def redo(self): 
+            self.counter.count += 1
+
+    def __attr_cmd(self,data:Set_Attr_Data)->Increment_Attr:
+        return self.Increment_Attr(self.counter)
+
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.alist = self.fac.newlist("integer")
+        self.counter = self.Set_Cmd_Call_Counter(count=0)
+        self.alist.on_set('test',self.__attr_cmd,'post')
+
+    def test_running_command_on_calling_set_method_of_attribute_list(self)->None:
+        self.assertEqual(self.counter.count,0)
+        self.alist.set()
+        self.assertEqual(self.counter.count,1)
+        self.fac.undo()
+        self.assertEqual(self.counter.count,0)
+        self.fac.redo()
+        self.assertEqual(self.counter.count,1)
+        self.fac.undo()
+        self.assertEqual(self.counter.count,0)
+
+
 
 # class Test_Implemeting_Dot_Product_Using_Dependency(unittest.TestCase):
 
@@ -1248,7 +1330,7 @@ class Test_Attribute_List(unittest.TestCase):
 #         self.assertEqual(scaledsum.value, 5)
 #         scale.set(0.5)
 #         self.assertEqual(scaledsum.value, 2.5)
-#         fac.controller.undo()
+#         fac.undo()
 #         self.assertEqual(scaledsum.value, 5)
 
 #         scaledsum._dependency.remove_input(x[1])
