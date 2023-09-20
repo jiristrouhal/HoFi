@@ -26,12 +26,10 @@ class Dependency(abc.ABC):
         self.output = output
         self.func = func
         self.inputs = list(inputs)
-
         if self.output.dependent: raise Attribute.DependencyAlreadyAssigned 
         self.__check_input_types()
         self._check_for_dependency_cycle(self.output, path=self.output.name)
         self.__set_up_command(*self.inputs)
-        
 
     @abc.abstractmethod
     def release(self)->None: pass  # pragma: no cover
@@ -137,6 +135,9 @@ class Set_Attr_Composed(Composed_Command):
     def add(self, owner:str, func:Callable[[Set_Attr_Data],Command],timing:Timing)->None:
         super().add(owner,func,timing)
 
+    def add_composed(self, owner_id: str, data_converter: Callable[[Set_Attr_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
+        return super().add_composed(owner_id, data_converter, cmd, timing)
+
 
 from typing import Tuple
 @dataclasses.dataclass
@@ -183,41 +184,6 @@ class Remove_From_Attribute_List(Command):
     def redo(self)->None:
         self.data.alist._remove(self.data.attribute)
 
-@dataclasses.dataclass
-class React_To_Setting_Attribute_Value(Command):
-    data:Edit_AttrList_Data
-
-    def run(self)->None:
-        pass
-    def undo(self)->None:
-        pass
-    def redo(self)->None:
-        pass
-
-@dataclasses.dataclass
-class Set_Attribute_List_Values(Command):
-    data:Edit_AttrList_Data
-    def run(self)->None: pass
-    def undo(self)->None: pass
-    def redo(self)->None: pass
-
-class Append_To_Attribute_List_Composed(Composed_Command):
-    @staticmethod
-    def cmd_type(): return Append_To_Attribute_List
-    def __call__(self, data:Edit_AttrList_Data):
-        return super().__call__(data)
-    def add(self, owner:str, func:Callable[[Edit_AttrList_Data],Command],timing:Timing)->None:
-        super().add(owner,func,timing)
-
-class Remove_From_Attribute_List_Composed(Composed_Command):
-    @staticmethod
-    def cmd_type(): return Remove_From_Attribute_List
-    def __call__(self, data:Edit_AttrList_Data):
-        return super().__call__(data)
-    def add(self, owner:str, func:Callable[[Edit_AttrList_Data],Command],timing:Timing)->None:
-        super().add(owner,func,timing)
-
-
 
 class AbstractAttribute(abc.ABC):
 
@@ -257,11 +223,8 @@ class Attribute_List(AbstractAttribute):
 
         self.__name = name
         self._type = atype
-        self.command:Dict[Attr_List_Command_Type,Composed_Command] = {
-            'append':Append_To_Attribute_List_Composed(),
-            'remove':Remove_From_Attribute_List_Composed()
-        }
         self.__attributes:List[Attribute] = init_attributes if init_attributes is not None else list()
+        self.command:Dict[Command_Type,Composed_Command] = {'set':Set_Attr_Composed()}
         self._factory = factory
         self.__dependency = DependencyImpl.NULL
         self._id = str(id(self))
@@ -280,26 +243,19 @@ class Attribute_List(AbstractAttribute):
 
     def append(self,attribute:Attribute)->None:
         self.__check_new_attribute_type(attribute)
-        self._factory.run(self.command['append'](Edit_AttrList_Data(self,attribute)))
+        self._factory.run(Append_To_Attribute_List(Edit_AttrList_Data(self,attribute)))
 
     def remove(self,attribute:Attribute)->None:
         if attribute not in self.__attributes: raise Attribute_List.NotInList(attribute)
-        self._factory.run(self.command['remove'](Edit_AttrList_Data(self,attribute)))
+        self._factory.run(Remove_From_Attribute_List(Edit_AttrList_Data(self,attribute)))
+
+    def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
+        self.command['set'].add(owner, func, timing)
+        self._set_commands[owner] = func
 
     def set(self,value:Any=None)->None:
         cmds:List[Command] = []
-        for owner in self._set_commands:
-            cmds.append(self._set_commands[owner](Set_Attr_Data(self, value)))
-        self._factory.run(*cmds)
-
-    def on_set(
-        self, 
-        owner:str, 
-        func: Callable[[Set_Attr_Data], Command], 
-        timing:Timing
-        ) -> None:
-
-        self._set_commands[owner] = func
+        self._factory.run(self.command['set'](Set_Attr_Data(self,self.value)))
 
     def remove_set_command(self, cmd_owner: str) -> None:
         pass

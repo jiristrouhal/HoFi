@@ -68,7 +68,10 @@ class Rename_Composed(Composed_Command):
         return super().__call__(data)
 
     def add(self, owner_id:str, func:Callable[[Renaming_Data],Command],timing:Timing)->None:
-        super().add(owner_id,creator_func=func,timing=timing)
+        super().add(owner_id,creator=func,timing=timing)
+
+    def add_composed(self, owner_id: str, data_converter: Callable[[Renaming_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
+        return super().add_composed(owner_id, data_converter, cmd, timing)
 
 
 @dataclasses.dataclass
@@ -95,7 +98,10 @@ class Adopt_Composed(Composed_Command):
         return super().__call__(data)
 
     def add(self, owner_id:str, func:Callable[[Adoption_Data],Command],timing:Timing)->None:
-        super().add(owner_id,creator_func=func,timing=timing)
+        super().add(owner_id,creator=func,timing=timing)
+
+    def add_composed(self, owner_id: str, data_converter: Callable[[Adoption_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
+        return super().add_composed(owner_id, data_converter, cmd, timing)
 
 
 @dataclasses.dataclass
@@ -131,7 +137,10 @@ class PassToNewParent_Composed(Composed_Command):
         func:Callable[[Pass_To_New_Parrent_Data],Command],
         timing:Timing)->None:
 
-        super().add(owner_id,creator_func=func,timing=timing)
+        super().add(owner_id,creator=func,timing=timing)
+
+    def add_composed(self, owner_id: str, data_converter: Callable[[Pass_To_New_Parrent_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
+        return super().add_composed(owner_id, data_converter, cmd, timing)
 
 
 from typing import Literal

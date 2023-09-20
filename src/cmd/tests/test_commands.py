@@ -3,7 +3,6 @@ from __future__ import annotations
 import sys
 sys.path.insert(1,"src")
 import dataclasses
-from typing import Protocol
 
 
 import unittest
@@ -124,7 +123,7 @@ class OtherInt:
 
 
 
-from typing import Callable
+from typing import Any, Callable
 class Composed_Increment(Composed_Command):
     @staticmethod
     def cmd_type(): return IncrementIntAttribute
@@ -135,6 +134,8 @@ class Composed_Increment(Composed_Command):
     def add(self,owner_id:str,func:Callable[[IncrementIntData],Command],timing:Timing)->None:
         super().add(owner_id,func,timing)
 
+    def add_composed(self, owner_id: str, data_converter: Callable[[IncrementIntData], Any], cmd: Composed_Command, timing: Timing) -> None:
+        return super().add_composed(owner_id, data_converter, cmd, timing)
 
 
 @dataclasses.dataclass
@@ -163,7 +164,7 @@ class Test_Composed_Command(unittest.TestCase):
 
     def get_cmd(self,data:IncrementIntData)->Increment_Other_Int:
         return Increment_Other_Int(self.other_int, data.obj)
-
+    
     def test_composed_command(self):
         composed_command = Composed_Increment()
         
@@ -185,10 +186,45 @@ class Test_Composed_Command(unittest.TestCase):
         self.assertEqual(self.other_int.value, 5)
 
     def test_adding_command_under_invalid_timing_key(self):
-        controller = Controller()
         composed_command = Composed_Increment()
         self.assertRaises(KeyError, composed_command.add, 'test', self.get_cmd, 'invalid key')
 
+    def test_adding_composed_command_to_composed_command(self):
+        composed_command_pre = Composed_Increment()
+        composed_command = Composed_Increment()
+        composed_command_post = Composed_Increment()
+
+        composed_command_post.add('test', self.get_cmd, 'post')
+        def data_converter(input_data:IncrementIntData)->IncrementIntData:
+            return input_data
+        
+        # each composed command should increment the integer by 5
+
+        #the composed_command_pre adds the first 5 to the integer
+        composed_command.add_composed('test', data_converter, composed_command_pre, 'pre')
+        # the post-command of the composed_command follows, adding another 5
+
+        # at last, the composed_command_post adds 5, which yields 15 in total
+        composed_command.add_composed('test', data_converter, composed_command_post, 'post')
+
+        # the increment is set the same for all three composed commands
+        self.controller.run(*composed_command(IncrementIntData(self.obj, step=5)))
+        self.assertEqual(self.obj.i, 15)
+
+        # after resetting the integer to zero, is is possible to set up the data converter
+        # such that the increment for the pre and post composed_command differs from the
+        # origina increment
+
+        self.obj.i = 0
+        def data_converter(input_data:IncrementIntData)->IncrementIntData:
+            return IncrementIntData(input_data.obj, step=2)
+        
+            # return IncrementIntData(input_data)
+        # replaces the original pre- composed_command 
+        composed_command.add_composed('test', data_converter, composed_command_pre, 'pre')
+        composed_command.add_composed('test', data_converter, composed_command_post, 'post')
+        self.controller.run(*composed_command(IncrementIntData(self.obj, step=5)))
+        self.assertEqual(self.obj.i, 9)
 
 
 if __name__=="__main__": unittest.main()
