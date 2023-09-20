@@ -1066,129 +1066,6 @@ class Test_Reading_Monetary_Value_With_Space_As_Thousands_Separator(unittest.Tes
         self.assertEqual(attr.value, -15000)
 
 
-class Test_Dependency_With_Variable_Number_Of_Inputs(unittest.TestCase):
-
-    def setUp(self) -> None:
-        self.fac = attribute_factory(Controller())
-        self.thesum = self.fac.new("integer")
-        self.a1, self.a2 = self.fac.new("integer"), self.fac.new("integer")
-        def sumint(*nums:int)->int: return sum(nums)
-        self.thesum.add_dependency(sumint, self.a1, self.a2)
-
-    def test_sum_over_of_variable_list_of_integer_attributes(self):
-        self.a1.set(2)
-        self.a2.set(3)
-        self.assertEqual(self.thesum.value, 5)
-        a3 = self.fac.new("integer")
-        a3.set(7)
-        self.thesum.dependency.add_input(a3)
-        self.assertEqual(self.thesum.value, 12)
-        self.thesum.dependency.remove_input(self.a2)
-        self.assertEqual(self.thesum.value, 9)
-
-    def test_adding_already_present_attribute_raises_exception(self):
-        self.assertRaises(Dependency.InputAlreadyUsed, self.thesum.dependency.add_input, self.a1)
-
-    def test_adding_dependent_attribute_as_its_own_input_raises_exception(self):
-        self.assertRaises(Dependency.CyclicDependency, self.thesum.dependency.add_input, self.thesum)
-
-    def test_adding_input_of_incorrect_type_raises_exception(self):
-        text_input = self.fac.new("text")
-        self.assertRaises(Dependency.InvalidArgumentType, self.thesum.dependency.add_input, text_input)
-
-    def test_removing_attribute_that_is_not_input_raises_exception(self):
-        some_attribute = self.fac.new("integer")
-        self.assertRaises(Dependency.NonexistentInput, self.thesum.dependency.remove_input, some_attribute)
-
-
-class Test_Undo_And_Redo_Changing_Dependency_Inputs(unittest.TestCase):
-
-    def setUp(self) -> None:
-        self.fac = attribute_factory(Controller())
-        self.thesum = self.fac.new("integer")
-        self.a1, self.a2 = self.fac.new("integer"), self.fac.new("integer")
-        def sumint(*nums:int)->int: return sum(nums)
-        self.thesum.add_dependency(sumint, self.a1, self.a2)
-        self.a1.set(2)
-        self.a2.set(3)
-
-        self.a3 = self.fac.new('integer')
-        self.a3.set(5)
-        self.thesum.dependency.add_input(self.a3)
-        self.assertEqual(self.thesum.value, 10)
-
-    def test_undo_and_redo_adding_an_input(self):
-        self.fac.undo()
-        self.assertFalse(self.thesum.dependency.is_input(self.a3))
-        self.assertEqual(self.thesum.value, 5)
-        self.fac.redo()
-        self.assertTrue(self.thesum.dependency.is_input(self.a3))
-        self.assertEqual(self.thesum.value, 10)
-        self.fac.undo()
-        self.assertFalse(self.thesum.dependency.is_input(self.a3))
-        self.assertEqual(self.thesum.value, 5)
-
-    def test_changing_input_after_undoing_its_addition_to_dependency_does_not_affect_the_dependency_output(self):
-        self.fac.undo()
-        self.assertEqual(self.thesum.value, 5)
-        # now the a3 is disconnected and setting its value does not affect the 'thesum' attribute
-        self.a3.set(5)
-        self.assertEqual(self.thesum.value, 5)
-        
-        self.thesum.dependency.add_input(self.a3)
-        self.assertEqual(self.thesum.value, 10)
-
-    def test_undo_and_redo_removing_an_input(self)->None:
-        self.thesum.dependency.remove_input(self.a3)
-        self.assertFalse(self.thesum.dependency.is_input(self.a3))
-        self.assertEqual(self.thesum.value, 5)
-
-        self.fac.undo()
-        self.assertTrue(self.thesum.dependency.is_input(self.a3))
-        self.assertEqual(self.thesum.value, 10)
-        self.fac.redo()
-        self.assertFalse(self.thesum.dependency.is_input(self.a3))
-        self.assertEqual(self.thesum.value, 5)
-        self.fac.undo()
-        self.assertTrue(self.thesum.dependency.is_input(self.a3))
-        self.assertEqual(self.thesum.value, 10)
-
-    def test_changing_input_after_undoing_its_removal_from_dependency_does_affect_the_dependency_output(self):
-        self.thesum.dependency.remove_input(self.a3)
-        self.fac.undo()
-        self.assertEqual(self.thesum.value, 10)
-        self.a3.set(self.a3.value+1)
-        self.assertEqual(self.thesum.value, 11)
-        
-
-class Test_Zero_Dependency_Inputs(unittest.TestCase):
-
-    def test_remove_depedency_input(self):
-        fac = attribute_factory(Controller())
-        x_sum = fac.new("integer")
-        x_i = fac.new("integer")
-        x_i.set(8)
-
-        def xsum(*x:int)->int: return sum(x)
-        x_sum.add_dependency(xsum, x_i)
-        
-        x_sum.dependency.remove_input(x_i)
-        self.assertEqual(x_sum.value, 0)
-
-        fac.undo()
-        self.assertEqual(x_sum.value, 8)
-
-    def test_adding_dependency_with_zero_inputs(self):
-        fac = attribute_factory(Controller())
-        thesum = fac.new("integer")
-        def xsum(*x:int)->int: return sum(x)
-        thesum.add_dependency(xsum)
-        
-        summand = fac.new("integer")
-        summand.set(5)
-        thesum.dependency.add_input(summand)
-        self.assertEqual(thesum.value, 5)
-
 
 from src.core.attributes import Attribute_List
 class Test_Attribute_List(unittest.TestCase):
@@ -1289,6 +1166,15 @@ class Test_Attribute_List_Set_Method(unittest.TestCase):
         self.fac.undo()
         self.assertEqual(self.counter.count,0)
 
+    def __test_setting_value_of_attribute_in_group_runs_set_command_of_the_attribute_list(self):
+        new_attr = self.fac.new("integer")
+        self.alist.append(new_attr)
+
+        self.counter.count = 0
+        self.alist.set()
+        self.assertEqual(self.counter.count, 1)
+        new_attr.set(5)
+        self.assertEqual(self.counter.count, 2)
 
 
 # class Test_Implemeting_Dot_Product_Using_Dependency(unittest.TestCase):

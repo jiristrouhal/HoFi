@@ -20,43 +20,6 @@ def verify_and_format_locale_code(locale_code:Locale_Code)->str:
     return code
 
 
-@dataclasses.dataclass
-class Dependency_Edit_Data:
-    dependency:Dependency
-    edited_input:AbstractAttribute
-    
-
-@dataclasses.dataclass
-class Add_Input(Command):
-    data:Dependency_Edit_Data
-    prev_value:Any = dataclasses.field(init=False)
-
-    def run(self)->None:
-        dep = self.data.dependency
-        dep.inputs.append(self.data.edited_input)
-        dep._check_for_dependency_cycle(dep.output, path=dep.output.name)
-        dep._add_set_up_command_to_input(self.data.edited_input)
-    def undo(self)->None:
-        self.data.dependency._disconnect_inputs(self.data.edited_input)
-    def redo(self)->None:
-        self.data.dependency.inputs.append(self.data.edited_input)
-        self.data.dependency._add_set_up_command_to_input(self.data.edited_input)
-
-
-@dataclasses.dataclass
-class Remove_Input(Command):
-    data:Dependency_Edit_Data
-    prev_value:Any = dataclasses.field(init=False)
-
-    def run(self)->None:
-        self.data.dependency._disconnect_inputs(self.data.edited_input)
-    def undo(self)->None:
-        self.data.dependency.inputs.append(self.data.edited_input)
-        self.data.dependency._add_set_up_command_to_input(self.data.edited_input)
-    def redo(self)->None:
-        self.data.dependency._disconnect_inputs(self.data.edited_input)
-
-
 class Dependency(abc.ABC):
 
     def __init__(self, output:Attribute, func:Callable[[Any],Any], *inputs:AbstractAttribute):
@@ -73,21 +36,8 @@ class Dependency(abc.ABC):
     @abc.abstractmethod
     def release(self)->None: pass  # pragma: no cover
 
-    def add_input(self,input:AbstractAttribute)->None:
-        if input in self.inputs: raise Dependency.InputAlreadyUsed
-        self.output._factory.controller.run(
-            Add_Input(Dependency_Edit_Data(self,input)),
-            self._set_output_value()
-        )
-
     def is_input(self,input:AbstractAttribute)->bool:
         return input in self.inputs
-
-    def remove_input(self,input:Attribute):
-        self.output._factory.controller.run(
-            Remove_Input(Dependency_Edit_Data(self,input)),
-            self._set_output_value()
-        )
         
     def _disconnect_inputs(self,*inputs:AbstractAttribute)->None:
         for input in inputs: 
