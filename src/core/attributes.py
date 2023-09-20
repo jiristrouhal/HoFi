@@ -264,6 +264,9 @@ class Attribute_List:
     def __getitem__(self,index:int)->Attribute: return self.__items[index]
 
     def append(self,item:Attribute)->None:
+        if not item.type==self._type: raise Attribute_List.WrongAttributeType(
+            f"Type {item.type} of the attribute does not match the type of the list {self._type}."
+        )
         self.set('append',item)
 
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
@@ -276,6 +279,8 @@ class Attribute_List:
 
     def _add(self,item:Attribute)->None: self.__items.append(item)
     def _remove(self,item:Attribute)->None: self.__items.remove(item)    
+
+    class WrongAttributeType(Exception): pass
 
 
 Command_Type = Literal['set']

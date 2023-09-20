@@ -1190,6 +1190,7 @@ class Test_Zero_Dependency_Inputs(unittest.TestCase):
         self.assertEqual(thesum.value, 5)
 
 
+from src.core.attributes import Attribute_List
 class Test_Attribute_List(unittest.TestCase):
 
     def test_attribute_list_is_initially_empty_if_no_item_was_initially_specified(self):
@@ -1203,6 +1204,9 @@ class Test_Attribute_List(unittest.TestCase):
         attr = fac.new('text')
         alist.append(attr)
         self.assertListEqual(alist.items, [attr])
+        int_attr = fac.new('integer')
+        self.assertRaises(Attribute_List.WrongAttributeType, alist.append, int_attr)
+        
     
 
 # class Test_Implemeting_Dot_Product_Using_Dependency(unittest.TestCase):
