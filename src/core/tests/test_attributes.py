@@ -1086,13 +1086,13 @@ class Test_Attribute_List(unittest.TestCase):
         self.assertRaises(Attribute_List.WrongAttributeType, alist.append, int_attr)
 
     def test_attributes_can_be_added_at_the_list_initialization(self):
-        some_attr = self.fac.new("text")
-        alist = self.fac.newlist("text", init_items=[some_attr])
-        self.assertListEqual(alist.attributes,[some_attr])
+        alist = self.fac.newlist("text", init_items=["xyz"])
+        self.assertEqual(len(alist.attributes), 1)
+        self.assertEqual(alist.attributes[-1].value,"xyz")
 
     def test_removing_attributes(self):
-        some_attr = self.fac.new("integer")
-        alist = self.fac.newlist("integer", init_items=[some_attr])
+        alist = self.fac.newlist("integer", init_items=[0])
+        some_attr = alist[-1]
         alist.remove(some_attr)
         # removing already removed item raises exception
         self.assertRaises(Attribute_List.NotInList, alist.remove, some_attr)
@@ -1146,127 +1146,151 @@ class Test_Attribute_List_Set_Method(unittest.TestCase):
             self.counter.count += 1
 
     def __attr_cmd(self,data:Set_Attr_Data)->Increment_Attr:
-        return self.Increment_Attr(self.counter)
+        return self.Increment_Attr(self.set_calls_counter)
 
 
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
         self.alist = self.fac.newlist("integer")
-        self.counter = self.Set_Cmd_Call_Counter(count=0)
+        self.set_calls_counter = self.Set_Cmd_Call_Counter(count=0)
         self.alist.on_set('test',self.__attr_cmd,'post')
 
     def test_running_command_on_calling_set_method_of_attribute_list(self)->None:
-        self.assertEqual(self.counter.count,0)
+        self.assertEqual(self.set_calls_counter.count,0)
         self.alist.set()
-        self.assertEqual(self.counter.count,1)
+        self.assertEqual(self.set_calls_counter.count,1)
         self.fac.undo()
-        self.assertEqual(self.counter.count,0)
+        self.assertEqual(self.set_calls_counter.count,0)
         self.fac.redo()
-        self.assertEqual(self.counter.count,1)
+        self.assertEqual(self.set_calls_counter.count,1)
         self.fac.undo()
-        self.assertEqual(self.counter.count,0)
+        self.assertEqual(self.set_calls_counter.count,0)
 
     def test_setting_value_of_attribute_in_list_runs_set_command_of_the_attribute_list(self):
         new_attr = self.fac.new("integer")
         self.alist.append(new_attr)
 
-        self.counter.count = 0
+        self.set_calls_counter.count = 0
         self.alist.set()
-        self.assertEqual(self.counter.count, 1)
+        self.assertEqual(self.set_calls_counter.count, 1)
         new_attr.set(5)
-        self.assertEqual(self.counter.count, 2)
+        self.assertEqual(self.set_calls_counter.count, 2)
         new_attr.set(7)
-        self.assertEqual(self.counter.count, 3)
+        self.assertEqual(self.set_calls_counter.count, 3)
         self.alist.factory.undo()
-        self.assertEqual(self.counter.count, 2)
+        self.assertEqual(self.set_calls_counter.count, 2)
         self.alist.factory.undo()
         self.alist.factory.undo()
-        self.assertEqual(self.counter.count, 0)
+        self.assertEqual(self.set_calls_counter.count, 0)
         self.alist.factory.redo()
         self.alist.factory.redo()
         self.alist.factory.redo()
-        self.assertEqual(self.counter.count, 3)
+        self.assertEqual(self.set_calls_counter.count, 3)
 
     def test_setting_value_of_attribute_after_undoing_appending_it_to_the_list_does_not_run_set_method(self):
         new_attr = self.fac.new("integer")
-        self.counter.count = 0
 
         self.alist.append(new_attr)
         self.alist.factory.undo()
 
-        self.assertEqual(self.counter.count, 0)
         new_attr.set(7)
-        self.assertEqual(self.counter.count, 0)
+        self.assertEqual(self.set_calls_counter.count, 0)
 
         #this redo is ignored as a new command (set) was run
         self.alist.factory.redo()
         new_attr.set(6)
-        self.assertEqual(self.counter.count, 0)
+        self.assertEqual(self.set_calls_counter.count, 0)
 
         # only after adding the 'new_attr' again to the list, the counter is again being updated
         self.alist.append(new_attr)
+        self.set_calls_counter.count = 0
         new_attr.set(7)
-        self.assertEqual(self.counter.count, 1)
+        self.assertEqual(self.set_calls_counter.count, 1)
 
     def test_setting_value_of_removed_attribute_does_run_the_set_method_of_the_attribute_list_after_calling_the_undo(self):
         new_attr = self.fac.new("integer")
-        self.counter.count = 0
         self.alist.append(new_attr)
         self.alist.remove(new_attr)
+        self.set_calls_counter.count = 0
         new_attr.set(5)
-        self.assertEqual(self.counter.count, 0)
+        self.assertEqual(self.set_calls_counter.count, 0)
 
         self.fac.undo() # undo setting the item's value to 5
         self.fac.undo() # undo removal
+        self.set_calls_counter.count = 0
         self.assertTrue(new_attr in self.alist.attributes)
         new_attr.set(5)
-        self.assertEqual(self.counter.count, 1)
+        self.assertEqual(self.set_calls_counter.count, 1)
+
+    def test_adding_attribute_calls_the_set_method(self):
+        new_attr = self.fac.new("integer")
+        self.set_calls_counter.count = 0
+        self.alist.append(new_attr)
+        self.assertEqual(self.set_calls_counter.count, 1)
+        self.fac.undo()
+        self.assertEqual(self.set_calls_counter.count, 0)
+        self.fac.redo()
+        self.assertEqual(self.set_calls_counter.count, 1)
+
+    def test_removing_attribute_calls_the_set_method(self):
+        new_attr = self.fac.new("integer")
+        self.set_calls_counter.count = 0
+        self.alist.append(new_attr)
+        self.assertEqual(self.set_calls_counter.count, 1)
+        self.alist.remove(new_attr)
+        self.assertEqual(self.set_calls_counter.count, 2)
 
 
-# class Test_Implemeting_Dot_Product_Using_Dependency(unittest.TestCase):
 
-#     def test_dot_product(self):
-#         fac = attribute_factory(Controller())
-#         dotprod = fac.new("integer")
-#         u = [fac.new("integer") for _ in range(3)]
-#         v = [fac.new("integer") for _ in range(3)]
-#         u[0].set(2) 
-#         u[1].set(0) 
-#         u[2].set(3)
+from typing import List
+class Test_Implemeting_Dot_Product_Using_Dependency(unittest.TestCase):
 
-#         v[0].set(3)
-#         v[1].set(1)
-#         v[2].set(2)
+    def test_dot_product(self):
+        fac = attribute_factory(Controller())
+        dotprod = fac.new("integer")
+        u = fac.newlist('integer', init_items=[2,0,3])
+        v = fac.newlist('integer', init_items=[3,1,2])
         
-#         def calc_dotprod(u:list[int], v:list[int])->int:
-#             return sum([ui*vi for ui,vi in zip(u,v)])
+        def calc_dotprod(u:list[int], v:list[int])->int:
+            return sum([ui*vi for ui,vi in zip(u,v)])
         
-#         dotprod.add_dependency(calc_dotprod, u, v)
-#         self.assertEqual(dotprod.value, 12)
+        dotprod.add_dependency(calc_dotprod, u, v)
+        self.assertEqual(dotprod.value, 12)
 
-#         u[0].set(0)
-#         self.assertEqual(dotprod.value, 6)
+        u[0].set(0)
+        self.assertEqual(dotprod.value, 6)
 
-#     def test_scaling_sum_of_list_of_integers(self):
-#         fac = attribute_factory(Controller())
-#         scaledsum = fac.new("real")
-#         scale = fac.new("real")
-#         scale.set(1.0)
-#         x = [fac.new("real") for _ in range(5)]
-#         for xi in x: xi.set(1)
+    def test_scaling_sum_of_list_of_integers(self):
+        fac = attribute_factory(Controller())
+        scaledsum = fac.new("real")
+        scale = fac.new("real")
+        scale.set(1.0)
+        x = fac.newlist('real',init_items=[1.0 for _ in range(5)])
 
-#         def getsum(s:float, x:List[float])->float: return s*sum(x)
+        def getsum(s:float, x:List[float])->float: return s*sum(x)
 
-#         scaledsum.add_dependency(getsum, scale, x)
+        scaledsum.add_dependency(getsum, scale, x)
 
-#         self.assertEqual(scaledsum.value, 5)
-#         scale.set(0.5)
-#         self.assertEqual(scaledsum.value, 2.5)
-#         fac.undo()
-#         self.assertEqual(scaledsum.value, 5)
+        self.assertEqual(scaledsum.value, 5)
+        scale.set(0.5)
+        self.assertEqual(scaledsum.value, 2.5)
+        fac.undo()
+        self.assertEqual(scaledsum.value, 5)
+        x.remove(x[-1])
+        self.assertEqual(scaledsum.value, 4)
 
-#         scaledsum._dependency.remove_input(x[1])
-#         self.assertEqual(scaledsum.value, 4)
+    def test_weighted_average(self):
+        fac = attribute_factory(Controller())
+        result = fac.new('real')
+        weights = fac.newlist('real',init_items=[1,2])
+        values = fac.newlist('real',init_items=[4,1])
+        def w_average(values:List[float], weights:List[float])->float:
+            return sum([v*w for v,w in zip(values,weights)])/sum(weights)
+        
+        result.add_dependency(w_average,values,weights)
+        self.assertEqual(result.value,2)
+        weights[-1].set(0)
+        self.assertEqual(result.value,4)
 
 
 if __name__=="__main__": unittest.main()

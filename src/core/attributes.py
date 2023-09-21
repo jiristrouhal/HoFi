@@ -255,15 +255,18 @@ class Attribute_List(AbstractAttribute):
         factory:Attribute_Factory, 
         atype:str, 
         name:str="",
-        init_attributes:List[Attribute]|None = None, 
+        init_attributes:List[Any]|None = None, 
         )->None:
 
         super().__init__(factory, atype, name)
         self.__attributes:List[Attribute] = list()
         self._set_commands:Dict[str,Callable[[Set_Attr_Data],Command]] = dict()
 
-        if init_attributes is not None:
-            for attr in init_attributes: self.append(attr)
+        if isinstance(init_attributes,list):
+            for attr_value in init_attributes:
+                attr = factory.new(atype)
+                attr.set(attr_value)
+                self.append(attr)
 
     @property
     def value(self)->List[Any]: return [attr.value for attr in self.__attributes]
@@ -278,18 +281,23 @@ class Attribute_List(AbstractAttribute):
 
     def append(self,attribute:Attribute)->None:
         self.__check_new_attribute_type(attribute)
-        self.factory.run(Append_To_Attribute_List(Edit_AttrList_Data(self,attribute)))
+        self.factory.run(
+            Append_To_Attribute_List(Edit_AttrList_Data(self,attribute)),
+            self.command['set'](Set_Attr_Data(self,self.value))
+        )
 
     def remove(self,attribute:Attribute)->None:
         if attribute not in self.__attributes: raise Attribute_List.NotInList(attribute)
-        self.factory.run(Remove_From_Attribute_List(Edit_AttrList_Data(self,attribute)))
+        self.factory.run(
+            Remove_From_Attribute_List(Edit_AttrList_Data(self,attribute)),
+            self.command['set'](Set_Attr_Data(self,self.value))
+        )
 
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
         self.command['set'].add(owner, func, timing)
         self._set_commands[owner] = func
 
     def set(self,value:Any=None)->None:
-        cmds:List[Command] = []
         self.factory.run(self.command['set'](Set_Attr_Data(self,self.value)))
 
     def _add(self,attributes:Attribute)->None: 
