@@ -220,9 +220,9 @@ class AbstractAttribute(abc.ABC):
     def dependent(self)->bool:
         return self.dependency is not Attribute.NullDependency
     @abc.abstractproperty
-    def dependency(self) -> Dependency: pass
+    def dependency(self) -> Dependency: pass   # pragma: no cover
     @abc.abstractproperty
-    def value(self)->Any: pass
+    def value(self)->Any: pass   # pragma: no cover
     @property
     def factory(self)->Attribute_Factory: return self.__factory
     @property
@@ -231,19 +231,20 @@ class AbstractAttribute(abc.ABC):
     def type(self)->str: return self.__type
 
     @abc.abstractmethod
-    def add_dependency(self,func:Callable[[Any],Any], *attributes:AbstractAttribute)->None: pass
+    def set(self,value:Any)->None: pass  # pragma: no cover
 
     @abc.abstractmethod
-    def break_dependency(self)->None: pass
+    def on_set(
+        self,
+        owner:str, 
+        func:Callable[[Set_Attr_Data],Command], 
+        timing:Timing
+        )->None:   # pragma: no cover
+        
+        pass
 
     @abc.abstractmethod
-    def set(self,value:Any)->None: pass
-
-    @abc.abstractmethod
-    def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: pass
-
-    @abc.abstractmethod
-    def _value_update(self, new_value:Any)->None: pass
+    def _value_update(self, new_value:Any)->None: pass   # pragma: no cover
 
 
 from typing import Iterator
@@ -274,10 +275,6 @@ class Attribute_List(AbstractAttribute):
     def attributes(self)->List[Attribute]: return self.__attributes.copy()
     @property
     def dependency(self)->Dependency: return DependencyImpl.NULL
-
-    def add_dependency(self,*args)->None: pass
-
-    def break_dependency(self)->None: pass
 
     def append(self,attribute:Attribute)->None:
         self.__check_new_attribute_type(attribute)
@@ -354,9 +351,6 @@ class Attribute(AbstractAttribute):
 
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
         self.command['set'].add(owner, func, timing)
-
-    def remove_dependency_commands(self,cmd_owner:str)->None:
-        self.command['set'].post.pop(cmd_owner)
 
     @abc.abstractmethod
     def print(self, locale_code:Locale_Code = "en_us")->str: pass # pragma: no cover
@@ -810,9 +804,8 @@ class Attribute_Factory:
         self.types['date'] = Date_Attribute
         self.types['money'] = Monetary_Attribute
 
-    def newlist(self,atype:str='text', name:str="", init_items:List[Attribute]|None=None)->Attribute_List:
+    def newlist(self,atype:str='text', name:str="", init_items:List[Any]|None=None)->Attribute_List:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
-        if init_items is None: init_items=[]
         return Attribute_List(self, atype, init_attributes=init_items, name=name)
 
     def new(self,atype:str='text',name:str="")->Attribute:

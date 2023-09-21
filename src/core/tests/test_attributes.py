@@ -1073,6 +1073,14 @@ class Test_Attribute_List(unittest.TestCase):
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
 
+    def test_attribute_list_type_can_be_initially_set_to_any_valid_type_of_attribute(self):
+        valid_types = self.fac.types.keys()
+        for atype in valid_types:
+            self.fac.newlist(atype)
+
+    def test_creating_attribute_list_with_invalid_attribute_type_raises_exception(self):
+        self.assertRaises(Attribute.InvalidAttributeType, self.fac.newlist, 'dsafgarga')
+
     def test_attribute_list_is_initially_empty_if_no_item_was_initially_specified(self):
         alist = self.fac.newlist('text')
         self.assertListEqual(alist.attributes, [])
@@ -1096,6 +1104,13 @@ class Test_Attribute_List(unittest.TestCase):
         alist.remove(some_attr)
         # removing already removed item raises exception
         self.assertRaises(Attribute_List.NotInList, alist.remove, some_attr)
+
+    def test_looping_over_attributes(self):
+        alist = self.fac.newlist("integer", init_items=[0,2,3])
+        values = []
+        for a in alist:
+            values.append(a.value)
+        self.assertListEqual(values, [0,2,3])
 
 
 from src.core.attributes import AbstractAttribute
