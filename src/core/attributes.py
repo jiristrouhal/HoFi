@@ -33,16 +33,7 @@ class Dependency(abc.ABC):
 
     @abc.abstractmethod
     def release(self)->None: pass  # pragma: no cover
-
-    def is_input(self,input:AbstractAttribute)->bool:
-        return input in self.inputs
         
-    def _disconnect_inputs(self,*inputs:AbstractAttribute)->None:
-        for input in inputs: 
-            if input not in self.inputs: raise Dependency.NonexistentInput
-            input.command['set'].post.pop(self.output.id)
-            self.inputs.remove(input)
-
     def __check_input_types(self)->None:
         values = self.collect_input_values()
         try:
@@ -102,7 +93,9 @@ class DependencyImpl(Dependency):
     NULL = NullDependency()
 
     def release(self)->None:
-        self._disconnect_inputs(*self.inputs) 
+        for input in self.inputs: 
+            input.command['set'].post.pop(self.output.id)
+            self.inputs.remove(input)
 
 
 @dataclasses.dataclass
