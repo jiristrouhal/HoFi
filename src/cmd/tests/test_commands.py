@@ -198,7 +198,7 @@ class Test_Composed_Command(unittest.TestCase):
 
     def test_adding_composed_command_under_invalid_timing_key(self):
         composed_command = Composed_Increment()
-        def data_converter(input_data:IncrementIntData)->IncrementIntData:
+        def data_converter(input_data:IncrementIntData)->IncrementIntData: # pragma: no cover
             return input_data
         with self.assertRaises(KeyError):
             composed_command.add_composed(
