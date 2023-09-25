@@ -1306,6 +1306,8 @@ class Test_Implemeting_Dot_Product_Using_Dependency(unittest.TestCase):
         self.assertEqual(result.value,2)
         weights[-1].set(0)
         self.assertEqual(result.value,4)
+        fac.undo()
+        self.assertEqual(result.value,2)
 
 
 if __name__=="__main__": unittest.main()
