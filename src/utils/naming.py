@@ -19,10 +19,10 @@ def adjust_taken_name(name:str)->str:
         while re.fullmatch("[\+\-\d]",s[-1]):
             number_str = s[-1]+number_str
             s = s[:-1]
-        # increment the extracted number - if the number string is empty, set it to one
-        if number_str=="": 
+        # increment the extracted number
+        if number_str.strip()=="": 
             number_str = "1"
-        else:
+        else: 
             number_str = str(int(number_str)+1)
         name = s.strip() + number_str+')'
     else:
