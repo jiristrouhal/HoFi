@@ -134,7 +134,13 @@ class Composed_Increment(Composed_Command):
     def add(self,owner_id:str,func:Callable[[IncrementIntData],Command],timing:Timing)->None:
         super().add(owner_id,func,timing)
 
-    def add_composed(self, owner_id: str, data_converter: Callable[[IncrementIntData], Any], cmd: Composed_Command, timing: Timing) -> None:
+    def add_composed(
+        self, 
+        owner_id:str, 
+        data_converter:Callable[[IncrementIntData], Any], 
+        cmd: Composed_Command, 
+        timing: Timing) -> None:
+
         return super().add_composed(owner_id, data_converter, cmd, timing)
 
 
@@ -187,7 +193,20 @@ class Test_Composed_Command(unittest.TestCase):
 
     def test_adding_command_under_invalid_timing_key(self):
         composed_command = Composed_Increment()
-        self.assertRaises(KeyError, composed_command.add, 'test', self.get_cmd, 'invalid key')
+        with self.assertRaises(KeyError):
+            composed_command.add(owner_id='test', func=self.get_cmd, timing='invalid key')
+
+    def test_adding_composed_command_under_invalid_timing_key(self):
+        composed_command = Composed_Increment()
+        def data_converter(input_data:IncrementIntData)->IncrementIntData:
+            return input_data
+        with self.assertRaises(KeyError):
+            composed_command.add_composed(
+                owner_id='test', 
+                cmd=self.get_cmd,
+                data_converter=data_converter,
+                timing='invalid key'
+            )
 
     def test_adding_composed_command_to_composed_command(self):
         composed_command_pre = Composed_Increment()
