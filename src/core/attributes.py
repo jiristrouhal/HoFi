@@ -308,6 +308,8 @@ class Attribute_List(AbstractAttribute):
         for item in self.__attributes: item._dependency = DependencyImpl.NULL
 
     def append(self,attribute:AbstractAttribute)->None:
+        if isinstance(attribute, Attribute_List): 
+            self._check_hierarchy_collision(attribute,self)
         self.__check_new_attribute_type(attribute)
         self.factory.run(
             Append_To_Attribute_List(Edit_AttrList_Data(self,attribute)),
@@ -334,6 +336,13 @@ class Attribute_List(AbstractAttribute):
     def _add(self,attributes:AbstractAttribute)->None: 
         self.__attributes.append(attributes)
 
+    @staticmethod
+    def _check_hierarchy_collision(alist:Attribute_List, root_list:Attribute_List)->None:
+        if alist is root_list: raise Attribute_List.ListContainsItself
+        for attr in alist: 
+            if isinstance(attr,Attribute_List):
+                attr._check_hierarchy_collision(attr,root_list)
+
     def _get_set_commands(self,values:List[Any])->List[Command]:
         cmds:List[Command] = []
         for attr, value in zip(self.__attributes, values):
@@ -357,6 +366,7 @@ class Attribute_List(AbstractAttribute):
         )    
 
     class ItemIsAlreadyDependent(Exception): pass
+    class ListContainsItself(Exception): pass
     class NotInList(Exception): pass
     class NotMatchingListLengths(Exception): pass
     class WrongAttributeType(Exception): pass

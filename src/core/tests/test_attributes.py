@@ -1394,13 +1394,46 @@ class Test_Using_Attribute_List_As_Output(unittest.TestCase):
 
 class Test_Nested_Attribute_Lists(unittest.TestCase):
 
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.parent_list = self.fac.newlist('integer')
+
     def test_nested_attribute_list(self)->None:
-        fac = attribute_factory(Controller())
-        parent_list = fac.newlist('integer')
-        child_list = fac.newlist('integer', [1,2,4])
-        parent_list.append(child_list)
-        
-        self.assertEqual(parent_list[0].value[1], 2)
+        child_list = self.fac.newlist('integer', [1,2,4])
+        self.parent_list.append(child_list)       
+        self.assertEqual(self.parent_list[0].value[1], 2)
+
+    def test_appending_list_to_itself_raises_exception(self):
+        self.assertRaises(Attribute_List.ListContainsItself, self.parent_list.append, self.parent_list)
+
+    def test_appending_parent_list_to_its_child_list_raises_exception(self):
+        child_list = self.fac.newlist('integer')
+        self.parent_list.append(child_list)   
+        self.assertRaises(Attribute_List.ListContainsItself, child_list.append, self.parent_list)
+
+    def test_outer_product(self):
+        u = self.fac.newlist('integer', [1,-1])
+        v = self.fac.newlist('integer', [2,3])
+        def outer_product(u:Tuple[int,int],v:Tuple[int,int])->Tuple[Tuple[int,int], Tuple[int,int]]:
+            return (
+                (u[0]*v[0], u[0]*v[1]),
+                (u[1]*v[0], u[1]*v[1])
+            )
+        prod = self.fac.newlist('integer')
+        prod.append(self.fac.newlist('integer',[0,0]))
+        prod.append(self.fac.newlist('integer',[0,0]))
+        prod.add_dependency(outer_product, u, v)
+
+        self.assertListEqual(prod.value, [
+            [2, 3],
+            [-2, -3]
+        ])
+
+        self.fac.undo()
+        self.assertListEqual(prod.value, [
+            [0, 0],
+            [0, 0]
+        ])
 
 
 if __name__=="__main__": unittest.main()
