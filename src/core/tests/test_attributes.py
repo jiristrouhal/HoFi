@@ -1316,21 +1316,21 @@ class Test_Using_Attribute_List_As_Output(unittest.TestCase):
         output = self.fac.newlist('integer', init_items=[0,0,0])
         
         output.add_dependency(self.foo, theinput)
-        self.assertListEqual([item.value for item in output], [5,5,5])
+        self.assertListEqual(output.value, [5,5,5])
 
         self.fac.undo()
-        self.assertListEqual([item.value for item in output], [0,0,0])
+        self.assertListEqual(output.value, [0,0,0])
         self.fac.redo()
-        self.assertListEqual([item.value for item in output], [5,5,5])
+        self.assertListEqual(output.value, [5,5,5])
         self.fac.undo()
-        self.assertListEqual([item.value for item in output], [0,0,0])
+        self.assertListEqual(output.value, [0,0,0])
 
         theinput.set(-1)
-        self.assertListEqual([item.value for item in output], [-1,-1,-1])
+        self.assertListEqual(output.value, [-1,-1,-1])
 
         output.break_dependency()
         theinput.set(4)
-        self.assertListEqual([item.value for item in output], [-1,-1,-1])
+        self.assertListEqual(output.value, [-1,-1,-1])
 
     def test_not_matching_types_of_output_values_and_attribute_list_type_raises_exception(self):
         theinput = self.fac.new('integer')
@@ -1371,9 +1371,9 @@ class Test_Using_Attribute_List_As_Output(unittest.TestCase):
         w.add_dependency(cross, u, v)
         self.assertEqual(cross((1,0,0), (0,1,0)), (0,0,1))
 
-        self.assertListEqual([coord.value for coord in w], [0,0,1])
+        self.assertListEqual(w.value, [0,0,1])
         u[0].set(2)
-        self.assertListEqual([coord.value for coord in w], [0,0,2])
+        self.assertListEqual(w.value, [0,0,2])
 
     def test_calculating_mass_fractions(self)->None:
         masses = self.fac.newlist('real',[3,5,2])
@@ -1387,9 +1387,20 @@ class Test_Using_Attribute_List_As_Output(unittest.TestCase):
             
         fractions.add_dependency(get_mass_fractions, masses)
 
-        self.assertListEqual([y.value for y in fractions], [Decimal('0.3'), Decimal('0.5'), Decimal('0.2')])
+        self.assertListEqual(fractions.value, [Decimal('0.3'), Decimal('0.5'), Decimal('0.2')])
         for attr in masses: attr.set(0)
-        self.assertListEqual([y.value for y in fractions], [Decimal('0.0'), Decimal('0.0'), Decimal('0.0')])
+        self.assertListEqual(fractions.value, [Decimal('0.0'), Decimal('0.0'), Decimal('0.0')])
+
+
+class Test_Nested_Attribute_Lists(unittest.TestCase):
+
+    def test_nested_attribute_list(self)->None:
+        fac = attribute_factory(Controller())
+        parent_list = fac.newlist('integer')
+        child_list = fac.newlist('integer', [1,2,4])
+        parent_list.append(child_list)
+        
+        self.assertEqual(parent_list[0].value[1], 2)
 
 
 if __name__=="__main__": unittest.main()

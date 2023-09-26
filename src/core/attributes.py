@@ -157,7 +157,7 @@ class Set_Dependent_Attr(Command):
 @dataclasses.dataclass
 class Edit_AttrList_Data:
     alist:Attribute_List
-    attribute:Attribute
+    attribute:AbstractAttribute
 
 @dataclasses.dataclass
 class Append_To_Attribute_List(Command):
@@ -260,6 +260,9 @@ class AbstractAttribute(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def _get_set_commands(self,values:List[Any])->List[Command]: pass  # pragma: no cover
+
+    @abc.abstractmethod
     def _run_set_command(self,value:Any)->None: pass  # pragma: no cover
 
     @abc.abstractmethod
@@ -281,7 +284,7 @@ class Attribute_List(AbstractAttribute):
         )->None:
 
         super().__init__(factory, atype, name)
-        self.__attributes:List[Attribute] = list()
+        self.__attributes:List[AbstractAttribute] = list()
         self._set_commands:Dict[str,Callable[[Set_Attr_Data],Command]] = dict()
 
         if isinstance(init_attributes,list):
@@ -293,7 +296,7 @@ class Attribute_List(AbstractAttribute):
     @property
     def value(self)->List[Any]: return [attr.value for attr in self.__attributes]
     @property
-    def attributes(self)->List[Attribute]: return self.__attributes.copy()
+    def attributes(self)->List[AbstractAttribute]: return self.__attributes.copy()
 
     def add_dependency(self, func: Callable[[Any], Any], *attributes: AbstractAttribute) -> None:
         if any([item.dependent for item in self.__attributes]): raise Attribute_List.ItemIsAlreadyDependent
@@ -304,7 +307,7 @@ class Attribute_List(AbstractAttribute):
         super().break_dependency()
         for item in self.__attributes: item._dependency = DependencyImpl.NULL
 
-    def append(self,attribute:Attribute)->None:
+    def append(self,attribute:AbstractAttribute)->None:
         self.__check_new_attribute_type(attribute)
         self.factory.run(
             Append_To_Attribute_List(Edit_AttrList_Data(self,attribute)),
@@ -314,7 +317,7 @@ class Attribute_List(AbstractAttribute):
     def is_valid(self,values:List[Any])->bool:
         return all([attr.is_valid(value) for attr,value in zip(self.__attributes, values)])
 
-    def remove(self,attribute:Attribute)->None:
+    def remove(self,attribute:AbstractAttribute)->None:
         if attribute not in self.__attributes: raise Attribute_List.NotInList(attribute)
         self.factory.run(
             Remove_From_Attribute_List(Edit_AttrList_Data(self,attribute)),
@@ -328,24 +331,27 @@ class Attribute_List(AbstractAttribute):
     def set(self,value:Any=None)->None:
         self.factory.run(self.command['set'](Set_Attr_Data(self,self.value)))
 
-    def _add(self,attributes:Attribute)->None: 
+    def _add(self,attributes:AbstractAttribute)->None: 
         self.__attributes.append(attributes)
 
-    def _remove(self,attributes:Attribute)->None: 
-        self.__attributes.remove(attributes)
-
-    def _run_set_command(self,values:List[Any])->None:
+    def _get_set_commands(self,values:List[Any])->List[Command]:
         cmds:List[Command] = []
         for attr, value in zip(self.__attributes, values):
             cmds.extend(attr._get_set_commands(value))
-        self.factory.controller.run(*cmds)
+        return cmds
+
+    def _remove(self,attributes:AbstractAttribute)->None: 
+        self.__attributes.remove(attributes)
+
+    def _run_set_command(self,values:List[Any])->None:
+        self.factory.controller.run(*self._get_set_commands(values))
 
     def _value_update(self,values:List[Any])->None:
         pass
    
-    def __iter__(self)->Iterator[Attribute]: return self.__attributes.__iter__()
-    def __getitem__(self,index:int)->Attribute: return self.__attributes[index]
-    def __check_new_attribute_type(self,attr:Attribute)->None:
+    def __iter__(self)->Iterator[AbstractAttribute]: return self.__attributes.__iter__()
+    def __getitem__(self,index:int)->AbstractAttribute: return self.__attributes[index]
+    def __check_new_attribute_type(self,attr:AbstractAttribute)->None:
         if not attr.type==self.type: raise Attribute_List.WrongAttributeType(
             f"Type {attr.type} of the attribute does not match the type of the list {self.type}."
         )    
@@ -399,14 +405,14 @@ class Attribute(AbstractAttribute):
     @abc.abstractmethod
     def _check_input_type(self,value:Any)->None: pass # pragma: no cover
 
-    def _get_set_commands(self,value:Any)->Tuple[Command,...]:
-        return self.command['set'](Set_Attr_Data(self,value))
+    def _get_set_commands(self,value:Any)->List[Command]:
+        return list(self.command['set'](Set_Attr_Data(self,value)))
 
     @abc.abstractmethod
     def _is_value_valid(self,value:Any)->bool: pass # pragma: no cover
 
     def _run_set_command(self,value:Any)->None:
-        self.factory.controller.run(self._get_set_commands(value))
+        self.factory.controller.run(*self._get_set_commands(value))
     
     def _value_update(self,value:Any)->None:
         self._value = value
