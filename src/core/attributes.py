@@ -23,23 +23,25 @@ def verify_and_format_locale_code(locale_code:Locale_Code)->str:
 class Dependency(abc.ABC):
 
     def __init__(self, output:AbstractAttribute, func:Callable[[Any],Any], *inputs:AbstractAttribute):
-        self.output = output
+        self._output = output
         self.func = func
         if not inputs: raise Dependency.NoInputs
         self.inputs = list(inputs)
-        if self.output.dependent: raise Attribute.DependencyAlreadyAssigned 
+        if self._output.dependent: raise Attribute.DependencyAlreadyAssigned 
         self.__check_input_types()
-        self._check_for_dependency_cycle(self.output, path=self.output.name)
+        self._check_for_dependency_cycle(self._output, path=self._output.name)
         self.__set_up_command(*self.inputs)
 
     @abc.abstractmethod
     def release(self)->None: pass  # pragma: no cover
+    @property
+    def output(self)->AbstractAttribute: return self._output
         
     def __check_input_types(self)->None:
         values = self.collect_input_values()
         try:
             result = self(*values)
-            self.output.is_valid(result)
+            self._output.is_valid(result)
         except Dependency.InvalidArgumentType:
             raise Dependency.WrongAttributeTypeForDependencyInput([type(v) for v in values])
         
@@ -55,7 +57,7 @@ class Dependency(abc.ABC):
         
     def _add_set_up_command_to_input(self,*inputs:AbstractAttribute)->None:
         for input in inputs:
-            input.on_set(self.output.id, self._set_output_value, 'post')
+            input.on_set(self._output.id, self._set_output_value, 'post')
         
     def _set_output_value(self,*args)->Command: 
         return Set_Dependent_Attr(self)
@@ -98,6 +100,7 @@ class DependencyImpl(Dependency):
         for input in self.inputs: 
             input.command['set'].post.pop(self.output.id)
             self.inputs.remove(input)
+        self.output._forget_dependency()
 
 
 @dataclasses.dataclass
@@ -209,7 +212,7 @@ class AbstractAttribute(abc.ABC):
         self.command:Dict[Command_Type,Composed_Command] = {'set':Set_Attr_Composed()}
         self.__id = str(id(self))
         self.__factory = factory
-        self.__dependency:Dependency = DependencyImpl.NULL
+        self._dependency:Dependency = DependencyImpl.NULL
 
     @property
     def name(self)->str: return self.__name
@@ -223,18 +226,21 @@ class AbstractAttribute(abc.ABC):
     def type(self)->str: return self.__type
 
     @property
-    def dependency(self)->Dependency: return self.__dependency
+    def dependency(self)->Dependency: return self._dependency
     @property 
     def dependent(self)->bool:
         return self.dependency is not Attribute.NullDependency
     
     def add_dependency(self,func:Callable[[Any],Any], *attributes:AbstractAttribute)->None:
-        self.__dependency = DependencyImpl(self, func, *attributes)
+        self._dependency = DependencyImpl(self, func, *attributes)
 
     def break_dependency(self)->None:
         if not self.dependent: raise Attribute.NoDependencyIsSet
-        self.__dependency.release()
-        self.__dependency = self.NullDependency
+        self._dependency.release()
+
+    def _forget_dependency(self)->None: 
+        if self.dependency is self.NullDependency: return 
+        self._dependency = self.NullDependency
 
     @abc.abstractmethod
     def is_valid(self,value:Any)->bool: pass  # pragma: no cover
@@ -288,6 +294,15 @@ class Attribute_List(AbstractAttribute):
     @property
     def attributes(self)->List[Attribute]: return self.__attributes.copy()
 
+    def add_dependency(self, func: Callable[[Any], Any], *attributes: AbstractAttribute) -> None:
+        if any([item.dependent for item in self.__attributes]): raise Attribute_List.ItemIsAlreadyDependent
+        super().add_dependency(func, *attributes)
+        for item in self.__attributes: item._dependency = self._dependency
+
+    def break_dependency(self)->None:
+        super().break_dependency()
+        for item in self.__attributes: item._dependency = DependencyImpl.NULL
+
     def append(self,attribute:Attribute)->None:
         self.__check_new_attribute_type(attribute)
         self.factory.run(
@@ -296,7 +311,7 @@ class Attribute_List(AbstractAttribute):
         )
 
     def is_valid(self,values:List[Any])->bool:
-        return True
+        return all([attr.is_valid(value) for attr,value in zip(self.__attributes, values)])
 
     def remove(self,attribute:Attribute)->None:
         if attribute not in self.__attributes: raise Attribute_List.NotInList(attribute)
@@ -334,6 +349,7 @@ class Attribute_List(AbstractAttribute):
             f"Type {attr.type} of the attribute does not match the type of the list {self.type}."
         )    
 
+    class ItemIsAlreadyDependent(Exception): pass
     class NotInList(Exception): pass
     class NotMatchingListLengths(Exception): pass
     class WrongAttributeType(Exception): pass
@@ -343,7 +359,7 @@ Command_Type = Literal['set']
 from typing import Set, List
 class Attribute(AbstractAttribute):
     default_value:Any = ""
-
+    
     def __init__(self,factory:Attribute_Factory, atype:str='text',name:str="")->None:  
         super().__init__(factory,atype,name)
         self._value = self.default_value

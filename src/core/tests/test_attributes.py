@@ -1321,31 +1321,63 @@ class Test_Calculating_Single_Attribute_From_Attribute_List(unittest.TestCase):
 
 class Test_Using_Attribute_List_As_Output(unittest.TestCase):
 
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+
+    def foo(self,inputval:int)->List[int]:
+        return [inputval for _ in range(3)]
+
     def test_copy_single_value_to_all_items_in_list(self):
-        fac = attribute_factory(Controller())
-        theinput = fac.new('integer')
+        theinput = self.fac.new('integer')
         theinput.set(5)
-        output = fac.newlist('integer', init_items=[0,0,0])
-        def foo(inputval:int)->List[int]:
-            return [inputval for _ in range(3)]
+        output = self.fac.newlist('integer', init_items=[0,0,0])
         
-        output.add_dependency(foo, theinput)
+        output.add_dependency(self.foo, theinput)
         self.assertListEqual([item.value for item in output], [5,5,5])
 
-        fac.undo()
+        self.fac.undo()
         self.assertListEqual([item.value for item in output], [0,0,0])
-        fac.redo()
+        self.fac.redo()
         self.assertListEqual([item.value for item in output], [5,5,5])
-        fac.undo()
+        self.fac.undo()
         self.assertListEqual([item.value for item in output], [0,0,0])
 
         theinput.set(-1)
         self.assertListEqual([item.value for item in output], [-1,-1,-1])
 
-
         output.break_dependency()
         theinput.set(4)
         self.assertListEqual([item.value for item in output], [-1,-1,-1])
+
+    def test_not_matching_types_of_output_values_and_attribute_list_type_raises_exception(self):
+        theinput = self.fac.new('integer')
+        output = self.fac.newlist('text', init_items=['abc','xyz', 'mno'])
+        self.assertRaises(Attribute.InvalidValueType, output.add_dependency, self.foo, theinput)
+
+    def test_adding_dependency_to_an_attribute_in_an_already_dependent_attribute_list_raises_exception(self):
+        someinput = self.fac.new('integer')
+        deplist = self.fac.newlist('integer', init_items=[0,1,2])
+        deplist.add_dependency(self.foo, someinput)
+
+        otherinput = self.fac.new('integer')
+        def goo(x:int)->int: return x
+        self.assertRaises(Attribute.DependencyAlreadyAssigned, deplist[0].add_dependency, goo, otherinput)
+        # after breaking the dependency of the list, other dependency can be added to its items
+        deplist.break_dependency()
+        deplist[0].add_dependency(goo, otherinput)
+
+    def test_attribute_list_containing_dependent_attributes_cannot_be_made_dependent(self):
+        someinput = self.fac.new('integer')
+        deplist = self.fac.newlist('integer', init_items=[0,1,2])
+
+        otherinput = self.fac.new('integer')
+        def goo(x:int)->int: return x
+        deplist[0].add_dependency(goo, otherinput)
+        self.assertRaises(Attribute_List.ItemIsAlreadyDependent, deplist.add_dependency, self.foo, someinput)
+
+        # after releasing the item dependency, dependency can be added to the list
+        deplist[0].break_dependency()
+        deplist.add_dependency(self.foo, someinput)
 
 
 if __name__=="__main__": unittest.main()
