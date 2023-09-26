@@ -25,6 +25,10 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
         a1 = self.attrfac.new('integer')
         self.assertEqual(a1.type, 'integer')
 
+    def test_name_of_attribute_has_to_be_of_type_string(self)->None:
+        x = self.attrfac.new(name="Valid name")
+        self.assertRaises(Attribute.Invalid_Name, self.attrfac.new, name=666)
+
     def test_setting_attribute_to_invalid_type_raises_error(self)->None:
         self.assertRaises(Attribute.InvalidAttributeType, self.attrfac.new, 'invalid_argument_type_0123456789')
 
@@ -188,6 +192,11 @@ class Test_Dependent_Attributes(unittest.TestCase):
         self.assertEqual(mass.value, 5000)
         self.fac.undo()
         self.assertEqual(mass.value, 2000)
+
+    def test_dependency_has_to_have_at_least_one_input(self):
+        y = self.fac.new('integer')
+        def foo()->int: return 4
+        self.assertRaises(Dependency.NoInputs, y.add_dependency, foo)
 
     def test_chaining_dependency_of_three_attributes(self):
         side = self.fac.new('integer', 'side')
@@ -1308,6 +1317,27 @@ class Test_Calculating_Single_Attribute_From_Attribute_List(unittest.TestCase):
         self.assertEqual(result.value,4)
         fac.undo()
         self.assertEqual(result.value,2)
+
+
+class Test_Using_Attribute_List_As_Output(unittest.TestCase):
+
+    def test_copy_single_value_to_all_items_in_list(self):
+        fac = attribute_factory(Controller())
+        theinput = fac.new('integer')
+        theinput.set(5)
+        output = fac.newlist('integer', init_items=[0,0,0])
+        def foo(inputval:int)->List[int]:
+            return [inputval for _ in range(3)]
+        
+        output.add_dependency(foo, theinput)
+        self.assertListEqual([item.value for item in output], [5,5,5])
+
+        fac.undo()
+        self.assertListEqual([item.value for item in output], [0,0,0])
+        fac.redo()
+        self.assertListEqual([item.value for item in output], [5,5,5])
+        fac.undo()
+        self.assertListEqual([item.value for item in output], [0,0,0])
 
 
 if __name__=="__main__": unittest.main()

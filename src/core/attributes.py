@@ -22,9 +22,10 @@ def verify_and_format_locale_code(locale_code:Locale_Code)->str:
 
 class Dependency(abc.ABC):
 
-    def __init__(self, output:Attribute, func:Callable[[Any],Any], *inputs:AbstractAttribute):
+    def __init__(self, output:AbstractAttribute, func:Callable[[Any],Any], *inputs:AbstractAttribute):
         self.output = output
         self.func = func
+        if not inputs: raise Dependency.NoInputs
         self.inputs = list(inputs)
         if self.output.dependent: raise Attribute.DependencyAlreadyAssigned 
         self.__check_input_types()
@@ -79,6 +80,7 @@ class Dependency(abc.ABC):
     class CyclicDependency(Exception): pass
     class InputAlreadyUsed(Exception): pass
     class InvalidArgumentType(Exception): pass
+    class NoInputs(Exception): pass
     class NonexistentInput(Exception): pass
     class WrongAttributeTypeForDependencyInput(Exception): pass
 
@@ -201,19 +203,16 @@ class AbstractAttribute(abc.ABC):
     NullDependency = DependencyImpl.NULL
 
     def __init__(self, factory:Attribute_Factory, atype:str, name:str="")->None:
+        if not isinstance(name,str): raise AbstractAttribute.Invalid_Name
         self.__name = name
         self.__type = atype
         self.command:Dict[Command_Type,Composed_Command] = {'set':Set_Attr_Composed()}
         self.__id = str(id(self))
         self.__factory = factory
+        self.__dependency:Dependency = DependencyImpl.NULL
 
     @property
     def name(self)->str: return self.__name
-    @property 
-    def dependent(self)->bool:
-        return self.dependency is not Attribute.NullDependency
-    @abc.abstractproperty
-    def dependency(self) -> Dependency: pass   # pragma: no cover
     @abc.abstractproperty
     def value(self)->Any: pass   # pragma: no cover
     @property
@@ -222,6 +221,23 @@ class AbstractAttribute(abc.ABC):
     def id(self)->str: return self.__id
     @property
     def type(self)->str: return self.__type
+
+    @property
+    def dependency(self)->Dependency: return self.__dependency
+    @property 
+    def dependent(self)->bool:
+        return self.dependency is not Attribute.NullDependency
+    
+    def add_dependency(self,func:Callable[[Any],Any], *attributes:AbstractAttribute)->None:
+        self.__dependency = DependencyImpl(self, func, *attributes)
+
+    def break_dependency(self)->None:
+        if not self.dependent: raise Attribute.NoDependencyIsSet
+        self.__dependency.release()
+        self.__dependency = self.NullDependency
+
+    @abc.abstractmethod
+    def is_valid(self,value:Any)->bool: pass  # pragma: no cover
 
     @abc.abstractmethod
     def set(self,value:Any)->None: pass  # pragma: no cover
@@ -237,7 +253,12 @@ class AbstractAttribute(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def _run_set_command(self,value:Any)->None: pass  # pragma: no cover
+
+    @abc.abstractmethod
     def _value_update(self, new_value:Any)->None: pass   # pragma: no cover
+
+    class Invalid_Name(Exception): pass
 
 
 from typing import Iterator
@@ -266,8 +287,6 @@ class Attribute_List(AbstractAttribute):
     def value(self)->List[Any]: return [attr.value for attr in self.__attributes]
     @property
     def attributes(self)->List[Attribute]: return self.__attributes.copy()
-    @property
-    def dependency(self)->Dependency: return DependencyImpl.NULL
 
     def append(self,attribute:Attribute)->None:
         self.__check_new_attribute_type(attribute)
@@ -275,6 +294,9 @@ class Attribute_List(AbstractAttribute):
             Append_To_Attribute_List(Edit_AttrList_Data(self,attribute)),
             self.command['set'](Set_Attr_Data(self,self.value))
         )
+
+    def is_valid(self,values:List[Any])->bool:
+        return True
 
     def remove(self,attribute:Attribute)->None:
         if attribute not in self.__attributes: raise Attribute_List.NotInList(attribute)
@@ -296,11 +318,14 @@ class Attribute_List(AbstractAttribute):
     def _remove(self,attributes:Attribute)->None: 
         self.__attributes.remove(attributes)
 
+    def _run_set_command(self,values:List[Any])->None:
+        cmds:List[Command] = []
+        for attr, value in zip(self.__attributes, values):
+            cmds.extend(attr._get_set_commands(value))
+        self.factory.controller.run(*cmds)
+
     def _value_update(self,values:List[Any])->None:
         pass
-        # if len(values)!=len(self.__attributes): raise Attribute_List.NotMatchingListLengths
-        # for value, attribute in zip(values,self.__attributes):
-        #     attribute._value_update(value)
    
     def __iter__(self)->Iterator[Attribute]: return self.__attributes.__iter__()
     def __getitem__(self,index:int)->Attribute: return self.__attributes[index]
@@ -322,20 +347,9 @@ class Attribute(AbstractAttribute):
     def __init__(self,factory:Attribute_Factory, atype:str='text',name:str="")->None:  
         super().__init__(factory,atype,name)
         self._value = self.default_value
-        self.__dependency:Dependency = self.NullDependency
 
     @property 
     def value(self)->Any: return self._value
-    @property
-    def dependency(self)->Dependency: return self.__dependency
-    
-    def add_dependency(self,func:Callable[[Any],Any], *attributes:AbstractAttribute)->None:
-        self.__dependency = DependencyImpl(self, func, *attributes)
-
-    def break_dependency(self)->None:
-        if not self.dependent: raise Attribute.NoDependencyIsSet
-        self.__dependency.release()
-        self.__dependency = self.NullDependency
 
     def copy(self)->Attribute:
         the_copy = self.factory.new(self.type, self.name)
@@ -365,17 +379,17 @@ class Attribute(AbstractAttribute):
     @abc.abstractmethod
     def _check_input_type(self,value:Any)->None: pass # pragma: no cover
 
+    def _get_set_commands(self,value:Any)->Tuple[Command,...]:
+        return self.command['set'](Set_Attr_Data(self,value))
+
     @abc.abstractmethod
     def _is_value_valid(self,value:Any)->bool: pass # pragma: no cover
 
     def _run_set_command(self,value:Any)->None:
-        self.factory.controller.run(self.__get_set_command(value))
+        self.factory.controller.run(self._get_set_commands(value))
     
     def _value_update(self,value:Any)->None:
         self._value = value
-
-    def __get_set_command(self,value:Any)->Tuple[Command,...]:
-        return self.command['set'](Set_Attr_Data(self,value))
     
     def __set_value_of_the_copy(self,the_copy:Attribute)->None:
         if self.dependent:
@@ -392,7 +406,7 @@ class Attribute(AbstractAttribute):
             if not attr.factory in facs: # Attribute_Factory is not hashable, two lists circumvent the problem
                 facs.append(attr.factory)
                 cmds.append(list())
-            cmds[facs.index(attr.factory)].extend(attr.__get_set_command(value))
+            cmds[facs.index(attr.factory)].extend(attr._get_set_commands(value))
         
         for fac, cmd_list in zip(facs,cmds):
             fac.controller.run(*cmd_list)
