@@ -1319,6 +1319,7 @@ class Test_Calculating_Single_Attribute_From_Attribute_List(unittest.TestCase):
         self.assertEqual(result.value,2)
 
 
+from typing import Tuple
 class Test_Using_Attribute_List_As_Output(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -1378,6 +1379,19 @@ class Test_Using_Attribute_List_As_Output(unittest.TestCase):
         # after releasing the item dependency, dependency can be added to the list
         deplist[0].break_dependency()
         deplist.add_dependency(self.foo, someinput)
+
+    def test_cross_product(self):
+        u = self.fac.newlist('real',[1,0,0])
+        v = self.fac.newlist('real',[0,1,0])
+        w = self.fac.newlist('real',[0,0,0])
+        def cross(u:Tuple[int,int,int],v:Tuple[int,int,int])->Tuple[int,int,int]:
+            return (u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0])
+        w.add_dependency(cross, u, v)
+        self.assertEqual(cross((1,0,0), (0,1,0)), (0,0,1))
+
+        self.assertListEqual([coord.value for coord in w], [0,0,1])
+        u[0].set(2)
+        self.assertListEqual([coord.value for coord in w], [0,0,2])
 
 
 if __name__=="__main__": unittest.main()

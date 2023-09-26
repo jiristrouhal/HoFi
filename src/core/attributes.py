@@ -206,7 +206,8 @@ class AbstractAttribute(abc.ABC):
     NullDependency = DependencyImpl.NULL
 
     def __init__(self, factory:Attribute_Factory, atype:str, name:str="")->None:
-        if not isinstance(name,str): raise AbstractAttribute.Invalid_Name
+        if not isinstance(name,str): 
+            raise AbstractAttribute.Invalid_Name
         self.__name = name
         self.__type = atype
         self.command:Dict[Command_Type,Composed_Command] = {'set':Set_Attr_Composed()}
@@ -827,7 +828,7 @@ class Attribute_Factory:
         self.types['date'] = Date_Attribute
         self.types['money'] = Monetary_Attribute
 
-    def newlist(self,atype:str='text', name:str="", init_items:List[Any]|None=None)->Attribute_List:
+    def newlist(self,atype:str='text', init_items:List[Any]|None=None, name:str="")->Attribute_List:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         return Attribute_List(self, atype, init_attributes=init_items, name=name)
 
