@@ -1375,5 +1375,21 @@ class Test_Using_Attribute_List_As_Output(unittest.TestCase):
         u[0].set(2)
         self.assertListEqual([coord.value for coord in w], [0,0,2])
 
+    def test_calculating_mass_fractions(self)->None:
+        masses = self.fac.newlist('real',[3,5,2])
+        fractions = self.fac.newlist('real',[0,0,0])
+        def get_mass_fractions(masses:Tuple[float,...])->Tuple[float,...]:
+            total_mass = sum(masses)
+            if total_mass==0: 
+                return tuple([0 for _ in masses])
+            else: 
+                return tuple([mi/total_mass for mi in masses])
+            
+        fractions.add_dependency(get_mass_fractions, masses)
+
+        self.assertListEqual([y.value for y in fractions], [Decimal('0.3'), Decimal('0.5'), Decimal('0.2')])
+        for attr in masses: attr.set(0)
+        self.assertListEqual([y.value for y in fractions], [Decimal('0.0'), Decimal('0.0'), Decimal('0.0')])
+
 
 if __name__=="__main__": unittest.main()
