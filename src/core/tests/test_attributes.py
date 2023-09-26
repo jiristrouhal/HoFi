@@ -167,7 +167,7 @@ class Test_Dependent_Attributes(unittest.TestCase):
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
 
-    def test_setting_dependency_of_one_attribute_on_another(self):
+    def test_setting_up_dependency(self):
         DENSITY = 1000
         volume = self.fac.new('integer', "volume")
         mass = self.fac.new('integer', "mass")
@@ -1258,7 +1258,7 @@ class Test_Attribute_List_Set_Method(unittest.TestCase):
 
 
 from typing import List
-class Test_Implemeting_Dot_Product_Using_Dependency(unittest.TestCase):
+class Test_Calculating_Single_Attribute_From_Attribute_List(unittest.TestCase):
 
     def test_dot_product(self):
         fac = attribute_factory(Controller())
