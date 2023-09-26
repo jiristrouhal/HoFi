@@ -361,16 +361,19 @@ from typing import Set, List
 class Attribute(AbstractAttribute):
     default_value:Any = ""
     
-    def __init__(self,factory:Attribute_Factory, atype:str='text',name:str="")->None:  
+    def __init__(self,factory:Attribute_Factory, atype:str='text',init_value:Any=None, name:str="")->None:  
         super().__init__(factory,atype,name)
-        self._value = self.default_value
+        if init_value is not None and self.is_valid(init_value):
+            self._value = init_value
+        else: 
+            self._value = self.default_value
 
     @property 
     def value(self)->Any: return self._value
 
     def copy(self)->Attribute:
-        the_copy = self.factory.new(self.type, self.name)
-        self.__set_value_of_the_copy(the_copy)
+        the_copy = self.factory.new(self.type, init_value=self._value, name=self.name)
+        self.__copy_dependency(the_copy)
         return the_copy
 
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
@@ -408,11 +411,9 @@ class Attribute(AbstractAttribute):
     def _value_update(self,value:Any)->None:
         self._value = value
     
-    def __set_value_of_the_copy(self,the_copy:Attribute)->None:
+    def __copy_dependency(self,the_copy:Attribute)->None:
         if self.dependent:
             the_copy.add_dependency(self.dependency.func, *self.dependency.inputs)
-        else:
-            the_copy._value = self._value
 
     @staticmethod
     def set_multiple(new_values:Dict[Attribute,Any])->None:
@@ -512,6 +513,11 @@ class Real_Attribute(Number_Attribute):
     class CannotExtractReal(Exception): pass
     _reading_exception:Type[Exception] = CannotExtractReal
 
+    def __init__(self,factory:Attribute_Factory, atype:str,init_value:Any=None,name:str="")->None:
+        if init_value is not None and self.is_valid(init_value):
+            init_value = Decimal(str(init_value))
+        super().__init__(factory,atype,init_value,name)
+
     def _check_input_type(self, value: Decimal|float|int) -> None:
         try: 
             if math.isnan(float(value)): return
@@ -539,7 +545,7 @@ class Real_Attribute(Number_Attribute):
     def set(self,value:Decimal|float|int)->None:
         if self.is_valid(value):
             value = Decimal(str(value))
-            self._run_set_command(Decimal(str(value)))
+            self._run_set_command(value)
         else: # pragma: no cover
             raise Attribute.InvalidValue(value)
     
@@ -832,10 +838,10 @@ class Attribute_Factory:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         return Attribute_List(self, atype, init_attributes=init_items, name=name)
 
-    def new(self,atype:str='text',name:str="")->Attribute:
+    def new(self,atype:str='text',init_value:Any=None, name:str="")->Attribute:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         else:
-            return self.types[atype](self,atype,name)
+            return self.types[atype](self,atype,init_value,name)
         
     def choice(self, name:str="")->Choice_Attribute:
         return Choice_Attribute(self,name)

@@ -25,6 +25,10 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
         a1 = self.attrfac.new('integer')
         self.assertEqual(a1.type, 'integer')
 
+    def test_setting_initial_value_of_attribute(self)->None:
+        a = self.attrfac.new('integer',5)
+        self.assertEqual(a.value, 5)
+
     def test_name_of_attribute_has_to_be_of_type_string(self)->None:
         x = self.attrfac.new(name="Valid name")
         self.assertRaises(Attribute.Invalid_Name, self.attrfac.new, name=666)
@@ -37,8 +41,7 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
         a.value
     
     def test_setting_the_attribute_value(self)->None:
-        a = self.attrfac.new('text')
-        a.set("Some text.")
+        a = self.attrfac.new('text',"Some text.")
         self.assertEqual(a.value, "Some text.")
 
     def test_valid_value(self)->None:
@@ -106,8 +109,7 @@ class Test_Defining_Custom_Attribute_Type(unittest.TestCase):
     def test_defining_positive_integer_attribute(self):
         attrfac = attribute_factory(Controller())
         attrfac.add('positive integer', self.Positive_Integer_Attribute)
-        attr = attrfac.new('positive integer')
-        attr.set(5)
+        attr = attrfac.new('positive integer', 5)
         self.assertEqual(attr.value, 5)
         self.assertFalse(attr.is_valid(0))
         self.assertFalse(attr.is_valid(-1))
@@ -151,7 +153,7 @@ class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
     def test_undo_and_redo_setting_attribute_values(self):
         fac = attribute_factory(Controller())
         logbook = self.LogBook(0)
-        volume = fac.new('integer', 'volume')
+        volume = fac.new('integer', name='volume')
         def  write_to_logbook(data:Set_Attr_Data)->Test_Undo_And_Redo_Setting_Attribute_Values.Write_Value_To_LogBook:
             write_data = self.Write_Data(logbook,data.attr)
             return self.Write_Value_To_LogBook(write_data)
@@ -173,8 +175,8 @@ class Test_Dependent_Attributes(unittest.TestCase):
 
     def test_setting_up_dependency(self):
         DENSITY = 1000
-        volume = self.fac.new('integer', "volume")
-        mass = self.fac.new('integer', "mass")
+        volume = self.fac.new('integer', name="volume")
+        mass = self.fac.new('integer', name="mass")
         def dependency(volume:int)->int:
             return volume*DENSITY
         
@@ -199,9 +201,9 @@ class Test_Dependent_Attributes(unittest.TestCase):
         self.assertRaises(Dependency.NoInputs, y.add_dependency, foo)
 
     def test_chaining_dependency_of_three_attributes(self):
-        side = self.fac.new('integer', 'side')
-        volume = self.fac.new('integer', 'volume')
-        max_n_of_items = self.fac.new('integer', 'max number of items')
+        side = self.fac.new('integer', name='side')
+        volume = self.fac.new('integer', name='volume')
+        max_n_of_items = self.fac.new('integer', name='max number of items')
 
         def calc_volume(side:int)->int:
             return side**3
@@ -230,8 +232,8 @@ class Test_Dependent_Attributes(unittest.TestCase):
         self.assertEqual(max_n_of_items.value,10)
 
     def test_adding_second_dependency_raises_exception(self):
-        x = self.fac.new('integer','x')
-        y = self.fac.new('integer','y')
+        x = self.fac.new('integer',name='x')
+        y = self.fac.new('integer',name='y')
         def x_squared(x:int)->int: return x*x # pragma: no cover
         y.add_dependency(x_squared,x)
         self.assertRaises(Attribute.DependencyAlreadyAssigned, y.add_dependency, x_squared,x)
@@ -241,8 +243,8 @@ class Test_Dependent_Attributes(unittest.TestCase):
         self.assertRaises(Attribute.DependencyAlreadyAssigned, y.add_dependency, x_squared,x)
 
     def test_calling_set_method_on_dependent_attribute_has_no_effect(self)->None:
-        a = self.fac.new('integer','a')
-        b = self.fac.new('integer', 'b')
+        a = self.fac.new('integer',name='a')
+        b = self.fac.new('integer', name='b')
         def b_double_of_a(a:int)->int: 
             return 2*a
         b.add_dependency(b_double_of_a, a)
@@ -253,8 +255,8 @@ class Test_Dependent_Attributes(unittest.TestCase):
         self.assertEqual(b.value,4)
 
     def test_removing_dependency(self)->None:
-        a = self.fac.new('integer','a')
-        b = self.fac.new('integer', 'b')
+        a = self.fac.new('integer',name='a')
+        b = self.fac.new('integer', name='b')
         def b_double_of_a(a:int)->int: 
             return 2*a
         b.add_dependency(b_double_of_a, a)
@@ -270,15 +272,15 @@ class Test_Dependent_Attributes(unittest.TestCase):
         self.assertEqual(b.value,5)
 
     def test_attribute_cannot_depend_on_itself(self):
-        a = self.fac.new('integer', 'a')
+        a = self.fac.new('integer', name='a')
         def triple(a:int)->int:  # pragma: no cover
             return 2*a
         self.assertRaises(Dependency.CyclicDependency, a.add_dependency, triple, a)
 
     def test_attribute_indirectly_depending_on_itself_raises_exception(self):
-        a = self.fac.new('integer', 'a')
-        b = self.fac.new('integer', 'b')
-        c = self.fac.new('integer', 'c')
+        a = self.fac.new('integer', name='a')
+        b = self.fac.new('integer', name='b')
+        c = self.fac.new('integer', name='c')
         def equal_to(x:int)->int: # pragma: no cover
             return x
         a.add_dependency(equal_to,b)
@@ -287,9 +289,9 @@ class Test_Dependent_Attributes(unittest.TestCase):
             c.add_dependency(equal_to, a)
 
     def test_dependent_attribute_is_updated_immediatelly_after_adding_the_dependency(self):
-        x = self.fac.new('integer','x')
+        x = self.fac.new('integer',name='x')
         x.set(2)
-        y = self.fac.new('integer','y')
+        y = self.fac.new('integer',name='y')
         y.set(0)
         def double(x:int)->int: return 2*x
 
@@ -298,7 +300,7 @@ class Test_Dependent_Attributes(unittest.TestCase):
         self.assertEqual(y.value,4)
 
     def test_breaking_dependency_of_independent_attribute_raises_exception(self):
-        independent_attribute = self.fac.new('integer','x')
+        independent_attribute = self.fac.new('integer',name='x')
         self.assertRaises(Attribute.NoDependencyIsSet, independent_attribute.break_dependency)
 
 
@@ -306,16 +308,16 @@ class Test_Correspondence_Between_Dependency_And_Attributes(unittest.TestCase):
 
     def test_assigning_invalid_attribute_type_for_dependency_function_argument_raises_exception(self):
         fac = Attribute_Factory(Controller())
-        x = fac.new('text',"x")
-        y = fac.new('integer',"y")
+        x = fac.new('text',name="x")
+        y = fac.new('integer',name="y")
         def y_of_x(x:int)->int: return x*x # pragma: no cover
         with self.assertRaises(Dependency.WrongAttributeTypeForDependencyInput):
             y.add_dependency(y_of_x,x)
 
     def test_adding_dependency_with_return_type_not_matching_the_dependent_attribute_raises_exception(self):
         fac = Attribute_Factory(Controller())
-        x = fac.new('integer',"x")
-        y = fac.new('text',"y")
+        x = fac.new('integer',name="x")
+        y = fac.new('text',name="y")
         def y_of_x(x:int)->int: return x*x # pragma: no cover
         with self.assertRaises(Attribute.InvalidValueType):
             y.add_dependency(y_of_x,x)
@@ -328,33 +330,31 @@ class Test_Using_Dependency_Object_To_Handle_Invalid_Input_Values(unittest.TestC
         self.fac = Attribute_Factory(Controller())
     
     def test_raise_exception_when_using_attribute_with_incorrect_type(self):
-        x = self.fac.new('text',"x")
-        y = self.fac.new('integer',"y")
+        x = self.fac.new('text',name="x")
+        y = self.fac.new('integer',name="y")
         def y_of_x(x:int)->int: return x*x # pragma: no cover
         with self.assertRaises(Dependency.WrongAttributeTypeForDependencyInput):
             y.add_dependency(y_of_x,x)
 
     def test_handle_input_outside_of_the_function_domain_in_dependent_attribute_calculation(self):
-        x = self.fac.new('integer',"x")
-        y = self.fac.new('real',"y")
+        x = self.fac.new('integer',name="x")
+        y = self.fac.new('real',name="y")
         def y_of_x(x:int)->float: return math.sqrt(x) # pragma: no cover
         y.add_dependency(y_of_x,x)
         x.set(-1)
         self.assertTrue(math.isnan(y.value))
 
     def test_handle_input_outside_of_the_function_when_adding_the_dependency(self):
-        x = self.fac.new('integer',"x")
-        x.set(-1)
-        y = self.fac.new('real',"y")
+        x = self.fac.new('integer', -1, name="x")
+        y = self.fac.new('real', name="y")
 
         def y_of_x(x:int)->float: return math.sqrt(x) # pragma: no cover
         y.add_dependency(y_of_x,x)
         self.assertTrue(math.isnan(y.value))
 
     def test_division_by_zero(self)->None:
-        x = self.fac.new('real',"x")
-        x.set(0)
-        y = self.fac.new('real',"y")
+        x = self.fac.new('real', 0, name="x")
+        y = self.fac.new('real',name="y")
 
         def y_of_x(x:float)->float: return 1/x 
         y.add_dependency(y_of_x,x)
@@ -367,8 +367,7 @@ class Test_Copying_Attribute(unittest.TestCase):
         self.fac = attribute_factory(Controller())
 
     def test_copy_independent_attribute(self)->None:
-        x = self.fac.new("integer", 'x')
-        x.set(5)
+        x = self.fac.new("integer", 5, name='x')
 
         self.assertEqual(x.value, 5)
         x_copy = x.copy()
@@ -377,9 +376,8 @@ class Test_Copying_Attribute(unittest.TestCase):
         self.assertTrue(x_copy.id != x.id)
     
     def test_copying_the_attribute_also_copies_its_dependencies(self)->None:
-        x = self.fac.new("integer", 'x')
-        x.set(2)
-        y = self.fac.new("integer", 'y')
+        x = self.fac.new("integer", 2, name='x')
+        y = self.fac.new("integer", name='y')
         def double(x:int)->int: return 2*x
 
         y.add_dependency(double,x)
@@ -419,8 +417,7 @@ class Test_Copying_Attribute(unittest.TestCase):
             self.message.text = self.new_text
 
     def test_copying_the_attribute_does_not_copy_those_commands_added_after_the_original_attribute_initialization(self):
-        x = self.fac.new("integer", 'x')
-        x.set(2)
+        x = self.fac.new("integer", 2, name='x')
         message = self.Message()
         def write_value_to_message_txt(data:Set_Attr_Data)->Test_Copying_Attribute.Write_Value_To_Message_Text:
             return self.Write_Value_To_Message_Text(x,message)
@@ -433,7 +430,7 @@ class Test_Copying_Attribute(unittest.TestCase):
         self.assertEqual(message.text,"5")
 
     def test_attribute_basic_commands_are_not_identical_to_those_of_its_copy(self):
-        x = self.fac.new("integer", 'x')
+        x = self.fac.new("integer", name='x')
         x_copy = x.copy()
         for label in x.command:
             self.assertTrue(x.command[label] is not x_copy.command[label])
@@ -483,12 +480,10 @@ class Test_Setting_Multiple_Independent_Attributes_At_Once(unittest.TestCase):
 
     def test_dependent_attributes_are_ignored(self):
         fac = attribute_factory(Controller())
-        x = fac.new('integer')
-        y = fac.new('integer')
-        z = fac.new('integer')
-        x.set(2)
-        y.set(0)
-        z.set(0)
+        x = fac.new('integer',2)
+        y = fac.new('integer',0)
+        z = fac.new('integer',0)
+
         def square(x:int)->int: return x*x
         y.add_dependency(square,x)
 
@@ -519,8 +514,7 @@ class Test_Attribute_Value_Formatting(unittest.TestCase):
 
     def test_real_attribute(self):
         fac = attribute_factory(Controller())
-        x = fac.new('real')
-        x.set(math.pi)
+        x = fac.new('real', math.pi)
         self.assertEqual(x.value, Decimal(str(math.pi)))
         self.assertEqual(x.print(precision=2), '3.14')
         x.set(150.254)
@@ -615,8 +609,7 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
 
     def test_printing_real_value(self):
         fac = attribute_factory(Controller())
-        attr = fac.new("real")
-        attr.set(5.3)
+        attr = fac.new("real", 5.3)
         self.assertEqual(attr.print(trailing_zeros=False), "5.3")
         self.assertEqual(attr.print(precision=5), "5.30000")
 
@@ -627,8 +620,7 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
 
     def test_printing_real_values_with_locale_code_specified(self):
         fac = attribute_factory(Controller())
-        attr = fac.new("real")
-        attr.set(5.3)
+        attr = fac.new("real", 5.3)
         self.assertEqual(attr.print(locale_code="cs_cz",trailing_zeros=False), "5,3")
         attr.set(5)
         self.assertEqual(attr.print(locale_code="cs_cz",trailing_zeros=False), "5")
@@ -789,8 +781,8 @@ class Test_Make_Choice_Attribute_Dependent(unittest.TestCase):
 
     def test_choice_describing_result_of_comparison_of_two_integers(self):
         fac = attribute_factory(Controller())
-        a = fac.new('integer', "a")
-        b = fac.new('integer', "b")
+        a = fac.new('integer', name="a")
+        b = fac.new('integer', name="b")
         comp = fac.choice()
         comp.add_options("a is greater than b","a is equal to b","a is less than b")
         def comparison(a:int, b:int):
@@ -816,8 +808,7 @@ class Test_Date_Attribute(unittest.TestCase):
 
     def test_date_attribute(self):
         fac = attribute_factory(Controller())
-        date = fac.new("date")
-        date.set(datetime.date(2023,9,15))
+        date = fac.new("date", datetime.date(2023,9,15))
         self.assertEqual(date.value, datetime.date(2023,9,15))
         self.assertEqual(date.print(locale_code='cs_cz'),"15.09.2023")
         self.assertEqual(date.print(locale_code='en_us'),"2023-09-15")
@@ -828,8 +819,7 @@ class Test_Date_Attribute(unittest.TestCase):
 
     def test_locale_code_is_not_case_sensitive(self):
         fac = attribute_factory(Controller())
-        date = fac.new("date")
-        date.set(datetime.date(2023,9,15))
+        date = fac.new("date", datetime.date(2023,9,15))
         self.assertEqual(date.print(locale_code='cs_cz'),"15.09.2023")
         self.assertEqual(date.print(locale_code='CS_CZ'),"15.09.2023")
     
@@ -886,8 +876,7 @@ class Test_Monetary_Attribute(unittest.TestCase):
 
     def test_defining_monetary_attribute_and_setting_its_value(self):
         fac = attribute_factory(Controller())
-        mon:Monetary_Attribute = fac.new("money")
-        mon.set(45)
+        mon:Monetary_Attribute = fac.new("money", 45)
         self.assertEqual(mon.value, 45)
         mon.set(45.12446656)
         self.assertEqual(mon.value, Decimal('45.12446656'))
@@ -902,8 +891,7 @@ class Test_Monetary_Attribute(unittest.TestCase):
 
     def test_currency_needs_to_be_specified_before_printing_money_value_as_a_string(self):
         fac = attribute_factory(Controller())
-        mon:Monetary_Attribute = fac.new("money")
-        mon.set(12)
+        mon:Monetary_Attribute = fac.new("money", 12)
         self.assertEqual(mon.print(locale_code="cs_cz", currency_code="USD"), f"12,00{NBSP}$")
         self.assertEqual(mon.print(locale_code="en_us", currency_code="USD"), "$12.00")
         self.assertEqual(mon.print(locale_code="cs_cz", currency_code="JPY"), f"12{NBSP}¥")
@@ -919,8 +907,7 @@ class Test_Monetary_Attribute(unittest.TestCase):
 
     def test_bankers_rounding_is_correctly_used(self):
         fac = attribute_factory(Controller())
-        mon:Monetary_Attribute = fac.new("money")
-        mon.set(12.5) 
+        mon:Monetary_Attribute = fac.new("money", 12.5)
         self.assertEqual(mon.print(locale_code="cs_cz", currency_code="JPY"), f"12{NBSP}¥")
 
         mon.set(1.455)
@@ -932,21 +919,18 @@ class Test_Monetary_Attribute(unittest.TestCase):
 
     def test_sign_is_always_put_right_on_the_beginning_of_the_string(self):
         fac = attribute_factory(Controller())
-        mon:Monetary_Attribute = fac.new("money")
-        mon.set(-5.01)
+        mon:Monetary_Attribute = fac.new("money", -5.01)
         self.assertEqual(mon.print(locale_code="en_us", currency_code="USD"), "-$5.01")
         self.assertEqual(mon.print(locale_code="cs_cz", currency_code="USD"), f"-5,01{NBSP}$")
 
     def test_plus_sign_can_be_enforced(self):
         fac = attribute_factory(Controller())
-        mon:Monetary_Attribute = fac.new("money")
-        mon.set(8.45)
+        mon:Monetary_Attribute = fac.new("money", 8.45)
         self.assertEqual(mon.print(locale_code="en_us", currency_code="USD", enforce_plus=True), "+$8.45")
 
     def test_raise_exception_on_invalid_locale_code_or_currency_value(self):
         fac = attribute_factory(Controller())
-        mon:Monetary_Attribute = fac.new("money")
-        mon.set(8.45)
+        mon:Monetary_Attribute = fac.new("money", 8.45)
         with self.assertRaises(Monetary_Attribute.CurrencyNotDefined):
             mon.print(locale_code="en_us", currency_code="!$X")
         with self.assertRaises(UnknownLocaleCode):
@@ -1026,9 +1010,8 @@ class Test_Monetary_Attribute(unittest.TestCase):
 
     def test_print_with_space_as_thousands_separator(self):
         fac = attribute_factory(Controller())
-        mon:Monetary_Attribute = fac.new("money")
+        mon:Monetary_Attribute = fac.new("money", 4100300)
 
-        mon.set(4100300)
         self.assertEqual(
             mon.print(
                 use_thousands_separator=True,
@@ -1103,19 +1086,19 @@ class Test_Attribute_List(unittest.TestCase):
         self.assertRaises(Attribute_List.WrongAttributeType, alist.append, int_attr)
 
     def test_attributes_can_be_added_at_the_list_initialization(self):
-        alist = self.fac.newlist("text", init_items=["xyz"])
+        alist = self.fac.newlist("text", ["xyz"])
         self.assertEqual(len(alist.attributes), 1)
         self.assertEqual(alist.attributes[-1].value,"xyz")
 
     def test_removing_attributes(self):
-        alist = self.fac.newlist("integer", init_items=[0])
+        alist = self.fac.newlist("integer", [0])
         some_attr = alist[-1]
         alist.remove(some_attr)
         # removing already removed item raises exception
         self.assertRaises(Attribute_List.NotInList, alist.remove, some_attr)
 
     def test_looping_over_attributes(self):
-        alist = self.fac.newlist("integer", init_items=[0,2,3])
+        alist = self.fac.newlist("integer", [0,2,3])
         values = []
         for a in alist:
             values.append(a.value)
@@ -1130,7 +1113,7 @@ class Test_Undo_And_Redo_Editing_The_Attribute_List(unittest.TestCase):
         self.alist = self.fac.newlist("integer")
 
     def test_undo_adding_item_to_the_list(self):
-        attr = self.fac.new("integer", "theattr")
+        attr = self.fac.new("integer", name="theattr")
         self.alist.append(attr)
 
         self.fac.undo()
@@ -1272,8 +1255,8 @@ class Test_Calculating_Single_Attribute_From_Attribute_List(unittest.TestCase):
     def test_dot_product(self):
         fac = attribute_factory(Controller())
         dotprod = fac.new("integer")
-        u = fac.newlist('integer', init_items=[2,0,3])
-        v = fac.newlist('integer', init_items=[3,1,2])
+        u = fac.newlist('integer', [2,0,3])
+        v = fac.newlist('integer', [3,1,2])
         
         def calc_dotprod(u:list[int], v:list[int])->int:
             return sum([ui*vi for ui,vi in zip(u,v)])
@@ -1289,7 +1272,7 @@ class Test_Calculating_Single_Attribute_From_Attribute_List(unittest.TestCase):
         scaledsum = fac.new("real")
         scale = fac.new("real")
         scale.set(1.0)
-        x = fac.newlist('real',init_items=[1.0 for _ in range(5)])
+        x = fac.newlist('real', [1.0 for _ in range(5)])
 
         def getsum(s:float, x:List[float])->float: return s*sum(x)
 
@@ -1306,8 +1289,8 @@ class Test_Calculating_Single_Attribute_From_Attribute_List(unittest.TestCase):
     def test_weighted_average(self):
         fac = attribute_factory(Controller())
         result = fac.new('real')
-        weights = fac.newlist('real',init_items=[1,2])
-        values = fac.newlist('real',init_items=[4,1])
+        weights = fac.newlist('real',[1,2])
+        values = fac.newlist('real',[4,1])
         def w_average(values:List[float], weights:List[float])->float:
             return sum([v*w for v,w in zip(values,weights)])/sum(weights)
         
@@ -1329,8 +1312,7 @@ class Test_Using_Attribute_List_As_Output(unittest.TestCase):
         return [inputval for _ in range(3)]
 
     def test_copy_single_value_to_all_items_in_list(self):
-        theinput = self.fac.new('integer')
-        theinput.set(5)
+        theinput = self.fac.new('integer',5)
         output = self.fac.newlist('integer', init_items=[0,0,0])
         
         output.add_dependency(self.foo, theinput)
