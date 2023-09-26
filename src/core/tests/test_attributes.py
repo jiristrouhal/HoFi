@@ -195,7 +195,7 @@ class Test_Dependent_Attributes(unittest.TestCase):
 
     def test_dependency_has_to_have_at_least_one_input(self):
         y = self.fac.new('integer')
-        def foo()->int: return 4
+        def foo()->int: return 4 # pragma: no cover
         self.assertRaises(Dependency.NoInputs, y.add_dependency, foo)
 
     def test_chaining_dependency_of_three_attributes(self):
@@ -1338,6 +1338,14 @@ class Test_Using_Attribute_List_As_Output(unittest.TestCase):
         self.assertListEqual([item.value for item in output], [5,5,5])
         fac.undo()
         self.assertListEqual([item.value for item in output], [0,0,0])
+
+        theinput.set(-1)
+        self.assertListEqual([item.value for item in output], [-1,-1,-1])
+
+
+        output.break_dependency()
+        theinput.set(4)
+        self.assertListEqual([item.value for item in output], [-1,-1,-1])
 
 
 if __name__=="__main__": unittest.main()

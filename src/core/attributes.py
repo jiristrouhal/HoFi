@@ -46,7 +46,7 @@ class Dependency(abc.ABC):
     def collect_input_values(self)->List[Any]:
         return [item.value for item in self.inputs]
 
-    def _check_for_dependency_cycle(self, output:Attribute, path:str)->None:
+    def _check_for_dependency_cycle(self, output:AbstractAttribute, path:str)->None:
         if output in self.inputs: 
             raise Dependency.CyclicDependency(path + ' -> ' + output.name)  
         for input in self.inputs:
