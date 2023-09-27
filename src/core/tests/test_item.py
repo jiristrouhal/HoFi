@@ -828,8 +828,38 @@ class Test_Undo_And_Redo_Duplicating_Item(unittest.TestCase):
         mg.undo() 
         self.assertEqual(parent.name, "Parent")
         self.assertFalse(parent.is_parent_of(child_duplicate))
-        
 
+
+from typing import List
+class Test_Making_Item_Attribute_Depend_On_Its_Children(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.mg = ItemManager()
+        self.parent = self.mg.new("Parent", {'total_count': 'integer'})
+        for k in range(5): 
+            child = self.mg.new("Child", {'count':'integer'})
+            child.set('count', 0)
+            self.parent.adopt(child)
+        self.child_counts = self.parent.child_values('integer','count')
+
+    @staticmethod
+    def sum_counts(xi:List[int])->int: return sum(xi)
+
+    def test_creating_attribute_group_on_items_children(self)->None:
+        self.assertSetEqual(set(self.child_counts.value), {0,0,0,0,0})
+
+    def test_summing_up_of_children_attribute(self):
+        self.parent.attribute('total_count').add_dependency(self.sum_counts, self.child_counts)
+        for child in self.parent.children: child.set('count',1)
+        self.assertEqual(self.parent('total_count'),5)
+        self.mg.undo()
+        self.assertEqual(self.parent('total_count'),4)
+        self.mg.undo()
+        self.assertEqual(self.parent('total_count'),3)
+
+    def __test_updating_total_count_when_adding_new_children(self):
+        self.parent.attribute('total_count').add_dependency(self.sum_counts, self.child_counts)
+        
 
 if __name__=="__main__": unittest.main()
 

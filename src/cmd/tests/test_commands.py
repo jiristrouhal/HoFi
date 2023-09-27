@@ -20,6 +20,16 @@ class IncrementIntData:
     step:int=1
 
 @dataclasses.dataclass
+class MultiplyIntData:
+    obj:Integer_Owner
+    factor:int=1
+
+@dataclasses.dataclass
+class IncrementOtherIntData:
+    obj:Integer_Owner
+    other:Integer_Owner
+
+@dataclasses.dataclass
 class IncrementIntAttribute(Command):
     data:IncrementIntData
     def run(self)->None: 
@@ -80,21 +90,20 @@ class Test_Running_A_Command(unittest.TestCase):
 
 @dataclasses.dataclass
 class MultiplyIntAttribute(Command):
-    obj:Integer_Owner
-    factor:int
+    data:MultiplyIntData
     prev_value:int = dataclasses.field(init=False)
     new_value:int = dataclasses.field(init=False)
 
     def run(self)->None: 
-        self.prev_value = self.obj.i
-        self.obj.i *= self.factor
-        self.new_value = self.obj.i
+        self.prev_value = self.data.obj.i
+        self.data.obj.i *= self.data.factor
+        self.new_value = self.data.obj.i
 
     def undo(self)->None: 
-        self.obj.i = self.prev_value
+        self.data.obj.i = self.prev_value
 
     def redo(self)->None: 
-        self.obj.i = self.new_value
+        self.data.obj.i = self.new_value
 
 
 class Test_Running_Multiple_Commands(unittest.TestCase):
@@ -104,7 +113,7 @@ class Test_Running_Multiple_Commands(unittest.TestCase):
         controller = Controller()
         controller.run(
             IncrementIntAttribute(IncrementIntData(obj, 2)),
-            MultiplyIntAttribute(obj, 3)
+            MultiplyIntAttribute(MultiplyIntData(obj, 3))
         )
         self.assertEqual(obj.i, 6)
 
@@ -117,10 +126,6 @@ class Test_Running_Multiple_Commands(unittest.TestCase):
 
 
 from src.cmd.commands import Composed_Command, Timing
-@dataclasses.dataclass
-class OtherInt:
-    value:int = 0
-
 
 
 from typing import Any, Callable
@@ -146,30 +151,29 @@ class Composed_Increment(Composed_Command):
 
 @dataclasses.dataclass
 class Increment_Other_Int(Command):
-    other_int:OtherInt
-    obj:Integer_Owner
+    data:IncrementOtherIntData
     prev_value:int = dataclasses.field(init=False)
     curr_value:int = dataclasses.field(init=False)
 
     def run(self) -> None:
-        self.prev_value = self.other_int.value
-        self.other_int.value = self.obj.i
-        self.curr_value = self.other_int.value
+        self.prev_value = self.data.other.i
+        self.data.other.i = self.data.obj.i
+        self.curr_value = self.data.other.i
     def undo(self)->None:
-        self.other_int.value = self.prev_value
+        self.data.other.i = self.prev_value
     def redo(self)->None:
-        self.other_int.value = self.curr_value
+        self.data.other.i = self.curr_value
 
 
 class Test_Composed_Command(unittest.TestCase):
 
     def setUp(self) -> None:
         self.obj = Integer_Owner(i=0)
-        self.other_int = OtherInt()
+        self.other_int = Integer_Owner(i=0)
         self.controller = Controller()
 
     def get_cmd(self,data:IncrementIntData)->Increment_Other_Int:
-        return Increment_Other_Int(self.other_int, data.obj)
+        return Increment_Other_Int(IncrementOtherIntData(data.obj,self.other_int))
     
     def test_composed_command(self):
         composed_command = Composed_Increment()
@@ -177,19 +181,19 @@ class Test_Composed_Command(unittest.TestCase):
         composed_command.add('test', self.get_cmd, 'post')
         self.controller.run(*composed_command(IncrementIntData(self.obj,step=5)))
         self.assertEqual(self.obj.i, 5)
-        self.assertEqual(self.other_int.value, 5)
+        self.assertEqual(self.other_int.i, 5)
         self.controller.run(*composed_command(IncrementIntData(self.obj,step=4)))
         self.assertEqual(self.obj.i, 9)
-        self.assertEqual(self.other_int.value, 9)
+        self.assertEqual(self.other_int.i, 9)
         self.controller.undo()
         self.assertEqual(self.obj.i, 5)
-        self.assertEqual(self.other_int.value, 5)
+        self.assertEqual(self.other_int.i, 5)
         self.controller.redo()
         self.assertEqual(self.obj.i, 9)
-        self.assertEqual(self.other_int.value, 9)
+        self.assertEqual(self.other_int.i, 9)
         self.controller.undo()
         self.assertEqual(self.obj.i, 5)
-        self.assertEqual(self.other_int.value, 5)
+        self.assertEqual(self.other_int.i, 5)
 
     def test_adding_command_under_invalid_timing_key(self):
         composed_command = Composed_Increment()
@@ -244,6 +248,35 @@ class Test_Composed_Command(unittest.TestCase):
         composed_command.add_composed('test', data_converter, composed_command_post, 'post')
         self.controller.run(*composed_command(IncrementIntData(self.obj, step=5)))
         self.assertEqual(self.obj.i, 9)
+
+
+@dataclasses.dataclass
+class Increment_With_Message(Command):
+    data:IncrementIntData
+    def run(self)->None: 
+        self.data.obj.i += self.data.step
+    def undo(self)->None: 
+        self.data.obj.i -= self.data.step
+    def redo(self)->None: 
+        self.data.obj.i += self.data.step
+    
+    @property
+    def message(self) -> str: return "Increment"
+
+
+class Test_Command_History(unittest.TestCase):
+
+    def __test_writing_command_history_line(self):
+        controller = Controller()
+        obj = Integer_Owner(i=0)
+        controller.run(Increment_With_Message(IncrementIntData(obj,step=5)))
+        self.assertEqual(obj.i,5)
+        self.assertListEqual(controller.history, ["Increment"])
+        controller.run(Increment_With_Message(IncrementIntData(obj,step=5)))
+        self.assertListEqual(controller.history, ["Increment", "Increment"])
+        controller.undo()
+        self.assertListEqual(controller.history, ["Increment", "Increment", "Undo: Increment"])
+        
 
 
 if __name__=="__main__": unittest.main()

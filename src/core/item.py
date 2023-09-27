@@ -3,7 +3,7 @@ from typing import Dict, Any, Set, Callable
 import dataclasses
 from src.cmd.commands import Command, Controller, Composed_Command, Timing
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
-from src.core.attributes import attribute_factory, Attribute
+from src.core.attributes import attribute_factory, Attribute, Attribute_List
 import abc
 
 
@@ -16,7 +16,7 @@ class ItemManager:
         attributes = {}
         for label, attr_type in attr_info.items():
             attributes[label] = self._attrfac.new(attr_type,name=label) 
-        return ItemImpl(name,attributes,self._controller)
+        return ItemImpl(name,attributes, self)
     
     def undo(self):
         self._controller.undo()
@@ -147,8 +147,8 @@ from typing import Literal
 Command_Type = Literal['adopt','pass_to_new_parent','rename']
 class Item(abc.ABC): # pragma: no cover
     
-    def __init__(self,name:str,attributes:Dict[str,Attribute],controller:Controller)->None:
-        self._controller = controller
+    def __init__(self,name:str,attributes:Dict[str,Attribute],manager:ItemManager)->None:
+        self._manager = manager
 
     @abc.abstractproperty
     def attributes(self)->Dict[str,Attribute]: pass
@@ -158,6 +158,10 @@ class Item(abc.ABC): # pragma: no cover
     def parent(self)->Item: pass
     @abc.abstractproperty
     def root(self)->Item: pass
+    @abc.abstractproperty
+    def children(self)->Set[Item]: pass
+    @property
+    def controller(self)->Controller: return self._manager._controller
 
     @abc.abstractmethod
     def adopt(self,child:Item)->None: pass
@@ -171,6 +175,9 @@ class Item(abc.ABC): # pragma: no cover
     def on_passing_to_new_parent(self,owner:str,func:Callable[[Pass_To_New_Parrent_Data],Command],timing:Timing)->None: pass
     @abc.abstractmethod
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None: pass
+
+    @abc.abstractmethod
+    def child_values(self, value_type:str, child_attribute_label:str)->Attribute_List: pass
 
     @abc.abstractmethod
     def duplicate(self)->Item: pass
@@ -229,7 +236,7 @@ class ItemImpl(Item):
 
     class __ItemNull(Item):
         def __init__(self,*args,**kwargs)->None:
-            pass
+            self.__children:Set[Item] = set()
 
         @property
         def attributes(self)->Dict[str,Attribute]: return {}
@@ -239,6 +246,8 @@ class ItemImpl(Item):
         def parent(self)->Item: return self
         @property
         def root(self)->Item: return self
+        @property
+        def children(self)->Set[Item]: return self.__children
 
         def adopt(self,child:Item)->None: 
             if child.parent is self: return
@@ -247,6 +256,7 @@ class ItemImpl(Item):
         def on_adoption(self,*args)->None: pass # pragma: no cover
         def on_passing_to_new_parent(self,*args)->None: pass # pragma: no cover
         def on_renaming(self,*args)->None: pass # pragma: no cover
+        def child_values(self,*args)->Any: return None 
         def duplicate(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
@@ -267,13 +277,13 @@ class ItemImpl(Item):
 
     NULL = __ItemNull()
     
-    def __init__(self,name:str,attributes:Dict[str,Attribute], controller:Controller)->None:
+    def __init__(self,name:str,attributes:Dict[str,Attribute], manager:ItemManager)->None:
+        super().__init__(name,attributes,manager)
         self.command:Dict[Command_Type,Composed_Command] = {
             'adopt':Adopt_Composed(),
             'pass_to_new_parent':PassToNewParent_Composed(),
             'rename':Rename_Composed()
         }
-        self._controller = controller
         self.__attributes = attributes
         self._rename(name)
         self.__children:Set[Item] = set()
@@ -282,19 +292,19 @@ class ItemImpl(Item):
     @property
     def attributes(self)->Dict[str,Attribute]: 
         return self.__attributes.copy()
-    
     @property
     def name(self)->str: 
         return self.__name
-
     @property
     def parent(self)->Item: 
         return self.__parent
-
     @property
     def root(self)->Item: 
         return self if self.__parent is self.NULL else self.__parent.root
-    
+    @property
+    def children(self)->Set[Item]:
+        return self.__children.copy()
+ 
     def attribute(self,label:str)->Attribute:
         if not label in self.__attributes: raise Item.NonexistentAttribute
         else:
@@ -303,16 +313,23 @@ class ItemImpl(Item):
     def adopt(self,item:Item)->None:
         if self is item.parent: return
         if self._can_be_parent_of(item):
-            self._controller.run(*self.command['adopt'](Adoption_Data(self,item)))
+            self.controller.run(*self.command['adopt'](Adoption_Data(self,item)))
+
+    def child_values(self, value_type:str, child_attribute_label:str)->Attribute_List:
+        alist = self._manager._attrfac.newlist(atype=value_type)
+        for child in self.__children: 
+            if child_attribute_label in child.attributes: 
+                alist.append(child.attribute(child_attribute_label))
+        return alist
 
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
         if new_parent._can_be_parent_of(child):
-            self._controller.run(
+            self.controller.run(
                 self.command['pass_to_new_parent'](Pass_To_New_Parrent_Data(self,child,new_parent))
             )
 
     def rename(self,name:str)->None:
-        self._controller.run(self.command['rename'](Renaming_Data(self,name)))
+        self.controller.run(self.command['rename'](Renaming_Data(self,name)))
 
     def set(self,attrib_label:str, value:Any)->None:
         self.attribute(attrib_label).set(value)
@@ -364,7 +381,7 @@ class ItemImpl(Item):
         else: return True
     
     def _duplicate(self)->Item:
-        item_duplicate = ItemImpl(self.name, self.__attributes_copy(), self._controller)
+        item_duplicate = ItemImpl(self.name, self.__attributes_copy(), self._manager)
         for child in self.__children:
             child_duplicate = child._duplicate()
             item_duplicate._adopt(child_duplicate)

@@ -1301,6 +1301,56 @@ class Test_Calculating_Single_Attribute_From_Attribute_List(unittest.TestCase):
         fac.undo()
         self.assertEqual(result.value,2)
 
+    def test_undoing_increments_of_every_single_summand(self)->None:
+        fac = attribute_factory(Controller())
+        result = fac.new('integer', name='result')
+        summands = fac.newlist('integer', [0,0,0], name='summands list')
+
+        for k in range(len(summands.attributes)): summands[k].rename(f'summand {k}')
+  
+        def getsum(x:List[int])->int: return sum(x)
+        result.add_dependency(getsum, summands)
+
+        fac.controller.clear_history()
+        for s in summands: s.set(1)   
+
+        self.assertEqual(result.value, 3)
+        fac.undo()
+
+        self.assertEqual(result.value, 2)
+        fac.undo()
+        self.assertEqual(result.value, 1)
+        fac.undo()
+        self.assertEqual(result.value, 0)
+
+
+    
+    def test_undoing_setting_of_a_driving_attribute(self)->None:
+        fac = attribute_factory(Controller())
+        y = fac.new('integer', name='y')
+        x = fac.new('integer', 0, name='x')
+
+        def double(x:int)->int: return 2*x
+        y.add_dependency(double, x)
+
+        x.set(1)
+        x.set(2)
+        x.set(3)
+        self.assertEqual(y.value, 6)
+        fac.undo()
+        self.assertEqual(y.value, 4)
+        fac.undo()
+        self.assertEqual(y.value, 2)
+        fac.undo()
+        self.assertEqual(y.value, 0)
+        fac.undo()
+
+        fac.redo()
+        fac.redo()
+        fac.redo()
+        fac.redo()
+        self.assertEqual(y.value, 6)
+
 
 from typing import Tuple
 class Test_Using_Attribute_List_As_Output(unittest.TestCase):
@@ -1314,7 +1364,7 @@ class Test_Using_Attribute_List_As_Output(unittest.TestCase):
     def test_copy_single_value_to_all_items_in_list(self):
         theinput = self.fac.new('integer',5)
         output = self.fac.newlist('integer', init_items=[0,0,0])
-        
+
         output.add_dependency(self.foo, theinput)
         self.assertListEqual(output.value, [5,5,5])
 
