@@ -285,6 +285,24 @@ class Test_Command_History(unittest.TestCase):
             "x  Increment\n"
             "- Undo: Increment\n"
             "x Redo: Increment\n")
+        
+
+from src.cmd.commands import Empty_Command
+class Test_Empty_Command(unittest.TestCase):
+
+    def test_empty_command(self)->None:
+        controller = Controller()
+        controller.run(Empty_Command())
+        controller.run(Empty_Command())
+        controller.run(Empty_Command())
+        controller.run(Empty_Command())
+        self.assertEqual(controller.history.strip(), "")
+        self.assertEqual(controller.history.strip(), "")
+        controller.undo()
+        controller.undo()
+        self.assertEqual(controller.history.strip(), "")
+        controller.redo()
+        self.assertEqual(controller.history.strip(), "")
 
 
 if __name__=="__main__": unittest.main()

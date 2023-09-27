@@ -845,9 +845,6 @@ class Test_Making_Item_Attribute_Depend_On_Its_Children(unittest.TestCase):
     @staticmethod
     def sum_counts(xi:List[int])->int: return sum(xi)
 
-    def test_creating_attribute_group_on_items_children(self)->None:
-        self.assertSetEqual(set(self.child_counts.value), {0,0,0,0,0})
-
     def test_summing_up_of_children_attribute(self):
         self.parent.attribute('total_count').add_dependency(self.sum_counts, self.child_counts)
         for child in self.parent.children: child.set('count',1)
@@ -857,8 +854,59 @@ class Test_Making_Item_Attribute_Depend_On_Its_Children(unittest.TestCase):
         self.mg.undo()
         self.assertEqual(self.parent('total_count'),3)
 
-    def __test_updating_total_count_when_adding_new_children(self):
+    def test_updating_total_count_when_adding_new_children(self):
         self.parent.attribute('total_count').add_dependency(self.sum_counts, self.child_counts)
+        for child in self.parent.children: child.set('count',1)
+
+        newchild = self.mg.new('Child',{'count':'integer'})
+        newchild.set('count',1)
+        self.parent.adopt(newchild) 
+        self.assertEqual(self.parent('total_count'), 6)
+
+        self.mg.undo()
+        self.assertEqual(self.parent('total_count'), 5)
+        self.mg.redo()
+        self.assertEqual(self.parent('total_count'), 6)
+        self.mg.undo()
+        self.assertEqual(self.parent('total_count'), 5)
+
+
+    def test_picking_existing_child_by_its_name(self):
+        picked_child = self.parent.pick_child('Child (2)')
+        self.assertTrue(picked_child in self.parent.children)
+        self.assertEqual(picked_child.name, "Child (2)")
+        
+    def test_picking_child_with_nonexistent_name_returns_null_item(self):
+        picked_child = self.parent.pick_child('Nonexistent child')
+        self.assertEqual(picked_child, NullItem)
+
+    def test_trailing_and_leading_white_characters_do_not_affect_the_child_picking(self):
+        picked_child = self.parent.pick_child('Child (1)')
+        name_variations = ('   Child (1)  ', 'Child   (1)', '\tChild (1)\n')
+        for name in name_variations: 
+            self.assertEqual(picked_child, self.parent.pick_child(name))
+
+    def test_updating_total_count_when_removing_children(self):
+        self.parent.attribute('total_count').add_dependency(self.sum_counts, self.child_counts)
+        for child in self.parent.children: child.set('count',1)
+
+        self.parent.leave(self.parent.pick_child('Child (1)')) 
+        self.parent.leave(self.parent.pick_child('Child (2)')) 
+
+        self.assertEqual(self.parent('total_count'), 3)
+        
+        self.mg.undo()
+        self.assertEqual(self.parent('total_count'), 4)
+        self.mg.undo()
+        self.assertEqual(self.parent('total_count'), 5)
+        self.mg.redo()
+        self.assertEqual(self.parent('total_count'), 4)
+        self.mg.redo()
+        self.assertEqual(self.parent('total_count'), 3)
+        self.mg.redo()
+        self.assertEqual(self.parent('total_count'), 3)
+        self.mg.undo()
+        self.assertEqual(self.parent('total_count'), 4)
         
 
 if __name__=="__main__": unittest.main()

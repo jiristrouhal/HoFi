@@ -1,9 +1,10 @@
 from __future__ import annotations
 from typing import Dict, Any, Set, Callable
 import dataclasses
-from src.cmd.commands import Command, Controller, Composed_Command, Timing
+from src.cmd.commands import Command, Controller, Composed_Command, Timing, Empty_Command
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
-from src.core.attributes import attribute_factory, Attribute, Attribute_List
+from src.core.attributes import attribute_factory, Attribute, Attribute_List, Set_Attr_Data, Set_Attr_Composed
+from src.core.attributes import Edit_AttrList_Data
 import abc
 
 
@@ -149,6 +150,7 @@ class Item(abc.ABC): # pragma: no cover
     
     def __init__(self,name:str,attributes:Dict[str,Attribute],manager:ItemManager)->None:
         self._manager = manager
+        self.__id = str(id(self))
 
     @abc.abstractproperty
     def attributes(self)->Dict[str,Attribute]: pass
@@ -162,12 +164,17 @@ class Item(abc.ABC): # pragma: no cover
     def children(self)->Set[Item]: pass
     @property
     def controller(self)->Controller: return self._manager._controller
+    @property
+    def id(self)->str: return self.__id
 
     @abc.abstractmethod
     def adopt(self,child:Item)->None: pass
     
     @abc.abstractmethod
     def attribute(self,label:str)->Attribute: pass
+
+    @abc.abstractmethod
+    def has_attribute(self,label:str)->bool: pass
 
     @abc.abstractmethod
     def on_adoption(self,owner:str,func:Callable[[Adoption_Data],Command],timing:Timing)->None: pass
@@ -232,6 +239,8 @@ class Item(abc.ABC): # pragma: no cover
     class NonexistentCommandType(Exception): pass
 
 
+from src.core.attributes import Append_To_Attribute_List, Remove_From_Attribute_List
+
 class ItemImpl(Item):
 
     class __ItemNull(Item):
@@ -253,6 +262,7 @@ class ItemImpl(Item):
             if child.parent is self: return
             child.parent.pass_to_new_parent(child,self)
         def attribute(self,label:str)->Attribute: raise Item.NonexistentAttribute
+        def has_attribute(self,label:str)->bool: return False
         def on_adoption(self,*args)->None: pass # pragma: no cover
         def on_passing_to_new_parent(self,*args)->None: pass # pragma: no cover
         def on_renaming(self,*args)->None: pass # pragma: no cover
@@ -309,24 +319,71 @@ class ItemImpl(Item):
         if not label in self.__attributes: raise Item.NonexistentAttribute
         else:
             return self.__attributes[label]
+        
+    def has_attribute(self, label:str)->bool:
+        return label in self.__attributes
 
     def adopt(self,item:Item)->None:
         if self is item.parent: return
         if self._can_be_parent_of(item):
             self.controller.run(*self.command['adopt'](Adoption_Data(self,item)))
 
-    def child_values(self, value_type:str, child_attribute_label:str)->Attribute_List:
+    def child_values(self, value_type:str, attribute_label:str)->Attribute_List:
         alist = self._manager._attrfac.newlist(atype=value_type)
         for child in self.__children: 
-            if child_attribute_label in child.attributes: 
-                alist.append(child.attribute(child_attribute_label))
+            if attribute_label in child.attributes: 
+                alist.append(child.attribute(attribute_label))
+        
+        def append_cmd(data:Adoption_Data)->Command:
+            if data.child.has_attribute(attribute_label):
+                cmd_data = Edit_AttrList_Data(alist,data.child.attribute(attribute_label))
+                return Append_To_Attribute_List(cmd_data)
+            else:
+                return Empty_Command()
+            
+        def pass_to_new_parent_cmd(data:Pass_To_New_Parrent_Data)->Command:
+            if data.child.has_attribute(attribute_label):
+                cmd_data = Edit_AttrList_Data(alist,data.child.attribute(attribute_label))
+                return Remove_From_Attribute_List(cmd_data)
+            else:
+                return Empty_Command()
+            
+        def set_cmd_converter(data:Adoption_Data)->Set_Attr_Data:
+            value_getter = lambda: alist.value
+            return Set_Attr_Data(alist, value_getter)
+
+        self.command['adopt'].add(self.id, append_cmd, 'post')
+        self.command['adopt'].add_composed(
+            self.id, 
+            set_cmd_converter, 
+            alist.command['set'], 
+            'post'
+        )
+
+        self.command['pass_to_new_parent'].add(self.id, pass_to_new_parent_cmd, 'post')
+        self.command['pass_to_new_parent'].add_composed(
+            self.id, 
+            set_cmd_converter, 
+            alist.command['set'], 
+            'post'
+        )
+
         return alist
+    
+    def leave(self, child:Item)->None:
+        self.pass_to_new_parent(child, ItemImpl.NULL)
 
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
         if new_parent._can_be_parent_of(child):
             self.controller.run(
                 self.command['pass_to_new_parent'](Pass_To_New_Parrent_Data(self,child,new_parent))
             )
+
+    def pick_child(self,name:str)->Item:
+        name = strip_and_join_spaces(name)
+        for child in self.__children: 
+            if child.name==name: return child
+        return ItemImpl.NULL
 
     def rename(self,name:str)->None:
         self.controller.run(self.command['rename'](Renaming_Data(self,name)))

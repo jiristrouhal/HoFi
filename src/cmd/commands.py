@@ -7,13 +7,28 @@ class Command(abc.ABC): # pragma: no cover
     def __init__(self, data:Any)->None: 
         self.data = data
     @property
-    def message(self)->str:
+    def message(self)->str|None:
         return f"{self.__class__}"
     @abc.abstractmethod
     def run(self)->None: pass
     @abc.abstractmethod
     def undo(self)->None: pass
     @abc.abstractmethod
+    def redo(self)->None: pass
+
+
+class Empty_Command(Command):
+    """
+    This commands' purpose is to avoid running other commands if certain condition is not satisfied (e.g. data for command are invalid).
+    Running of the empty command is NOT reflected in the controller history.
+    """
+    def __init__(self,*args)->None: pass
+    
+    @property
+    def message(self)->None: return None
+
+    def run(self)->None: pass
+    def undo(self)->None: pass
     def redo(self)->None: pass
     
 
@@ -48,26 +63,30 @@ class Controller:
         
         for cmd in cmd_list: cmd.run()
         self.__undo_stack.append(cmd_list)
-        self.__history.extend([f"{self.__last_symbol} {cmd.message}" for cmd in cmd_list])
         self.__redo_stack.clear()
 
-        self.__switch_last_symbol()
+        if cmd.message is not None:
+            self.__history.extend([f"{self.__last_symbol} {cmd.message}" for cmd in cmd_list])
+            self.__switch_last_symbol()
 
     def undo(self)->None:
         if not self.__undo_stack: return 
         batch = self.__undo_stack.pop()   
         for cmd in reversed(batch): 
             cmd.undo()
-            self.__history.append(f"{self.__last_symbol}Undo: {cmd.message}")
+            if cmd.message is not None:
+                self.__history.append(f"{self.__last_symbol}Undo: {cmd.message}")
         self.__redo_stack.append(batch)
         self.__switch_last_symbol()
+
 
     def redo(self)->None:
         if not self.__redo_stack: return 
         batch = self.__redo_stack.pop()    
         for cmd in batch: 
             cmd.redo()
-            self.__history.append(f"{self.__last_symbol}Redo: {cmd.message}")
+            if cmd.message is not None:
+                self.__history.append(f"{self.__last_symbol}Redo: {cmd.message}")
         self.__undo_stack.append(batch)
         self.__switch_last_symbol()
 
