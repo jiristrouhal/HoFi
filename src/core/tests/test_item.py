@@ -836,28 +836,35 @@ class Test_Making_Item_Attribute_Depend_On_Its_Children(unittest.TestCase):
     def setUp(self) -> None:
         self.mg = ItemManager()
         self.parent = self.mg.new("Parent", {'total_count': 'integer'})
-        for k in range(5): 
+        for _ in range(5): 
             child = self.mg.new("Child", {'count':'integer'})
             child.set('count', 0)
             self.parent.adopt(child)
-        self.child_counts = self.parent.child_values('integer','count')
+        self.parent.collect_child_values('integer','count')
+        self.parent.attribute('total_count').add_dependency(
+            self.sum_counts, 
+            self.parent.child_values('count')
+        )
+        for child in self.parent.children: child.set('count',1)
 
     @staticmethod
     def sum_counts(xi:List[int])->int: return sum(xi)
 
     def test_summing_up_of_children_attribute(self):
-        self.parent.attribute('total_count').add_dependency(self.sum_counts, self.child_counts)
-        for child in self.parent.children: child.set('count',1)
         self.assertEqual(self.parent('total_count'),5)
         self.mg.undo()
         self.assertEqual(self.parent('total_count'),4)
         self.mg.undo()
         self.assertEqual(self.parent('total_count'),3)
+    
+    def test_repeated_setting_of_child_values_does_not_affect_the_parent(self):
+        for child in self.parent.children: child.set('count',1)
+        for child in self.parent.children: child.set('count',1)
+        for child in self.parent.children: child.set('count',1)
+        for child in self.parent.children: child.set('count',1)
+        self.assertEqual(self.parent('total_count'),5)
 
     def test_updating_total_count_when_adding_new_children(self):
-        self.parent.attribute('total_count').add_dependency(self.sum_counts, self.child_counts)
-        for child in self.parent.children: child.set('count',1)
-
         newchild = self.mg.new('Child',{'count':'integer'})
         newchild.set('count',1)
         self.parent.adopt(newchild) 
@@ -887,9 +894,6 @@ class Test_Making_Item_Attribute_Depend_On_Its_Children(unittest.TestCase):
             self.assertEqual(picked_child, self.parent.pick_child(name))
 
     def test_updating_total_count_when_removing_children(self):
-        self.parent.attribute('total_count').add_dependency(self.sum_counts, self.child_counts)
-        for child in self.parent.children: child.set('count',1)
-
         self.parent.leave(self.parent.pick_child('Child (1)')) 
         self.parent.leave(self.parent.pick_child('Child (2)')) 
 
@@ -907,7 +911,22 @@ class Test_Making_Item_Attribute_Depend_On_Its_Children(unittest.TestCase):
         self.assertEqual(self.parent('total_count'), 3)
         self.mg.undo()
         self.assertEqual(self.parent('total_count'), 4)
+
+    def test_removing_all_children(self)->None:
+        for child in self.parent.children: self.parent.leave(child)
+        self.assertEqual(self.parent('total_count'), 0)
+        self.mg.undo()
+        self.assertEqual(self.parent('total_count'), 1)
         
+    def __test_duplicating_the_parent(self)->None:
+        self.assertEqual(self.parent("total_count"), 5)
+        parent_duplicate = self.parent.duplicate()
+        self.assertEqual(parent_duplicate('total_count'), 5)
+        
+        child_1 = parent_duplicate.pick_child('Child (1)')
+        child_1.set('count', 0)
+        self.assertEqual(parent_duplicate('total_count'), 4)
+
 
 if __name__=="__main__": unittest.main()
 

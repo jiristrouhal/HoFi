@@ -241,6 +241,11 @@ class AbstractAttribute(abc.ABC):
         if not self.dependent: raise Attribute.NoDependencyIsSet
         self._dependency.release()
 
+    @abc.abstractmethod
+    def copy(self, copy_dependency:bool=True)->AbstractAttribute: pass
+
+    def _copy_dependency(self, thecopy:AbstractAttribute)->None: pass
+
     def _forget_dependency(self)->None: 
         if self.dependency is self.NullDependency: return 
         self._dependency = self.NullDependency
@@ -326,6 +331,13 @@ class Attribute_List(AbstractAttribute):
             self.command['set'](Set_Attr_Data(self,value_getter))
         )
 
+    def copy(self, copy_dependency:bool=True)->Attribute_List:
+        the_copy = self.factory.newlist(self.type, name=self.name)
+        for item in self.__attributes:
+            the_copy.__attributes.append(item.copy(copy_dependency=False))
+        if copy_dependency: self._copy_dependency(the_copy)
+        return the_copy
+
     def is_valid(self,values:List[Any])->bool:
         return all([attr.is_valid(value) for attr,value in zip(self.__attributes, values)])
 
@@ -355,6 +367,13 @@ class Attribute_List(AbstractAttribute):
             if isinstance(attr,Attribute_List):
                 attr._check_hierarchy_collision(attr,root_list)
 
+    def _copy_dependency(self, the_copy:AbstractAttribute)->None:
+        if self.dependent:
+            the_copy.add_dependency(self.dependency.func, *self.dependency.inputs)
+        elif isinstance(the_copy, Attribute_List):
+            for item, item_copy in zip(self.__attributes, the_copy.__attributes):
+                item._copy_dependency(item_copy)
+
     def _get_set_commands(self,values:List[Any])->List[Command]:
         cmds:List[Command] = []
         for attr, value in zip(self.__attributes, values):
@@ -370,6 +389,7 @@ class Attribute_List(AbstractAttribute):
     def _value_update(self,values:List[Any])->None:
         for attr, value in zip(self.__attributes, values):
             attr._value_update(value)
+
    
     def __iter__(self)->Iterator[AbstractAttribute]: return self.__attributes.__iter__()
     def __getitem__(self,index:int)->AbstractAttribute: return self.__attributes[index]
@@ -400,9 +420,9 @@ class Attribute(AbstractAttribute):
     @property 
     def value(self)->Any: return self._value
 
-    def copy(self)->Attribute:
+    def copy(self, copy_dependency:bool=True)->Attribute:
         the_copy = self.factory.new(self.type, init_value=self._value, name=self.name)
-        self.__copy_dependency(the_copy)
+        if copy_dependency: self._copy_dependency(the_copy)
         return the_copy
 
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
@@ -429,6 +449,10 @@ class Attribute(AbstractAttribute):
     @abc.abstractmethod
     def _check_input_type(self,value:Any)->None: pass # pragma: no cover
 
+    def _copy_dependency(self, thecopy:AbstractAttribute)->None:
+        if self.dependent:
+            thecopy.add_dependency(self.dependency.func, *self.dependency.inputs)
+
     def _get_set_commands(self,value:Any)->List[Command]:
         value_getter = lambda: value
         return list(self.command['set'](Set_Attr_Data(self,value_getter)))
@@ -442,10 +466,6 @@ class Attribute(AbstractAttribute):
     def _value_update(self,value:Any)->None:
         self._value = value
     
-    def __copy_dependency(self,the_copy:Attribute)->None:
-        if self.dependent:
-            the_copy.add_dependency(self.dependency.func, *self.dependency.inputs)
-
     @staticmethod
     def set_multiple(new_values:Dict[Attribute,Any])->None:
         facs:List[Attribute_Factory] = list()

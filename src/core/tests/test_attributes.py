@@ -1486,4 +1486,50 @@ class Test_Nested_Attribute_Lists(unittest.TestCase):
         ])
 
 
+class Test_Copying_Attribute_List(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.alist = self.fac.newlist('integer', [1,2,3])
+
+    def test_copying_attribute_list(self)->None:
+        alistcopy = self.alist.copy()
+        self.assertListEqual(alistcopy.value, [1,2,3])
+        alistcopy[1].set(4)
+        self.assertListEqual(self.alist.value, [1,2,3])
+        self.assertListEqual(alistcopy.value, [1,4,3])
+
+    def test_attribute_list_is_copied_along_with_its_dependency(self)->None:
+        def copyval(x:int)->List[int]: return [x for _ in range(3)]
+        x = self.fac.new('integer',1)
+        self.alist.add_dependency(copyval, x)
+        self.assertListEqual(self.alist.value, [1,1,1])
+        alistcopy = self.alist.copy()
+        self.assertListEqual(alistcopy.value, [1,1,1])
+        x.set(2)
+        self.assertListEqual(self.alist.value, [2,2,2])
+        self.assertListEqual(alistcopy.value, [2,2,2])
+
+    def test_list_copy_does_not_affect_an_attribute_that_depends_on_the_original_list(self):
+        s = self.fac.new('integer', 2)
+        s.add_dependency(sum, self.alist)
+        self.assertEqual(s.value, 6)
+        alistcopy = self.alist.copy()
+        alistcopy._value_update([0,0,0])
+        self.assertEqual(s.value, 6)
+
+    def test_list_item_dependencies_are_copied_into_the_new_list(self):
+        a = self.fac.new('integer',0)
+        def double(x:int)->int: return 2*x
+        self.alist[0].add_dependency(double, a)
+        
+        a.set(5)
+        self.assertEqual(self.alist[0].value,10)
+
+        alistcopy = self.alist.copy()
+        a.set(4)
+        self.assertEqual(self.alist[0].value,8)
+        self.assertEqual(alistcopy[0].value,8)
+
+
 if __name__=="__main__": unittest.main()

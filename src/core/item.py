@@ -184,7 +184,10 @@ class Item(abc.ABC): # pragma: no cover
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None: pass
 
     @abc.abstractmethod
-    def child_values(self, value_type:str, child_attribute_label:str)->Attribute_List: pass
+    def collect_child_values(self, value_type:str, child_attribute_label:str)->None: pass
+
+    @abc.abstractmethod
+    def child_values(self, label:str)->Attribute_List: pass
 
     @abc.abstractmethod
     def duplicate(self)->Item: pass
@@ -199,7 +202,13 @@ class Item(abc.ABC): # pragma: no cover
     def is_ancestor_of(self, child:Item)->bool: pass
 
     @abc.abstractmethod
+    def leave(self, child:Item)->None: pass
+
+    @abc.abstractmethod
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None: pass
+
+    @abc.abstractmethod
+    def pick_child(self, name:str)->Item: pass 
 
     @abc.abstractmethod
     def rename(self,name:str)->None: pass
@@ -266,13 +275,16 @@ class ItemImpl(Item):
         def on_adoption(self,*args)->None: pass # pragma: no cover
         def on_passing_to_new_parent(self,*args)->None: pass # pragma: no cover
         def on_renaming(self,*args)->None: pass # pragma: no cover
-        def child_values(self,*args)->Any: return None 
+        def child_values(self, label:str)->Attribute_List: raise Item.NonexistentAttribute
+        def collect_child_values(self,*args)->Any: return None 
         def duplicate(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
         def is_ancestor_of(self, child:Item)->bool: return child==self
+        def leave(self, child:Item)->None: pass
         def pass_to_new_parent(self, child:Item, new_parent:Item)->None: 
             new_parent.adopt(child)
+        def pick_child(self, name:str)->Item: return self
         def rename(self,name:str)->None: return
         def set(self, attr_name:str,value:Any)->None: raise Item.NonexistentAttribute   # pragma: no cover
         def __call__(self, attr_name:str)->Any: raise Item.NonexistentAttribute   # pragma: no cover
@@ -298,6 +310,7 @@ class ItemImpl(Item):
         self._rename(name)
         self.__children:Set[Item] = set()
         self.__parent:Item = self.NULL
+        self.__child_values:Dict[str,Attribute_List] = dict()
 
     @property
     def attributes(self)->Dict[str,Attribute]: 
@@ -322,13 +335,16 @@ class ItemImpl(Item):
         
     def has_attribute(self, label:str)->bool:
         return label in self.__attributes
-
+    
     def adopt(self,item:Item)->None:
         if self is item.parent: return
         if self._can_be_parent_of(item):
             self.controller.run(*self.command['adopt'](Adoption_Data(self,item)))
+    
+    def child_values(self, label:str)->Attribute_List:
+        return self.__child_values[label]
 
-    def child_values(self, value_type:str, attribute_label:str)->Attribute_List:
+    def collect_child_values(self, value_type:str, attribute_label:str)->None:
         alist = self._manager._attrfac.newlist(atype=value_type)
         for child in self.__children: 
             if attribute_label in child.attributes: 
@@ -368,7 +384,7 @@ class ItemImpl(Item):
             'post'
         )
 
-        return alist
+        self.__child_values[attribute_label] = alist
     
     def leave(self, child:Item)->None:
         self.pass_to_new_parent(child, ItemImpl.NULL)
