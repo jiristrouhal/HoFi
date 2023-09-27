@@ -266,17 +266,25 @@ class Increment_With_Message(Command):
 
 class Test_Command_History(unittest.TestCase):
 
-    def __test_writing_command_history_line(self):
+    def test_writing_command_history_line(self):
         controller = Controller()
         obj = Integer_Owner(i=0)
         controller.run(Increment_With_Message(IncrementIntData(obj,step=5)))
         self.assertEqual(obj.i,5)
-        self.assertListEqual(controller.history, ["Increment"])
+        self.assertEqual(controller.history, "\n\n-  Increment\n")
         controller.run(Increment_With_Message(IncrementIntData(obj,step=5)))
-        self.assertListEqual(controller.history, ["Increment", "Increment"])
+        self.assertEqual(
+            controller.history, 
+            "\n\n-  Increment\n"
+            "x  Increment\n")
         controller.undo()
-        self.assertListEqual(controller.history, ["Increment", "Increment", "Undo: Increment"])
-        
+        controller.redo()
+        self.assertEqual(
+            controller.history, 
+            "\n\n-  Increment\n"
+            "x  Increment\n"
+            "- Undo: Increment\n"
+            "x Redo: Increment\n")
 
 
 if __name__=="__main__": unittest.main()
