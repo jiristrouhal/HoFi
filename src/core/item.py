@@ -157,6 +157,7 @@ class Item(abc.ABC): # pragma: no cover
         self._manager = manager
         self.__id = str(id(self))
         self._bindings:Dict[str, Item.BindingInfo] = dict()
+        self._child_attr_lists:Dict[str,Attribute_List] = dict()
 
     @abc.abstractproperty
     def attributes(self)->Dict[str,Attribute]: pass
@@ -277,11 +278,12 @@ class ItemImpl(Item):
     class __ItemNull(Item):
         def __init__(self,*args,**kwargs)->None:
             self.__children:Set[Item] = set()
+            self._child_attr_lists:Dict = dict()
 
         @property
         def attributes(self)->Dict[str,Attribute]: return {}
         @property
-        def name(self)->str: return ""
+        def name(self)->str: return "NULL"
         @property
         def parent(self)->Item: return self
         @property
@@ -336,7 +338,6 @@ class ItemImpl(Item):
         self._rename(name)
         self.__children:Set[Item] = set()
         self.__parent:Item = self.NULL
-        self._child_attr_lists:Dict[str,Attribute_List] = dict()
         self._bindings:Dict[str, Item.BindingInfo] = dict()
 
     @property
@@ -463,9 +464,8 @@ class ItemImpl(Item):
 
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
         if new_parent._can_be_parent_of(child):
-            self.controller.run(
-                self.command['pass_to_new_parent'](Pass_To_New_Parrent_Data(self,child,new_parent))
-            )
+            data = Pass_To_New_Parrent_Data(self,child,new_parent)
+            self.controller.run(*self.command['pass_to_new_parent'](data))
 
     def pick_child(self,name:str)->Item:
         name = strip_and_join_spaces(name)
@@ -474,7 +474,7 @@ class ItemImpl(Item):
         return ItemImpl.NULL
 
     def rename(self,name:str)->None:
-        self.controller.run(self.command['rename'](Renaming_Data(self,name)))
+        self.controller.run(*self.command['rename'](Renaming_Data(self,name)))
 
     def set(self,attrib_label:str, value:Any)->None:
         self.attribute(attrib_label).set(value)

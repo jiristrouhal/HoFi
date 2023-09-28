@@ -328,7 +328,7 @@ class Attribute_List(AbstractAttribute):
         value_getter = lambda: self.value
         self.factory.run(
             Append_To_Attribute_List(Edit_AttrList_Data(self,attribute)),
-            self.command['set'](Set_Attr_Data(self,value_getter))
+            *self.command['set'](Set_Attr_Data(self,value_getter))
         )
 
     def copy(self, copy_dependency:bool=True)->Attribute_List:
@@ -346,7 +346,7 @@ class Attribute_List(AbstractAttribute):
         value_getter = lambda: self.value
         self.factory.run(
             Remove_From_Attribute_List(Edit_AttrList_Data(self,attribute)),
-            self.command['set'](Set_Attr_Data(self, value_getter))
+            *self.command['set'](Set_Attr_Data(self, value_getter))
         )
 
     def on_set(self, owner:str, func:Callable[[Set_Attr_Data],Command], timing:Timing)->None: 
@@ -355,7 +355,7 @@ class Attribute_List(AbstractAttribute):
 
     def set(self, value:Any=None)->None:
         value_getter = lambda: self.value
-        self.factory.run(self.command['set'](Set_Attr_Data(self, value_getter)))
+        self.factory.run(*self.command['set'](Set_Attr_Data(self, value_getter)))
 
     def _add(self,attributes:AbstractAttribute)->None: 
         self.__attributes.append(attributes)
@@ -907,7 +907,7 @@ class Attribute_Factory:
 
 
     def redo(self)->None: self.controller.redo()
-    def run(self,*cmds:Command|Tuple[Command,...])->None:
+    def run(self,*cmds:Command)->None:
         self.controller.run(*cmds)
     
     def undo(self)->None: self.controller.undo()

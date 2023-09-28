@@ -55,7 +55,7 @@ class Controller:
     def clear_history(self)->None: self.__history.clear()
 
     
-    def run(self,*cmds:Command|Tuple[Command,...])->None:
+    def run(self,*cmds:Command)->None:
         cmd_list:List[Command] = []
         for item in cmds: 
             if isinstance(item,tuple): cmd_list.extend(item)
@@ -128,7 +128,13 @@ class Composed_Command(abc.ABC):
         return *pre, main, *post
 
     @abc.abstractmethod
-    def add(self, owner_id:str, creator:Callable[[Any],Command], timing:Timing)->None:
+    def add(
+        self, 
+        owner_id:str, 
+        creator: Callable[[Any],Command], 
+        timing:Timing
+        )->None:
+
         if timing=='pre': self.pre[owner_id] = creator
         elif timing=='post': self.post[owner_id] = creator
         else: raise KeyError(f"Invalid timing key: {timing}.")
