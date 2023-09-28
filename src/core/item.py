@@ -168,10 +168,16 @@ class Item(abc.ABC): # pragma: no cover
     def id(self)->str: return self.__id
 
     @abc.abstractmethod
+    def bind(self, output_name:str, func:Callable[[Any],Any], *input_names:str)->None: pass
+
+    @abc.abstractmethod
     def adopt(self,child:Item)->None: pass
     
     @abc.abstractmethod
     def attribute(self,label:str)->Attribute: pass
+
+    @abc.abstractmethod
+    def free(self,output_name:str)->None: pass
 
     @abc.abstractmethod
     def has_attribute(self,label:str)->bool: pass
@@ -238,7 +244,7 @@ class Item(abc.ABC): # pragma: no cover
     def _rename(self,name:str)->None: pass
 
     @abc.abstractmethod
-    def _duplicate(self)->Item: pass
+    def _duplicate_items(self)->Item: pass
         
     class AdoptionOfAncestor(Exception): pass
     class AdoptingNULL(Exception): pass
@@ -246,9 +252,12 @@ class Item(abc.ABC): # pragma: no cover
     class ItemAdoptsItself(Exception): pass
     class NonexistentAttribute(Exception): pass
     class NonexistentCommandType(Exception): pass
+    class NonexistentChildValueGroup(Exception): pass
+
 
 
 from src.core.attributes import Append_To_Attribute_List, Remove_From_Attribute_List
+from typing import Tuple
 
 class ItemImpl(Item):
 
@@ -267,6 +276,8 @@ class ItemImpl(Item):
         @property
         def children(self)->Set[Item]: return self.__children
 
+        def bind(self,*args)->None: raise self.SettingDependencyOnNull
+        def free(self,*args)->None: raise self.SettingDependencyOnNull
         def adopt(self,child:Item)->None: 
             if child.parent is self: return
             child.parent.pass_to_new_parent(child,self)
@@ -294,10 +305,18 @@ class ItemImpl(Item):
         def _leave_child(self,child:Item)->None: return
         def _leave_parent(self,parent:Item)->None: return
         def _rename(self,name:str)->None: return
-        def _duplicate(self)->Item: return self # pragma: no cover
+        def _duplicate_items(self)->Item: return self # pragma: no cover
 
+        class SettingDependencyOnNull(Exception):pass
 
     NULL = __ItemNull()
+
+
+    @dataclasses.dataclass(frozen=True)
+    class __BindingInfo:
+        func:Callable[[Any],Any]
+        input_labels:Tuple[str,...]
+
     
     def __init__(self,name:str,attributes:Dict[str,Attribute], manager:ItemManager)->None:
         super().__init__(name,attributes,manager)
@@ -310,7 +329,8 @@ class ItemImpl(Item):
         self._rename(name)
         self.__children:Set[Item] = set()
         self.__parent:Item = self.NULL
-        self.__child_values:Dict[str,Attribute_List] = dict()
+        self._child_values:Dict[str,Attribute_List] = dict()
+        self.__bindings:Dict[str, ItemImpl.__BindingInfo] = dict()
 
     @property
     def attributes(self)->Dict[str,Attribute]: 
@@ -333,6 +353,15 @@ class ItemImpl(Item):
         else:
             return self.__attributes[label]
         
+    def bind(self, output_name:str, func:Callable[[Any], Any], *input_names:str)->None:
+        output = self.attribute(output_name)
+        output.add_dependency(func, *[self.attribute(name) for name in input_names])
+        self.__bindings[output_name] = ItemImpl.__BindingInfo(func, input_names)
+    
+    def free(self, output_name:str)->None:
+        self.attribute(output_name).break_dependency()
+        self.__bindings.pop(output_name)
+        
     def has_attribute(self, label:str)->bool:
         return label in self.__attributes
     
@@ -342,7 +371,8 @@ class ItemImpl(Item):
             self.controller.run(*self.command['adopt'](Adoption_Data(self,item)))
     
     def child_values(self, label:str)->Attribute_List:
-        return self.__child_values[label]
+        if label not in self._child_values: raise Item.NonexistentChildValueGroup
+        return self._child_values[label]
 
     def collect_child_values(self, value_type:str, attribute_label:str)->None:
         alist = self._manager._attrfac.newlist(atype=value_type)
@@ -384,7 +414,7 @@ class ItemImpl(Item):
             'post'
         )
 
-        self.__child_values[attribute_label] = alist
+        self._child_values[attribute_label] = alist
     
     def leave(self, child:Item)->None:
         self.pass_to_new_parent(child, ItemImpl.NULL)
@@ -417,7 +447,8 @@ class ItemImpl(Item):
         self.command['rename'].add(owner, func, timing)
 
     def duplicate(self)->Item:
-        the_duplicate = self._duplicate()
+        the_duplicate = self._duplicate_items()
+        self.__copy_bindings(the_duplicate)
         self.parent.adopt(the_duplicate)
         return the_duplicate
 
@@ -452,13 +483,26 @@ class ItemImpl(Item):
         if item.is_ancestor_of(self): raise Item.AdoptionOfAncestor
         elif item==self: raise Item.ItemAdoptsItself
         else: return True
-    
-    def _duplicate(self)->Item:
-        item_duplicate = ItemImpl(self.name, self.__attributes_copy(), self._manager)
+
+    def _duplicate_items(self)->ItemImpl:
+        dupl = ItemImpl(self.name, self.__attributes_copy(), self._manager)
+        for attr in dupl.__attributes.values():
+            if attr.dependent: attr.break_dependency()
         for child in self.__children:
-            child_duplicate = child._duplicate()
-            item_duplicate._adopt(child_duplicate)
-        return item_duplicate
+            child_duplicate = child._duplicate_items()
+            dupl._adopt(child_duplicate)
+        return dupl
+    
+    def __apply_binding_info(self)->None:
+        for output_name, info in self.__bindings.items():
+            self.bind(output_name, info.func, *info.input_labels)
+    
+    def __copy_bindings(self, dupl:ItemImpl)->None:
+        dupl.__bindings = self.__bindings.copy()
+        dupl.__apply_binding_info()
+        for child, child_dupl in zip(self.__children, dupl.__children):
+            if isinstance(child, ItemImpl) and isinstance(child_dupl, ItemImpl):
+                child.__copy_bindings(child_dupl)
 
     def _leave_child(self,child:Item)->None:
         if child in self.__children:

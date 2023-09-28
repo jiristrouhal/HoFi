@@ -850,6 +850,13 @@ class Test_Making_Item_Attribute_Depend_On_Its_Children(unittest.TestCase):
     @staticmethod
     def sum_counts(xi:List[int])->int: return sum(xi)
 
+    def test_accessing_nonexistent_child_values_raises_exception(self):
+        self.assertRaises(
+            Item.NonexistentChildValueGroup, 
+            self.parent.child_values, 
+            'nonexistent group label'
+        )
+
     def test_summing_up_of_children_attribute(self):
         self.assertEqual(self.parent('total_count'),5)
         self.mg.undo()
@@ -917,15 +924,59 @@ class Test_Making_Item_Attribute_Depend_On_Its_Children(unittest.TestCase):
         self.assertEqual(self.parent('total_count'), 0)
         self.mg.undo()
         self.assertEqual(self.parent('total_count'), 1)
-        
-    def __test_duplicating_the_parent(self)->None:
-        self.assertEqual(self.parent("total_count"), 5)
-        parent_duplicate = self.parent.duplicate()
-        self.assertEqual(parent_duplicate('total_count'), 5)
-        
-        child_1 = parent_duplicate.pick_child('Child (1)')
-        child_1.set('count', 0)
-        self.assertEqual(parent_duplicate('total_count'), 4)
+
+
+class Test_Binding_Attributes_Owned_By_The_Same_Item(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.mg = ItemManager()
+        self.item = self.mg.new("Item",{'x':'integer','y':'integer', 'z':'integer'})
+        self.item.set('y',-1)
+        self.item.bind('y', self.square, 'x')
+
+    @staticmethod
+    def square(x:int)->int: return x*x
+
+    def test_two_attributes_owned_by_the_the_same_item_are_bound_by_a_specified_function(self):
+        self.item.set('x',2)
+        self.assertEqual(self.item('y'), 4)
+    
+    def test_freeing_attribute_removes_its_dependency_on_other_attribute(self):
+        self.item.set('x',2)
+        self.item.free('y')
+        self.item.set('x',3)
+        self.assertEqual(self.item('y'), 4)
+
+    def test_calling_set_on_bound_attribute_has_no_effect(self):
+        self.item.set('x',2)
+        self.item.set('y',-16651651653)
+        self.assertEqual(self.item('y'), 4)
+
+    def test_copying_item_preserves_the_dependency(self):
+        self.item.set('x',3)
+        item2 = self.item.duplicate()
+        item2.set('x',5)
+        self.assertEqual(self.item('x'),3)
+        self.assertEqual(item2('x'),5)
+        self.assertEqual(self.item('y'),9)
+        self.assertEqual(item2('y'),25)
+    
+    def test_multivariable_binding(self):
+        self.item.free('y')
+        self.item.bind('z', lambda x,y: x+y,'x','y')
+        self.item.set('x',2)
+        self.item.set('y',3)
+        self.assertEqual(self.item('z'),5)
+
+    def test_chain_of_bindings(self)->None:
+        self.item.free('y')
+
+        self.item.bind('y',lambda t: t+1, 'x')
+        self.item.bind('z',lambda t: 2*t, 'y')
+
+        self.item.set('x',3)
+        self.assertEqual(self.item('y'), 4)
+        self.assertEqual(self.item('z'), 8)
 
 
 if __name__=="__main__": unittest.main()
