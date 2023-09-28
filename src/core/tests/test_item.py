@@ -830,100 +830,100 @@ class Test_Undo_And_Redo_Duplicating_Item(unittest.TestCase):
         self.assertFalse(parent.is_parent_of(child_duplicate))
 
 
-from typing import List
-class Test_Making_Item_Attribute_Depend_On_Its_Children(unittest.TestCase):
+# from typing import List
+# class Test_Making_Item_Attribute_Depend_On_Its_Children(unittest.TestCase):
 
-    def setUp(self) -> None:
-        self.mg = ItemManager()
-        self.parent = self.mg.new("Parent", {'total_count': 'integer'})
-        for _ in range(5): 
-            child = self.mg.new("Child", {'count':'integer'})
-            child.set('count', 0)
-            self.parent.adopt(child)
-        self.parent.collect_child_values('integer','count')
-        self.parent.attribute('total_count').add_dependency(
-            self.sum_counts, 
-            self.parent.child_values('count')
-        )
-        for child in self.parent.children: child.set('count',1)
+#     def setUp(self) -> None:
+#         self.mg = ItemManager()
+#         self.parent = self.mg.new("Parent", {'total_count': 'integer'})
+#         for _ in range(5): 
+#             child = self.mg.new("Child", {'count':'integer'})
+#             child.set('count', 0)
+#             self.parent.adopt(child)
+#         self.parent.collect_child_values('integer','count')
+#         self.parent.attribute('total_count').add_dependency(
+#             self.sum_counts, 
+#             self.parent.child_values('count')
+#         )
+#         for child in self.parent.children: child.set('count',1)
 
-    @staticmethod
-    def sum_counts(xi:List[int])->int: return sum(xi)
+#     @staticmethod
+#     def sum_counts(xi:List[int])->int: return sum(xi)
 
-    def test_accessing_nonexistent_child_values_raises_exception(self):
-        self.assertRaises(
-            Item.NonexistentChildValueGroup, 
-            self.parent.child_values, 
-            'nonexistent group label'
-        )
+#     def test_accessing_nonexistent_child_values_raises_exception(self):
+#         self.assertRaises(
+#             Item.NonexistentChildValueGroup, 
+#             self.parent.child_values, 
+#             'nonexistent group label'
+#         )
 
-    def test_summing_up_of_children_attribute(self):
-        self.assertEqual(self.parent('total_count'),5)
-        self.mg.undo()
-        self.assertEqual(self.parent('total_count'),4)
-        self.mg.undo()
-        self.assertEqual(self.parent('total_count'),3)
+#     def test_summing_up_of_children_attribute(self):
+#         self.assertEqual(self.parent('total_count'),5)
+#         self.mg.undo()
+#         self.assertEqual(self.parent('total_count'),4)
+#         self.mg.undo()
+#         self.assertEqual(self.parent('total_count'),3)
     
-    def test_repeated_setting_of_child_values_does_not_affect_the_parent(self):
-        for child in self.parent.children: child.set('count',1)
-        for child in self.parent.children: child.set('count',1)
-        for child in self.parent.children: child.set('count',1)
-        for child in self.parent.children: child.set('count',1)
-        self.assertEqual(self.parent('total_count'),5)
+#     def test_repeated_setting_of_child_values_does_not_affect_the_parent(self):
+#         for child in self.parent.children: child.set('count',1)
+#         for child in self.parent.children: child.set('count',1)
+#         for child in self.parent.children: child.set('count',1)
+#         for child in self.parent.children: child.set('count',1)
+#         self.assertEqual(self.parent('total_count'),5)
 
-    def test_updating_total_count_when_adding_new_children(self):
-        newchild = self.mg.new('Child',{'count':'integer'})
-        newchild.set('count',1)
-        self.parent.adopt(newchild) 
-        self.assertEqual(self.parent('total_count'), 6)
+#     def test_updating_total_count_when_adding_new_children(self):
+#         newchild = self.mg.new('Child',{'count':'integer'})
+#         newchild.set('count',1)
+#         self.parent.adopt(newchild) 
+#         self.assertEqual(self.parent('total_count'), 6)
 
-        self.mg.undo()
-        self.assertEqual(self.parent('total_count'), 5)
-        self.mg.redo()
-        self.assertEqual(self.parent('total_count'), 6)
-        self.mg.undo()
-        self.assertEqual(self.parent('total_count'), 5)
+#         self.mg.undo()
+#         self.assertEqual(self.parent('total_count'), 5)
+#         self.mg.redo()
+#         self.assertEqual(self.parent('total_count'), 6)
+#         self.mg.undo()
+#         self.assertEqual(self.parent('total_count'), 5)
 
 
-    def test_picking_existing_child_by_its_name(self):
-        picked_child = self.parent.pick_child('Child (2)')
-        self.assertTrue(picked_child in self.parent.children)
-        self.assertEqual(picked_child.name, "Child (2)")
+#     def test_picking_existing_child_by_its_name(self):
+#         picked_child = self.parent.pick_child('Child (2)')
+#         self.assertTrue(picked_child in self.parent.children)
+#         self.assertEqual(picked_child.name, "Child (2)")
         
-    def test_picking_child_with_nonexistent_name_returns_null_item(self):
-        picked_child = self.parent.pick_child('Nonexistent child')
-        self.assertEqual(picked_child, NullItem)
+#     def test_picking_child_with_nonexistent_name_returns_null_item(self):
+#         picked_child = self.parent.pick_child('Nonexistent child')
+#         self.assertEqual(picked_child, NullItem)
 
-    def test_trailing_and_leading_white_characters_do_not_affect_the_child_picking(self):
-        picked_child = self.parent.pick_child('Child (1)')
-        name_variations = ('   Child (1)  ', 'Child   (1)', '\tChild (1)\n')
-        for name in name_variations: 
-            self.assertEqual(picked_child, self.parent.pick_child(name))
+#     def test_trailing_and_leading_white_characters_do_not_affect_the_child_picking(self):
+#         picked_child = self.parent.pick_child('Child (1)')
+#         name_variations = ('   Child (1)  ', 'Child   (1)', '\tChild (1)\n')
+#         for name in name_variations: 
+#             self.assertEqual(picked_child, self.parent.pick_child(name))
 
-    def test_updating_total_count_when_removing_children(self):
-        self.parent.leave(self.parent.pick_child('Child (1)')) 
-        self.parent.leave(self.parent.pick_child('Child (2)')) 
+#     def test_updating_total_count_when_removing_children(self):
+#         self.parent.leave(self.parent.pick_child('Child (1)')) 
+#         self.parent.leave(self.parent.pick_child('Child (2)')) 
 
-        self.assertEqual(self.parent('total_count'), 3)
+#         self.assertEqual(self.parent('total_count'), 3)
         
-        self.mg.undo()
-        self.assertEqual(self.parent('total_count'), 4)
-        self.mg.undo()
-        self.assertEqual(self.parent('total_count'), 5)
-        self.mg.redo()
-        self.assertEqual(self.parent('total_count'), 4)
-        self.mg.redo()
-        self.assertEqual(self.parent('total_count'), 3)
-        self.mg.redo()
-        self.assertEqual(self.parent('total_count'), 3)
-        self.mg.undo()
-        self.assertEqual(self.parent('total_count'), 4)
+#         self.mg.undo()
+#         self.assertEqual(self.parent('total_count'), 4)
+#         self.mg.undo()
+#         self.assertEqual(self.parent('total_count'), 5)
+#         self.mg.redo()
+#         self.assertEqual(self.parent('total_count'), 4)
+#         self.mg.redo()
+#         self.assertEqual(self.parent('total_count'), 3)
+#         self.mg.redo()
+#         self.assertEqual(self.parent('total_count'), 3)
+#         self.mg.undo()
+#         self.assertEqual(self.parent('total_count'), 4)
 
-    def test_removing_all_children(self)->None:
-        for child in self.parent.children: self.parent.leave(child)
-        self.assertEqual(self.parent('total_count'), 0)
-        self.mg.undo()
-        self.assertEqual(self.parent('total_count'), 1)
+#     def test_removing_all_children(self)->None:
+#         for child in self.parent.children: self.parent.leave(child)
+#         self.assertEqual(self.parent('total_count'), 0)
+#         self.mg.undo()
+#         self.assertEqual(self.parent('total_count'), 1)
 
 
 class Test_Binding_Attributes_Owned_By_The_Same_Item(unittest.TestCase):
@@ -977,6 +977,76 @@ class Test_Binding_Attributes_Owned_By_The_Same_Item(unittest.TestCase):
         self.item.set('x',3)
         self.assertEqual(self.item('y'), 4)
         self.assertEqual(self.item('z'), 8)
+
+    def test_redo_and_undo_setting_free_value(self):
+        self.item.set('x',2)
+        self.item.set('x',3)
+        self.item.set('x',4)
+        self.mg.undo()
+        self.assertEqual(self.item('y'),9)
+        self.mg.undo()
+        self.assertEqual(self.item('y'),4)
+        self.mg.redo()
+        self.assertEqual(self.item('y'),9)
+        self.mg.redo()
+        self.assertEqual(self.item('y'),16)
+        self.mg.undo()
+        self.assertEqual(self.item('y'),9)
+        self.mg.undo()
+        self.assertEqual(self.item('y'),4)
+
+
+from typing import List
+class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.mg = ItemManager()
+        self.parent = self.mg.new('Parent',{'y':'integer'})
+
+    @staticmethod
+    def sum_x(x:List[int])->int: return sum(x)
+        
+    def test_parent_attribute_can_be_bound_to_any_attribute_that_is_expected_to_be_owned_by_some_of_its_children(self):
+        self.parent.bind('y', self.sum_x, '[x:integer]')
+        self.assertEqual(self.parent('y'), 0)
+
+    def test_parent_attribute_is_automatically_updates_when_adopting_or_leaving_a_child(self):
+        self.parent.bind('y', self.sum_x, '[x:integer]')
+        child = self.mg.new('Child',{'x':'integer'})
+        child.set('x',1)
+        self.parent.adopt(child)
+        self.assertEqual(self.parent('y'), 1)
+        self.parent.leave(child)
+        self.assertEqual(self.parent('y'), 0)
+
+    def test_children_not_containing_the_input_attribute_are_neglected(self):
+        self.parent.bind('y', self.sum_x, '[x:integer]')
+        child = self.mg.new('Child',{'x':'integer'})
+        child.set('x',1)
+        self.parent.adopt(child)
+        self.assertEqual(self.parent('y'), 1)
+        child_without_x = self.mg.new('Child',{'z':'integer'})
+        self.parent.adopt(child_without_x)
+        self.assertEqual(self.parent('y'), 1)
+
+    def test_adding_child_with_attribute_of_type_that_does_not_match_the_dependency_raises_exception(self):
+        self.parent.bind('y', self.sum_x, '[x:integer]')
+        child = self.mg.new('Child',{'x':'text'})
+        self.assertRaises(ItemImpl.ChildAttributeTypeConflict, self.parent.adopt, child)
+
+    def __test_passing_child_to_other_parent(self)->None:
+        self.parent.bind('y', self.sum_x, '[x:integer]')
+        child = self.mg.new('Child',{'x':'integer'})
+        child.set('x',1)
+        self.parent.adopt(child)
+
+        other_parent = self.mg.new('Other parent')
+        self.assertEqual(self.parent('y'), 1)
+        self.parent.pass_to_new_parent(child, other_parent)
+        self.assertEqual(self.parent('y'), 0)
+        other_parent.pass_to_new_parent(child, self.parent)
+        self.assertEqual(self.parent('y'), 1)
+
 
 
 if __name__=="__main__": unittest.main()

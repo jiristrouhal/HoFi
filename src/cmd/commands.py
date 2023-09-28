@@ -111,9 +111,17 @@ class Composed_Command(abc.ABC):
             converted_data = converter(data)
             pre.extend(composed_cmd(converted_data))
 
-        pre.extend([p(data) for p in self.pre.values()])
+        for func in self.pre.values():
+            cmd = func(data)
+            if isinstance(cmd, tuple): pre.extend(cmd)
+            else: pre.append(cmd)
+
         main = self.cmd_type()(data)
-        post = [p(data) for p in self.post.values()]
+        post:List[Command] = []
+        for func in self.post.values():
+            cmd = func(data)
+            if isinstance(cmd, tuple): post.extend(cmd)
+            else: post.append(cmd)
 
         for converter, composed_cmd in self.composed_post.values():
             post.extend(composed_cmd(converter(data)))

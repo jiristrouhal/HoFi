@@ -147,10 +147,16 @@ class PassToNewParent_Composed(Composed_Command):
 from typing import Literal
 Command_Type = Literal['adopt','pass_to_new_parent','rename']
 class Item(abc.ABC): # pragma: no cover
+
+    @dataclasses.dataclass(frozen=True)
+    class BindingInfo:
+        func:Callable[[Any],Any]
+        input_labels:Tuple[str,...]
     
     def __init__(self,name:str,attributes:Dict[str,Attribute],manager:ItemManager)->None:
         self._manager = manager
         self.__id = str(id(self))
+        self._bindings:Dict[str, Item.BindingInfo] = dict()
 
     @abc.abstractproperty
     def attributes(self)->Dict[str,Attribute]: pass
@@ -168,7 +174,14 @@ class Item(abc.ABC): # pragma: no cover
     def id(self)->str: return self.__id
 
     @abc.abstractmethod
-    def bind(self, output_name:str, func:Callable[[Any],Any], *input_names:str)->None: pass
+    def bind(self, output_name:str, func:Callable[[Any],Any], *input_names:str)->None:
+        """
+        A following convention is used for specifiying the dependency inputs:
+            'x' ... attribute named 'x', owned by this item\n
+            '[x:integer]' ... list of all attributes named 'x' owned by this item's children. The expected type of the attributes must be put after the label; both must be separated with a colon
+        Naming is whitespace- and case- sensitive (e.g. 'x' is different from ' x' and from 'X').
+        """
+        pass
 
     @abc.abstractmethod
     def adopt(self,child:Item)->None: pass
@@ -190,10 +203,10 @@ class Item(abc.ABC): # pragma: no cover
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None: pass
 
     @abc.abstractmethod
-    def collect_child_values(self, value_type:str, child_attribute_label:str)->None: pass
+    def _create_child_attr_list(self, value_type:str, child_attr_label:str)->None: pass
 
     @abc.abstractmethod
-    def child_values(self, label:str)->Attribute_List: pass
+    def child_attr_list(self, label:str)->Attribute_List: pass
 
     @abc.abstractmethod
     def duplicate(self)->Item: pass
@@ -256,8 +269,8 @@ class Item(abc.ABC): # pragma: no cover
 
 
 
-from src.core.attributes import Append_To_Attribute_List, Remove_From_Attribute_List
-from typing import Tuple
+from src.core.attributes import Append_To_Attribute_List, Remove_From_Attribute_List, AbstractAttribute
+from typing import Tuple, List
 
 class ItemImpl(Item):
 
@@ -286,8 +299,8 @@ class ItemImpl(Item):
         def on_adoption(self,*args)->None: pass # pragma: no cover
         def on_passing_to_new_parent(self,*args)->None: pass # pragma: no cover
         def on_renaming(self,*args)->None: pass # pragma: no cover
-        def child_values(self, label:str)->Attribute_List: raise Item.NonexistentAttribute
-        def collect_child_values(self,*args)->Any: return None 
+        def child_attr_list(self, *args)->Attribute_List: raise Item.NonexistentAttribute
+        def _create_child_attr_list(self,*args)->None: pass
         def duplicate(self) -> Item: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
@@ -311,12 +324,6 @@ class ItemImpl(Item):
 
     NULL = __ItemNull()
 
-
-    @dataclasses.dataclass(frozen=True)
-    class __BindingInfo:
-        func:Callable[[Any],Any]
-        input_labels:Tuple[str,...]
-
     
     def __init__(self,name:str,attributes:Dict[str,Attribute], manager:ItemManager)->None:
         super().__init__(name,attributes,manager)
@@ -329,8 +336,8 @@ class ItemImpl(Item):
         self._rename(name)
         self.__children:Set[Item] = set()
         self.__parent:Item = self.NULL
-        self._child_values:Dict[str,Attribute_List] = dict()
-        self.__bindings:Dict[str, ItemImpl.__BindingInfo] = dict()
+        self._child_attr_lists:Dict[str,Attribute_List] = dict()
+        self._bindings:Dict[str, Item.BindingInfo] = dict()
 
     @property
     def attributes(self)->Dict[str,Attribute]: 
@@ -349,18 +356,39 @@ class ItemImpl(Item):
         return self.__children.copy()
  
     def attribute(self,label:str)->Attribute:
-        if not label in self.__attributes: raise Item.NonexistentAttribute
+        if not label in self.__attributes: 
+            raise Item.NonexistentAttribute(label)
         else:
             return self.__attributes[label]
         
     def bind(self, output_name:str, func:Callable[[Any], Any], *input_names:str)->None:
         output = self.attribute(output_name)
-        output.add_dependency(func, *[self.attribute(name) for name in input_names])
-        self.__bindings[output_name] = ItemImpl.__BindingInfo(func, input_names)
+        inputs = self.__collect_input_attributes(input_names)
+        output.add_dependency(func, *inputs)
+        self._bindings[output_name] = ItemImpl.BindingInfo(func, input_names)
+
+    def __collect_input_attributes(self, input_labels:Tuple[str,...])->List[AbstractAttribute]:
+        inputs:List[AbstractAttribute] = list()
+        for input_label in input_labels:
+            if self.__is_child_attributes_label(input_label):
+                label, value_type = input_label[1:-1].split(":")
+                if label not in self._child_attr_lists:
+                    self._create_child_attr_list(value_type, label)
+                inputs.append(self.child_attr_list(label))
+            else:
+                inputs.append(self.attribute(input_label))
+        return inputs
     
+    @staticmethod
+    def __is_child_attributes_label(label)->bool: 
+        if len(label)<3: 
+            return False
+        else:
+            return label[0]=='[' and label[-1]==']'
+
     def free(self, output_name:str)->None:
         self.attribute(output_name).break_dependency()
-        self.__bindings.pop(output_name)
+        self._bindings.pop(output_name)
         
     def has_attribute(self, label:str)->bool:
         return label in self.__attributes
@@ -370,51 +398,65 @@ class ItemImpl(Item):
         if self._can_be_parent_of(item):
             self.controller.run(*self.command['adopt'](Adoption_Data(self,item)))
     
-    def child_values(self, label:str)->Attribute_List:
-        if label not in self._child_values: raise Item.NonexistentChildValueGroup
-        return self._child_values[label]
-
-    def collect_child_values(self, value_type:str, attribute_label:str)->None:
-        alist = self._manager._attrfac.newlist(atype=value_type)
-        for child in self.__children: 
-            if attribute_label in child.attributes: 
-                alist.append(child.attribute(attribute_label))
+    def child_attr_list(self, label:str)->Attribute_List:
+        if label not in self._child_attr_lists: 
+            raise Item.NonexistentChildValueGroup
+        else:
+            return self._child_attr_lists[label]
+    
+    def __check_attribute_type_matches_list_type(
+        self,
+        alist:Attribute_List,
+        attribute:AbstractAttribute
+        )->None:
         
-        def append_cmd(data:Adoption_Data)->Command:
-            if data.child.has_attribute(attribute_label):
-                cmd_data = Edit_AttrList_Data(alist,data.child.attribute(attribute_label))
+        if not alist.type==attribute.type: 
+            raise self.ChildAttributeTypeConflict
+
+    def _create_child_attr_list(self, value_type:str, child_attr_label:str)->None:
+        alist = self._manager._attrfac.newlist(atype=value_type)
+        
+        for child in self.__children: 
+            if child_attr_label in child.attributes: 
+                self.__check_attribute_type_matches_list_type(alist,child.attribute(child_attr_label))
+                alist.append(child.attribute(child_attr_label))
+        
+        def adopt_cmd(data:Adoption_Data)->Command:
+            if data.child.has_attribute(child_attr_label):
+                self.__check_attribute_type_matches_list_type(alist,data.child.attribute(child_attr_label))
+                cmd_data = Edit_AttrList_Data(alist,data.child.attribute(child_attr_label))
                 return Append_To_Attribute_List(cmd_data)
             else:
                 return Empty_Command()
             
-        def pass_to_new_parent_cmd(data:Pass_To_New_Parrent_Data)->Command:
-            if data.child.has_attribute(attribute_label):
-                cmd_data = Edit_AttrList_Data(alist,data.child.attribute(attribute_label))
+        def leave_child_cmd(data:Pass_To_New_Parrent_Data)->Command:
+            if data.child.has_attribute(child_attr_label):
+                cmd_data = Edit_AttrList_Data(alist,data.child.attribute(child_attr_label))
                 return Remove_From_Attribute_List(cmd_data)
             else:
                 return Empty_Command()
-            
+
         def set_cmd_converter(data:Adoption_Data)->Set_Attr_Data:
             value_getter = lambda: alist.value
             return Set_Attr_Data(alist, value_getter)
 
-        self.command['adopt'].add(self.id, append_cmd, 'post')
+        self.command['adopt'].add(alist.id, adopt_cmd, 'post')
         self.command['adopt'].add_composed(
-            self.id, 
+            alist.id, 
             set_cmd_converter, 
             alist.command['set'], 
             'post'
         )
 
-        self.command['pass_to_new_parent'].add(self.id, pass_to_new_parent_cmd, 'post')
+        self.command['pass_to_new_parent'].add(alist.id, leave_child_cmd, 'post')
         self.command['pass_to_new_parent'].add_composed(
-            self.id, 
+            alist.id, 
             set_cmd_converter, 
             alist.command['set'], 
             'post'
         )
 
-        self._child_values[attribute_label] = alist
+        self._child_attr_lists[child_attr_label] = alist
     
     def leave(self, child:Item)->None:
         self.pass_to_new_parent(child, ItemImpl.NULL)
@@ -494,11 +536,11 @@ class ItemImpl(Item):
         return dupl
     
     def __apply_binding_info(self)->None:
-        for output_name, info in self.__bindings.items():
+        for output_name, info in self._bindings.items():
             self.bind(output_name, info.func, *info.input_labels)
     
     def __copy_bindings(self, dupl:ItemImpl)->None:
-        dupl.__bindings = self.__bindings.copy()
+        dupl._bindings = self._bindings.copy()
         dupl.__apply_binding_info()
         for child, child_dupl in zip(self.__children, dupl.__children):
             if isinstance(child, ItemImpl) and isinstance(child_dupl, ItemImpl):
@@ -539,4 +581,5 @@ class ItemImpl(Item):
         if name=="": raise self.BlankName
 
 
+    class ChildAttributeTypeConflict(Exception): pass
         
