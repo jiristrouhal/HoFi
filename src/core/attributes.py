@@ -269,13 +269,7 @@ class AbstractAttribute(abc.ABC):
         )->None:   # pragma: no cover
         
         pass
-
-    @abc.abstractmethod
-    def _get_set_commands(self,values:List[Any])->List[Command]: pass  # pragma: no cover
-
-    @abc.abstractmethod
-    def _run_set_command(self,value:Any)->None: pass  # pragma: no cover
-
+    
     @abc.abstractmethod
     def _value_update(self, new_value:Any)->None: pass   # pragma: no cover
 
@@ -366,17 +360,8 @@ class Attribute_List(AbstractAttribute):
             if isinstance(attr,Attribute_List):
                 attr._check_hierarchy_collision(attr,root_list)
 
-    def _get_set_commands(self,values:List[Any])->List[Command]:
-        cmds:List[Command] = []
-        for attr, value in zip(self.__attributes, values):
-            cmds.extend(attr._get_set_commands(value))
-        return cmds
-
     def _remove(self,attributes:AbstractAttribute)->None: 
         self.__attributes.remove(attributes)
-
-    def _run_set_command(self,values:List[Any])->None:
-        self.factory.controller.run(*self._get_set_commands(values))
 
     def _value_update(self,values:List[Any])->None:
         for attr, value in zip(self.__attributes, values):

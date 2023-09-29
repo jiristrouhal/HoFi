@@ -30,8 +30,9 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
         self.assertEqual(a.value, 5)
 
     def test_name_of_attribute_has_to_be_of_type_string(self)->None:
-        x = self.attrfac.new(name="Valid name")
         self.assertRaises(Attribute.Invalid_Name, self.attrfac.new, name=666)
+        x = self.attrfac.new(name="Valid name")
+        self.assertRaises(Attribute.Invalid_Name, x.rename, name=666)
 
     def test_setting_attribute_to_invalid_type_raises_error(self)->None:
         self.assertRaises(Attribute.InvalidAttributeType, self.attrfac.new, 'invalid_argument_type_0123456789')
