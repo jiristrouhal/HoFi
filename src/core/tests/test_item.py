@@ -949,6 +949,28 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
         parent.bind('y',sum,'[x:integer]')
         self.assertEqual(parent('y'),2)
 
+    def test_switching_roles_of_parent_and_child_both_depending_on_child_attributes_of_the_same_name(self):
+        parent = self.mg.new('Parent', {'x':'integer','y':'integer'})
+        child = self.mg.new('Child', {'x':'integer','y':'integer'})
+        parent.adopt(child)
+
+        parent.set('x',5)
+        parent.set('y',-1)
+        child.set('x',5)
+        child.set('y',-1)
+
+        parent.bind('y',sum,'[x:integer]')
+        child.bind('y',sum,'[x:integer]')
+
+        self.assertEqual(parent('y'), 5)
+        self.assertEqual(child('y'), 0)
+
+        parent.leave(child)
+        child.adopt(parent)
+
+        self.assertEqual(parent('y'), 0)
+        self.assertEqual(child('y'), 5)
+
 
 class Test_Picking_Child_Item_By_Name(unittest.TestCase):
 
