@@ -105,6 +105,31 @@ class Adopt_Composed(Composed_Command):
         return super().add_composed(owner_id, data_converter, cmd, timing)
 
 
+class Leave(Command):
+    data:Adoption_Data
+    def run(self):
+        self.data.parent._leave_child(self.data.child)
+    def undo(self):
+        self.data.parent._adopt(self.data.child)
+    def redo(self):
+        self.data.parent._leave_child(self.data.child)
+
+
+@dataclasses.dataclass
+class Leave_Composed(Composed_Command):
+    @staticmethod
+    def cmd_type(): return Leave
+
+    def __call__(self, data:Adoption_Data)->Tuple[Command, ...]:
+        return super().__call__(data)
+    
+    def add(self, owner_id: str, creator: Callable[[Adoption_Data], Command], timing: Timing) -> None:
+        return super().add(owner_id, creator, timing)
+    
+    def add_composed(self, owner_id: str, data_converter: Callable[[Adoption_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
+        return super().add_composed(owner_id, data_converter, cmd, timing)
+
+
 @dataclasses.dataclass
 class PassToNewParent(Command):
     data:Pass_To_New_Parrent_Data
@@ -129,7 +154,7 @@ class PassToNewParent_Composed(Composed_Command):
     @staticmethod
     def cmd_type(): return PassToNewParent
 
-    def __call__(self, data:Pass_To_New_Parrent_Data):
+    def __call__(self, data:Pass_To_New_Parrent_Data)->Tuple[Command,...]:
         return super().__call__(data)
 
     def add(

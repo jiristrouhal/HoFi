@@ -959,6 +959,20 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
         # self.assertEqual(parent('y'), 1)
 
 
+class Test_Leaving_Child(unittest.TestCase):
+
+    def test_running_leaving_child_command(self):
+        mg = ItemManager()
+        parent = mg.new("Parent")
+        child = mg.new("Child")
+        parent.adopt(child)
+        parent.leave(child)
+        self.assertFalse(parent.has_children())
+        self.assertFalse(parent.is_parent_of(child))
+        mg.undo()
+        self.assertTrue(parent.has_children())
+        self.assertTrue(parent.is_parent_of(child))
+
 
 if __name__=="__main__": unittest.main()
 
