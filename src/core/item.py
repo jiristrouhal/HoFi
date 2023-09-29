@@ -213,9 +213,6 @@ class Item(abc.ABC): # pragma: no cover
     def _create_child_attr_list(self, value_type:str, child_attr_label:str)->None: pass
 
     @abc.abstractmethod
-    def child_attr_list(self, label:str)->Attribute_List: pass
-
-    @abc.abstractmethod
     def duplicate(self)->Item: pass
 
     @abc.abstractmethod
@@ -250,6 +247,12 @@ class Item(abc.ABC): # pragma: no cover
 
     @abc.abstractmethod
     def _accept_parent(self,item:Item)->None: pass
+
+    @abc.abstractmethod
+    def _apply_binding_info(self)->None: pass
+
+    @abc.abstractmethod
+    def _copy_bindings(self, dupl:Item)->None: pass 
 
     @abc.abstractmethod
     def _can_be_parent_of(self,item:Item)->bool: pass
@@ -294,7 +297,7 @@ class ItemImpl(Item):
         @property
         def root(self)->Item: return self
         @property
-        def children(self)->Set[Item]: return self.__children
+        def children(self)->Set[Item]: raise self.CannotAccessChildrenOfNull
 
         def bind(self,*args)->None: raise self.SettingDependencyOnNull
         def free(self,*args)->None: raise self.SettingDependencyOnNull
@@ -305,7 +308,6 @@ class ItemImpl(Item):
         def on_adoption(self,*args)->None: pass # pragma: no cover
         def on_leaving(self,*args)->None: pass # pragma: no cover
         def on_renaming(self,*args)->None: pass # pragma: no cover
-        def child_attr_list(self, *args)->Attribute_List: raise Item.NonexistentAttribute # pragma: no cover
         def _create_child_attr_list(self,*args)->None: raise self.AddingAttributeToNullItem
         def duplicate(self)->ItemImpl.__ItemNull: return self
         def has_children(self)->bool: return True
@@ -314,12 +316,14 @@ class ItemImpl(Item):
         def leave(self, child:Item)->None: raise self.NullCannotLeaveChild
         def pass_to_new_parent(self, child:Item, new_parent:Item)->None: 
             new_parent.adopt(child)
-        def pick_child(self, name:str)->Item: raise self.CannotPickChildOfNull
+        def pick_child(self, name:str)->Item: raise self.CannotAccessChildrenOfNull
         def rename(self,name:str)->None: return
         def set(self, attr_name:str,value:Any)->None: raise Item.NonexistentAttribute   # pragma: no cover
         def __call__(self, attr_name:str)->Any: raise Item.NonexistentAttribute   # pragma: no cover
-        def _adopt(self, child:Item)->None: return
+        def _adopt(self, child:Item)->None: return # pragma: no cover
         def _accept_parent(self,item:Item)->None: raise Item.AdoptingNULL
+        def _apply_binding_info(self)->None: pass # pragma: no cover
+        def _copy_bindings(self, dupl:Item)->None: pass # pragma: no cover
         def _can_be_parent_of(self,item:Item)->bool: return True   # pragma: no cover
         def _leave_child(self,child:Item)->None: return
         def _leave_parent(self,parent:Item)->None: return
@@ -327,7 +331,7 @@ class ItemImpl(Item):
         def _duplicate_items(self)->Item: return self # pragma: no cover
 
         class AddingAttributeToNullItem(Exception): pass
-        class CannotPickChildOfNull(Exception): pass
+        class CannotAccessChildrenOfNull(Exception): pass
         class NullCannotLeaveChild(Exception): pass
         class SettingDependencyOnNull(Exception): pass
 
@@ -382,7 +386,7 @@ class ItemImpl(Item):
                 label, value_type = input_label[1:-1].split(":")
                 if label not in self._child_attr_lists:
                     self._create_child_attr_list(value_type, label)
-                inputs.append(self.child_attr_list(label))
+                inputs.append(self._child_attr_lists[label])
             else:
                 inputs.append(self.attribute(input_label))
         return inputs
@@ -409,12 +413,6 @@ class ItemImpl(Item):
     def leave(self, child:Item)->None:
         self.controller.run(*self.command['leave'](Parentage_Data(self,child)))
     
-    def child_attr_list(self, label:str)->Attribute_List:
-        if label not in self._child_attr_lists: 
-            raise Item.NonexistentChildValueGroup
-        else:
-            return self._child_attr_lists[label]
-    
     def __check_attr_type_matches_list_type(
         self,
         alist:Attribute_List,
@@ -434,8 +432,6 @@ class ItemImpl(Item):
         
         def adopt_cmd(data:Parentage_Data)->Command:
             if not data.child.has_attribute(child_attr_label): return Empty_Command()
-            if child_attr_label not in data.parent._child_attr_lists: return Empty_Command()
-            
             self.__check_attr_type_matches_list_type(alist, data.child.attribute(child_attr_label))
             cmd_data = Edit_AttrList_Data(alist,data.child.attribute(child_attr_label))
             return Append_To_Attribute_List(cmd_data)
@@ -486,7 +482,7 @@ class ItemImpl(Item):
 
     def duplicate(self)->Item:
         the_duplicate = self._duplicate_items()
-        self.__copy_bindings(the_duplicate)
+        self._copy_bindings(the_duplicate)
         self.parent.adopt(the_duplicate)
         return the_duplicate
 
@@ -531,16 +527,15 @@ class ItemImpl(Item):
             dupl._adopt(child_duplicate)
         return dupl
     
-    def __apply_binding_info(self)->None:
+    def _apply_binding_info(self)->None:
         for output_name, info in self._bindings.items():
             self.bind(output_name, info.func, *info.input_labels)
     
-    def __copy_bindings(self, dupl:ItemImpl)->None:
+    def _copy_bindings(self, dupl:Item)->None:
         dupl._bindings = self._bindings.copy()
-        dupl.__apply_binding_info()
-        for child, child_dupl in zip(self.__children, dupl.__children):
-            if isinstance(child, ItemImpl) and isinstance(child_dupl, ItemImpl):
-                child.__copy_bindings(child_dupl)
+        dupl._apply_binding_info()
+        for child, child_dupl in zip(self.__children, dupl.children):
+            child._copy_bindings(child_dupl)
 
     def _leave_child(self,child:Item)->None:
         if child in self.__children:

@@ -123,14 +123,14 @@ class Test_NULL_Item(unittest.TestCase):
         self.assertRaises(NullItem.NullCannotLeaveChild, NullItem.leave, item)
 
     def test_picking_child_on_null_raises_exception(self)->None:
-        self.assertRaises(NullItem.CannotPickChildOfNull, NullItem.pick_child, "some child's name")
+        self.assertRaises(NullItem.CannotAccessChildrenOfNull, NullItem.pick_child, "some child's name")
 
     def test_setting_dependency_on_null_raises_exception(self)->None:
         self.assertRaises(NullItem.SettingDependencyOnNull, NullItem.bind, )
         self.assertRaises(NullItem.SettingDependencyOnNull, NullItem.free, )
 
-    def test_null_item_has_no_children(self):
-        self.assertSetEqual(NullItem.children, set())
+    def test_accessing_children_of_null_raises_exception(self):
+        with self.assertRaises(NullItem.CannotAccessChildrenOfNull): NullItem.children
 
     
 class Test_Accessing_Item_Attributes(unittest.TestCase):
@@ -913,6 +913,58 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
         other_parent.pass_to_new_parent(child, parent)
         self.assertTrue(child.attribute('x') in parent._child_attr_lists['x'])
         self.assertEqual(parent('y'), 1)
+
+    def test_binding_to_already_existing_list_of_childrens_attributes(self):
+        parent = self.mg.new('Some parent', {'y':'integer','z':'integer'})
+        parent.bind('y',sum,'[x:integer]')
+        parent.bind('z',sum,'[x:integer]')
+        self.assertEqual(parent('y'),0)
+        self.assertEqual(parent('z'),0)
+        child = self.mg.new('Child',{'x':'integer'})
+        child.set('x',2)
+        parent.adopt(child)
+        self.assertEqual(parent('y'),2)
+        self.assertEqual(parent('z'),2)
+
+    def test_adopting_child_without_input_attribute_has_no_effect(self):
+        parent = self.mg.new('Some parent', {'y':'integer'})
+        parent.bind('y',sum,'[x:integer]')
+        child = self.mg.new('Child',{'not an x':'integer'})
+        child.set('not an x',1)
+
+        self.assertEqual(parent('y'),0)
+        parent.adopt(child)
+        self.assertEqual(parent('y'),0)
+        parent.leave(child)
+        self.assertEqual(parent('y'),0)
+
+    def test_adding_dependency_on_children_attributes_when_already_having_children(self):
+        parent = self.mg.new('Some parent', {'y':'integer'})
+        child = self.mg.new('Child',{'x':'integer'})
+        other_child = self.mg.new('Other Child')
+        child.set('x',2)
+        parent.adopt(child)
+        parent.adopt(other_child)
+
+        parent.bind('y',sum,'[x:integer]')
+        self.assertEqual(parent('y'),2)
+
+
+class Test_Picking_Child_Item_By_Name(unittest.TestCase):
+
+    def test_picking_child_by_name(self):
+        mg = ItemManager()
+        parent = mg.new('Parent')
+        alice = mg.new('Alice')
+        bob = mg.new('Bob')
+        not_a_child = mg.new('Not a Child')
+
+        parent.adopt(alice)
+        parent.adopt(bob)
+
+        self.assertEqual(parent.pick_child('Bob'),bob)
+        self.assertEqual(parent.pick_child('Alice'),alice)
+        self.assertEqual(parent.pick_child('Not a Child'),NullItem)
 
 
 class Test_Leaving_Child(unittest.TestCase):
