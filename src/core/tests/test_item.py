@@ -445,7 +445,7 @@ class Test_Undo_And_Redo_Multiple_Operations(unittest.TestCase):
 
 
 from src.cmd.commands import Command
-from src.core.item import Adoption_Data
+from src.core.item import Parentage_Data
 import dataclasses
 class Test_Connecting_External_Commands_To_The_Adopt_Command(unittest.TestCase):
 
@@ -481,7 +481,7 @@ class Test_Connecting_External_Commands_To_The_Adopt_Command(unittest.TestCase):
         self.mg = ItemManager()
         self.parent = self.mg.new("Parent")
 
-        def record_adoption(data:Adoption_Data)->Command:
+        def record_adoption(data:Parentage_Data)->Command:
             return self.RecordAdoption(data.parent, data.child, self.display)
 
         self.parent.on_adoption('test',record_adoption,'pre') 
@@ -660,76 +660,6 @@ class Test_Catching_Old_And_New_Name_On_Paper(unittest.TestCase):
         self.assertEqual(self.paper.old_name, "New name")
         self.assertEqual(self.paper.new_name, "Newer name")
 
-
-from src.core.item import Pass_To_New_Parrent_Data
-class Test_Store_New_Parent_Name(unittest.TestCase):
-
-    @dataclasses.dataclass
-    class Paper:
-        parent_name:str = ""
-
-    @dataclasses.dataclass
-    class Store_Parent_Name(Command):
-        parent:Item
-        new_parent:Item
-        paper:Test_Store_New_Parent_Name.Paper
-        old_name:str = dataclasses.field(init=False)
-        new_name:str = dataclasses.field(init=False)
-
-        def run(self)->None:
-            self.old_name = self.parent.name
-            self.new_name = self.new_parent.name
-            self.paper.parent_name = self.new_name
-        def undo(self)->None:
-            self.paper.parent_name = self.old_name
-        def redo(self)->None:
-            self.paper.parent_name = self.new_name
-
-
-    def test_undo_and_redo_passing_to_new_parent(self):
-        paper = Test_Store_New_Parent_Name.Paper()
-        mg = ItemManager()
-        parent_A = mg.new("Parent A")
-
-        def store_name_of_new_parent(
-            data:Pass_To_New_Parrent_Data
-            )->Test_Store_New_Parent_Name.Store_Parent_Name:
-
-            return Test_Store_New_Parent_Name.Store_Parent_Name(data.parent,data.new_parent,paper)
-
-        parent_A.on_passing_to_new_parent('test',store_name_of_new_parent,'pre')
-        child = mg.new("Child")
-        
-        parent_A.adopt(child)
-        self.assertEqual(paper.parent_name, "")
-
-        parent_B = mg.new("Parent B")
-        parent_B.on_passing_to_new_parent('test',store_name_of_new_parent,'pre')
-
-        parent_A.pass_to_new_parent(child,parent_B)
-        self.assertEqual(child.parent, parent_B)
-        self.assertEqual(paper.parent_name, "Parent B")
-
-        parent_C = mg.new("Parent C")
-        parent_B.pass_to_new_parent(child,parent_C)
-        self.assertEqual(child.parent, parent_C)
-        self.assertEqual(paper.parent_name, "Parent C")
-
-        mg.undo()
-        self.assertEqual(child.parent, parent_B)
-        self.assertEqual(paper.parent_name, "Parent B")
-
-        mg.undo()
-        self.assertEqual(child.parent, parent_A)
-        self.assertEqual(paper.parent_name, "Parent A")
-
-        mg.redo()
-        self.assertEqual(child.parent, parent_B)
-        self.assertEqual(paper.parent_name, "Parent B")
-        
-        mg.undo()
-        self.assertEqual(child.parent, parent_A)
-        self.assertEqual(paper.parent_name, "Parent A")
 
 
 class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
@@ -947,16 +877,21 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
         parent.bind('y', self.sum_x, '[x:integer]')
         child = self.mg.new('Child',{'x':'integer'})
         child.set('x',1)
-        parent.adopt(child)
-
         other_parent = self.mg.new('The other parent')
+
+        parent.adopt(child)
         self.assertEqual(parent('y'), 1)
+        self.assertTrue(child.attribute('x') in parent._child_attr_lists['x'])
+
         parent.pass_to_new_parent(child, other_parent)
-        self.assertTrue(child.attribute('x') not in parent._child_attr_lists['x'])
+        self.assertFalse(parent.is_parent_of(child))
+        self.assertTrue(other_parent.is_parent_of(child))
+        self.assertFalse(child.attribute('x') in parent._child_attr_lists['x'])
         self.assertEqual(parent('y'), 0)
+
         other_parent.pass_to_new_parent(child, parent)
-        # self.assertTrue(child.attribute('x') in parent._child_attr_lists['x'])
-        # self.assertEqual(parent('y'), 1)
+        self.assertTrue(child.attribute('x') in parent._child_attr_lists['x'])
+        self.assertEqual(parent('y'), 1)
 
 
 class Test_Leaving_Child(unittest.TestCase):
@@ -972,6 +907,81 @@ class Test_Leaving_Child(unittest.TestCase):
         mg.undo()
         self.assertTrue(parent.has_children())
         self.assertTrue(parent.is_parent_of(child))
+
+    def test_passing_to_new_parent(self):
+        mg = ItemManager()
+        parent = mg.new("Parent")
+        new_parent = mg.new("New Parent")
+        child = mg.new("Child")
+        parent.adopt(child)
+
+        parent.pass_to_new_parent(child,new_parent)
+        self.assertFalse(parent.has_children())
+        self.assertFalse(parent.is_parent_of(child))
+        self.assertTrue(new_parent.has_children())
+        self.assertTrue(new_parent.is_parent_of(child))    
+
+
+class Test_Running_Additional_Command_When_Leaving_Child(unittest.TestCase):
+
+    def setUp(self) -> None:
+        @dataclasses.dataclass
+        class Message:
+            text:str = ""
+
+        @dataclasses.dataclass
+        class Write_Message(Command):
+            data:Write_Message_Data
+            old_text:str = ""
+            new_text:str = ""
+            def run(self)->None:
+                self.old_text = self.data.message.text
+                self.data.message.text = f"{self.data.message_start} {self.data.child.name}"
+                self.new_text = self.data.message.text
+            def undo(self)->None:
+                self.data.message.text = self.old_text
+            def redo(self)->None:
+                self.data.message.text = self.new_text
+
+        @dataclasses.dataclass
+        class Write_Message_Data:
+            message_start:str
+            message:Message
+            child:Item
+
+        self.mg = ItemManager()
+        self.parent = self.mg.new("Parent")
+        self.child = self.mg.new("Child")
+        self.parent.adopt(self.child)
+        self.message_before = Message()
+        self.message_after = Message()
+        def write_message_before(data:Parentage_Data)->Command:
+            return Write_Message(Write_Message_Data("Leaving", self.message_before,self.child))
+        def write_message_after(data:Parentage_Data)->Command:
+            return Write_Message(Write_Message_Data("Left", self.message_after,self.child))
+        self.parent.on_leaving('test',write_message_before, 'pre')
+        self.parent.on_leaving('test',write_message_after, 'post')
+
+    def test_writing_message_before_and_after_leaving_child(self):
+        self.parent.leave(self.child)
+        self.assertEqual(self.message_before.text, "Leaving Child")
+        self.assertEqual(self.message_after.text, "Left Child")
+        self.mg.undo()
+        self.assertEqual(self.message_before.text, "")
+        self.assertEqual(self.message_after.text, "")
+        self.mg.redo()
+        self.assertEqual(self.message_before.text, "Leaving Child")
+        self.assertEqual(self.message_after.text, "Left Child")
+        self.mg.undo()
+        self.assertEqual(self.message_before.text, "")
+        self.assertEqual(self.message_after.text, "")
+
+    def test_writing_message_before_and_after_passing_child_to_other_parent(self):
+        other_parent = self.mg.new("Other Parent")
+
+        self.parent.pass_to_new_parent(self.child, other_parent)
+        self.assertEqual(self.message_before.text, "Leaving Child")
+        self.assertEqual(self.message_after.text, "Left Child")
 
 
 if __name__=="__main__": unittest.main()

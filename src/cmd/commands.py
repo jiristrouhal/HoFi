@@ -7,8 +7,7 @@ class Command(abc.ABC): # pragma: no cover
     def __init__(self, data:Any)->None: 
         self.data = data
     @property
-    def message(self)->str|None:
-        return f"{self.__class__}"
+    def message(self)->str: return ""
     @abc.abstractmethod
     def run(self)->None: pass
     @abc.abstractmethod
@@ -22,10 +21,11 @@ class Empty_Command(Command):
     This commands' purpose is to avoid running other commands if certain condition is not satisfied (e.g. data for command are invalid).
     Running of the empty command is NOT reflected in the controller history.
     """
-    def __init__(self,*args)->None: pass
-    
+    def __init__(self,*args,custom_message:str="")->None:
+        self.__message = custom_message
+
     @property
-    def message(self)->None: return None
+    def message(self)->str: return self.__message
 
     def run(self)->None: pass
     def undo(self)->None: pass
@@ -57,35 +57,30 @@ class Controller:
     
     def run(self,*cmds:Command)->None:
         cmd_list:List[Command] = []
-        for item in cmds: 
-            if isinstance(item,tuple): cmd_list.extend(item)
-            else: cmd_list.append(item)
-        
+        for item in cmds: cmd_list.append(item)
         for cmd in cmd_list: cmd.run()
         self.__undo_stack.append(cmd_list)
         self.__redo_stack.clear()
 
-        if cmd.message is not None:
-            self.__history.extend([f"{self.__last_symbol} {cmd.message}" for cmd in cmd_list])
-            self.__switch_last_symbol()
+        self.__history.extend([f"{self.__last_symbol} {cmd.message}" for cmd in cmd_list if cmd.message.strip() != ""])
+        self.__switch_last_symbol()
 
     def undo(self)->None:
         if not self.__undo_stack: return 
         batch = self.__undo_stack.pop()   
         for cmd in reversed(batch): 
             cmd.undo()
-            if cmd.message is not None:
+            if cmd.message.strip() != "":
                 self.__history.append(f"{self.__last_symbol}Undo: {cmd.message}")
         self.__redo_stack.append(batch)
         self.__switch_last_symbol()
-
 
     def redo(self)->None:
         if not self.__redo_stack: return 
         batch = self.__redo_stack.pop()    
         for cmd in batch: 
             cmd.redo()
-            if cmd.message is not None:
+            if cmd.message.strip() != "":
                 self.__history.append(f"{self.__last_symbol}Redo: {cmd.message}")
         self.__undo_stack.append(batch)
         self.__switch_last_symbol()
@@ -113,15 +108,13 @@ class Composed_Command(abc.ABC):
 
         for func in self.pre.values():
             cmd = func(data)
-            if isinstance(cmd, tuple): pre.extend(cmd)
-            else: pre.append(cmd)
+            pre.append(cmd)
 
         main = self.cmd_type()(data)
         post:List[Command] = []
         for func in self.post.values():
             cmd = func(data)
-            if isinstance(cmd, tuple): post.extend(cmd)
-            else: post.append(cmd)
+            post.append(cmd)
 
         for converter, composed_cmd in self.composed_post.values():
             post.extend(composed_cmd(converter(data)))

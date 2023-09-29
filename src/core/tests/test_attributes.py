@@ -400,27 +400,31 @@ class Test_Copying_Attribute(unittest.TestCase):
     @dataclasses.dataclass
     class Message:
         text:str = ""
-    
+
     @dataclasses.dataclass
-    class Write_Value_To_Message_Text:
+    class Write_Value_To_Message_Text_Data:
         attr:Attribute
         message:Test_Copying_Attribute.Message
+    
+    @dataclasses.dataclass
+    class Write_Value_To_Message_Text(Command):
+        data:Test_Copying_Attribute.Write_Value_To_Message_Text_Data
         prev_text:str = dataclasses.field(init=False)
         new_text:str = dataclasses.field(init=False)
         def run(self):
-            self.prev_text = self.message.text
-            self.message.text = str(self.attr.value)
-            self.new_text = self.message.text
+            self.prev_text = self.data.message.text
+            self.data.message.text = str(self.data.attr.value)
+            self.new_text = self.data.message.text
         def undo(self): # pragma: no cover
-            self.message.text = self.prev_text
+            self.data.message.text = self.prev_text
         def redo(self): # pragma: no cover
-            self.message.text = self.new_text
+            self.data.message.text = self.new_text
 
     def test_copying_the_attribute_does_not_copy_those_commands_added_after_the_original_attribute_initialization(self):
         x = self.fac.new("integer", 2, name='x')
         message = self.Message()
         def write_value_to_message_txt(data:Set_Attr_Data)->Test_Copying_Attribute.Write_Value_To_Message_Text:
-            return self.Write_Value_To_Message_Text(x,message)
+            return self.Write_Value_To_Message_Text(self.Write_Value_To_Message_Text_Data(x,message))
         x.command['set'].add('test',write_value_to_message_txt,'post')
 
         x_copy = x.copy()

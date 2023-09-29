@@ -3,7 +3,7 @@ from typing import Dict, Any, Set, Callable
 import dataclasses
 from src.cmd.commands import Command, Controller, Composed_Command, Timing, Empty_Command
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
-from src.core.attributes import attribute_factory, Attribute, Attribute_List, Set_Attr_Data, Set_Attr_Composed
+from src.core.attributes import attribute_factory, Attribute, Attribute_List, Set_Attr_Data
 from src.core.attributes import Edit_AttrList_Data
 import abc
 
@@ -33,16 +33,9 @@ class Renaming_Data:
 
 
 @dataclasses.dataclass
-class Adoption_Data:
+class Parentage_Data:
     parent:Item
     child:Item
-
-
-@dataclasses.dataclass
-class Pass_To_New_Parrent_Data:
-    parent:Item
-    child:Item
-    new_parent:Item
 
 
 @dataclasses.dataclass
@@ -77,7 +70,7 @@ class Rename_Composed(Composed_Command):
 
 @dataclasses.dataclass
 class Adopt(Command):
-    data:Adoption_Data
+    data:Parentage_Data
     old_name:str = dataclasses.field(init=False)
     def run(self):
         self.old_name = self.data.child.name
@@ -89,88 +82,54 @@ class Adopt(Command):
 
     def redo(self):
         self.data.parent._adopt(self.data.child)
+    @property
+    def message(self)->str:
+        return f"Adopt child | '{self.data.parent.name}' adopts '{self.data.child.name}'."
 
 
 class Adopt_Composed(Composed_Command):
     @staticmethod
     def cmd_type(): return Adopt
 
-    def __call__(self, data:Adoption_Data):
+    def __call__(self, data:Parentage_Data)->Tuple[Command,...]:
         return super().__call__(data)
 
-    def add(self, owner_id:str, func:Callable[[Adoption_Data],Command],timing:Timing)->None:
+    def add(self, owner_id:str, func:Callable[[Parentage_Data],Command],timing:Timing)->None:
         super().add(owner_id,creator=func,timing=timing)
 
-    def add_composed(self, owner_id: str, data_converter: Callable[[Adoption_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
+    def add_composed(self, owner_id: str, data_converter: Callable[[Parentage_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
         return super().add_composed(owner_id, data_converter, cmd, timing)
 
 
+@dataclasses.dataclass
 class Leave(Command):
-    data:Adoption_Data
+    data:Parentage_Data
     def run(self):
         self.data.parent._leave_child(self.data.child)
     def undo(self):
         self.data.parent._adopt(self.data.child)
     def redo(self):
         self.data.parent._leave_child(self.data.child)
+    @property
+    def message(self) -> str:
+        return f"Leave child | '{self.data.parent.name}' leaves '{self.data.child.name}'."
 
-
-@dataclasses.dataclass
 class Leave_Composed(Composed_Command):
     @staticmethod
     def cmd_type(): return Leave
 
-    def __call__(self, data:Adoption_Data)->Tuple[Command, ...]:
+    def __call__(self, data:Parentage_Data)->Tuple[Command, ...]:
         return super().__call__(data)
     
-    def add(self, owner_id: str, creator: Callable[[Adoption_Data], Command], timing: Timing) -> None:
+    def add(self, owner_id: str, creator: Callable[[Parentage_Data], Command], timing: Timing) -> None:
         return super().add(owner_id, creator, timing)
     
-    def add_composed(self, owner_id: str, data_converter: Callable[[Adoption_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
-        return super().add_composed(owner_id, data_converter, cmd, timing)
-
-
-@dataclasses.dataclass
-class PassToNewParent(Command):
-    data:Pass_To_New_Parrent_Data
-    old_name:str = dataclasses.field(init=False)
-
-    def run(self):
-        self.old_name = self.data.child.name
-        self.data.child._leave_parent(self.data.parent)
-        self.data.new_parent._adopt(self.data.child)
-    
-    def undo(self):
-        self.data.child._leave_parent(self.data.new_parent)
-        self.data.parent._adopt(self.data.child)
-        self.data.child._rename(self.old_name)
-
-    def redo(self):
-        self.data.child._leave_parent(self.data.parent)
-        self.data.new_parent._adopt(self.data.child)
-
-
-class PassToNewParent_Composed(Composed_Command):
-    @staticmethod
-    def cmd_type(): return PassToNewParent
-
-    def __call__(self, data:Pass_To_New_Parrent_Data)->Tuple[Command,...]:
-        return super().__call__(data)
-
-    def add(
-        self, 
-        owner_id:str, 
-        func:Callable[[Pass_To_New_Parrent_Data],Command],
-        timing:Timing)->None:
-
-        super().add(owner_id,creator=func,timing=timing)
-
-    def add_composed(self, owner_id: str, data_converter: Callable[[Pass_To_New_Parrent_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
+    def add_composed(self, owner_id: str, data_converter: Callable[[Parentage_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
         return super().add_composed(owner_id, data_converter, cmd, timing)
 
 
 from typing import Literal
-Command_Type = Literal['adopt','pass_to_new_parent','rename']
+Command_Type = Literal['adopt','leave','rename']
 class Item(abc.ABC): # pragma: no cover
 
     @dataclasses.dataclass(frozen=True)
@@ -222,9 +181,9 @@ class Item(abc.ABC): # pragma: no cover
     def has_attribute(self,label:str)->bool: pass
 
     @abc.abstractmethod
-    def on_adoption(self,owner:str,func:Callable[[Adoption_Data],Command],timing:Timing)->None: pass
+    def on_adoption(self,owner:str,func:Callable[[Parentage_Data],Command],timing:Timing)->None: pass
     @abc.abstractmethod
-    def on_passing_to_new_parent(self,owner:str,func:Callable[[Pass_To_New_Parrent_Data],Command],timing:Timing)->None: pass
+    def on_leaving(self,owner:str,func:Callable[[Parentage_Data],Command],timing:Timing)->None: pass
     @abc.abstractmethod
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None: pass
 
@@ -304,7 +263,6 @@ class ItemImpl(Item):
         def __init__(self,*args,**kwargs)->None:
             self.__children:Set[Item] = set()
             self._child_attr_lists:Dict = dict()
-
         @property
         def attributes(self)->Dict[str,Attribute]: return {}
         @property
@@ -320,11 +278,11 @@ class ItemImpl(Item):
         def free(self,*args)->None: raise self.SettingDependencyOnNull
         def adopt(self,child:Item)->None: 
             if child.parent is self: return
-            child.parent.pass_to_new_parent(child,self)
+            child.parent.leave(child)
         def attribute(self,label:str)->Attribute: raise Item.NonexistentAttribute
         def has_attribute(self,label:str)->bool: return False
         def on_adoption(self,*args)->None: pass # pragma: no cover
-        def on_passing_to_new_parent(self,*args)->None: pass # pragma: no cover
+        def on_leaving(self,*args)->None: pass # pragma: no cover
         def on_renaming(self,*args)->None: pass # pragma: no cover
         def child_attr_list(self, *args)->Attribute_List: raise Item.NonexistentAttribute
         def _create_child_attr_list(self,*args)->None: pass
@@ -354,16 +312,16 @@ class ItemImpl(Item):
     
     def __init__(self,name:str,attributes:Dict[str,Attribute], manager:ItemManager)->None:
         super().__init__(name,attributes,manager)
-        self.command:Dict[Command_Type,Composed_Command] = {
-            'adopt':Adopt_Composed(),
-            'pass_to_new_parent':PassToNewParent_Composed(),
-            'rename':Rename_Composed()
-        }
         self.__attributes = attributes
         self._rename(name)
         self.__children:Set[Item] = set()
         self.__parent:Item = self.NULL
         self._bindings:Dict[str, Item.BindingInfo] = dict()
+        self.command:Dict[Command_Type,Composed_Command] = {
+            'adopt':Adopt_Composed(),
+            'leave':Leave_Composed(),
+            'rename':Rename_Composed()
+        }
 
     @property
     def attributes(self)->Dict[str,Attribute]: 
@@ -422,7 +380,10 @@ class ItemImpl(Item):
     def adopt(self,item:Item)->None:
         if self is item.parent: return
         if self._can_be_parent_of(item):
-            self.controller.run(*self.command['adopt'](Adoption_Data(self,item)))
+            self.controller.run(*self.command['adopt'](Parentage_Data(self,item)))
+
+    def leave(self, child:Item)->None:
+        self.controller.run(*self.command['leave'](Parentage_Data(self,child)))
     
     def child_attr_list(self, label:str)->Attribute_List:
         if label not in self._child_attr_lists: 
@@ -430,7 +391,7 @@ class ItemImpl(Item):
         else:
             return self._child_attr_lists[label]
     
-    def __check_attribute_type_matches_list_type(
+    def __check_attr_type_matches_list_type(
         self,
         alist:Attribute_List,
         attribute:AbstractAttribute
@@ -440,57 +401,43 @@ class ItemImpl(Item):
             raise self.ChildAttributeTypeConflict
 
     def _create_child_attr_list(self, value_type:str, child_attr_label:str)->None:
-        alist = self._manager._attrfac.newlist(atype=value_type)
+        alist = self._manager._attrfac.newlist(atype=value_type, name=child_attr_label+' (children)')
         
         for child in self.__children: 
             if child_attr_label in child.attributes: 
-                self.__check_attribute_type_matches_list_type(alist,child.attribute(child_attr_label))
+                self.__check_attr_type_matches_list_type(alist,child.attribute(child_attr_label))
                 alist.append(child.attribute(child_attr_label))
         
-        def adopt_cmd(data:Adoption_Data)->Command:
-            if data.child.has_attribute(child_attr_label):
-                self.__check_attribute_type_matches_list_type(alist,data.child.attribute(child_attr_label))
-                cmd_data = Edit_AttrList_Data(alist,data.child.attribute(child_attr_label))
-                return Append_To_Attribute_List(cmd_data)
-            else:
-                return Empty_Command()
+        def adopt_cmd(data:Parentage_Data)->Command:
+            if not data.child.has_attribute(child_attr_label): return Empty_Command()
+            if child_attr_label not in data.parent._child_attr_lists: return Empty_Command()
             
-        def leave_child_cmd(data:Pass_To_New_Parrent_Data)->Command:
-            if data.child.has_attribute(child_attr_label):
-                cmd_data = Edit_AttrList_Data(alist,data.child.attribute(child_attr_label))
-                return Remove_From_Attribute_List(cmd_data)
-            else:
-                return Empty_Command()
+            self.__check_attr_type_matches_list_type(alist, data.child.attribute(child_attr_label))
+            cmd_data = Edit_AttrList_Data(alist,data.child.attribute(child_attr_label))
+            return Append_To_Attribute_List(cmd_data)
+            
+        def leave_child_cmd(data:Parentage_Data)->Command:
+            if not data.child.has_attribute(child_attr_label): return Empty_Command()
+            cmd_data = Edit_AttrList_Data(alist,data.child.attribute(child_attr_label))
+            return Remove_From_Attribute_List(cmd_data)
 
-        def set_cmd_converter(data:Adoption_Data)->Set_Attr_Data:
+        def converter(data:Parentage_Data)->Set_Attr_Data:
             value_getter = lambda: alist.value
             return Set_Attr_Data(alist, value_getter)
 
         self.command['adopt'].add(alist.id, adopt_cmd, 'post')
-        self.command['adopt'].add_composed(
-            alist.id, 
-            set_cmd_converter, 
-            alist.command['set'], 
-            'post'
-        )
-
-        self.command['pass_to_new_parent'].add(alist.id, leave_child_cmd, 'post')
-        self.command['pass_to_new_parent'].add_composed(
-            alist.id, 
-            set_cmd_converter, 
-            alist.command['set'], 
-            'post'
-        )
+        self.command['adopt'].add_composed(alist.id, converter, alist.command['set'], 'post')
+        self.command['leave'].add(alist.id, leave_child_cmd, 'post')
+        self.command['leave'].add_composed(alist.id, converter, alist.command['set'], 'post')
 
         self._child_attr_lists[child_attr_label] = alist
     
-    def leave(self, child:Item)->None:
-        self.pass_to_new_parent(child, ItemImpl.NULL)
-
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
-        if new_parent._can_be_parent_of(child):
-            data = Pass_To_New_Parrent_Data(self,child,new_parent)
-            self.controller.run(*self.command['pass_to_new_parent'](data))
+        if new_parent._can_be_parent_of(child) and isinstance(new_parent, ItemImpl):
+            self.controller.run(
+                *self.command['leave'](Parentage_Data(self,child)),
+                *new_parent.command['adopt'](Parentage_Data(new_parent,child))
+            )   
 
     def pick_child(self,name:str)->Item:
         name = strip_and_join_spaces(name)
@@ -504,11 +451,11 @@ class ItemImpl(Item):
     def set(self,attrib_label:str, value:Any)->None:
         self.attribute(attrib_label).set(value)
 
-    def on_adoption(self,owner:str,func:Callable[[Adoption_Data],Command],timing:Timing)->None:
+    def on_adoption(self,owner:str,func:Callable[[Parentage_Data],Command],timing:Timing)->None:
         self.command['adopt'].add(owner, func, timing)
 
-    def on_passing_to_new_parent(self,owner:str,func:Callable[[Pass_To_New_Parrent_Data],Command],timing:Timing)->None:
-        self.command['pass_to_new_parent'].add(owner, func, timing)
+    def on_leaving(self,owner:str,func:Callable[[Parentage_Data],Command],timing:Timing)->None:
+        self.command['leave'].add(owner, func, timing)
 
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None:
         self.command['rename'].add(owner, func, timing)

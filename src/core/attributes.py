@@ -163,7 +163,7 @@ class Append_To_Attribute_List(Command):
 
     @property
     def message(self)->str: 
-        return f"Append to attribute list | {self.data.alist.name}: add attribute {self.data.attribute}."
+        return f"Append attribute to list | Attribute '{self.data.attribute.name}' appended to '{self.data.alist.name}'."
 
     def run(self)->None:
         self.data.alist._add(self.data.attribute)
@@ -203,6 +203,9 @@ class Remove_From_Attribute_List(Command):
         self.data.alist._remove(self.data.attribute)
         self.composed_post_set = self.data.attribute.command['set'].composed_post.pop(self.data.alist.id)
 
+    @property
+    def message(self) -> str | None:
+        return f"Remove attribute from list | Attribute '{self.data.attribute.name}' removed from '{self.data.alist.name}'."
 
 class AbstractAttribute(abc.ABC):
     NullDependency = DependencyImpl.NULL
