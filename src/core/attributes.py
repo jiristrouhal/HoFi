@@ -204,7 +204,7 @@ class Remove_From_Attribute_List(Command):
         self.composed_post_set = self.data.attribute.command['set'].composed_post.pop(self.data.alist.id)
 
     @property
-    def message(self) -> str | None:
+    def message(self)->str:
         return f"Remove attribute from list | Attribute '{self.data.attribute.name}' removed from '{self.data.alist.name}'."
 
 class AbstractAttribute(abc.ABC):
@@ -245,12 +245,11 @@ class AbstractAttribute(abc.ABC):
         self._dependency.release()
 
     @abc.abstractmethod
-    def copy(self, copy_dependency:bool=True)->AbstractAttribute: pass
+    def copy(self, copy_dependency:bool=True)->AbstractAttribute: pass # pragma: no cover
 
     def _copy_dependency(self, thecopy:AbstractAttribute)->None: pass
 
     def _forget_dependency(self)->None: 
-        if self.dependency is self.NullDependency: return 
         self._dependency = self.NullDependency
 
     @abc.abstractmethod
