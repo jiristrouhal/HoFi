@@ -64,7 +64,14 @@ class Rename_Composed(Composed_Command):
     def add(self, owner_id:str, func:Callable[[Renaming_Data],Command],timing:Timing)->None:
         super().add(owner_id,creator=func,timing=timing)
 
-    def add_composed(self, owner_id: str, data_converter: Callable[[Renaming_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
+    def add_composed(
+        self, 
+        owner_id: str, 
+        data_converter: Callable[[Renaming_Data], Any], 
+        cmd: Composed_Command, 
+        timing: Timing
+        ) -> None: # pragma: no cover
+
         return super().add_composed(owner_id, data_converter, cmd, timing)
 
 
@@ -97,7 +104,15 @@ class Adopt_Composed(Composed_Command):
     def add(self, owner_id:str, func:Callable[[Parentage_Data],Command],timing:Timing)->None:
         super().add(owner_id,creator=func,timing=timing)
 
-    def add_composed(self, owner_id: str, data_converter: Callable[[Parentage_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
+    def add_composed(
+        self, 
+        owner_id: str, 
+        data_converter: 
+        Callable[[Parentage_Data], Any], 
+        cmd: Composed_Command, 
+        timing: Timing
+        ) -> None: # pragma: no cover
+
         return super().add_composed(owner_id, data_converter, cmd, timing)
 
 
@@ -124,7 +139,14 @@ class Leave_Composed(Composed_Command):
     def add(self, owner_id: str, creator: Callable[[Parentage_Data], Command], timing: Timing) -> None:
         return super().add(owner_id, creator, timing)
     
-    def add_composed(self, owner_id: str, data_converter: Callable[[Parentage_Data], Any], cmd: Composed_Command, timing: Timing) -> None:
+    def add_composed(
+        self, 
+        owner_id: str, 
+        data_converter: Callable[[Parentage_Data], Any], 
+        cmd: Composed_Command, 
+        timing: Timing
+        ) -> None: # pragma: no cover
+
         return super().add_composed(owner_id, data_converter, cmd, timing)
 
 
@@ -277,23 +299,22 @@ class ItemImpl(Item):
         def bind(self,*args)->None: raise self.SettingDependencyOnNull
         def free(self,*args)->None: raise self.SettingDependencyOnNull
         def adopt(self,child:Item)->None: 
-            if child.parent is self: return
-            child.parent.leave(child)
-        def attribute(self,label:str)->Attribute: raise Item.NonexistentAttribute
+            if child.parent is not self: child.parent.leave(child)
+        def attribute(self,label:str)->Attribute: raise Item.NonexistentAttribute # pragma: no cover
         def has_attribute(self,label:str)->bool: return False
         def on_adoption(self,*args)->None: pass # pragma: no cover
         def on_leaving(self,*args)->None: pass # pragma: no cover
         def on_renaming(self,*args)->None: pass # pragma: no cover
-        def child_attr_list(self, *args)->Attribute_List: raise Item.NonexistentAttribute
-        def _create_child_attr_list(self,*args)->None: pass
-        def duplicate(self) -> Item: return self
+        def child_attr_list(self, *args)->Attribute_List: raise Item.NonexistentAttribute # pragma: no cover
+        def _create_child_attr_list(self,*args)->None: raise self.AddingAttributeToNullItem
+        def duplicate(self)->ItemImpl.__ItemNull: return self
         def has_children(self)->bool: return True
         def is_parent_of(self, child:Item)->bool: return child.parent is self
         def is_ancestor_of(self, child:Item)->bool: return child==self
-        def leave(self, child:Item)->None: pass
+        def leave(self, child:Item)->None: raise self.NullCannotLeaveChild
         def pass_to_new_parent(self, child:Item, new_parent:Item)->None: 
             new_parent.adopt(child)
-        def pick_child(self, name:str)->Item: return self
+        def pick_child(self, name:str)->Item: raise self.CannotPickChildOfNull
         def rename(self,name:str)->None: return
         def set(self, attr_name:str,value:Any)->None: raise Item.NonexistentAttribute   # pragma: no cover
         def __call__(self, attr_name:str)->Any: raise Item.NonexistentAttribute   # pragma: no cover
@@ -305,7 +326,10 @@ class ItemImpl(Item):
         def _rename(self,name:str)->None: return
         def _duplicate_items(self)->Item: return self # pragma: no cover
 
-        class SettingDependencyOnNull(Exception):pass
+        class AddingAttributeToNullItem(Exception): pass
+        class CannotPickChildOfNull(Exception): pass
+        class NullCannotLeaveChild(Exception): pass
+        class SettingDependencyOnNull(Exception): pass
 
     NULL = __ItemNull()
 

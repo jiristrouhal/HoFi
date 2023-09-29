@@ -111,6 +111,27 @@ class Test_NULL_Item(unittest.TestCase):
         NullItem._rename("New Name")
         self.assertEqual(NullItem.name,"NULL")
 
+    def test_adding_attributes_or_attribute_lists_raises_exceptino(self):
+        self.assertRaises(
+            NullItem.AddingAttributeToNullItem,
+            NullItem._create_child_attr_list, 'integer', 'label'
+        )
+    
+    def test_leaving_item_raises_exception(self)->None:
+        item = ItemManager().new('Item')
+        self.assertEqual(item.parent, NullItem)
+        self.assertRaises(NullItem.NullCannotLeaveChild, NullItem.leave, item)
+
+    def test_picking_child_on_null_raises_exception(self)->None:
+        self.assertRaises(NullItem.CannotPickChildOfNull, NullItem.pick_child, "some child's name")
+
+    def test_setting_dependency_on_null_raises_exception(self)->None:
+        self.assertRaises(NullItem.SettingDependencyOnNull, NullItem.bind, )
+        self.assertRaises(NullItem.SettingDependencyOnNull, NullItem.free, )
+
+    def test_null_item_has_no_children(self):
+        self.assertSetEqual(NullItem.children, set())
+
     
 class Test_Accessing_Item_Attributes(unittest.TestCase):
 
