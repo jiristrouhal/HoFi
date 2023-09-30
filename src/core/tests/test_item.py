@@ -999,13 +999,13 @@ class Test_Examples_Of_Calculations_On_Child_Attributes(unittest.TestCase):
         self.assertTrue(math.isnan(self.parent('y')))
 
     def test_summing_over_child_attributes_coplying_with_condition(self):
-        childA = self.mg.new('Parent', {'x':'real', 'switch':'integer'})
-        childB = self.mg.new('Parent', {'x':'real', 'switch':'integer'})
+        childA = self.mg.new('Parent', {'x':'real', 'switch':'bool'})
+        childB = self.mg.new('Parent', {'x':'real', 'switch':'bool'})
         self.parent.adopt(childA)
         self.parent.adopt(childB)
         def sumif(x:List[float],val:List[int])->float:
-            return sum([xi for xi,vi in zip(x,val) if vi!=0])
-        self.parent.bind('y',sumif,'[x:real]','[switch:integer]')
+            return sum([xi for xi,vi in zip(x,val) if vi==True])
+        self.parent.bind('y',sumif,'[x:real]','[switch:bool]')
         
         childA.set('switch',0)
         childB.set('switch',0)
