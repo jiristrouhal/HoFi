@@ -971,8 +971,14 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
         self.assertEqual(parent('y'), 0)
         self.assertEqual(child('y'), 5)
 
+
+class Test_Examples_Of_Calculations_On_Child_Attributes(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.mg = ItemManager()
+        self.parent = self.mg.new('Parent', {'y':'real'})
+
     def test_calculating_average_of_child_attribute(self):
-        parent = self.mg.new('Parent',{'av':'real'})
         childA = self.mg.new('Parent',{'x':'real'})
         childB = self.mg.new('Parent',{'x':'real'})
         childA.set('x',5)
@@ -980,17 +986,47 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
         def arithmetic_average(x:List[decimal.Decimal]) -> decimal.Decimal|float: 
             if not x: return math.nan
             return decimal.Decimal(sum(x))/len(x)
-        parent.bind('av',arithmetic_average,'[x:real]')
-        self.assertTrue(math.isnan(parent('av')))
+        self.parent.bind('y',arithmetic_average,'[x:real]')
+        self.assertTrue(math.isnan(self.parent('y')))
 
-        parent.adopt(childA)
-        self.assertEqual(parent('av'), 5)
-        parent.adopt(childB)
-        self.assertEqual(parent('av'), 4)
-        parent.leave(childA)
-        self.assertEqual(parent('av'),3)
-        parent.leave(childB)
-        self.assertTrue(math.isnan(parent('av')))
+        self.parent.adopt(childA)
+        self.assertEqual(self.parent('y'), 5)
+        self.parent.adopt(childB)
+        self.assertEqual(self.parent('y'), 4)
+        self.parent.leave(childA)
+        self.assertEqual(self.parent('y'),3)
+        self.parent.leave(childB)
+        self.assertTrue(math.isnan(self.parent('y')))
+
+    def test_summing_over_child_attributes_coplying_with_condition(self):
+        childA = self.mg.new('Parent', {'x':'real', 'switch':'integer'})
+        childB = self.mg.new('Parent', {'x':'real', 'switch':'integer'})
+        self.parent.adopt(childA)
+        self.parent.adopt(childB)
+        def sumif(x:List[float],val:List[int])->float:
+            return sum([xi for xi,vi in zip(x,val) if vi!=0])
+        self.parent.bind('y',sumif,'[x:real]','[switch:integer]')
+        
+        childA.set('switch',0)
+        childB.set('switch',0)
+        childA.set('x',2)
+        childB.set('x',3)
+        self.assertEqual(self.parent('y'), 0)
+
+        childA.set('switch',1)
+        self.assertEqual(self.parent('y'),2)
+
+        childB.set('switch',1)
+        self.assertEqual(self.parent('y'),5)
+
+        self.mg.undo()
+        self.assertEqual(self.parent('y'),2)
+        self.mg.undo()
+        self.assertEqual(self.parent('y'),0)
+        self.mg.redo()
+        self.assertEqual(self.parent('y'),2)
+        self.mg.redo()
+        self.assertEqual(self.parent('y'),5)
 
 
 class Test_Picking_Child_Item_By_Name(unittest.TestCase):
