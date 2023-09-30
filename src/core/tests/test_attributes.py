@@ -1574,5 +1574,16 @@ class Test_Bool_Attribute(unittest.TestCase):
         number.set(-1)
         self.assertTrue(number_is_negative.value)
 
+    def test_printing_boolean_attribute(self)->None:
+        switch = self.fac.new('bool')
+        switch.set(False)
+        self.assertEqual(switch.print(),'False')
+        switch.set(True)
+        self.assertEqual(switch.print(),'True')
+        switch.set(0)
+        self.assertEqual(switch.print(),'False')
+        switch.set(1)
+        self.assertEqual(switch.print(),'True')
+
 
 if __name__=="__main__": unittest.main()

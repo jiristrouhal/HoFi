@@ -855,7 +855,7 @@ class Bool_Attribute(Attribute):
         return True
     
     def print(self, locale_code: Locale_Code = "en_us") -> str:
-        return str(self._value)
+        return str(bool(self._value))
     
     def read(self, text: str) -> None:
         if text.strip() in ("True","False","true","false"): 
