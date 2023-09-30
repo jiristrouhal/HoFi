@@ -1562,5 +1562,17 @@ class Test_Bool_Attribute(unittest.TestCase):
         self.assertRaises(switch.CannotReadBooleanFromText, switch.read, "0")
         self.assertRaises(switch.CannotReadBooleanFromText, switch.read, "1")
 
+    def test_dependent_boolean_attribute(self):
+        number_is_negative = self.fac.new('bool',False)
+        number = self.fac.new('integer')
+        number_is_negative.add_dependency(lambda x: x<0, number)
+
+        number.set(2)
+        self.assertFalse(number_is_negative.value)
+        number.set(0)
+        self.assertFalse(number_is_negative.value)
+        number.set(-1)
+        self.assertTrue(number_is_negative.value)
+
 
 if __name__=="__main__": unittest.main()
