@@ -1518,5 +1518,49 @@ class Test_Copying_Attribute_List(unittest.TestCase):
         self.assertEqual(s.value, 6)
 
 
+class Test_Bool_Attribute(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+
+    def test_creating_and_setting_bool_attribute(self):
+        switch = self.fac.new('bool',False)
+        self.assertFalse(switch.value)
+
+    def test_setting_value(self):
+        switch = self.fac.new('bool',False)
+
+        switch.set(True)
+        self.assertTrue(switch.value)
+        switch.set(0)
+        self.assertFalse(switch.value)
+        switch.set(1)
+        self.assertTrue(switch.value)
+
+        self.assertRaises(Attribute.InvalidValueType, switch.set, 'True')
+        self.assertRaises(Attribute.InvalidValueType, switch.set, 2)
+
+    def test_reading_value_from_text(self):
+        switch = self.fac.new('bool',False)
+
+        switch.read("True")
+        self.assertTrue(switch.value)
+        
+        switch.read("true")
+        self.assertTrue(switch.value)
+
+        switch.read("False")
+        self.assertTrue(switch.value)
+    
+        switch.read("false")
+        self.assertTrue(switch.value)
+
+        self.assertRaises(switch.CannotReadBooleanFromText, switch.read, "  ")
+        self.assertRaises(switch.CannotReadBooleanFromText, switch.read, "")
+        self.assertRaises(switch.CannotReadBooleanFromText, switch.read, "2")
+        self.assertRaises(switch.CannotReadBooleanFromText, switch.read, "asdfdsfs")
+        self.assertRaises(switch.CannotReadBooleanFromText, switch.read, "0")
+        self.assertRaises(switch.CannotReadBooleanFromText, switch.read, "1")
+
 
 if __name__=="__main__": unittest.main()

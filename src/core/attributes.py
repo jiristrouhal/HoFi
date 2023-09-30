@@ -844,6 +844,28 @@ class Choice_Attribute(Attribute):
     class UndefinedOption(Exception): pass
 
 
+class Bool_Attribute(Attribute):
+    default_value = False
+
+    def _check_input_type(self, value: Any) -> None:
+        if bool(value)==value: return
+        else: raise Attribute.InvalidValueType
+
+    def _is_value_valid(self, value: Any) -> bool:
+        return True
+    
+    def print(self, locale_code: Locale_Code = "en_us") -> str:
+        return str(self._value)
+    
+    def read(self, text: str) -> None:
+        if text.strip() in ("True","False","true","false"): 
+            self._value = bool(text)
+        else: raise Bool_Attribute.CannotReadBooleanFromText(text)
+
+    class CannotReadBooleanFromText(Exception): pass
+    
+
+
 from typing import Type
 @dataclasses.dataclass
 class Attribute_Factory:
@@ -851,6 +873,7 @@ class Attribute_Factory:
     types:Dict[str,Type[Attribute]] = dataclasses.field(default_factory=dict,init=False)
     def __post_init__(self)->None:
         self.types['text'] = Text_Attribute
+        self.types['bool'] = Bool_Attribute
         self.types['integer'] = Integer_Attribute
         self.types['real'] = Real_Attribute
         self.types['choice'] = Choice_Attribute
