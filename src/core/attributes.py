@@ -571,6 +571,10 @@ class Real_Attribute(Number_Attribute):
             self._run_set_command(value)
         else: # pragma: no cover
             raise Attribute.InvalidValue(value)
+        
+
+class Real_Attribute_Dimensionless(Real_Attribute):
+    pass
     
 
 Currency_Code = Literal['USD','EUR','CZK','JPY']
@@ -863,7 +867,44 @@ class Bool_Attribute(Attribute):
         else: raise Bool_Attribute.CannotReadBooleanFromText(text)
 
     class CannotReadBooleanFromText(Exception): pass
+
+
+from typing import Optional
+class Quantity(Real_Attribute):
+
+    __multiples:Dict[str,int] = {'n':-9, 'μ':-6, 'm':-3, '':0, 'k':3, 'M':6, 'G':9}
+
     
+    def __init__(
+        self,
+        factory:Attribute_Factory,
+        unit:str,
+        init_value:Optional[float|Decimal|int]=None, 
+        name:str=""
+        )->None:
+
+        super().__init__(factory,atype='real',init_value=init_value,name=name)
+        self.__prefix:str = ""
+        self.__unit:str = unit
+
+    def add_prefix(self,prefix:str,exponent:int)->None:
+        self.__multiples[prefix] = exponent
+
+    def set_prefix(self,prefix:str)->None:
+        shift = Quantity.__multiples[self.__prefix] - Quantity.__multiples[prefix]
+        self._value = self._value*Decimal(10)**Decimal(shift)
+        self.__prefix = prefix
+
+    def print(
+        self,
+        locale_code:Locale_Code="en_us",
+        use_thousands_separator:bool=False,
+        precision:int=28,
+        trailing_zeros:bool=True
+        )->str:
+
+        str_val = super().print(locale_code,use_thousands_separator,precision,trailing_zeros)
+        return f"{str_val} {self.__prefix}{self.__unit}"
 
 
 from typing import Type
@@ -875,7 +916,7 @@ class Attribute_Factory:
         self.types['text'] = Text_Attribute
         self.types['bool'] = Bool_Attribute
         self.types['integer'] = Integer_Attribute
-        self.types['real'] = Real_Attribute
+        self.types['real'] = Real_Attribute_Dimensionless
         self.types['choice'] = Choice_Attribute
         self.types['date'] = Date_Attribute
         self.types['money'] = Monetary_Attribute
@@ -883,6 +924,9 @@ class Attribute_Factory:
     def newlist(self,atype:str='text', init_items:List[Any]|None=None, name:str="")->Attribute_List:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         return Attribute_List(self, atype, init_attributes=init_items, name=name)
+    
+    def newqu(self,unit:str,init_value:Optional[float|Decimal|int]=None,name:str="")->Quantity:
+        return Quantity(self,unit,init_value,name)
 
     def new(self,atype:str='text',init_value:Any=None, name:str="")->Attribute:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)

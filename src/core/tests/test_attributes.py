@@ -544,7 +544,7 @@ class Test_Reading_Text_Attribute_Value_From_Text(unittest.TestCase):
         self.assertEqual(attr.value, "")
 
 
-from src.core.attributes import Real_Attribute, Integer_Attribute
+from src.core.attributes import Real_Attribute_Dimensionless, Integer_Attribute
 class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase):
 
     def test_reading_integer_from_text(self):
@@ -574,9 +574,9 @@ class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase)
         attr.read("+01E-02")
         self.assertEqual(attr.value, Decimal(str(0.01)))
 
-        self.assertRaises(Real_Attribute.CannotExtractReal, attr.read, "5/7")
-        self.assertRaises(Real_Attribute.CannotExtractReal, attr.read, " ")
-        self.assertRaises(Real_Attribute.CannotExtractReal, attr.read, "asdfd ")
+        self.assertRaises(Real_Attribute_Dimensionless.CannotExtractReal, attr.read, "5/7")
+        self.assertRaises(Real_Attribute_Dimensionless.CannotExtractReal, attr.read, " ")
+        self.assertRaises(Real_Attribute_Dimensionless.CannotExtractReal, attr.read, "asdfd ")
 
     def __common_tests_for_int_and_real(self,attr:Attribute)->None:
         attr.read("789")
@@ -627,14 +627,14 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
         self.assertEqual(attr.print(locale_code="cs_cz",trailing_zeros=False), "0")
 
     def test_is_int(self)->None:
-        self.assertTrue(Real_Attribute.is_int(12.0))
-        self.assertTrue(Real_Attribute.is_int(0.0))
-        self.assertTrue(Real_Attribute.is_int(-1))
-        self.assertTrue(Real_Attribute.is_int(math.pi-math.pi))
+        self.assertTrue(Real_Attribute_Dimensionless.is_int(12.0))
+        self.assertTrue(Real_Attribute_Dimensionless.is_int(0.0))
+        self.assertTrue(Real_Attribute_Dimensionless.is_int(-1))
+        self.assertTrue(Real_Attribute_Dimensionless.is_int(math.pi-math.pi))
 
-        self.assertFalse(Real_Attribute.is_int(12.1))
-        self.assertFalse(Real_Attribute.is_int(math.pi))
-        self.assertFalse(Real_Attribute.is_int(-12.1))
+        self.assertFalse(Real_Attribute_Dimensionless.is_int(12.1))
+        self.assertFalse(Real_Attribute_Dimensionless.is_int(math.pi))
+        self.assertFalse(Real_Attribute_Dimensionless.is_int(-12.1))
 
 
 class Test_Thousands_Separator(unittest.TestCase):
@@ -1584,6 +1584,34 @@ class Test_Bool_Attribute(unittest.TestCase):
         self.assertEqual(switch.print(),'False')
         switch.set(1)
         self.assertEqual(switch.print(),'True')
+
+
+class Test_Quantity(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.length = self.fac.newqu('m',2)
+
+    def test_setting_quantity_value(self):
+        self.length.set(3)
+        self.assertEqual(self.length.value, 3)
+        self.assertEqual(self.length.print(trailing_zeros=False), '3 m')
+
+    def test_setting_quantity_unit_multiple(self):
+        self.length.set_prefix('m')
+        self.assertEqual(self.length.value, 2000)
+        self.assertEqual(self.length.print(trailing_zeros=False), '2000 mm')
+        self.length.set_prefix('k')
+        self.assertEqual(self.length.print(trailing_zeros=False), '0.002 km')
+        self.length.set_prefix('G')
+        self.assertEqual(self.length.print(trailing_zeros=False), '0.000000002 Gm')
+    
+    def test_setting_custom_quantity(self)->None:
+        self.length.set(5)
+
+        self.length.add_prefix('c',-2)
+        self.length.set_prefix('c')
+        self.assertEqual(self.length.print(trailing_zeros=False),'500 cm')
 
 
 if __name__=="__main__": unittest.main()
