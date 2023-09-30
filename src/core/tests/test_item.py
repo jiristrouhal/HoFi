@@ -7,7 +7,7 @@ sys.path.insert(1,"src")
 
 import unittest
 from src.core.item import ItemManager, Item, ItemImpl
-from typing import Tuple
+import math, decimal
 
 
 NullItem = ItemImpl.NULL
@@ -970,6 +970,27 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
 
         self.assertEqual(parent('y'), 0)
         self.assertEqual(child('y'), 5)
+
+    def test_calculating_average_of_child_attribute(self):
+        parent = self.mg.new('Parent',{'av':'real'})
+        childA = self.mg.new('Parent',{'x':'real'})
+        childB = self.mg.new('Parent',{'x':'real'})
+        childA.set('x',5)
+        childB.set('x',3)
+        def arithmetic_average(x:List[decimal.Decimal]) -> decimal.Decimal|float: 
+            if not x: return math.nan
+            return decimal.Decimal(sum(x))/len(x)
+        parent.bind('av',arithmetic_average,'[x:real]')
+        self.assertTrue(math.isnan(parent('av')))
+
+        parent.adopt(childA)
+        self.assertEqual(parent('av'), 5)
+        parent.adopt(childB)
+        self.assertEqual(parent('av'), 4)
+        parent.leave(childA)
+        self.assertEqual(parent('av'),3)
+        parent.leave(childB)
+        self.assertTrue(math.isnan(parent('av')))
 
 
 class Test_Picking_Child_Item_By_Name(unittest.TestCase):
