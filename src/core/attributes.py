@@ -556,10 +556,19 @@ class Real_Attribute(Number_Attribute):
         locale_code:Locale_Code = "en_us",
         use_thousands_separator:bool=False,
         precision:int=28,
-        trailing_zeros:bool=True
+        trailing_zeros:bool=True,
+        adjust:Optional[Callable[[float|Decimal],float|Decimal]] = None
         )->str:
         
-        str_value = format(self._value, f',.{precision}f')
+        if adjust is None: value = self._value
+        else:
+            try: 
+                value = adjust(self._value)
+                if not self.is_valid(value): raise
+            except: 
+                raise Real_Attribute.InvalidAdjustedValue(adjust)
+
+        str_value = format(value, f',.{precision}f')
         str_value = self._set_thousands_separator(str_value, use_thousands_separator)
         if not trailing_zeros: str_value = str_value.rstrip('0').rstrip('.')
         str_value = self._adjust_decimal_separator(str_value, locale_code)
@@ -571,6 +580,8 @@ class Real_Attribute(Number_Attribute):
             self._run_set_command(value)
         else: # pragma: no cover
             raise Attribute.InvalidValue(value)
+        
+    class InvalidAdjustedValue(Exception): pass
         
 
 class Real_Attribute_Dimensionless(Real_Attribute):
@@ -869,42 +880,153 @@ class Bool_Attribute(Attribute):
     class CannotReadBooleanFromText(Exception): pass
 
 
+@dataclasses.dataclass
+class Unit:
+    symbol:str
+    exponents:Dict[str,int]
+    space:bool=True
+    from_basic:Optional[Callable[[float|Decimal],Decimal|float]] = None
+    to_basic:Optional[Callable[[float|Decimal],Decimal|float]] = None
+
+    def __post_init__(self)->None: 
+        self.exponents[''] = 0
+
+
 from typing import Optional
 class Quantity(Real_Attribute):
 
-    __multiples:Dict[str,int] = {'n':-9, 'μ':-6, 'm':-3, '':0, 'k':3, 'M':6, 'G':9}
-
+    __default_exponents = {'n':-9, 'μ':-6, 'm':-3, 'k':3, 'M':6, 'G':9}
     
     def __init__(
         self,
         factory:Attribute_Factory,
         unit:str,
         init_value:Optional[float|Decimal|int]=None, 
-        name:str=""
+        name:str="",
+        space_after_value:bool=True
         )->None:
 
         super().__init__(factory,atype='real',init_value=init_value,name=name)
-        self.__prefix:str = ""
-        self.__unit:str = unit
+        self.__prefix = ""
+        self.__units:Dict[str,Unit] = dict()
+        self.add_unit(
+            unit,
+            exponents=None,
+            space_after_value=space_after_value
+        )
+        self.__unit:Unit = self.__units[unit]
 
     def add_prefix(self,prefix:str,exponent:int)->None:
-        self.__multiples[prefix] = exponent
+        Quantity.__check_exponent(prefix,exponent)
+        self.__unit.exponents[prefix] = exponent
 
-    def set_prefix(self,prefix:str)->None:
-        shift = Quantity.__multiples[self.__prefix] - Quantity.__multiples[prefix]
-        self._value = self._value*Decimal(10)**Decimal(shift)
-        self.__prefix = prefix
+    def add_unit(
+        self, 
+        symbol:str, 
+        exponents:Optional[Dict[str,int]]=None, 
+        from_basic:Optional[Callable[[Decimal|float],Decimal|float]] = None,
+        to_basic:Optional[Callable[[Decimal|float],Decimal|float]] = None,
+        space_after_value = False
+        )->None:
+
+        Quantity._check_conversion_from_and_to_basic_units(from_basic,to_basic)
+        self.__units[symbol] = self.__create_unit(
+            symbol,
+            exponents,
+            space_after_value,
+            from_basic=from_basic,
+            to_basic=to_basic
+        )
 
     def print(
         self,
         locale_code:Locale_Code="en_us",
         use_thousands_separator:bool=False,
         precision:int=28,
-        trailing_zeros:bool=True
+        trailing_zeros:bool=True,
+        *args
         )->str:
 
-        str_val = super().print(locale_code,use_thousands_separator,precision,trailing_zeros)
-        return f"{str_val} {self.__prefix}{self.__unit}"
+        str_val = super().print(
+            locale_code,
+            use_thousands_separator,
+            precision,trailing_zeros,
+            adjust=self.__adjust_func
+        )
+        sep = NBSP if self.__unit.space else ''
+        return f"{str_val}{sep}{self.__prefix}{self.__unit.symbol}"
+
+    def set_prefix(self,prefix:str)->None:
+        if not prefix in self.__unit.exponents: raise Quantity.UndefinedUnitPrefix
+        self.__prefix = prefix
+
+    def set_unit(self,unit:str)->None:
+        if unit not in self.__units: raise Quantity.UndefinedUnit(unit)
+        self.__unit = self.__units[unit]
+
+    def __adjust_func(self, value:Decimal|float)->Decimal:
+        if self.__unit.from_basic is not None:
+            value = self.__unit.from_basic(value)
+        decimal_shift = Decimal(- self.__unit.exponents[self.__prefix])
+        return Decimal(value)*Decimal('10')**decimal_shift
+    
+    @staticmethod
+    def _acceptable_unit_symbol(text:str)->bool:
+        return re.fullmatch('[^\s\d!"#$%&\'\(\)\*+\,\./:;<=>?@\^_`{|}~-]+',text) is not None
+    
+    @staticmethod
+    def _acceptable_unit_prefix(text:str)->bool:
+        return re.fullmatch('[TGMkhdcmμnp]?|da',text) is not None
+    
+    @staticmethod
+    def _check_conversion_from_and_to_basic_units(
+        from_basic:Optional[Callable[[Decimal|float],Decimal|float]] = None,
+        to_basic:Optional[Callable[[Decimal|float],Decimal|float]] = None,
+        test_value:Decimal|float = Decimal('0')
+        )->None:
+
+        if not type(from_basic)==type(to_basic): 
+            raise Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None(from_basic, to_basic)
+        if from_basic is not None and to_basic is not None:
+            orig = Decimal(str(test_value))
+            converted_to_alt_and_back = from_basic(to_basic(Decimal(str(test_value))))
+            if converted_to_alt_and_back != orig:
+                raise Quantity.Conversion_To_Alternative_Units_And_Back_Does_Not_Give_The_Original_Value(
+                    f"{orig} != {converted_to_alt_and_back}"
+                )
+        
+    @staticmethod
+    def __check_exponent(prefix,exponent)->None:
+        if not Quantity._acceptable_unit_prefix(prefix): 
+            raise Quantity.UnacceptableUnitPrefix(prefix)
+        if not int(exponent)==exponent: 
+            raise Quantity.NonIntegerExponent(exponent)
+        
+    @staticmethod
+    def __create_unit(
+        symbol:str, 
+        exponents:Optional[Dict[str,int]]=None, 
+        space:bool=True,
+        from_basic:Optional[Callable[[Decimal|float],Decimal|float]]=None,
+        to_basic:Optional[Callable[[Decimal|float],Decimal|float]]=None
+        )->Unit:
+
+        symbol = symbol.strip()
+        if not Quantity._acceptable_unit_symbol(symbol): raise Quantity.UnacceptableUnitSymbol(symbol)
+        if exponents is not None:
+            for prefix, exponent in exponents.items(): Quantity.__check_exponent(prefix,exponent)
+        else:
+            exponents = Quantity.__default_exponents.copy()
+        return Unit(symbol,exponents,space,from_basic,to_basic)
+    
+    class Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None(Exception): pass
+    class Conversion_To_Alternative_Units_And_Back_Does_Not_Give_The_Original_Value(Exception): pass
+    class DuplicityInCustomPrefixes(Exception): pass
+    class NonIntegerExponent(Exception): pass
+    class UndefinedUnit(Exception): pass
+    class UndefinedUnitPrefix(Exception): pass
+    class UnacceptableUnitPrefix(Exception): pass
+    class UnacceptableUnitSymbol(Exception): pass
 
 
 from typing import Type

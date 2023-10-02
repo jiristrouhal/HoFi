@@ -1586,6 +1586,7 @@ class Test_Bool_Attribute(unittest.TestCase):
         self.assertEqual(switch.print(),'True')
 
 
+from src.core.attributes import Quantity
 class Test_Quantity(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -1595,23 +1596,93 @@ class Test_Quantity(unittest.TestCase):
     def test_setting_quantity_value(self):
         self.length.set(3)
         self.assertEqual(self.length.value, 3)
-        self.assertEqual(self.length.print(trailing_zeros=False), '3 m')
+        self.assertEqual(self.length.print(trailing_zeros=False), f'3{NBSP}m')
 
     def test_setting_quantity_unit_multiple(self):
         self.length.set_prefix('m')
-        self.assertEqual(self.length.value, 2000)
-        self.assertEqual(self.length.print(trailing_zeros=False), '2000 mm')
+        self.assertEqual(self.length.print(trailing_zeros=False), f'2000{NBSP}mm')
         self.length.set_prefix('k')
-        self.assertEqual(self.length.print(trailing_zeros=False), '0.002 km')
+        self.assertEqual(self.length.print(trailing_zeros=False), f'0.002{NBSP}km')
         self.length.set_prefix('G')
-        self.assertEqual(self.length.print(trailing_zeros=False), '0.000000002 Gm')
+        self.assertEqual(self.length.print(trailing_zeros=False), f'0.000000002{NBSP}Gm')
     
     def test_setting_custom_quantity(self)->None:
         self.length.set(5)
-
         self.length.add_prefix('c',-2)
         self.length.set_prefix('c')
-        self.assertEqual(self.length.print(trailing_zeros=False),'500 cm')
+        self.assertEqual(self.length.print(trailing_zeros=False),f'500{NBSP}cm')
+
+    def test_value_is_kept_unscaled(self)->None:
+        self.length.set(5000)
+        self.length.set_prefix('k')
+        self.assertEqual(self.length.value, 5000)
+        self.assertEqual(self.length.print(trailing_zeros=False), f'5{NBSP}km')
+
+    def test_choosing_nonexistent_prefix_raises_exception(self):
+        self.assertRaises(Quantity.UndefinedUnitPrefix, self.length.set_prefix,'nonexistent_prefix')
+
+    def test_setting_noninteger_exponent_for_prefix_raises(self):
+        self.assertRaises(
+            Quantity.NonIntegerExponent, self.length.add_prefix, 'k', 3.5
+        )
+
+    def test_setting_quantity_unit_to_undefined_one_raises_exception(self):
+        self.assertRaises(Quantity.UndefinedUnit, self.length.set_unit, 'undefined_unit')
+
+
+class Test_Alternative_Units_For_Quantity(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.temperature = self.fac.newqu('K')
+        self.temperature.set(293.15)
+
+    def test_adding_other_units_to_quantity(self):
+        self.temperature.add_unit(
+            '°C', 
+            exponents={'m':-3}, 
+            to_basic = lambda x: x + Decimal('273.15'), 
+            from_basic = lambda x: x - Decimal('273.15'),
+            space_after_value=False
+        )
+        self.temperature.set_unit('°C')
+        self.assertEqual(self.temperature.print(trailing_zeros=False), f'20°C')
+
+    def test_not_matching_conversion_functions_raise_exception(self):
+        self.assertRaises(Quantity.Conversion_To_Alternative_Units_And_Back_Does_Not_Give_The_Original_Value,
+            Quantity._check_conversion_from_and_to_basic_units,
+            to_basic = lambda x: x + Decimal('273.15'), 
+            from_basic = lambda x: x - Decimal('73.15'),
+        )
+
+    
+        
+
+class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):
+
+    def test_unit_symbols_have_to_contain_nonwhite_space_and_nondigit_characters_without_punctuation_marks(self)->None:
+        self.assertTrue(Quantity._acceptable_unit_symbol('N'))
+        self.assertTrue(Quantity._acceptable_unit_symbol('Ω'))
+        self.assertTrue(Quantity._acceptable_unit_symbol('°'))
+        self.assertTrue(Quantity._acceptable_unit_symbol('°C'))
+        self.assertTrue(Quantity._acceptable_unit_symbol('cd'))
+        self.assertTrue(Quantity._acceptable_unit_symbol('m²'))
+
+        self.assertFalse(Quantity._acceptable_unit_symbol(''))
+        self.assertFalse(Quantity._acceptable_unit_symbol(' '))
+        self.assertFalse(Quantity._acceptable_unit_symbol(' C'))
+        self.assertFalse(Quantity._acceptable_unit_symbol('1F'))
+        self.assertFalse(Quantity._acceptable_unit_symbol('_'))
+        self.assertFalse(Quantity._acceptable_unit_symbol('.'))
+        self.assertFalse(Quantity._acceptable_unit_symbol(','))
+        self.assertFalse(Quantity._acceptable_unit_symbol('!'))
+        self.assertFalse(Quantity._acceptable_unit_symbol('?'))
+        self.assertFalse(Quantity._acceptable_unit_symbol('m ²'))
+
+    def test_unit_prefix_has_to_be_no_single_or_two_letters(self):
+        self.assertTrue(Quantity._acceptable_unit_prefix(''))
+        self.assertTrue(Quantity._acceptable_unit_prefix('m'))
+        self.assertTrue(Quantity._acceptable_unit_prefix('da'))
 
 
 if __name__=="__main__": unittest.main()
