@@ -932,6 +932,7 @@ class Quantity(Real_Attribute):
         super().__init__(factory,atype='real',init_value=init_value,name=name)
         self.__prefix = ""
         self.__units:Dict[str,Unit] = dict()
+        self.__scaled_units:List[Tuple[str,str]] = list()
         self.add_unit(
             unit,
             exponents=exponents,
@@ -945,16 +946,11 @@ class Quantity(Real_Attribute):
     def prefix(self)->str: return self.__prefix
     @property
     def scaled_units(self)->List[Tuple[str,str]]: 
-        the_list:List[Tuple[str,str]] = []
-        for unit in self.__units:
-            the_list.extend(
-                [(prefix, unit) for prefix in self.__units[unit].exponents]
-            )
-        return the_list
+        return self.__scaled_units
     
     @property
     def scaled_units_single_str(self)->List[str]:
-        return [item[0]+item[1] for item in self.scaled_units]
+        return [item[0]+item[1] for item in self.__scaled_units]
 
     def add_prefix(self,unit:str, prefix:str,exponent:int)->None:
         self.__check_unit_is_defined(unit)
@@ -981,6 +977,17 @@ class Quantity(Real_Attribute):
             from_basic=from_basic,
             to_basic=to_basic
         )
+        self.__scaled_units.extend([(prefix, symbol) for prefix in self.__units[symbol].exponents])
+
+    def pick_scaled_unit(self,id:int)->None:
+        try: 
+            picked = self.__scaled_units[id]
+            self.set_unit(picked[1])
+            self.set_prefix(picked[0])
+        except IndexError:
+            raise IndexError(f"Index {id} of option for scaled unit is out of range"
+                             f" (min={-len(self.__scaled_units)},max={len(self.__scaled_units)-1}).")
+
 
     def print(
         self,

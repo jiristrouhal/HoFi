@@ -1841,6 +1841,9 @@ class Test_Listing_Available_Scaled_Units_For_Quantity(unittest.TestCase):
             volume.scaled_units_single_str, 
             ['mm³', 'dm³', 'm³', 'mL', 'L']
         )
+        volume.pick_scaled_unit(1)
+        self.assertEqual(volume.unit, 'm³')
+        self.assertEqual(volume.prefix, 'd')
 
 
 if __name__=="__main__": unittest.main()
