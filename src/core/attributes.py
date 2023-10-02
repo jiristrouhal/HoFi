@@ -943,6 +943,18 @@ class Quantity(Real_Attribute):
     def unit(self)->str: return self.__unit.symbol
     @property
     def prefix(self)->str: return self.__prefix
+    @property
+    def scaled_units(self)->List[Tuple[str,str]]: 
+        the_list:List[Tuple[str,str]] = []
+        for unit in self.__units:
+            the_list.extend(
+                [(prefix, unit) for prefix in self.__units[unit].exponents]
+            )
+        return the_list
+    
+    @property
+    def scaled_units_single_str(self)->List[str]:
+        return [item[0]+item[1] for item in self.scaled_units]
 
     def add_prefix(self,unit:str, prefix:str,exponent:int)->None:
         self.__check_unit_is_defined(unit)

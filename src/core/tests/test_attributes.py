@@ -1823,5 +1823,24 @@ class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):
         )
 
 
+class Test_Listing_Available_Scaled_Units_For_Quantity(unittest.TestCase):
+
+    def test_listing_available_scaled_units_for_quantity(self):
+        fac = attribute_factory(Controller())
+        volume = fac.newqu('m³', 1, exponents={'m':-9,'d':-3})
+        self.assertListEqual(
+            volume.scaled_units, 
+            [('m','m³'), ('d','m³'), ('','m³')]
+        )
+        volume.add_unit('L',exponents={'m':-3})
+        self.assertListEqual(
+            volume.scaled_units, 
+            [('m','m³'), ('d','m³'), ('','m³'), ('m','L'), ('','L')]
+        )
+        self.assertListEqual(
+            volume.scaled_units_single_str, 
+            ['mm³', 'dm³', 'm³', 'mL', 'L']
+        )
+
 
 if __name__=="__main__": unittest.main()
