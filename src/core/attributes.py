@@ -1012,7 +1012,7 @@ class Quantity(Real_Attribute):
             raise Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None(from_basic, to_basic)
         if from_basic is not None and to_basic is not None:
             orig = Decimal(str(test_value))
-            converted_to_alt_and_back = from_basic(to_basic(Decimal(str(test_value))))
+            converted_to_alt_and_back = from_basic(to_basic(orig))
             if converted_to_alt_and_back != orig:
                 raise Quantity.Conversion_To_Alternative_Units_And_Back_Does_Not_Give_The_Original_Value(
                     f"{orig} != {converted_to_alt_and_back}"

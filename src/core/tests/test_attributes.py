@@ -603,6 +603,10 @@ class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase)
         attr.read("  1,564e+03  ")
         self.assertEqual(attr.value, 1564)
 
+    def test_initializing_real_attribute_to_invalid_value_type_raises_exception(self):
+        fac = attribute_factory(Controller())
+        self.assertRaises(Attribute.InvalidValueType, fac.new, 'real', 'invalid_init_value')
+
 
 from src.core.attributes import Real_Attribute
 class Test_Printing_Real_Attribute_Value(unittest.TestCase):
@@ -663,11 +667,6 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
 
 
 class Test_Specifying_Ranges_For_Real_Attribute_Value(unittest.TestCase):
-
-    def test_any_value_is_allowed(self)->None:
-        fac = attribute_factory(Controller())
-        real = fac.new('real')
-        real.set_validity_condition(lambda x: True)
 
     def test_allowing_only_positive_real_numbers(self)->None:
         fac = attribute_factory(Controller())
@@ -1701,12 +1700,14 @@ class Test_Alternative_Units_For_Quantity(unittest.TestCase):
         self.assertRaises(
             Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None,
             Quantity._check_conversion_from_and_to_basic_units,
-            from_basic = lambda x: x - Decimal('273.15'),
+            None,
+            lambda x: x - Decimal('273.15'),
         )
         self.assertRaises(
             Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None,
             Quantity._check_conversion_from_and_to_basic_units,
-            to_basic = lambda x: x + Decimal('273.15'),
+            lambda x: x + Decimal('273.15'),
+            None
         )
         
 
