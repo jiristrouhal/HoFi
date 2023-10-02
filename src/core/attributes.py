@@ -900,9 +900,9 @@ class Bool_Attribute(Attribute):
 class Unit:
     symbol:str
     exponents:Dict[str,int]
+    from_basic:Callable[[float|Decimal],Decimal|float]
+    to_basic:Callable[[float|Decimal],Decimal|float]
     space:bool=True
-    from_basic:Optional[Callable[[float|Decimal],Decimal|float]] = None
-    to_basic:Optional[Callable[[float|Decimal],Decimal|float]] = None
 
     def __post_init__(self)->None: 
         self.exponents[''] = 0
@@ -912,6 +912,12 @@ from typing import Optional
 class Quantity(Real_Attribute):
 
     __default_exponents = {'n':-9, 'μ':-6, 'm':-3, 'k':3, 'M':6, 'G':9}
+    NON_UNIT_SYMBOLS = '\s\d!"#$%&\'\(\)\*+\,\.:;<=>?@\^_`{|}~-'
+    EXPONENT_SYMBOLS = '⁺⁻¹²³⁴⁵⁶⁷⁸⁹'
+    GREEK_ALPHABET = 'ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω'
+    UNIT_PATTERN = f'[a-zA-Zα-ωΑ-Ω°%‰‱]+[{EXPONENT_SYMBOLS}]*'
+    PREFIX_PATTERN = '([TGMkhdcmμnp]?|da)'
+    COMPLETE_UNIT_PATTERN = PREFIX_PATTERN + UNIT_PATTERN
     
     def __init__(
         self,
@@ -935,6 +941,8 @@ class Quantity(Real_Attribute):
 
     @property
     def unit(self)->str: return self.__unit.symbol
+    @property
+    def prefix(self)->str: return self.__prefix
 
     def add_prefix(self,unit:str, prefix:str,exponent:int)->None:
         self.__check_unit_is_defined(unit)
@@ -951,6 +959,8 @@ class Quantity(Real_Attribute):
         )->None:
 
         if symbol in self.__units: raise Quantity.UnitAlreadyDefined(symbol)
+        if from_basic is None: from_basic = lambda x: x
+        if to_basic is None: to_basic = lambda x: x
         Quantity._check_conversion_from_and_to_basic_units(from_basic,to_basic)
         self.__units[symbol] = self.__create_unit(
             symbol,
@@ -977,6 +987,23 @@ class Quantity(Real_Attribute):
         )
         sep = NBSP if self.__unit.space else ''
         return f"{str_val}{sep}{self.__prefix}{self.__unit.symbol}"
+    
+    def read(self, text:str)->None:
+        text = text.strip()
+        if text=="": raise Quantity.BlankText(text)
+        matchobj = re.fullmatch('(?P<value>[\S]+) '+f'(?P<possible_scaled_unit>{Quantity.COMPLETE_UNIT_PATTERN})', text)
+        if matchobj is None: 
+            raise Quantity.CannotExtractQuantity(text)
+
+        read_data = matchobj.groupdict()
+        possible_scaled_unit = read_data['possible_scaled_unit']
+        prefix, unit = Quantity._separate_prefix_from_unit(possible_scaled_unit)
+        if unit not in self.__units: raise Quantity.UnknownUnitInText(text)
+
+        super().read(read_data['value'])
+        self.set_unit(unit)
+        self.set_prefix(prefix)
+        self._value = self.__unit.to_basic(self._value)
 
     def set_prefix(self,prefix:str)->None:
         if not prefix in self.__unit.exponents: raise Quantity.UndefinedUnitPrefix
@@ -988,8 +1015,7 @@ class Quantity(Real_Attribute):
         self.__unit = self.__units[unit]
 
     def __adjust_func(self, value:Decimal|float)->Decimal:
-        if self.__unit.from_basic is not None:
-            value = self.__unit.from_basic(value)
+        value = self.__unit.from_basic(value)
         decimal_shift = Decimal(- self.__unit.exponents[self.__prefix])
         return Decimal(value)*Decimal('10')**decimal_shift
     
@@ -998,28 +1024,25 @@ class Quantity(Real_Attribute):
     
     @staticmethod
     def _acceptable_unit_symbol(text:str)->bool:
-        return re.fullmatch('[^\s\d!"#$%&\'\(\)\*+\,\.:;<=>?@\^_`{|}~-]+',text) is not None
+        return re.fullmatch(Quantity.UNIT_PATTERN,text) is not None
     
     @staticmethod
     def _acceptable_unit_prefix(text:str)->bool:
-        return re.fullmatch('[TGMkhdcmμnp]?|da',text) is not None
+        return re.fullmatch(Quantity.PREFIX_PATTERN,text) is not None
     
     @staticmethod
     def _check_conversion_from_and_to_basic_units(
-        from_basic:Optional[Callable[[Decimal|float],Decimal|float]] = None,
-        to_basic:Optional[Callable[[Decimal|float],Decimal|float]] = None,
+        from_basic:Callable[[Decimal|float],Decimal|float],
+        to_basic:Callable[[Decimal|float],Decimal|float],
         test_value:Decimal|float = Decimal('0')
         )->None:
 
-        if not type(from_basic)==type(to_basic): 
-            raise Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None(from_basic, to_basic)
-        if from_basic is not None and to_basic is not None:
-            orig = Decimal(str(test_value))
-            converted_to_alt_and_back = from_basic(to_basic(orig))
-            if converted_to_alt_and_back != orig:
-                raise Quantity.Conversion_To_Alternative_Units_And_Back_Does_Not_Give_The_Original_Value(
-                    f"{orig} != {converted_to_alt_and_back}"
-                )
+        orig = Decimal(str(test_value))
+        converted_to_alt_and_back = from_basic(to_basic(orig))
+        if converted_to_alt_and_back != orig:
+            raise Quantity.Conversion_To_Alternative_Units_And_Back_Does_Not_Give_The_Original_Value(
+                f"{orig} != {converted_to_alt_and_back}"
+            )
         
     @staticmethod
     def __check_exponent(prefix,exponent)->None:
@@ -1033,8 +1056,8 @@ class Quantity(Real_Attribute):
         symbol:str, 
         exponents:Optional[Dict[str,int]]=None, 
         space:bool=True,
-        from_basic:Optional[Callable[[Decimal|float],Decimal|float]]=None,
-        to_basic:Optional[Callable[[Decimal|float],Decimal|float]]=None
+        from_basic:Callable[[Decimal|float], Decimal|float] = lambda x: x,
+        to_basic:Callable[[Decimal|float], Decimal|float] = lambda x: x,
         )->Unit:
 
         symbol = symbol.strip()
@@ -1043,17 +1066,41 @@ class Quantity(Real_Attribute):
             for prefix, exponent in exponents.items(): Quantity.__check_exponent(prefix,exponent)
         else:
             exponents = Quantity.__default_exponents.copy()
-        return Unit(symbol,exponents,space,from_basic,to_basic)
+        
+        return Unit(symbol,exponents,from_basic,to_basic,space)
     
-    class Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None(Exception): pass
+    WHOLE_UNITS = ['ppm','mol','Gy','Torr']
+    @staticmethod
+    def _separate_prefix_from_unit(possible_scaled_unit:str)->Tuple[str,str]:
+        for whole_unit in Quantity.WHOLE_UNITS:
+            for k in range(len(possible_scaled_unit),-1,-1):
+                if whole_unit==possible_scaled_unit[k:]: 
+                    return possible_scaled_unit[:k], whole_unit
+
+        if possible_scaled_unit in Quantity.WHOLE_UNITS:
+            return '', possible_scaled_unit
+        unit_match, prefix_match = None, None
+        k = 0
+        n = len(possible_scaled_unit)
+        while (unit_match is None or prefix_match is None) and (-k)<n:
+            k -= 1
+            prefix, unit = possible_scaled_unit[:k], possible_scaled_unit[k:]
+            prefix_match = re.fullmatch(Quantity.PREFIX_PATTERN, prefix)
+            unit_match = re.fullmatch(Quantity.UNIT_PATTERN, unit)
+        return prefix, unit
+    
+    class BlankText(Exception): pass
+    class CannotExtractQuantity(Exception): pass
     class Conversion_To_Alternative_Units_And_Back_Does_Not_Give_The_Original_Value(Exception): pass
     class DuplicityInCustomPrefixes(Exception): pass
+    class MissingUnit(Exception): pass
     class NonIntegerExponent(Exception): pass
     class UndefinedUnit(Exception): pass
     class UndefinedUnitPrefix(Exception): pass
     class UnacceptableUnitPrefix(Exception): pass
     class UnacceptableUnitSymbol(Exception): pass
     class UnitAlreadyDefined(Exception): pass
+    class UnknownUnitInText(Exception): pass
 
 
 from typing import Type

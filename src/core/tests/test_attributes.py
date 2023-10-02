@@ -1696,19 +1696,6 @@ class Test_Alternative_Units_For_Quantity(unittest.TestCase):
             from_basic = lambda x: x - Decimal('73.15'),
         )
 
-    def test_defining_only_a_single_conversion_function_raises_exception(self):
-        self.assertRaises(
-            Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None,
-            Quantity._check_conversion_from_and_to_basic_units,
-            None,
-            lambda x: x - Decimal('273.15'),
-        )
-        self.assertRaises(
-            Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None,
-            Quantity._check_conversion_from_and_to_basic_units,
-            lambda x: x + Decimal('273.15'),
-            None
-        )
 
     def test_creating_already_defined_unit_raises_exception(self):
         self.assertRaises(Quantity.UnitAlreadyDefined, self.temperature.add_unit, symbol='K')
@@ -1729,7 +1716,66 @@ class Test_Alternative_Units_For_Quantity(unittest.TestCase):
         self.assertEqual(volume.print(trailing_zeros=False), f'10{NBSP}hl')
         volume.set_unit('m³')
         self.assertEqual(volume.print(trailing_zeros=False), f'1{NBSP}m³')
-        
+
+
+class Test_Reading_Quantity_Value(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.volume = self.fac.newqu('m³',init_value=1, exponents={'m':-9,'c':-6,'d':-3})
+
+    def test_reading_blank_text_as_value_raises_exception(self)->None:
+        self.assertRaises(Quantity.BlankText, self.volume.read, "")
+        self.assertRaises(Quantity.BlankText, self.volume.read, "  ")
+
+    def test_reading_value_without_unit_raises_exception(self)->None:
+        self.assertRaises(Quantity.CannotExtractQuantity, self.volume.read, "1.5")
+
+    def test_reading_quantity_in_valid_format_with_already_defined_unit_and_prefix(self)->None:
+        self.volume.read("1.5 m³")
+        self.assertEqual(self.volume.value, 1.5)
+        self.volume.read("4,5 m³")
+        self.assertEqual(self.volume.value, 4.5)
+    
+    def test_reading_quantity_with_unknown_unit_raises_exception(self)->None:
+        self.assertRaises(Quantity.UnknownUnitInText, self.volume.read, '120 L')
+        self.volume.add_unit('L',exponents={'m':3}, from_basic=lambda x: 1000*x, to_basic=lambda x: x/1000)
+        self.volume.read('120 L')
+        self.assertEqual(self.volume.value, Decimal('0.12'))
+        self.assertEqual(self.volume.unit, 'L')
+        self.assertEqual(self.volume.prefix, '')
+
+    def test_separating_prefix_and_unit(self):
+        def test_separation(scaled_unit:str, expected_prefix:str, expected_unit:str)->None:
+            self.assertEqual(
+                Quantity._separate_prefix_from_unit(scaled_unit), 
+                (expected_prefix, expected_unit) 
+            )
+        test_separation('m', '','m')
+        test_separation('m⁻³', '','m⁻³')
+        test_separation('m³', '','m³')
+        test_separation('mm', 'm','m')
+        test_separation('kΩ', 'k','Ω')
+        test_separation('Pa', '','Pa')
+        test_separation('kPa', 'k','Pa')
+        test_separation('°', '','°')
+        test_separation('dal', 'da','l')
+        test_separation('bar', '','bar')
+        test_separation('%', '','%')
+        test_separation('‰', '','‰')
+        test_separation('‱','','‱')
+        test_separation('T','','T')
+        test_separation('μ','','μ')
+        test_separation('inch','','inch')
+
+        test_separation('kmol','k','mol') 
+        test_separation('mmol','m','mol') 
+
+        #exceptions from rules used to separate previous cases
+        test_separation('mol','','mol') # would be separated as 'm' and 'ol' otherwise 
+        test_separation('ppm','','ppm') # would be separated as 'p' and 'pm' otherwise 
+        test_separation('Gy', '', 'Gy') # gray
+        test_separation('Torr','','Torr')
 
 class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):
 
@@ -1744,6 +1790,9 @@ class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):
         self.assertTrue(Quantity._acceptable_unit_symbol('°C'))
         self.assertTrue(Quantity._acceptable_unit_symbol('cd'))
         self.assertTrue(Quantity._acceptable_unit_symbol('m²'))
+        self.assertTrue(Quantity._acceptable_unit_symbol('%'))
+        self.assertTrue(Quantity._acceptable_unit_symbol('‰'))
+        self.assertTrue(Quantity._acceptable_unit_symbol('‱'))
 
         self.assertFalse(Quantity._acceptable_unit_symbol(''))
         self.assertFalse(Quantity._acceptable_unit_symbol(' '))
