@@ -646,7 +646,6 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
 
     def test_adjusted_value_has_to_be_of_type_decimal_or_float_and_has_to_be_defined(self):
         fac = attribute_factory(Controller())
-        fac = attribute_factory(Controller())
         attr:Real_Attribute = fac.new('real',1.5)
         self.assertRaises(
             Real_Attribute.InvalidAdjustedValue,
@@ -656,7 +655,28 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
             Real_Attribute.InvalidAdjustedValue,
             attr.print, trailing_zeros=False, adjust=lambda x: x/0
         )
+        attr.set_validity_condition(lambda x: x>0)
+        self.assertRaises(
+            Real_Attribute.InvalidAdjustedValue,
+            attr.print, trailing_zeros=False, adjust=lambda x: x-2
+        )
 
+
+class Test_Specifying_Ranges_For_Real_Attribute_Value(unittest.TestCase):
+
+    def test_any_value_is_allowed(self)->None:
+        fac = attribute_factory(Controller())
+        real = fac.new('real')
+        real.set_validity_condition(lambda x: True)
+
+    def test_allowing_only_positive_real_numbers(self)->None:
+        fac = attribute_factory(Controller())
+        real = fac.new('real')
+        real.set_validity_condition(lambda x: x>0)
+        self.assertTrue(real.is_valid(5))
+        self.assertTrue(real.is_valid(5.3))
+        self.assertFalse(real.is_valid(-1))
+        self.assertFalse(real.is_valid(0))
 
 class Test_Thousands_Separator(unittest.TestCase):
 

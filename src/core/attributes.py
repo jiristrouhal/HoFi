@@ -388,6 +388,7 @@ class Attribute(AbstractAttribute):
     default_value:Any = ""
     
     def __init__(self,factory:Attribute_Factory, atype:str='text',init_value:Any=None, name:str="")->None:  
+        self.__customary_condition:Callable[[Any],bool] = lambda x: True
         super().__init__(factory,atype,name)
         if init_value is not None and self.is_valid(init_value):
             self._value = init_value
@@ -417,10 +418,13 @@ class Attribute(AbstractAttribute):
             self._run_set_command(value)
         else:
             raise Attribute.InvalidValue(value)
+        
+    def set_validity_condition(self,func:Callable[[Any],bool])->None:
+        self.__customary_condition = func
 
     def is_valid(self, value:Any)->bool: 
         self._check_input_type(value)
-        return self._is_value_valid(value)
+        return self._is_value_valid(value) and self.__customary_condition(value)==True
     
     @abc.abstractmethod
     def _check_input_type(self,value:Any)->None: pass # pragma: no cover
@@ -536,10 +540,20 @@ class Real_Attribute(Number_Attribute):
     class CannotExtractReal(Exception): pass
     _reading_exception:Type[Exception] = CannotExtractReal
 
-    def __init__(self,factory:Attribute_Factory, atype:str,init_value:Any=None,name:str="")->None:
+    def __init__(
+        self,
+        factory:Attribute_Factory, 
+        atype:str,
+        init_value:Any=None,
+        name:str="", 
+        )->None:
+
+        if init_value is not None:
+            try: init_value = Decimal(str(init_value))
+            except: raise Attribute.InvalidValueType(init_value)
+        super().__init__(factory,atype,init_value,name)
         if init_value is not None and self.is_valid(init_value):
             init_value = Decimal(str(init_value))
-        super().__init__(factory,atype,init_value,name)
 
     def _check_input_type(self, value: Decimal|float|int) -> None:
         try: 
