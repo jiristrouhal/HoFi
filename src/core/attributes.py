@@ -913,10 +913,9 @@ from typing import Optional
 class Quantity(Real_Attribute):
 
     __default_exponents = {'n':-9, 'μ':-6, 'm':-3, 'k':3, 'M':6, 'G':9}
-    NON_UNIT_SYMBOLS = '\s\d!"#$%&\'\(\)\*+\,\.:;<=>?@\^_`{|}~-'
     EXPONENT_SYMBOLS = '⁺⁻¹²³⁴⁵⁶⁷⁸⁹'
     GREEK_ALPHABET = 'ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω'
-    UNIT_PATTERN = f'[a-zA-Zα-ωΑ-Ω°%‰‱]+[{EXPONENT_SYMBOLS}]*'
+    UNIT_PATTERN = f'([a-zA-Zα-ωΑ-Ω°%‰‱]+[{EXPONENT_SYMBOLS}]*)+'
     PREFIX_PATTERN = '([TGMkhdcmμnp]?|da)'
     COMPLETE_UNIT_PATTERN = PREFIX_PATTERN + UNIT_PATTERN
     
@@ -981,14 +980,9 @@ class Quantity(Real_Attribute):
         self.__scaled_units.extend([(prefix, symbol) for prefix in self.__units[symbol].exponents])
 
     def pick_scaled_unit(self,id:int)->None:
-        try: 
-            picked = self.__scaled_units[id]
-            self.set_unit(picked[1])
-            self.set_prefix(picked[0])
-        except IndexError:
-            raise IndexError(f"Index {id} of option for scaled unit is out of range"
-                             f" (min={-len(self.__scaled_units)},max={len(self.__scaled_units)-1}).")
-
+        picked = self.__scaled_units[id]
+        self.set_unit(picked[1])
+        self.set_prefix(picked[0])
 
     def print(
         self,
@@ -1030,6 +1024,10 @@ class Quantity(Real_Attribute):
         self.set_prefix(prefix)
         self._value = self.__unit.to_basic(self._value)
 
+    def read_only_value(self, text:str)->None:
+        super().read(text)
+        self._value = self.__readjust_func(self.__unit.to_basic(self._value))
+
     def set_prefix(self,prefix:str)->None:
         if not prefix in self.__unit.exponents: raise Quantity.UndefinedUnitPrefix
         self.__prefix = prefix
@@ -1042,6 +1040,11 @@ class Quantity(Real_Attribute):
     def __adjust_func(self, value:Decimal|float)->Decimal:
         value = self.__unit.from_basic(value)
         decimal_shift = Decimal(- self.__unit.exponents[self.__prefix])
+        return Decimal(value)*Decimal('10')**decimal_shift
+    
+    def __readjust_func(self, value:Decimal|float)->Decimal:
+        value = self.__unit.from_basic(value)
+        decimal_shift = Decimal(self.__unit.exponents[self.__prefix])
         return Decimal(value)*Decimal('10')**decimal_shift
     
     def __check_unit_is_defined(self, unit_symbol:str)->None:
@@ -1102,8 +1105,6 @@ class Quantity(Real_Attribute):
                 if whole_unit==possible_scaled_unit[k:]: 
                     return possible_scaled_unit[:k], whole_unit
 
-        if possible_scaled_unit in Quantity.WHOLE_UNITS:
-            return '', possible_scaled_unit
         unit_match, prefix_match = None, None
         k = 0
         n = len(possible_scaled_unit)

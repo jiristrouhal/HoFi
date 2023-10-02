@@ -1750,6 +1750,13 @@ class Test_Reading_Quantity_Value(unittest.TestCase):
         self.assertEqual(self.volume.unit, 'L')
         self.assertEqual(self.volume.prefix, '')
 
+    def test_reading_value_from_text_without_unit_symbol(self)->None:
+        self.volume.set_prefix('d')
+        self.assertEqual(self.volume.prefix, "d")
+        self.volume.read_only_value("850")
+        self.assertEqual(self.volume.value, Decimal('0.85'))
+        self.assertEqual(self.volume.print(trailing_zeros=False), f"850{NBSP}dm³")
+
     def test_separating_prefix_and_unit(self):
         def test_separation(scaled_unit:str, expected_prefix:str, expected_unit:str)->None:
             self.assertEqual(
