@@ -1709,6 +1709,26 @@ class Test_Alternative_Units_For_Quantity(unittest.TestCase):
             lambda x: x + Decimal('273.15'),
             None
         )
+
+    def test_creating_already_defined_unit_raises_exception(self):
+        self.assertRaises(Quantity.UnitAlreadyDefined, self.temperature.add_unit, symbol='K')
+
+    def test_case_of_volume(self)->None:
+        volume = self.fac.newqu('m³', exponents={'k':9,'d':-3,'m':-9})
+        volume.add_unit(
+            'l', 
+            exponents={'h':2, 'm':-3}, 
+            from_basic=lambda x:Decimal(1000)*Decimal(x), 
+            to_basic=lambda x: Decimal(x)*Decimal(1000)
+        )
+        volume.set(1)
+        self.assertEqual(volume.print(trailing_zeros=False), f'1{NBSP}m³')
+        volume.set_unit('l')
+        self.assertEqual(volume.print(trailing_zeros=False), f'1000{NBSP}l')
+        volume.set_prefix('h')
+        self.assertEqual(volume.print(trailing_zeros=False), f'10{NBSP}hl')
+        volume.set_unit('m³')
+        self.assertEqual(volume.print(trailing_zeros=False), f'1{NBSP}m³')
         
 
 class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):

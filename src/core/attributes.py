@@ -919,6 +919,7 @@ class Quantity(Real_Attribute):
         unit:str,
         init_value:Optional[float|Decimal|int]=None, 
         name:str="",
+        exponents:Optional[Dict[str,int]] = None,
         space_after_value:bool=True
         )->None:
 
@@ -927,7 +928,7 @@ class Quantity(Real_Attribute):
         self.__units:Dict[str,Unit] = dict()
         self.add_unit(
             unit,
-            exponents=None,
+            exponents=exponents,
             space_after_value=space_after_value
         )
         self.__unit:Unit = self.__units[unit]
@@ -946,9 +947,10 @@ class Quantity(Real_Attribute):
         exponents:Optional[Dict[str,int]]=None, 
         from_basic:Optional[Callable[[Decimal|float],Decimal|float]] = None,
         to_basic:Optional[Callable[[Decimal|float],Decimal|float]] = None,
-        space_after_value = False
+        space_after_value:bool=True
         )->None:
 
+        if symbol in self.__units: raise Quantity.UnitAlreadyDefined(symbol)
         Quantity._check_conversion_from_and_to_basic_units(from_basic,to_basic)
         self.__units[symbol] = self.__create_unit(
             symbol,
@@ -982,6 +984,7 @@ class Quantity(Real_Attribute):
 
     def set_unit(self,unit:str)->None:
         self.__check_unit_is_defined(unit)
+        self.__prefix = ''
         self.__unit = self.__units[unit]
 
     def __adjust_func(self, value:Decimal|float)->Decimal:
@@ -995,7 +998,7 @@ class Quantity(Real_Attribute):
     
     @staticmethod
     def _acceptable_unit_symbol(text:str)->bool:
-        return re.fullmatch('[^\s\d!"#$%&\'\(\)\*+\,\./:;<=>?@\^_`{|}~-]+',text) is not None
+        return re.fullmatch('[^\s\d!"#$%&\'\(\)\*+\,\.:;<=>?@\^_`{|}~-]+',text) is not None
     
     @staticmethod
     def _acceptable_unit_prefix(text:str)->bool:
@@ -1050,6 +1053,7 @@ class Quantity(Real_Attribute):
     class UndefinedUnitPrefix(Exception): pass
     class UnacceptableUnitPrefix(Exception): pass
     class UnacceptableUnitSymbol(Exception): pass
+    class UnitAlreadyDefined(Exception): pass
 
 
 from typing import Type
@@ -1070,8 +1074,16 @@ class Attribute_Factory:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         return Attribute_List(self, atype, init_attributes=init_items, name=name)
     
-    def newqu(self,unit:str,init_value:Optional[float|Decimal|int]=None,name:str="")->Quantity:
-        return Quantity(self,unit,init_value,name)
+    def newqu(
+        self,
+        unit:str,
+        init_value:Optional[float|Decimal|int]=None,
+        name:str="",
+        exponents:Optional[Dict[str,int]] = None,
+        space_after_value:bool=True,
+        )->Quantity:
+
+        return Quantity(self,unit,init_value,name,exponents,space_after_value)
 
     def new(self,atype:str='text',init_value:Any=None, name:str="")->Attribute:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
