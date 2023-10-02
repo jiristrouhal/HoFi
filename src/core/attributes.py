@@ -564,9 +564,11 @@ class Real_Attribute(Number_Attribute):
         else:
             try: 
                 value = adjust(self._value)
-                if not self.is_valid(value): raise
-            except: 
-                raise Real_Attribute.InvalidAdjustedValue(adjust)
+                if not self.is_valid(value): 
+                    raise Real_Attribute.InvalidAdjustedValue(value)
+            except Exception: 
+                raise Real_Attribute.InvalidAdjustedValue
+
 
         str_value = format(value, f',.{precision}f')
         str_value = self._set_thousands_separator(str_value, use_thousands_separator)
@@ -582,7 +584,7 @@ class Real_Attribute(Number_Attribute):
             raise Attribute.InvalidValue(value)
         
     class InvalidAdjustedValue(Exception): pass
-        
+
 
 class Real_Attribute_Dimensionless(Real_Attribute):
     pass
@@ -920,7 +922,7 @@ class Quantity(Real_Attribute):
     def unit(self)->str: return self.__unit.symbol
 
     def add_prefix(self,unit:str, prefix:str,exponent:int)->None:
-        if not unit in self.__units: raise Quantity.UndefinedUnit(unit)
+        self.__check_unit_is_defined(unit)
         Quantity.__check_exponent(prefix,exponent)
         self.__unit.exponents[prefix] = exponent
 
@@ -965,7 +967,7 @@ class Quantity(Real_Attribute):
         self.__prefix = prefix
 
     def set_unit(self,unit:str)->None:
-        if unit not in self.__units: raise Quantity.UndefinedUnit(unit)
+        self.__check_unit_is_defined(unit)
         self.__unit = self.__units[unit]
 
     def __adjust_func(self, value:Decimal|float)->Decimal:
@@ -973,6 +975,9 @@ class Quantity(Real_Attribute):
             value = self.__unit.from_basic(value)
         decimal_shift = Decimal(- self.__unit.exponents[self.__prefix])
         return Decimal(value)*Decimal('10')**decimal_shift
+    
+    def __check_unit_is_defined(self, unit_symbol:str)->None:
+        if unit_symbol not in self.__units: raise Quantity.UndefinedUnit(unit_symbol)
     
     @staticmethod
     def _acceptable_unit_symbol(text:str)->bool:

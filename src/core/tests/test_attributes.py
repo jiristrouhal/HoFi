@@ -604,6 +604,7 @@ class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase)
         self.assertEqual(attr.value, 1564)
 
 
+from src.core.attributes import Real_Attribute
 class Test_Printing_Real_Attribute_Value(unittest.TestCase):
 
     def test_printing_real_value(self):
@@ -635,6 +636,26 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
         self.assertFalse(Real_Attribute_Dimensionless.is_int(12.1))
         self.assertFalse(Real_Attribute_Dimensionless.is_int(math.pi))
         self.assertFalse(Real_Attribute_Dimensionless.is_int(-12.1))
+
+    def test_value_can_be_printed_with_adjusted_value(self):
+        fac = attribute_factory(Controller())
+        attr:Real_Attribute_Dimensionless = fac.new('real',1.5)
+        self.assertEqual(
+            attr.print(trailing_zeros=False, adjust=lambda x: Decimal(2)*x), '3'
+        )
+
+    def test_adjusted_value_has_to_be_of_type_decimal_or_float_and_has_to_be_defined(self):
+        fac = attribute_factory(Controller())
+        fac = attribute_factory(Controller())
+        attr:Real_Attribute = fac.new('real',1.5)
+        self.assertRaises(
+            Real_Attribute.InvalidAdjustedValue,
+            attr.print, trailing_zeros=False, adjust=lambda x: str(x)
+        )
+        self.assertRaises(
+            Real_Attribute.InvalidAdjustedValue,
+            attr.print, trailing_zeros=False, adjust=lambda x: x/0
+        )
 
 
 class Test_Thousands_Separator(unittest.TestCase):
@@ -1649,24 +1670,31 @@ class Test_Alternative_Units_For_Quantity(unittest.TestCase):
         self.assertEqual(self.temperature.print(trailing_zeros=False), f'20°C')
 
     def test_not_matching_conversion_functions_raise_exception(self):
-        self.assertRaises(Quantity.Conversion_To_Alternative_Units_And_Back_Does_Not_Give_The_Original_Value,
+        self.assertRaises(
+            Quantity.Conversion_To_Alternative_Units_And_Back_Does_Not_Give_The_Original_Value,
             Quantity._check_conversion_from_and_to_basic_units,
             to_basic = lambda x: x + Decimal('273.15'), 
             from_basic = lambda x: x - Decimal('73.15'),
         )
 
     def test_defining_only_a_single_conversion_function_raises_exception(self):
-        self.assertRaises(Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None,
+        self.assertRaises(
+            Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None,
             Quantity._check_conversion_from_and_to_basic_units,
             from_basic = lambda x: x - Decimal('273.15'),
         )
-        self.assertRaises(Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None,
+        self.assertRaises(
+            Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None,
             Quantity._check_conversion_from_and_to_basic_units,
             to_basic = lambda x: x + Decimal('273.15'),
         )
         
 
 class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.length = self.fac.newqu('m')
 
     def test_unit_symbols_have_to_contain_nonwhite_space_and_nondigit_characters_without_punctuation_marks(self)->None:
         self.assertTrue(Quantity._acceptable_unit_symbol('N'))
@@ -1693,19 +1721,17 @@ class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):
         self.assertTrue(Quantity._acceptable_unit_prefix('da'))
 
     def test_raise_exception_if_unacceptable_unit_symbol_is_specified(self):
-        fac = attribute_factory(Controller())
-        self.assertRaises(Quantity.UnacceptableUnitSymbol, fac.newqu, '$456_unacceptable_symbol')
+        self.assertRaises(Quantity.UnacceptableUnitSymbol, self.fac.newqu, '$456_unacceptable_symbol')
 
     def test_raise_exception_if_adding_unacceptable_unit_prefix(self):
-        fac = attribute_factory(Controller())
-        length = fac.newqu('m')
         self.assertRaises(
             Quantity.UnacceptableUnitPrefix, 
-            length.add_prefix, 
-            unit=length.unit, 
+            self.length.add_prefix, 
+            unit=self.length.unit, 
             prefix='$26+2', 
             exponent=5
         )
+
 
 
 if __name__=="__main__": unittest.main()
