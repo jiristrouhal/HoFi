@@ -571,7 +571,8 @@ class Real_Attribute(Number_Attribute):
         use_thousands_separator:bool=False,
         precision:int=28,
         trailing_zeros:bool=True,
-        adjust:Optional[Callable[[float|Decimal],float|Decimal]] = None
+        adjust:Optional[Callable[[float|Decimal],float|Decimal]] = None,
+        *args
         )->str:
         
         if adjust is None: value = self._value
@@ -995,6 +996,8 @@ class Quantity(Real_Attribute):
         use_thousands_separator:bool=False,
         precision:int=28,
         trailing_zeros:bool=True,
+        adjust:Optional[Callable[[Decimal|float],Decimal|float]] = None,
+        include_unit:bool=True,
         *args
         )->str:
 
@@ -1002,10 +1005,13 @@ class Quantity(Real_Attribute):
             locale_code,
             use_thousands_separator,
             precision,trailing_zeros,
-            adjust=self.__adjust_func
+            adjust=self.__adjust_func,
         )
-        sep = NBSP if self.__unit.space else ''
-        return f"{str_val}{sep}{self.__prefix}{self.__unit.symbol}"
+        if include_unit: 
+            sep = NBSP if self.__unit.space else ''
+            return f"{str_val}{sep}{self.__prefix}{self.__unit.symbol}"
+        else: 
+            return str_val
     
     def read(self, text:str)->None:
         text = text.strip()

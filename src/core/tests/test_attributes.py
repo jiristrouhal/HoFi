@@ -1717,6 +1717,11 @@ class Test_Alternative_Units_For_Quantity(unittest.TestCase):
         volume.set_unit('m³')
         self.assertEqual(volume.print(trailing_zeros=False), f'1{NBSP}m³')
 
+    def test_print_value_without_unit(self)->None:
+        volume = self.fac.newqu('m³', exponents={'k':9,'d':-3,'m':-9})
+        volume.set(5)
+        self.assertEqual(volume.print(trailing_zeros=False, include_unit=False), '5')
+
 
 class Test_Reading_Quantity_Value(unittest.TestCase):
 
@@ -1844,6 +1849,8 @@ class Test_Listing_Available_Scaled_Units_For_Quantity(unittest.TestCase):
         volume.pick_scaled_unit(1)
         self.assertEqual(volume.unit, 'm³')
         self.assertEqual(volume.prefix, 'd')
+
+
 
 
 if __name__=="__main__": unittest.main()
