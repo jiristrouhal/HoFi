@@ -916,7 +916,11 @@ class Quantity(Real_Attribute):
         )
         self.__unit:Unit = self.__units[unit]
 
-    def add_prefix(self,prefix:str,exponent:int)->None:
+    @property
+    def unit(self)->str: return self.__unit.symbol
+
+    def add_prefix(self,unit:str, prefix:str,exponent:int)->None:
+        if not unit in self.__units: raise Quantity.UndefinedUnit(unit)
         Quantity.__check_exponent(prefix,exponent)
         self.__unit.exponents[prefix] = exponent
 

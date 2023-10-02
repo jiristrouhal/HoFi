@@ -1608,7 +1608,7 @@ class Test_Quantity(unittest.TestCase):
     
     def test_setting_custom_quantity(self)->None:
         self.length.set(5)
-        self.length.add_prefix('c',-2)
+        self.length.add_prefix('m','c',-2)
         self.length.set_prefix('c')
         self.assertEqual(self.length.print(trailing_zeros=False),f'500{NBSP}cm')
 
@@ -1623,7 +1623,7 @@ class Test_Quantity(unittest.TestCase):
 
     def test_setting_noninteger_exponent_for_prefix_raises(self):
         self.assertRaises(
-            Quantity.NonIntegerExponent, self.length.add_prefix, 'k', 3.5
+            Quantity.NonIntegerExponent, self.length.add_prefix, 'm', 'k', 3.5
         )
 
     def test_setting_quantity_unit_to_undefined_one_raises_exception(self):
@@ -1655,7 +1655,15 @@ class Test_Alternative_Units_For_Quantity(unittest.TestCase):
             from_basic = lambda x: x - Decimal('73.15'),
         )
 
-    
+    def test_defining_only_a_single_conversion_function_raises_exception(self):
+        self.assertRaises(Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None,
+            Quantity._check_conversion_from_and_to_basic_units,
+            from_basic = lambda x: x - Decimal('273.15'),
+        )
+        self.assertRaises(Quantity.Both_Unit_Conversion_Functions_Has_To_Be_None_Or_Not_None,
+            Quantity._check_conversion_from_and_to_basic_units,
+            to_basic = lambda x: x + Decimal('273.15'),
+        )
         
 
 class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):
@@ -1683,6 +1691,21 @@ class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):
         self.assertTrue(Quantity._acceptable_unit_prefix(''))
         self.assertTrue(Quantity._acceptable_unit_prefix('m'))
         self.assertTrue(Quantity._acceptable_unit_prefix('da'))
+
+    def test_raise_exception_if_unacceptable_unit_symbol_is_specified(self):
+        fac = attribute_factory(Controller())
+        self.assertRaises(Quantity.UnacceptableUnitSymbol, fac.newqu, '$456_unacceptable_symbol')
+
+    def test_raise_exception_if_adding_unacceptable_unit_prefix(self):
+        fac = attribute_factory(Controller())
+        length = fac.newqu('m')
+        self.assertRaises(
+            Quantity.UnacceptableUnitPrefix, 
+            length.add_prefix, 
+            unit=length.unit, 
+            prefix='$26+2', 
+            exponent=5
+        )
 
 
 if __name__=="__main__": unittest.main()
