@@ -1788,6 +1788,10 @@ class Test_Reading_Quantity_Value(unittest.TestCase):
         test_separation('ppm','','ppm') # would be separated as 'p' and 'pm' otherwise 
         test_separation('Gy', '', 'Gy') # gray
         test_separation('Torr','','Torr')
+        test_separation('hp','','hp') # horsepower
+        test_separation('ft','','ft') 
+        test_separation('min','','min')
+        test_separation('mph','','mph')
 
 class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):
 

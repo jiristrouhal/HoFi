@@ -1096,7 +1096,7 @@ class Quantity(Real_Attribute):
         
         return Unit(symbol,exponents,from_basic,to_basic,space)
     
-    WHOLE_UNITS = ['ppm','mol','Gy','Torr']
+    WHOLE_UNITS = ['ppm','mol','Gy','Torr','hp','ft','min','mph']
     @staticmethod
     def _separate_prefix_from_unit(possible_scaled_unit:str)->Tuple[str,str]:
         for whole_unit in Quantity.WHOLE_UNITS:
