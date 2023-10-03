@@ -1805,6 +1805,9 @@ class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):
         self.assertTrue(Quantity._acceptable_unit_symbol('%'))
         self.assertTrue(Quantity._acceptable_unit_symbol('‰'))
         self.assertTrue(Quantity._acceptable_unit_symbol('‱'))
+        self.assertTrue(Quantity._acceptable_unit_symbol('Gy')) # Gray
+        self.assertTrue(Quantity._acceptable_unit_symbol('ppm'))
+        self.assertTrue(Quantity._acceptable_unit_symbol('mol'))
 
         self.assertFalse(Quantity._acceptable_unit_symbol(''))
         self.assertFalse(Quantity._acceptable_unit_symbol(' '))

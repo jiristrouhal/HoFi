@@ -914,7 +914,6 @@ class Quantity(Real_Attribute):
 
     __default_exponents = {'n':-9, 'μ':-6, 'm':-3, 'k':3, 'M':6, 'G':9}
     EXPONENT_SYMBOLS = '⁺⁻¹²³⁴⁵⁶⁷⁸⁹'
-    GREEK_ALPHABET = 'ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω'
     UNIT_PATTERN = f'([a-zA-Zα-ωΑ-Ω°%‰‱]+[{EXPONENT_SYMBOLS}]*)+'
     PREFIX_PATTERN = '([TGMkhdcmμnp]?|da)'
     COMPLETE_UNIT_PATTERN = PREFIX_PATTERN + UNIT_PATTERN
