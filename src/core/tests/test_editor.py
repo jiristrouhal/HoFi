@@ -55,6 +55,13 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
             self.case_template.add_template, label="", attribute_info={}, child_template_labels=()
         )
 
+    def test_adding_nonexistent_case_child_label_raises_exception(self):
+        self.assertRaises(
+            Case_Template.UndefinedTemplate, 
+            self.case_template.add_case_child_label, 
+            'Nonexistent template label'
+        )
+
     def test_changing_case_template_after_creating_the_editor_does_not_affect_the_editor(self):
         self.case_template.add_template('Item', {}, (),)
         self.case_template.add_case_child_label('Item')
@@ -111,13 +118,55 @@ class Test_Managing_Cases(unittest.TestCase):
         self.assertEqual(caseA.name, "Case")
         self.assertEqual(caseB.name, "Case (1)")
 
-    def test_deleting_case(self):
+    def test_removing_case(self):
         caseA = self.editor.new_case("Case")
         self.assertTrue(self.editor.contains_case(caseA))
         self.editor.remove_case(caseA)
         self.assertFalse(self.editor.contains_case(caseA))
 
-        
+        self.editor.undo()
+        self.assertTrue(self.editor.contains_case(caseA))
+        self.editor.redo()
+        self.assertFalse(self.editor.contains_case(caseA))
+        self.editor.undo()
+        self.assertTrue(self.editor.contains_case(caseA))
+
+    def test_duplicate_case(self):
+        caseA = self.editor.new_case("Case")
+        caseA_dupl = caseA.duplicate()
+        self.assertTrue(self.editor.contains_case(caseA_dupl))
+        self.editor.undo()
+        self.assertFalse(self.editor.contains_case(caseA_dupl))
+        self.editor.redo()
+        self.assertTrue(self.editor.contains_case(caseA_dupl))
+        self.assertEqual(caseA_dupl.name,"Case (1)")
+
+
+
+from src.core.item import ItemImpl
+class Test_Converting_Cases_To_Items_And_Back(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.case_template = blank_case_template()
+        self.case_template.add_template('Item', {}, ('Item',))
+        self.case_template.add_case_child_label('Item')
+        self.editor = new_editor(self.case_template)
+
+    def test_duplicate_item_as_a_case(self):
+        caseA = self.editor.new_case("Case A")
+        parent = self.editor.new(caseA,'Item')
+        child = self.editor.new(parent,'Item')
+        grandchild = self.editor.new(child, 'Item')
+        grandchild.rename("Grandchild")
+
+        caseA.rename("Case A_")
+        derived_case = self.editor.duplicate_as_case(child)
+        self.assertTrue(self.editor.contains_case(derived_case))
+        self.assertEqual(derived_case.name, "Item")
+        self.assertTrue(derived_case.has_children())
+
+        child_copy = derived_case.pick_child('Item')
+        self.assertTrue(child_copy.pick_child("Grandchild") is not ItemImpl.NULL)
 
 
 if __name__=="__main__": unittest.main()

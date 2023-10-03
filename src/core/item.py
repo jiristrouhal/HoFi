@@ -227,6 +227,8 @@ class Item(abc.ABC): # pragma: no cover
     def itype(self)->str: return ""
     @abc.abstractproperty
     def child_itypes(self)->Optional[Tuple[str,...]]: pass
+    @abc.abstractproperty
+    def command(self)->Dict[Command_Type,Composed_Command]: pass
 
     @abc.abstractmethod
     def bind(self, output_name:str, func:Callable[[Any],Any], *input_names:str)->None:
@@ -243,6 +245,9 @@ class Item(abc.ABC): # pragma: no cover
     
     @abc.abstractmethod
     def attribute(self,label:str)->Attribute: pass
+
+    @abc.abstractmethod
+    def copy(self)->Item: pass
 
     @abc.abstractmethod
     def free(self,output_name:str)->None: pass
@@ -351,8 +356,11 @@ class ItemImpl(Item):
         def itype(self)->str: return ""   # pragma: no cover
         @property
         def child_itypes(self)->Optional[Tuple[str,...]]: return None   # pragma: no cover
+        @property
+        def command(self)->Dict[Command_Type,Composed_Command]: return {}
 
         def bind(self,*args)->None: raise self.SettingDependencyOnNull
+        def copy(self)->Item: return self
         def free(self,*args)->None: raise self.SettingDependencyOnNull
         def adopt(self,child:Item)->None: 
             if child.parent is not self: child.parent.leave(child)
@@ -398,7 +406,7 @@ class ItemImpl(Item):
         self.__children:Set[Item] = set()
         self.__parent:Item = self.NULL
         self._bindings:Dict[str, Item.BindingInfo] = dict()
-        self.command:Dict[Command_Type,Composed_Command] = {
+        self.__command:Dict[Command_Type,Composed_Command] = {
             'adopt':Adopt_Composed(),
             'leave':Leave_Composed(),
             'rename':Rename_Composed()
@@ -425,6 +433,8 @@ class ItemImpl(Item):
     def itype(self)->str: return self.__itype
     @property
     def child_itypes(self)->Optional[Tuple[str,...]]: return self.__child_itypes
+    @property
+    def command(self)->Dict[Command_Type,Composed_Command]: return self.__command
  
     def attribute(self,label:str)->Attribute:
         if not label in self.__attributes: 
@@ -539,11 +549,15 @@ class ItemImpl(Item):
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None:
         self.command['rename'].add(owner, func, timing)
 
+    def copy(self)->Item:
+        the_copy = self._duplicate_items()
+        self._copy_bindings(the_copy)
+        return the_copy
+
     def duplicate(self)->Item:
-        the_duplicate = self._duplicate_items()
-        self._copy_bindings(the_duplicate)
-        self.parent.adopt(the_duplicate)
-        return the_duplicate
+        the_copy = self.copy()
+        self.parent.adopt(the_copy)
+        return the_copy
 
     def has_children(self)->bool:
         return bool(self.__children)
@@ -581,7 +595,13 @@ class ItemImpl(Item):
         else: return True
 
     def _duplicate_items(self)->ItemImpl:
-        dupl = ItemImpl(self.name, self.__attributes_copy(), self._manager)
+        dupl = ItemImpl(
+            self.name, 
+            self.__attributes_copy(), 
+            self._manager,
+            self.itype,
+            self.__child_itypes
+        )
         for attr in dupl.__attributes.values():
             if attr.dependent: attr.break_dependency()
         for child in self.__children:

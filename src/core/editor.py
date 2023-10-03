@@ -20,9 +20,11 @@ class Case_Template:
         self.__templates[label] = Template(label, attribute_info, child_template_labels)
     
     def add_case_child_label(self,label:str)->None:
+        if label not in self.__templates: raise Case_Template.UndefinedTemplate(label)
         self.__case_child_labels.append(label)
 
     class BlankTemplateLabel(Exception): pass
+    class UndefinedTemplate(Exception): pass
 
 
 class Editor:
@@ -35,6 +37,16 @@ class Editor:
 
     def contains_case(self,case:Item)->bool:
         return self.__root.is_parent_of(case)
+
+    from src.core.item import Parentage_Data
+    def duplicate_as_case(self,item:Item)->Item:
+        case = self.__creator.from_template("", item.name)
+        item_dupl = item.copy()
+        self.__root.controller.run(
+            *self.__root.command['adopt'](self.Parentage_Data(self.__root, case)),
+            *case.command['adopt'](self.Parentage_Data(case, item_dupl)),
+        )
+        return case
 
     def item_types_to_create(self,parent:Item)->Tuple[str,...]:
         types = self.__creator.template(parent.itype).child_itypes
