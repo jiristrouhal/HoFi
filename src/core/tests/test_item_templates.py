@@ -48,7 +48,7 @@ class Test_Specifying_Children_Types(unittest.TestCase):
         itemB = self.mg.from_template('Item')
         self.assertRaises(Item.CannotAdoptItemOfType,item.adopt, itemB)
     
-    def test_specifying_single_child_item_type(self):
+    def test_specifyinging_single_child_item_type(self):
         self.mg.add_template('Item', child_itypes=('Item',))
         item = self.mg.from_template('Item')
         self.assertEqual(item.child_itypes, ('Item',))
