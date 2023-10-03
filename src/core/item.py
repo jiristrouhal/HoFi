@@ -21,6 +21,8 @@ class ItemCreator:
         self._attrfac = attribute_factory(self._controller)
         self.__templates:Dict[str,Template] = {}
 
+    def template(self, label:str)->Template: return self.__templates[label]
+
     def add_template(
         self,
         label:str,

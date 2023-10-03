@@ -4,38 +4,56 @@ sys.path.insert(1,"src")
 
 
 import unittest
-from src.core.editor import new_case_template, new_editor, Editor, Case_Template
+from src.core.editor import new_editor, blank_case_template
 
 
-class Test_Creating_Case_Template(unittest.TestCase):
+class Test_Specifying_Case_Template(unittest.TestCase):
+
+    def test_creating_case_template_and_passing_to_editor(self)->None:
+        case_templ = blank_case_template()
+
+
+class Test_Creating_Case(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.ctempl = new_case_template()
+        case_templ = blank_case_template()
+        self.editor = new_editor(case_templ)
+        self.case = self.editor.new_case("New Case")
 
-    def test_adding_item_template(self):
-        self.ctempl.add_template('Item')
-        self.assertEqual(self.ctempl.templates, ('Item',))
-
-    def test_repeatedly_adding_template_with_the_same_name_raises_exception(self)->None:
-        self.ctempl.add_template('Item')
-        self.assertRaises(Case_Template.TemplateAlreadyDefined, self.ctempl.add_template, 'Item')
-
+    def test_creating_case(self):
+        self.assertEqual(self.case.name, "New Case")
     
+    def test_undo_and_redo_renaming_case(self):
+        self.case.rename("Case A")
+        self.assertEqual(self.case.name, "Case A")
+        self.editor.undo()
+        self.assertEqual(self.case.name, "New Case")
+        self.editor.redo()
+        self.assertEqual(self.case.name, "Case A")
 
 
-class Test_Using_Case_Template_To_Create_Case(unittest.TestCase):
+class Test_Creating_Item_Under_Case(unittest.TestCase):
 
-    def test_creating_new_case(self):
-        editor = new_editor()
-        ctempl = new_case_template()
-        editor.set_case_template(ctempl)
-        newcase = editor.new_case('New Case')
-        self.assertEqual(newcase.name, 'New Case')
+    def test_list_of_available_items_to_be_created_is_empty_without_specifying_any_item_template(self):
+        case_templ = blank_case_template()
+        editor = new_editor(case_templ)
+        thecase = editor.new_case("Case")
+        self.assertEqual(editor.item_types_to_create(thecase), ())
 
-    def test_creating_case_without_specifying_case_template_raises_exception(self)->None:
-        editor = new_editor()
-        self.assertRaises(Editor.CaseTemplateNotSet, editor.new_case, 'New Case')
+    def test_creating_item_from_a_template(self):
+        case_templ = blank_case_template()
 
+        case_templ.add_template('Item', {}, (),)
+        case_templ.add_case_child_label('Item')
+
+        editor = new_editor(case_templ)
+        thecase = editor.new_case("Case")
+
+        self.assertEqual(editor.item_types_to_create(thecase), ('Item',))
+
+        item = editor.new(thecase,'Item')
+        self.assertTrue(thecase.contains(item))
+ 
 
 if __name__=="__main__": unittest.main()
 
