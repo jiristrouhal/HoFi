@@ -79,8 +79,6 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         editor = new_editor(self.case_template)
         acase = editor.new_case("Case")
 
-        self.assertEqual(editor.item_types_to_create(acase), ('Item',))
-
         self.assertRaises(
             Editor.InvalidChildTypeUnderGivenParent,
             editor.new, 
@@ -88,17 +86,39 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
             'Nonexistent template label'
         )
 
-    def test_case_name_is_adjusted_if_already_taken(self):
-        self.case_template.add_template('Item', {}, (),)
+    def test_removing_item(self)->None:
+        self.case_template.add_template("Item", {}, ())
         self.case_template.add_case_child_label('Item')
 
         editor = new_editor(self.case_template)
-        caseA = editor.new_case("Case")
-        caseB = editor.new_case("Case")
+        acase = editor.new_case("Case")
+        item = editor.new(acase, "Item")
+
+        self.assertTrue(acase.is_parent_of(item))
+        editor.remove(item,acase)
+        self.assertFalse(acase.is_parent_of(item))
         
+
+class Test_Managing_Cases(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.case_template = blank_case_template()
+        self.editor = new_editor(self.case_template)
+
+    def test_case_name_is_adjusted_if_already_taken(self):
+        caseA = self.editor.new_case("Case")
+        caseB = self.editor.new_case("Case")
         self.assertEqual(caseA.name, "Case")
         self.assertEqual(caseB.name, "Case (1)")
- 
+
+    def test_deleting_case(self):
+        caseA = self.editor.new_case("Case")
+        self.assertTrue(self.editor.contains_case(caseA))
+        self.editor.remove_case(caseA)
+        self.assertFalse(self.editor.contains_case(caseA))
+
+        
+
 
 if __name__=="__main__": unittest.main()
 

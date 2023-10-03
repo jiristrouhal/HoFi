@@ -33,6 +33,9 @@ class Editor:
         self.__creator.add_template('', {}, case_template.case_child_labels)
         self.__root = self.__creator.new("_")
 
+    def contains_case(self,case:Item)->bool:
+        return self.__root.is_parent_of(case)
+
     def item_types_to_create(self,parent:Item)->Tuple[str,...]:
         types = self.__creator.template(parent.itype).child_itypes
         if types is None: return ()
@@ -47,11 +50,17 @@ class Editor:
                 f"Parent type: {parent.itype}, child type: {itype}."
             )
         return item
-
+    
     def new_case(self,name:str)->Item:
         case = self.__creator.from_template("",name)
         self.__root.adopt(case)
         return case
+
+    def remove(self,item:Item,parent:Item)->None:
+        if parent==item.parent: parent.leave(item)
+
+    def remove_case(self,case:Item)->None:
+        self.__root.leave(case)
     
     def undo(self)->None:
         self.__creator.undo()
