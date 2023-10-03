@@ -48,7 +48,7 @@ class Test_Specifying_Children_Types(unittest.TestCase):
         itemB = self.mg.from_template('Item')
         self.assertRaises(Item.CannotAdoptItemOfType,item.adopt, itemB)
     
-    def test_specify_single_child_item_type(self):
+    def test_specifying_single_child_item_type(self):
         self.mg.add_template('Item', child_itypes=('Item',))
         item = self.mg.from_template('Item')
         self.assertEqual(item.child_itypes, ('Item',))
@@ -57,7 +57,16 @@ class Test_Specifying_Children_Types(unittest.TestCase):
         item.adopt(itemB)
         self.assertTrue(item.is_parent_of(itemB))
 
-    
+
+class Test_Checking_Template_Existence(unittest.TestCase):
+
+    def test_adding_child_itype_without_corresponding_template_raises_exception(self):
+        mg = ItemManager()
+        self.assertRaises(ItemManager.UndefinedTemplate, mg.add_template, 'Parent', child_itypes=('Child',))
+        # the Child template must to be added first
+        mg.add_template('Child')
+        mg.add_template('Parent',child_itypes=('Child',))
+        self.assertEqual(mg.from_template('Parent').child_itypes, ('Child',))
 
 
 if __name__=="__main__": unittest.main()
