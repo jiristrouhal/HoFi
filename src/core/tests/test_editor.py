@@ -71,6 +71,7 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         editor_2 = new_editor(self.case_template)
         acase_2 = editor_2.new_case("Case")
         self.assertEqual(editor_2.item_types_to_create(acase_2), ('Item', 'Other Item Type'))
+
  
 
 if __name__=="__main__": unittest.main()

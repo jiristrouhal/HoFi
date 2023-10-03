@@ -16,8 +16,6 @@ class Case_Template:
     @property
     def templates(self)->Dict[str,Template]: return self.__templates
     @property
-    def itype(self)->str: return ''
-    @property
     def case_child_labels(self)->Tuple[str,...]: return tuple(self.__case_child_labels)
 
     def add_template(self,label:str, attribute_info:Dict[str,str], child_template_labels)->None:
