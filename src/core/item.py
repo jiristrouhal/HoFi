@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Any, Set, Callable
+from typing import Dict, Any, Set, Callable, Optional
 import dataclasses
 from src.cmd.commands import Command, Controller, Composed_Command, Timing, Empty_Command
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
@@ -8,16 +8,41 @@ from src.core.attributes import Edit_AttrList_Data
 import abc
 
 
+@dataclasses.dataclass(frozen=True)
+class Template:
+    item_type:str
+    attribute_info:Dict[str,str]
+    child_itypes:Optional[Tuple[str,...]]
+
+
 class ItemManager:
     def __init__(self)->None:
         self._controller = Controller()
         self._attrfac = attribute_factory(self._controller)
+        self.__templates:Dict[str,Template] = {}
+
+    def add_template(
+        self,
+        label:str,
+        attribute_info:Dict[str,str]={}, 
+        child_itypes:Optional[Tuple[str,...]]=None
+        )->None:
+
+        self.__templates[label] = Template(label, attribute_info, child_itypes)
+
+    def from_template(self,label:str)->Item:
+        template = self.__templates[label]
+        attributes = self.__get_attrs(template.attribute_info)
+        return ItemImpl(
+            template.item_type, 
+            attributes, 
+            self, 
+            itype = template.item_type, 
+            child_itypes = template.child_itypes
+        )
 
     def new(self,name:str,attr_info:Dict[str,str]={})->Item:
-        attributes = {}
-        for label, attr_type in attr_info.items():
-            attributes[label] = self._attrfac.new(attr_type,name=label) 
-        return ItemImpl(name,attributes, self)
+        return ItemImpl(name, self.__get_attrs(attr_info), self)
     
     def undo(self):
         self._controller.undo()
@@ -25,6 +50,11 @@ class ItemManager:
     def redo(self):
         self._controller.redo()
 
+    def __get_attrs(self,attribute_info:Dict[str,str])->Dict[str,Attribute]:
+        attributes = {}
+        for label, attr_type in attribute_info.items():
+            attributes[label] = self._attrfac.new(attr_type,name=label) 
+        return attributes
 
 @dataclasses.dataclass
 class Renaming_Data:
@@ -179,6 +209,10 @@ class Item(abc.ABC): # pragma: no cover
     def controller(self)->Controller: return self._manager._controller
     @property
     def id(self)->str: return self.__id
+    @property
+    def itype(self)->str: return ""
+    @abc.abstractproperty
+    def child_itypes(self)->Optional[Tuple[str,...]]: pass
 
     @abc.abstractmethod
     def bind(self, output_name:str, func:Callable[[Any],Any], *input_names:str)->None:
@@ -272,6 +306,7 @@ class Item(abc.ABC): # pragma: no cover
     class AdoptionOfAncestor(Exception): pass
     class AdoptingNULL(Exception): pass
     class BlankName(Exception): pass
+    class CannotAdoptItemOfType(Exception): pass
     class ItemAdoptsItself(Exception): pass
     class NonexistentAttribute(Exception): pass
     class NonexistentCommandType(Exception): pass
@@ -298,6 +333,10 @@ class ItemImpl(Item):
         def root(self)->Item: return self
         @property
         def children(self)->Set[Item]: raise self.CannotAccessChildrenOfNull
+        @property
+        def itype(self)->str: return ""
+        @property
+        def child_itypes(self)->Optional[Tuple[str,...]]: return None
 
         def bind(self,*args)->None: raise self.SettingDependencyOnNull
         def free(self,*args)->None: raise self.SettingDependencyOnNull
@@ -338,7 +377,7 @@ class ItemImpl(Item):
     NULL = __ItemNull()
 
     
-    def __init__(self,name:str,attributes:Dict[str,Attribute], manager:ItemManager)->None:
+    def __init__(self,name:str,attributes:Dict[str,Attribute], manager:ItemManager, itype:str="", child_itypes:Optional[Tuple[str,...]]=None)->None:
         super().__init__(name,attributes,manager)
         self.__attributes = attributes
         self._rename(name)
@@ -350,6 +389,8 @@ class ItemImpl(Item):
             'leave':Leave_Composed(),
             'rename':Rename_Composed()
         }
+        self.__itype = itype
+        self.__child_itypes = child_itypes
 
     @property
     def attributes(self)->Dict[str,Attribute]: 
@@ -366,6 +407,10 @@ class ItemImpl(Item):
     @property
     def children(self)->Set[Item]:
         return self.__children.copy()
+    @property
+    def itype(self)->str: return self.__itype
+    @property
+    def child_itypes(self)->Optional[Tuple[str,...]]: return self.__child_itypes
  
     def attribute(self,label:str)->Attribute:
         if not label in self.__attributes: 
@@ -514,6 +559,9 @@ class ItemImpl(Item):
             self.__children.add(child)
 
     def _can_be_parent_of(self,item:Item)->bool:
+        if self.child_itypes is not None:
+            if item.itype not in self.child_itypes: raise Item.CannotAdoptItemOfType(item.itype)
+
         if item.is_ancestor_of(self): raise Item.AdoptionOfAncestor
         elif item==self: raise Item.ItemAdoptsItself
         else: return True
