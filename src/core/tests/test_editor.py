@@ -4,7 +4,7 @@ sys.path.insert(1,"src")
 
 
 import unittest
-from src.core.editor import new_editor, blank_case_template, Case_Template
+from src.core.editor import new_editor, blank_case_template, Case_Template, Editor
 
 
 class Test_Creating_Case(unittest.TestCase):
@@ -72,6 +72,32 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         acase_2 = editor_2.new_case("Case")
         self.assertEqual(editor_2.item_types_to_create(acase_2), ('Item', 'Other Item Type'))
 
+    def test_creating_item_without_existing_template_raises_exception(self):
+        self.case_template.add_template('Item', {}, (),)
+        self.case_template.add_case_child_label('Item')
+
+        editor = new_editor(self.case_template)
+        acase = editor.new_case("Case")
+
+        self.assertEqual(editor.item_types_to_create(acase), ('Item',))
+
+        self.assertRaises(
+            Editor.InvalidChildTypeUnderGivenParent,
+            editor.new, 
+            acase,
+            'Nonexistent template label'
+        )
+
+    def test_case_name_is_adjusted_if_already_taken(self):
+        self.case_template.add_template('Item', {}, (),)
+        self.case_template.add_case_child_label('Item')
+
+        editor = new_editor(self.case_template)
+        caseA = editor.new_case("Case")
+        caseB = editor.new_case("Case")
+        
+        self.assertEqual(caseA.name, "Case")
+        self.assertEqual(caseB.name, "Case (1)")
  
 
 if __name__=="__main__": unittest.main()

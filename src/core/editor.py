@@ -30,9 +30,10 @@ class Case_Template:
 
 
 class Case:
-    def __init__(self,name:str,creator:ItemCreator)->None:
+    def __init__(self,name:str, creator:ItemCreator, root:Item)->None:
         self.__creator = creator
         self.__item = self.__creator.new(name)
+        root.adopt(self.__item)
 
     @property
     def name(self)->str: return self.__item.name
@@ -50,6 +51,7 @@ class Editor:
         for label, template in case_template.templates.items():
             self.__creator.add_template(label, template.attribute_info, template.child_itypes)
         self.__creator.add_template('', {}, case_template.case_child_labels)
+        self.__root = self.__creator.new("_")
 
     def item_types_to_create(self,parent:Case|Item)->Tuple[str,...]:
         types = self.__creator.template(parent.itype).child_itypes
@@ -57,18 +59,25 @@ class Editor:
         else: return types
 
     def new(self,parent:Case|Item,itype:str)->Item:
-        item = self.__creator.from_template(itype)
-        parent.adopt(item)
+        try:
+            item = self.__creator.from_template(itype)
+            parent.adopt(item)
+        except:
+            raise Editor.InvalidChildTypeUnderGivenParent(
+                f"Parent type: {parent.itype}, child type: {itype}."
+            )
         return item
 
     def new_case(self,name:str)->Case:
-        return Case(name, self.__creator)
+        return Case(name, self.__creator, self.__root)
     
     def undo(self)->None:
         self.__creator.undo()
 
     def redo(self)->None:
         self.__creator.redo()
+
+    class InvalidChildTypeUnderGivenParent(Exception): pass
 
 
 def new_editor(case_template:Case_Template)->Editor:
