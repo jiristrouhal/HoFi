@@ -28,7 +28,13 @@ class ItemManager:
         child_itypes:Optional[Tuple[str,...]]=None
         )->None:
 
+        if child_itypes is not None: self.__check_template_presence(label,child_itypes)
         self.__templates[label] = Template(label, attribute_info, child_itypes)
+
+    def __check_template_presence(self, label:str, child_itypes:Tuple[str,...])->None:
+        for itype in child_itypes:  
+            if not ((itype in self.__templates) or (itype==label)):  
+                raise ItemManager.UndefinedTemplate(itype)
 
     def from_template(self,label:str)->Item:
         template = self.__templates[label]
@@ -55,6 +61,9 @@ class ItemManager:
         for label, attr_type in attribute_info.items():
             attributes[label] = self._attrfac.new(attr_type,name=label) 
         return attributes
+    
+    class UndefinedTemplate(Exception): pass
+
 
 @dataclasses.dataclass
 class Renaming_Data:
