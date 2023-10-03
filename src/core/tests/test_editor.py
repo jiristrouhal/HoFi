@@ -41,12 +41,12 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         self.case_template.add_case_child_label('Item')
 
         editor = new_editor(self.case_template)
-        thecase = editor.new_case("Case")
+        acase = editor.new_case("Case")
 
-        self.assertEqual(editor.item_types_to_create(thecase), ('Item',))
+        self.assertEqual(editor.item_types_to_create(acase), ('Item',))
 
-        item = editor.new(thecase,'Item')
-        self.assertTrue(thecase.contains(item))
+        item = editor.new(acase,'Item')
+        self.assertTrue(acase.contains(item))
         self.assertEqual(editor.item_types_to_create(item), ())
 
     def test_adding_item_template_under_empty_label_raises_exception(self):
@@ -54,6 +54,23 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
             Case_Template.BlankTemplateLabel, 
             self.case_template.add_template, label="", attribute_info={}, child_template_labels=()
         )
+
+    def test_changing_case_template_after_creating_the_editor_does_not_affect_the_editor(self):
+        self.case_template.add_template('Item', {}, (),)
+        self.case_template.add_case_child_label('Item')
+        editor = new_editor(self.case_template)
+
+        self.case_template.add_template('Other Item Type', {}, ())
+        self.case_template.add_case_child_label('Other Item Type')
+        acase = editor.new_case("Case")
+
+        # the 'Other Item Type' is not included in the editor types
+        self.assertEqual(editor.item_types_to_create(acase), ('Item',))
+
+        # the new type is included if the editor is created after adding the type to the case template
+        editor_2 = new_editor(self.case_template)
+        acase_2 = editor_2.new_case("Case")
+        self.assertEqual(editor_2.item_types_to_create(acase_2), ('Item', 'Other Item Type'))
  
 
 if __name__=="__main__": unittest.main()
