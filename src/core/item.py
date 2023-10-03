@@ -343,9 +343,9 @@ class ItemImpl(Item):
         @property
         def children(self)->Set[Item]: raise self.CannotAccessChildrenOfNull
         @property
-        def itype(self)->str: return ""
+        def itype(self)->str: return ""   # pragma: no cover
         @property
-        def child_itypes(self)->Optional[Tuple[str,...]]: return None
+        def child_itypes(self)->Optional[Tuple[str,...]]: return None   # pragma: no cover
 
         def bind(self,*args)->None: raise self.SettingDependencyOnNull
         def free(self,*args)->None: raise self.SettingDependencyOnNull
