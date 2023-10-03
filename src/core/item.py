@@ -28,10 +28,11 @@ class ItemCreator:
         child_itypes:Optional[Tuple[str,...]]=None
         )->None:
 
-        if child_itypes is not None: self.__check_template_presence(label,child_itypes)
+        if label in self.__templates: raise ItemCreator.TemplateAlreadyExists(label)
+        if child_itypes is not None: self.__check_child_template_presence(label,child_itypes)
         self.__templates[label] = Template(label, attribute_info, child_itypes)
 
-    def __check_template_presence(self, label:str, child_itypes:Tuple[str,...])->None:
+    def __check_child_template_presence(self, label:str, child_itypes:Tuple[str,...])->None:
         for itype in child_itypes:  
             if not ((itype in self.__templates) or (itype==label)):  
                 raise ItemCreator.UndefinedTemplate(itype)
@@ -62,6 +63,7 @@ class ItemCreator:
             attributes[label] = self._attrfac.new(attr_type,name=label) 
         return attributes
     
+    class TemplateAlreadyExists(Exception): pass
     class UndefinedTemplate(Exception): pass
 
 
