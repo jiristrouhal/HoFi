@@ -39,11 +39,12 @@ class ItemCreator:
             if not ((itype in self.__templates) or (itype==label)):  
                 raise ItemCreator.UndefinedTemplate(itype)
 
-    def from_template(self,label:str)->Item:
+    def from_template(self,label:str,name:str="")->Item:
         template = self.__templates[label]
         attributes = self.__get_attrs(template.attribute_info)
+        if name.strip()=="": name = template.item_type
         return ItemImpl(
-            template.item_type, 
+            name, 
             attributes, 
             self, 
             itype = template.item_type, 

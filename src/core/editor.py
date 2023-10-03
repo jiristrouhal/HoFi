@@ -2,10 +2,7 @@ from __future__ import annotations
 
 
 from typing import Tuple, Dict, List
-
-
 from src.core.item import ItemCreator, Item, Template
-
 
 
 class Case_Template:
@@ -25,24 +22,7 @@ class Case_Template:
     def add_case_child_label(self,label:str)->None:
         self.__case_child_labels.append(label)
 
-
     class BlankTemplateLabel(Exception): pass
-
-
-class Case:
-    def __init__(self,name:str, creator:ItemCreator, root:Item)->None:
-        self.__creator = creator
-        self.__item = self.__creator.new(name)
-        root.adopt(self.__item)
-
-    @property
-    def name(self)->str: return self.__item.name
-    @property
-    def itype(self)->str: return ""
-
-    def adopt(self,item:Item)->None: self.__item.adopt(item)
-    def contains(self,item:Item)->bool: return self.__item.is_ancestor_of(item)
-    def rename(self,name:str)->None: self.__item.rename(name)
 
 
 class Editor:
@@ -53,12 +33,12 @@ class Editor:
         self.__creator.add_template('', {}, case_template.case_child_labels)
         self.__root = self.__creator.new("_")
 
-    def item_types_to_create(self,parent:Case|Item)->Tuple[str,...]:
+    def item_types_to_create(self,parent:Item)->Tuple[str,...]:
         types = self.__creator.template(parent.itype).child_itypes
         if types is None: return ()
         else: return types
 
-    def new(self,parent:Case|Item,itype:str)->Item:
+    def new(self,parent:Item,itype:str)->Item:
         try:
             item = self.__creator.from_template(itype)
             parent.adopt(item)
@@ -68,8 +48,10 @@ class Editor:
             )
         return item
 
-    def new_case(self,name:str)->Case:
-        return Case(name, self.__creator, self.__root)
+    def new_case(self,name:str)->Item:
+        case = self.__creator.from_template("",name)
+        self.__root.adopt(case)
+        return case
     
     def undo(self)->None:
         self.__creator.undo()

@@ -46,7 +46,7 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         self.assertEqual(editor.item_types_to_create(acase), ('Item',))
 
         item = editor.new(acase,'Item')
-        self.assertTrue(acase.contains(item))
+        self.assertTrue(acase.is_ancestor_of(item))
         self.assertEqual(editor.item_types_to_create(item), ())
 
     def test_adding_item_template_under_empty_label_raises_exception(self):
