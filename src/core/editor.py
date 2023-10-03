@@ -21,7 +21,7 @@ class Case_Template:
     def case_child_labels(self)->Tuple[str,...]: return tuple(self.__case_child_labels)
 
     def add_template(self,label:str, attribute_info:Dict[str,str], child_template_labels)->None:
-        if label.strip=='': raise Case_Template.BlankTemplateLabel
+        if label.strip()=='': raise Case_Template.BlankTemplateLabel
         self.__templates[label] = Template(label, attribute_info, child_template_labels)
     
     def add_case_child_label(self,label:str)->None:
