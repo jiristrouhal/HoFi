@@ -6,13 +6,13 @@ sys.path.insert(1,"src")
 
 
 import unittest
-from src.core.item import ItemManager, Item, ItemImpl
+from src.core.item import ItemCreator, Item, ItemImpl
 
 
 class Test_Adding_Item_Template(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.mg = ItemManager()
+        self.mg = ItemCreator()
 
     def test_template_of_item_without_attributes_and_children(self):
         self.mg.add_template('Item')
@@ -38,7 +38,7 @@ class Test_Adding_Item_Template(unittest.TestCase):
 class Test_Specifying_Children_Types(unittest.TestCase):
     
     def setUp(self) -> None:
-        self.mg = ItemManager()
+        self.mg = ItemCreator()
 
     def test_no_children_are_specified(self):
         self.mg.add_template('Item', child_itypes=())
@@ -61,8 +61,8 @@ class Test_Specifying_Children_Types(unittest.TestCase):
 class Test_Checking_Template_Existence(unittest.TestCase):
 
     def test_adding_child_itype_without_corresponding_template_raises_exception(self):
-        mg = ItemManager()
-        self.assertRaises(ItemManager.UndefinedTemplate, mg.add_template, 'Parent', child_itypes=('Child',))
+        mg = ItemCreator()
+        self.assertRaises(ItemCreator.UndefinedTemplate, mg.add_template, 'Parent', child_itypes=('Child',))
         # the Child template must to be added first
         mg.add_template('Child')
         mg.add_template('Parent',child_itypes=('Child',))

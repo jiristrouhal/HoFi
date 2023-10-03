@@ -6,7 +6,7 @@ sys.path.insert(1,"src")
 
 
 import unittest
-from src.core.item import ItemManager, Item, ItemImpl
+from src.core.item import ItemCreator, Item, ItemImpl
 import math, decimal
 
 
@@ -16,7 +16,7 @@ NullItem = ItemImpl.NULL
 class Test_Naming_The_Item(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.iman = ItemManager()
+        self.iman = ItemCreator()
 
     def test_create_named_item(self):
         item = self.iman.new(name="Item 1")
@@ -65,7 +65,7 @@ class Test_NULL_Item(unittest.TestCase):
 
         self.assertTrue(NullItem.has_children())
 
-        mg = ItemManager()
+        mg = ItemCreator()
         child = mg.new("Child")
         parent = mg.new("Parent")
         self.assertEqual(child.parent, NullItem)
@@ -76,25 +76,25 @@ class Test_NULL_Item(unittest.TestCase):
         self.assertEqual(NullItem.duplicate(), NullItem)
 
     def test_leaving_child_has_no_effect(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         child = mg.new("Child")
         self.assertTrue(NullItem.is_parent_of, child)
         NullItem._leave_child(child)
         self.assertTrue(NullItem.is_parent_of, child)
 
     def test_leaving_parent_has_no_effect(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         NullItem._leave_parent(NullItem)
         self.assertTrue(NullItem.is_parent_of, NullItem)
 
     def test_adding_null_item_under_a_nonnull_parent_raises_error(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         parent = mg.new("Parent")
         self.assertRaises(Item.AdoptingNULL, parent.adopt, NullItem)
         self.assertRaises(Item.AdoptingNULL, NullItem._accept_parent, parent)
         
     def test_adopting_child_by_null_is_equivalent_to_leaving_parent(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         child = mg.new("Child")
         parent = mg.new("Parent")
         parent.adopt(child)
@@ -118,7 +118,7 @@ class Test_NULL_Item(unittest.TestCase):
         )
     
     def test_leaving_item_raises_exception(self)->None:
-        item = ItemManager().new('Item')
+        item = ItemCreator().new('Item')
         self.assertEqual(item.parent, NullItem)
         self.assertRaises(NullItem.NullCannotLeaveChild, NullItem.leave, item)
 
@@ -136,7 +136,7 @@ class Test_NULL_Item(unittest.TestCase):
 class Test_Accessing_Item_Attributes(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.iman = ItemManager()
+        self.iman = ItemCreator()
         self.item = self.iman.new("Item X", attr_info={"label_1":'integer', "label_2":'integer'})
 
     def test_defining_no_attributes(self)->None:
@@ -150,7 +150,7 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
 class Test_Undo_And_Redo_Renaming(unittest.TestCase):
 
     def test_single_undo_and_redo(self)->None:
-        mg = ItemManager()
+        mg = ItemCreator()
         item = mg.new(name="Apple")
         item.rename("Orange")
         mg.undo()
@@ -164,7 +164,7 @@ class Test_Undo_And_Redo_Renaming(unittest.TestCase):
 class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.iman = ItemManager()
+        self.iman = ItemCreator()
         self.parent = self.iman.new(name="Parent")
         self.child = self.iman.new(name="Child")
         self.parent.adopt(self.child)
@@ -262,7 +262,7 @@ class Test_Setting_Parent_Child_Relationship(unittest.TestCase):
 class Test_Name_Collisions_Of_Items_With_Common_Parent(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.iman = ItemManager()
+        self.iman = ItemCreator()
 
     def test_adding_new_child_with_name_already_taken_by_other_child_makes_the_name_to_adjust(self):
         parent = self.iman.new("Parent")
@@ -299,7 +299,7 @@ class Test_Name_Collisions_Of_Items_With_Common_Parent(unittest.TestCase):
 class Test_Undo_And_Redo_Setting_Parent_Child_Relationship(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.mg = ItemManager()
+        self.mg = ItemCreator()
         self.parent = self.mg.new("Parent")
         self.child = self.mg.new("Child")
         self.parent.adopt(self.child)
@@ -388,7 +388,7 @@ class Test_Undo_And_Redo_Setting_Parent_Child_Relationship(unittest.TestCase):
 class Test_Child_Duplicate(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.mg = ItemManager()
+        self.mg = ItemCreator()
         self.parent = self.mg.new("Parent")
         self.child = self.mg.new("Child")
         self.parent.adopt(self.child)
@@ -417,7 +417,7 @@ class Test_Child_Duplicate(unittest.TestCase):
 class Test_Undo_And_Redo_Multiple_Operations(unittest.TestCase):
 
     def test_duplicating_and_renaming(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         parent = mg.new("Parent")
         child = mg.new("Child")
         parent.adopt(child)
@@ -445,7 +445,7 @@ class Test_Undo_And_Redo_Multiple_Operations(unittest.TestCase):
             self.assertEqual(child_duplicate.name, "Second child")
 
     def test_undo_and_executing_new_command_erases_redo_command(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         parent = mg.new("Parent")
         child = mg.new("Child")
         parent.adopt(child)
@@ -499,7 +499,7 @@ class Test_Connecting_External_Commands_To_The_Adopt_Command(unittest.TestCase):
  
     def setUp(self) -> None:
         self.display = self.AdoptionDisplay()
-        self.mg = ItemManager()
+        self.mg = ItemCreator()
         self.parent = self.mg.new("Parent")
 
         def record_adoption(data:Parentage_Data)->Command:
@@ -570,7 +570,7 @@ class Test_Adding_External_Command_To_Renaming(unittest.TestCase):
 
     def setUp(self) -> None:
         self.label = Test_Adding_External_Command_To_Renaming.Label("Empty")
-        self.mg = ItemManager()
+        self.mg = ItemCreator()
         self.item = self.mg.new("Child")
         def catch_new_item_name_in_label(
             data:Renaming_Data
@@ -649,7 +649,7 @@ class Test_Catching_Old_And_New_Name_On_Paper(unittest.TestCase):
             self.paper.new_name = self.new_value
     
     def test_catching_old_and_new_item_name_on_paper_when_undoing_and_redoing_rename_operation(self):
-        self.mg = ItemManager()
+        self.mg = ItemCreator()
         self.item = self.mg.new("Old name")
         self.paper = self.Paper()
 
@@ -686,14 +686,14 @@ class Test_Catching_Old_And_New_Name_On_Paper(unittest.TestCase):
 class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
 
     def test_accessing_nonexistent_attribute(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         item = mg.new("Water",{"Volume":'integer'}) 
         self.assertRaises(Item.NonexistentAttribute, item.set, "Nonexistent attribute",5)
         self.assertRaises(Item.NonexistentAttribute, item, "Nonexistent attribute")
         self.assertRaises(Item.NonexistentAttribute, item.attribute, "Nonexistent attribute")
 
     def test_accessing_existing_attribute(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         item = mg.new("Water",{"Volume":'integer'}) 
         item.set("Volume",5)
         self.assertEqual(item("Volume"),5)
@@ -703,7 +703,7 @@ class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
 class Test_Attributes_Of_Duplicated_Item(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.mg = ItemManager()
+        self.mg = ItemCreator()
         self.item = self.mg.new("item", {"a":'integer', "b":'real'})
         self.item.set("a",4)
         self.item.set("b",2.5)
@@ -725,7 +725,7 @@ class Test_Attributes_Of_Duplicated_Item(unittest.TestCase):
 class Test_Children_Of_Duplicated_Item(unittest.TestCase):
 
     def test_item_is_copied_with_its_children(self)->None:
-        mg = ItemManager()
+        mg = ItemCreator()
         parent = mg.new("parent")
         child = mg.new("child")
         grandchild = mg.new("grandchild")
@@ -740,7 +740,7 @@ class Test_Children_Of_Duplicated_Item(unittest.TestCase):
 class Test_Undo_And_Redo_Duplicating_Item(unittest.TestCase):
 
     def test_duplicating_a_single_child(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         parent = mg.new("Parent")
         child = mg.new("Child")
         parent.adopt(child)
@@ -760,7 +760,7 @@ class Test_Undo_And_Redo_Duplicating_Item(unittest.TestCase):
 
 
     def test_duplicating_item_with_arbitrary_tree_of_descendants_behaves_like_single_command(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         parent = mg.new("Parent")
         child = mg.new("Child")
         grandchild = mg.new("Grandchild")
@@ -788,7 +788,7 @@ class Test_Undo_And_Redo_Duplicating_Item(unittest.TestCase):
 class Test_Binding_Attributes_Owned_By_The_Same_Item(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.mg = ItemManager()
+        self.mg = ItemCreator()
         self.item = self.mg.new("Item",{'x':'integer','y':'integer', 'z':'integer'})
         self.item.set('y',-1)
         self.item.bind('y', self.square, 'x')
@@ -859,7 +859,7 @@ from typing import List
 class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.mg = ItemManager()
+        self.mg = ItemCreator()
         self.parent = self.mg.new('Parent', {'y':'integer'})
 
     @staticmethod
@@ -975,7 +975,7 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
 class Test_Examples_Of_Calculations_On_Child_Attributes(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.mg = ItemManager()
+        self.mg = ItemCreator()
         self.parent = self.mg.new('Parent', {'y':'real'})
 
     def test_calculating_average_of_child_attribute(self):
@@ -1032,7 +1032,7 @@ class Test_Examples_Of_Calculations_On_Child_Attributes(unittest.TestCase):
 class Test_Picking_Child_Item_By_Name(unittest.TestCase):
 
     def test_picking_child_by_name(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         parent = mg.new('Parent')
         alice = mg.new('Alice')
         bob = mg.new('Bob')
@@ -1049,7 +1049,7 @@ class Test_Picking_Child_Item_By_Name(unittest.TestCase):
 class Test_Leaving_Child(unittest.TestCase):
 
     def test_running_leaving_child_command(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         parent = mg.new("Parent")
         child = mg.new("Child")
         parent.adopt(child)
@@ -1061,7 +1061,7 @@ class Test_Leaving_Child(unittest.TestCase):
         self.assertTrue(parent.is_parent_of(child))
 
     def test_passing_to_new_parent(self):
-        mg = ItemManager()
+        mg = ItemCreator()
         parent = mg.new("Parent")
         new_parent = mg.new("New Parent")
         child = mg.new("Child")
@@ -1101,7 +1101,7 @@ class Test_Running_Additional_Command_When_Leaving_Child(unittest.TestCase):
             message:Message
             child:Item
 
-        self.mg = ItemManager()
+        self.mg = ItemCreator()
         self.parent = self.mg.new("Parent")
         self.child = self.mg.new("Child")
         self.parent.adopt(self.child)

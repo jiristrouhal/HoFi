@@ -15,7 +15,7 @@ class Template:
     child_itypes:Optional[Tuple[str,...]]
 
 
-class ItemManager:
+class ItemCreator:
     def __init__(self)->None:
         self._controller = Controller()
         self._attrfac = attribute_factory(self._controller)
@@ -34,7 +34,7 @@ class ItemManager:
     def __check_template_presence(self, label:str, child_itypes:Tuple[str,...])->None:
         for itype in child_itypes:  
             if not ((itype in self.__templates) or (itype==label)):  
-                raise ItemManager.UndefinedTemplate(itype)
+                raise ItemCreator.UndefinedTemplate(itype)
 
     def from_template(self,label:str)->Item:
         template = self.__templates[label]
@@ -198,7 +198,7 @@ class Item(abc.ABC): # pragma: no cover
         func:Callable[[Any],Any]
         input_labels:Tuple[str,...]
     
-    def __init__(self,name:str,attributes:Dict[str,Attribute],manager:ItemManager)->None:
+    def __init__(self,name:str,attributes:Dict[str,Attribute],manager:ItemCreator)->None:
         self._manager = manager
         self.__id = str(id(self))
         self._bindings:Dict[str, Item.BindingInfo] = dict()
@@ -386,7 +386,7 @@ class ItemImpl(Item):
     NULL = __ItemNull()
 
     
-    def __init__(self,name:str,attributes:Dict[str,Attribute], manager:ItemManager, itype:str="", child_itypes:Optional[Tuple[str,...]]=None)->None:
+    def __init__(self,name:str,attributes:Dict[str,Attribute], manager:ItemCreator, itype:str="", child_itypes:Optional[Tuple[str,...]]=None)->None:
         super().__init__(name,attributes,manager)
         self.__attributes = attributes
         self._rename(name)
