@@ -1705,13 +1705,20 @@ class Test_Reading_Quantity_Value(unittest.TestCase):
         self.volume.read("4,5 m³")
         self.assertEqual(self.volume.value, 4.5)
     
+    def test_reading_quantity_preserves_setup_for_quantity_unit_and_prefix(self):
+        self.volume.add_unit(
+            'L', 
+            {"m":-3}, 
+            from_basic=lambda x:Decimal(x)*Decimal(1000), 
+            to_basic=lambda x:Decimal(x)/Decimal(1000)
+        )
+        self.volume.set_unit('m³')
+        self.volume.read("120 L")
+        self.assertEqual(self.volume.print(trailing_zeros=False), f"0.12{NBSP}m³")
+        self.assertEqual(self.volume.value, Decimal('0.12'))
+    
     def test_reading_quantity_with_unknown_unit_raises_exception(self)->None:
         self.assertRaises(Quantity.UnknownUnitInText, self.volume.read, '120 L')
-        self.volume.add_unit('L',exponents={'m':3}, from_basic=lambda x: 1000*x, to_basic=lambda x: x/1000)
-        self.volume.read('120 L')
-        self.assertEqual(self.volume.value, Decimal('0.12'))
-        self.assertEqual(self.volume.unit, 'L')
-        self.assertEqual(self.volume.prefix, '')
 
     def test_reading_value_from_text_without_unit_symbol(self)->None:
         self.volume.set_prefix('d')
@@ -1829,6 +1836,25 @@ class Test_Listing_Available_Scaled_Units_For_Quantity(unittest.TestCase):
         volume.pick_scaled_unit(1)
         self.assertEqual(volume.unit, 'm³')
         self.assertEqual(volume.prefix, 'd')
+
+        
+class Test_Specifying_Unit_With_Prefix(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.mass = self.fac.newqu(init_value=1, unit='kg')
+
+    def test_specifying_unit_with_nonempty_prefix_makes_the_quantity_return_its_value_scaled_according_to_the_prefix(self):
+        # the 'unit' property returns the basic unit symbol (grams, in this case)
+        self.assertEqual(self.mass.unit,'g')
+        # the 'value' returns the value in the originally specified unit, i.e. the kilogram
+        self.assertEqual(self.mass.value, 1)
+        # the prefix for value printing is set to 'k'
+        self.assertEqual(self.mass.print(trailing_zeros=False),f"1{NBSP}kg")
+
+    def test_reading_value_into_quantity_with_default_prefix(self):
+        self.mass.read("2000 g")
+        self.assertEqual(self.mass.print(trailing_zeros=False), f"2{NBSP}kg")
 
 
 

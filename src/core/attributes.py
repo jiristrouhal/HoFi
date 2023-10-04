@@ -900,6 +900,7 @@ class Unit:
     from_basic:Callable[[float|Decimal],Decimal|float]
     to_basic:Callable[[float|Decimal],Decimal|float]
     space:bool=True
+    default_prefix:str=""
 
     def __post_init__(self)->None: 
         self.exponents[''] = 0
@@ -929,12 +930,17 @@ class Quantity(Real_Attribute):
         self.__prefix = ""
         self.__units:Dict[str,Unit] = dict()
         self.__scaled_units:List[Tuple[str,str]] = list()
+        default_prefix, base_unit = self._separate_prefix_from_unit(unit)
+        assert(base_unit.strip()!="") 
+        
         self.add_unit(
-            unit,
+            base_unit,
             exponents=exponents,
             space_after_value=space_after_value
         )
-        self.__unit:Unit = self.__units[unit]
+        self.__unit:Unit = self.__units[base_unit]
+        self.set_prefix(default_prefix)
+        self.__unit.default_prefix = default_prefix
 
     @property
     def unit(self)->str: return self.__unit.symbol
@@ -1013,19 +1019,21 @@ class Quantity(Real_Attribute):
         read_data = matchobj.groupdict()
         possible_scaled_unit = read_data['possible_scaled_unit']
         prefix, unit = Quantity._separate_prefix_from_unit(possible_scaled_unit)
-        if unit not in self.__units: raise Quantity.UnknownUnitInText(text)
+        if unit not in self.__units: 
+            raise Quantity.UnknownUnitInText(text)
 
         super().read(read_data['value'])
-        self.set_unit(unit)
-        self.set_prefix(prefix)
-        self._value = self.__unit.to_basic(self._value)
+        self._value *= Decimal(10)**Decimal(self.__units[unit].exponents[prefix])
+        self._value = self.__units[unit].to_basic(self._value)
+        self._value *= Decimal(10)**Decimal(-self.__unit.exponents[self.__unit.default_prefix])
 
     def read_only_value(self, text:str)->None:
         super().read(text)
         self._value = self.__readjust_func(self.__unit.to_basic(self._value))
 
     def set_prefix(self,prefix:str)->None:
-        if not prefix in self.__unit.exponents: raise Quantity.UndefinedUnitPrefix
+        if not prefix in self.__unit.exponents: 
+            raise Quantity.UndefinedUnitPrefix(prefix)
         self.__prefix = prefix
 
     def set_unit(self,unit:str)->None:
@@ -1035,7 +1043,8 @@ class Quantity(Real_Attribute):
 
     def __adjust_func(self, value:Decimal|float)->Decimal:
         value = self.__unit.from_basic(value)
-        decimal_shift = Decimal(- self.__unit.exponents[self.__prefix])
+        decimal_shift = Decimal(
+            self.__unit.exponents[self.__unit.default_prefix] - self.__unit.exponents[self.__prefix])
         return Decimal(value)*Decimal('10')**decimal_shift
     
     def __readjust_func(self, value:Decimal|float)->Decimal:
@@ -1087,7 +1096,8 @@ class Quantity(Real_Attribute):
         symbol = symbol.strip()
         if not Quantity._acceptable_unit_symbol(symbol): raise Quantity.UnacceptableUnitSymbol(symbol)
         if exponents is not None:
-            for prefix, exponent in exponents.items(): Quantity.__check_exponent(prefix,exponent)
+            for prefix, exponent in exponents.items(): 
+                Quantity.__check_exponent(prefix,exponent)
         else:
             exponents = Quantity.__default_exponents.copy()
         
@@ -1138,7 +1148,7 @@ class Attribute_Data_Constructor:
             'money':Monetary_Attribute,
             'quantity':Quantity,
         }
-        
+
     def _check(self,info:Dict[str,Any])->None:
         if 'atype' not in info: 
             raise Attribute_Data_Constructor.MissingAttributeType(info)
@@ -1155,7 +1165,7 @@ class Attribute_Data_Constructor:
     def quantity(
         self, 
         unit:str, 
-        exponents:Dict[str,int] = {}, 
+        exponents:Optional[Dict[str,int]] = None, 
         init_value:Decimal|float|int=0.0,
         space_after_value:bool = True
         )->Dict[str,Any]:

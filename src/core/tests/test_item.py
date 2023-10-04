@@ -1148,7 +1148,7 @@ class Test_Defining_Item_Attributes_Via_Special_Methods(unittest.TestCase):
                 'y':cr.attr.real(7.5),
                 'description':cr.attr.text("..."),
                 'cost':cr.attr.money(15.1),
-                'weight':cr.attr.quantity(unit='g',init_value=2.5)
+                'weight':cr.attr.quantity(unit='kg',init_value=2.5)
             }
         )
         item = cr.from_template('Item')
