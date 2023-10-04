@@ -37,7 +37,7 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         self.assertEqual(editor.item_types_to_create(thecase), ())
 
     def test_creating_item_from_a_template(self):
-        self.case_template.add_template('Item', {}, (),)
+        self.case_template.add('Item', {}, (),)
         self.case_template.add_case_child_label('Item')
 
         editor = new_editor(self.case_template)
@@ -52,7 +52,7 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
     def test_adding_item_template_under_empty_label_raises_exception(self):
         self.assertRaises(
             Case_Template.BlankTemplateLabel, 
-            self.case_template.add_template, label="", attribute_info={}, child_template_labels=()
+            self.case_template.add, label="", attribute_info={}, child_template_labels=()
         )
 
     def test_adding_nonexistent_case_child_label_raises_exception(self):
@@ -63,11 +63,11 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         )
 
     def test_changing_case_template_after_creating_the_editor_does_not_affect_the_editor(self):
-        self.case_template.add_template('Item', {}, (),)
+        self.case_template.add('Item', {}, (),)
         self.case_template.add_case_child_label('Item')
         editor = new_editor(self.case_template)
 
-        self.case_template.add_template('Other Item Type', {}, ())
+        self.case_template.add('Other Item Type', {}, ())
         self.case_template.add_case_child_label('Other Item Type')
         acase = editor.new_case("Case")
 
@@ -80,7 +80,7 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         self.assertEqual(editor_2.item_types_to_create(acase_2), ('Item', 'Other Item Type'))
 
     def test_creating_item_without_existing_template_raises_exception(self):
-        self.case_template.add_template('Item', {}, (),)
+        self.case_template.add('Item', {}, (),)
         self.case_template.add_case_child_label('Item')
 
         editor = new_editor(self.case_template)
@@ -94,7 +94,7 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         )
 
     def test_removing_item(self)->None:
-        self.case_template.add_template("Item", {}, ())
+        self.case_template.add("Item", {}, ())
         self.case_template.add_case_child_label('Item')
 
         editor = new_editor(self.case_template)
@@ -142,13 +142,12 @@ class Test_Managing_Cases(unittest.TestCase):
         self.assertEqual(caseA_dupl.name,"Case (1)")
 
 
-
 from src.core.item import ItemImpl
 class Test_Converting_Cases_To_Items_And_Back(unittest.TestCase):
 
     def setUp(self) -> None:
         self.case_template = blank_case_template()
-        self.case_template.add_template('Item', {}, ('Item',))
+        self.case_template.add('Item', {}, ('Item',))
         self.case_template.add_case_child_label('Item')
         self.editor = new_editor(self.case_template)
 
@@ -167,6 +166,43 @@ class Test_Converting_Cases_To_Items_And_Back(unittest.TestCase):
 
         child_copy = derived_case.pick_child('Item')
         self.assertTrue(child_copy.pick_child("Grandchild") is not ItemImpl.NULL)
+
+    
+class Test_Accessing_Item_Attributes_Via_Editor(unittest.TestCase):
+
+    def setUp(self):
+        self.case_template = blank_case_template()
+
+    def test_case_template_collects_attributes_added_via_templates(self):
+        self.case_template.add('typeA', {'x':'real'}, ())
+        self.case_template.add('typeA', {'x':'real','y':'integer'}, ())
+        self.assertDictEqual(self.case_template.attributes, {'x':'real', 'y':'integer'})
+
+    def test_using_already_used_attribute_with_different_type_in_new_template_raises_exception(self):
+        self.case_template.add('typeA', {'x':'real'}, ())
+        self.assertRaises(
+            Case_Template.ReaddingAttributeWithDifferentType, 
+            self.case_template.add, 'typeA', {'x':'integer'}, ()
+        )
+
+    def test_listing_item_attributes(self)->None:
+        self.case_template.add('typeA', {'xA':'real', 'yA':'real'}, ())
+        self.case_template.add('typeB', {'xB':'integer'}, ())
+        self.case_template.add_case_child_label('typeA', 'typeB')
+        editor = new_editor(self.case_template)
+        self.assertEqual(editor.attributes, {'xA':'real','yA':'real','xB':'integer'})
+
+    def test_accessing_attribute_value(self):
+        self.case_template.add('Item',{'x':'integer'},())
+        self.case_template.add_case_child_label('Item')
+        editor = new_editor(self.case_template)
+        case = editor.new_case('Case')
+        item = editor.new(case, 'Item')
+        item.set('x', 5)
+
+        self.assertEqual(editor.value(item,'x'), "5")
+
+
 
 
 if __name__=="__main__": unittest.main()

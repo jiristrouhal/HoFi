@@ -9,21 +9,33 @@ class Case_Template:
     def __init__(self)->None:
         self.__templates:Dict[str, Template] = {}
         self.__case_child_labels:List[str] = list()
+        self.__attributes:Dict[str,str] = {}
 
     @property
     def templates(self)->Dict[str,Template]: return self.__templates
     @property
     def case_child_labels(self)->Tuple[str,...]: return tuple(self.__case_child_labels)
+    @property
+    def attributes(self)->Dict[str,str]: return self.__attributes.copy()
 
-    def add_template(self,label:str, attribute_info:Dict[str,str], child_template_labels)->None:
+    def add(self,label:str, attribute_info:Dict[str,str], child_template_labels)->None:
         if label.strip()=='': raise Case_Template.BlankTemplateLabel
+        for attr, atype in attribute_info.items():
+            if attr not in self.__attributes: self.__attributes[attr] = atype
+            elif atype != self.__attributes[attr]: 
+                raise Case_Template.ReaddingAttributeWithDifferentType(
+                    f"Attribute '{attr}' has type {atype}. Previously was added with type '{self.__attributes[attr]}'."
+                )
+
         self.__templates[label] = Template(label, attribute_info, child_template_labels)
-    
-    def add_case_child_label(self,label:str)->None:
-        if label not in self.__templates: raise Case_Template.UndefinedTemplate(label)
-        self.__case_child_labels.append(label)
+        
+    def add_case_child_label(self,*labels:str)->None:
+        for label in labels:
+            if label not in self.__templates: raise Case_Template.UndefinedTemplate(label)
+            self.__case_child_labels.append(label)
 
     class BlankTemplateLabel(Exception): pass
+    class ReaddingAttributeWithDifferentType(Exception): pass
     class UndefinedTemplate(Exception): pass
 
 
@@ -34,6 +46,10 @@ class Editor:
             self.__creator.add_template(label, template.attribute_info, template.child_itypes)
         self.__creator.add_template('', {}, case_template.case_child_labels)
         self.__root = self.__creator.new("_")
+        self.__attributes =  case_template.attributes
+
+    @property
+    def attributes(self)->Dict[str,str]: return self.__attributes
 
     def contains_case(self,case:Item)->bool:
         return self.__root.is_parent_of(case)
@@ -79,6 +95,9 @@ class Editor:
 
     def redo(self)->None:
         self.__creator.redo()
+
+    def value(self,item:Item,attribute_name:str,**options)->str:
+        return item.attribute(attribute_name).print(**options)
 
     class InvalidChildTypeUnderGivenParent(Exception): pass
 
