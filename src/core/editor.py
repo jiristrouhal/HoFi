@@ -1,30 +1,33 @@
 from __future__ import annotations
 
 
-from typing import Tuple, Dict, List
-from src.core.item import ItemCreator, Item, Template
+from typing import Tuple, Dict, List, Any
+from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor
 
 
 class Case_Template:
     def __init__(self)->None:
         self.__templates:Dict[str, Template] = {}
         self.__case_child_labels:List[str] = list()
-        self.__attributes:Dict[str,str] = {}
+        self.__attributes:Dict[str,Dict[str,Any]] = {}
+        self.__constructor = Attribute_Data_Constructor()
 
+    @property
+    def attr(self)->Attribute_Data_Constructor: return self.__constructor
     @property
     def templates(self)->Dict[str,Template]: return self.__templates
     @property
     def case_child_labels(self)->Tuple[str,...]: return tuple(self.__case_child_labels)
     @property
-    def attributes(self)->Dict[str,str]: return self.__attributes.copy()
+    def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes.copy()
 
-    def add(self,label:str, attribute_info:Dict[str,str], child_template_labels)->None:
+    def add(self,label:str, attribute_info:Dict[str,Dict[str,Any]], child_template_labels)->None:
         if label.strip()=='': raise Case_Template.BlankTemplateLabel
-        for attr, atype in attribute_info.items():
-            if attr not in self.__attributes: self.__attributes[attr] = atype
-            elif atype != self.__attributes[attr]: 
+        for attr, info in attribute_info.items():
+            if attr not in self.__attributes: self.__attributes[attr] = info
+            elif info['atype'] != self.__attributes[attr]['atype']: 
                 raise Case_Template.ReaddingAttributeWithDifferentType(
-                    f"Attribute '{attr}' has type {atype}. Previously was added with type '{self.__attributes[attr]}'."
+                    f"Attribute '{attr}' has type {info}. Previously was added with type '{self.__attributes[attr]}'."
                 )
 
         self.__templates[label] = Template(label, attribute_info, child_template_labels)
@@ -39,6 +42,7 @@ class Case_Template:
     class UndefinedTemplate(Exception): pass
 
 
+from src.core.item import Attribute_Data_Constructor
 class Editor:
     def __init__(self, case_template:Case_Template)->None:
         self.__creator = ItemCreator()
@@ -49,7 +53,11 @@ class Editor:
         self.__attributes =  case_template.attributes
 
     @property
-    def attributes(self)->Dict[str,str]: return self.__attributes
+    def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes
+
+    @property
+    def attr(self)->Attribute_Data_Constructor:
+        return self.__creator.attr
 
     def contains_case(self,case:Item)->bool:
         return self.__root.is_parent_of(case)

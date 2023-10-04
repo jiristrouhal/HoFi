@@ -1136,6 +1136,28 @@ class Test_Running_Additional_Command_When_Leaving_Child(unittest.TestCase):
         self.assertEqual(self.message_after.text, "Left Child")
 
 
+class Test_Defining_Item_Attributes_Via_Special_Methods(unittest.TestCase):
+
+    def test_define_item_via_template(self):
+        cr = ItemCreator()
+        cr.add_template(
+            'Item', 
+            attributes = {
+                'x':cr.attr.integer(5), 
+                'y':cr.attr.real(7.5),
+                'description':cr.attr.text("..."),
+                'cost':cr.attr.money(15.1),
+                'weight':cr.attr.quantity(unit='g',init_value=2.5)
+            }
+        )
+        item = cr.from_template('Item')
+        self.assertEqual(item('x'),5)
+        self.assertEqual(item('y'),7.5)
+        self.assertEqual(item('description'),"..."),
+        self.assertEqual(item('cost'), decimal.Decimal('15.1')),
+        self.assertEqual(item('weight'), 2.5)
+
+
 if __name__=="__main__": unittest.main()
 
 

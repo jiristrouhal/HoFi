@@ -921,9 +921,10 @@ class Quantity(Real_Attribute):
     def __init__(
         self,
         factory:Attribute_Factory,
-        unit:str,
+        atype:str,
         init_value:Optional[float|Decimal|int]=None, 
         name:str="",
+        unit:str="",
         exponents:Optional[Dict[str,int]] = None,
         space_after_value:bool=True
         )->None:
@@ -1128,11 +1129,43 @@ class Quantity(Real_Attribute):
     class UnknownUnitInText(Exception): pass
 
 
+class Attribute_Data_Constructor:
+
+    def integer(self, init_value:int=0)->Dict[str,Any]:
+        return {'atype':"integer", 'init_value':init_value}
+    
+    def money(self, init_value:Decimal|float|int=0.0)->Dict[str,Any]:
+        return {'atype':"real", 'init_value':init_value}
+    
+    def quantity(
+        self, 
+        unit:str, 
+        exponents:Dict[str,int] = {}, 
+        init_value:Decimal|float|int=0.0,
+        space_after_value:bool = True
+        )->Dict[str,Any]:
+
+        return {
+            'atype':'quantity', 
+            'init_value':init_value, 
+            'unit':unit, 
+            'exponents':exponents, 
+            'space_after_value':space_after_value
+        }
+    
+    def real(self, init_value:Decimal|float|int=0.0)->Dict[str,Any]:
+        return {'atype':"real", 'init_value':init_value}
+    
+    def text(self, init_value:str="")->Dict[str,Any]:
+        return {'atype':"text", 'init_value':init_value}
+
+
 from typing import Type
 @dataclasses.dataclass
 class Attribute_Factory:
     controller:Controller
     types:Dict[str,Type[Attribute]] = dataclasses.field(default_factory=dict,init=False)
+    data_constructor:Attribute_Data_Constructor = dataclasses.field(init=False)
     def __post_init__(self)->None:
         self.types['text'] = Text_Attribute
         self.types['bool'] = Bool_Attribute
@@ -1141,6 +1174,9 @@ class Attribute_Factory:
         self.types['choice'] = Choice_Attribute
         self.types['date'] = Date_Attribute
         self.types['money'] = Monetary_Attribute
+        self.types['quantity'] = Quantity
+
+        self.data_constructor = Attribute_Data_Constructor()
 
     def newlist(self,atype:str='text', init_items:List[Any]|None=None, name:str="")->Attribute_List:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
@@ -1148,39 +1184,41 @@ class Attribute_Factory:
     
     def newqu(
         self,
-        unit:str,
         init_value:Optional[float|Decimal|int]=None,
         name:str="",
+        unit:str="",
         exponents:Optional[Dict[str,int]] = None,
         space_after_value:bool=True,
         )->Quantity:
 
-        return Quantity(self,unit,init_value,name,exponents,space_after_value)
+        return Quantity(
+            self,
+            atype="quantity",
+            init_value=init_value,
+            name=name,
+            unit=unit,
+            exponents=exponents,
+            space_after_value=space_after_value
+        )
 
     def new(self,atype:str='text',init_value:Any=None, name:str="")->Attribute:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         else:
             return self.types[atype](self,atype,init_value,name)
         
+    def new_from_dict(self,**dict)->Attribute:
+        if dict['atype'] not in self.types: raise Attribute.InvalidAttributeType(dict['atype'])
+        else:
+            return self.types[dict['atype']](self,**dict)
+        
     def choice(self, name:str="")->Choice_Attribute:
         return Choice_Attribute(self,name)
         
-    def add(self,label:str,new_attribute_class:Type[Attribute])->None:
-        if label in self.types:
-            raise Attribute_Factory.TypeAlreadyDefined(
-                f"Label '{label}' already assigned to attribute class '{self.types[label]}'."
-            )
-        else:
-            self.types[label] = new_attribute_class
-
 
     def redo(self)->None: self.controller.redo()
     def run(self,*cmds:Command)->None:
         self.controller.run(*cmds)
-    
     def undo(self)->None: self.controller.undo()
-
-    class TypeAlreadyDefined(Exception): pass
 
 
 def attribute_factory(controller:Controller)->Attribute_Factory:

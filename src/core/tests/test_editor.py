@@ -172,28 +172,29 @@ class Test_Accessing_Item_Attributes_Via_Editor(unittest.TestCase):
 
     def setUp(self):
         self.case_template = blank_case_template()
+        self.attrc = self.case_template.attr
 
     def test_case_template_collects_attributes_added_via_templates(self):
-        self.case_template.add('typeA', {'x':'real'}, ())
-        self.case_template.add('typeA', {'x':'real','y':'integer'}, ())
-        self.assertDictEqual(self.case_template.attributes, {'x':'real', 'y':'integer'})
+        self.case_template.add('typeA', {'x':self.attrc.real()}, ())
+        self.case_template.add('typeA', {'x':self.attrc.real(),'y':self.attrc.integer()}, ())
+        self.assertDictEqual(self.case_template.attributes, {'x':self.attrc.real(), 'y':self.attrc.integer()})
 
     def test_using_already_used_attribute_with_different_type_in_new_template_raises_exception(self):
-        self.case_template.add('typeA', {'x':'real'}, ())
+        self.case_template.add('typeA', {'x':self.attrc.real()}, ())
         self.assertRaises(
             Case_Template.ReaddingAttributeWithDifferentType, 
-            self.case_template.add, 'typeA', {'x':'integer'}, ()
+            self.case_template.add, 'typeA', {'x':self.attrc.integer()}, ()
         )
 
     def test_listing_item_attributes(self)->None:
-        self.case_template.add('typeA', {'xA':'real', 'yA':'real'}, ())
-        self.case_template.add('typeB', {'xB':'integer'}, ())
+        self.case_template.add('typeA', {'xA':self.attrc.real(), 'yA':self.attrc.real()}, ())
+        self.case_template.add('typeB', {'xB':self.attrc.integer()}, ())
         self.case_template.add_case_child_label('typeA', 'typeB')
         editor = new_editor(self.case_template)
-        self.assertEqual(editor.attributes, {'xA':'real','yA':'real','xB':'integer'})
+        self.assertEqual(editor.attributes, {'xA':self.attrc.real(),'yA':self.attrc.real(),'xB':self.attrc.integer()})
 
     def test_accessing_attribute_value(self):
-        self.case_template.add('Item',{'x':'integer'},())
+        self.case_template.add('Item',{'x':self.attrc.integer()},())
         self.case_template.add_case_child_label('Item')
         editor = new_editor(self.case_template)
         case = editor.new_case('Case')

@@ -3,7 +3,7 @@ from typing import Dict, Any, Set, Callable, Optional
 import dataclasses
 from src.cmd.commands import Command, Controller, Composed_Command, Timing, Empty_Command
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
-from src.core.attributes import attribute_factory, Attribute, Attribute_List, Set_Attr_Data
+from src.core.attributes import attribute_factory, Attribute, Attribute_List, Set_Attr_Data, Attribute_Data_Constructor
 from src.core.attributes import Edit_AttrList_Data
 import abc
 
@@ -11,7 +11,7 @@ import abc
 @dataclasses.dataclass(frozen=True)
 class Template:
     item_type:str
-    attribute_info:Dict[str,str]
+    attribute_info:Dict[str,Dict[str,Any]]
     child_itypes:Optional[Tuple[str,...]]
 
 
@@ -23,16 +23,21 @@ class ItemCreator:
 
     def template(self, label:str)->Template: return self.__templates[label]
 
+    @property
+    def attr(self)->Attribute_Data_Constructor:
+        return self._attrfac.data_constructor
+
     def add_template(
-        self,
+        self,        
         label:str,
-        attribute_info:Dict[str,str]={}, 
+        attributes:Dict[str,Dict[str,Any]]={}, 
+
         child_itypes:Optional[Tuple[str,...]]=None
         )->None:
 
         if label in self.__templates: raise ItemCreator.TemplateAlreadyExists(label)
         if child_itypes is not None: self.__check_child_template_presence(label,child_itypes)
-        self.__templates[label] = Template(label, attribute_info, child_itypes)
+        self.__templates[label] = Template(label, attributes, child_itypes)
 
     def __check_child_template_presence(self, label:str, child_itypes:Tuple[str,...])->None:
         for itype in child_itypes:  
@@ -41,7 +46,7 @@ class ItemCreator:
 
     def from_template(self,label:str,name:str="")->Item:
         template = self.__templates[label]
-        attributes = self.__get_attrs(template.attribute_info)
+        attributes = self.__get_attrs_from_template(template.attribute_info)
         if name.strip()=="": name = template.item_type
         return ItemImpl(
             name, 
@@ -60,10 +65,17 @@ class ItemCreator:
     def redo(self):
         self._controller.redo()
 
+    def __get_attrs_from_template(self,attribute_info:Dict[str,Dict[str,Any]])->Dict[str,Attribute]:
+        attributes = {}
+        for label, info in attribute_info.items():
+            attributes[label] = self._attrfac.new_from_dict(name=label, **info)
+
+        return attributes
+
     def __get_attrs(self,attribute_info:Dict[str,str])->Dict[str,Attribute]:
         attributes = {}
-        for label, attr_type in attribute_info.items():
-            attributes[label] = self._attrfac.new(attr_type,name=label) 
+        for label, info in attribute_info.items():
+            attributes[label] = self._attrfac.new(name=label, atype=info) 
         return attributes
     
     class TemplateAlreadyExists(Exception): pass

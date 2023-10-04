@@ -25,7 +25,7 @@ class Test_Adding_Item_Template(unittest.TestCase):
         self.assertEqual(item.itype, "Item")
     
     def test_template_of_item_with_attributes(self):
-        self.cr.add_template('Item', {'x':'integer'})
+        self.cr.add_template('Item', {'x':self.cr.attr.integer()})
         itemA = self.cr.from_template('Item')
         itemB = self.cr.from_template('Item')
         itemA.set('x',5)

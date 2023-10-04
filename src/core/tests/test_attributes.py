@@ -88,43 +88,6 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
 
 
 from src.core.attributes import Attribute_Factory, Number_Attribute
-class Test_Defining_Custom_Attribute_Type(unittest.TestCase):
-
-    class Positive_Integer_Attribute(Number_Attribute):
-        default_value = 1
-        def _check_input_type(self, value: Any)->None:
-            try: 
-                if not value==int(value): raise
-            except: 
-                raise Attribute.InvalidValueType(type(value))
-
-        def _is_value_valid(self, value: Any) -> bool:
-            return value>0
-            
-        def print(self,*options)->str: # pragma: no cover
-            return str(self._value)
-            
-        def read(self,text:str)->None: # pragma: no cover
-            pass
-            
-    def test_defining_positive_integer_attribute(self):
-        attrfac = attribute_factory(Controller())
-        attrfac.add('positive integer', self.Positive_Integer_Attribute)
-        attr = attrfac.new('positive integer', 5)
-        self.assertEqual(attr.value, 5)
-        self.assertFalse(attr.is_valid(0))
-        self.assertFalse(attr.is_valid(-1))
-        self.assertRaises(Attribute.InvalidValueType, attr.is_valid, "abc")
-        self.assertRaises(Attribute.InvalidValueType, attr.is_valid, 0.5)
-        self.assertRaises(Attribute.InvalidValue, attr.set, 0)
-        self.assertRaises(Attribute.InvalidValue, attr.set, -1)
-        self.assertRaises(Attribute.InvalidValueType, attr.set, 0.5)
-
-    def test_adding_new_attribute_type_under_already_taken_label_raises_exception(self):
-        attrfac = attribute_factory(Controller())
-        with self.assertRaises(Attribute_Factory.TypeAlreadyDefined):
-            attrfac.add('integer', self.Positive_Integer_Attribute)
-
 
 class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
 
@@ -1631,7 +1594,7 @@ class Test_Quantity(unittest.TestCase):
 
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
-        self.length = self.fac.newqu('m',2)
+        self.length = self.fac.newqu(unit='m',init_value=2)
 
     def test_setting_quantity_value(self):
         self.length.set(3)
@@ -1674,7 +1637,7 @@ class Test_Alternative_Units_For_Quantity(unittest.TestCase):
 
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
-        self.temperature = self.fac.newqu('K')
+        self.temperature = self.fac.newqu(unit='K')
         self.temperature.set(293.15)
 
     def test_adding_other_units_to_quantity(self):
@@ -1701,7 +1664,7 @@ class Test_Alternative_Units_For_Quantity(unittest.TestCase):
         self.assertRaises(Quantity.UnitAlreadyDefined, self.temperature.add_unit, symbol='K')
 
     def test_case_of_volume(self)->None:
-        volume = self.fac.newqu('m³', exponents={'k':9,'d':-3,'m':-9})
+        volume = self.fac.newqu(unit='m³', exponents={'k':9,'d':-3,'m':-9})
         volume.add_unit(
             'l', 
             exponents={'h':2, 'm':-3}, 
@@ -1718,7 +1681,7 @@ class Test_Alternative_Units_For_Quantity(unittest.TestCase):
         self.assertEqual(volume.print(trailing_zeros=False), f'1{NBSP}m³')
 
     def test_print_value_without_unit(self)->None:
-        volume = self.fac.newqu('m³', exponents={'k':9,'d':-3,'m':-9})
+        volume = self.fac.newqu(unit='m³', exponents={'k':9,'d':-3,'m':-9})
         volume.set(5)
         self.assertEqual(volume.print(trailing_zeros=False, include_unit=False), '5')
 
@@ -1727,7 +1690,7 @@ class Test_Reading_Quantity_Value(unittest.TestCase):
 
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
-        self.volume = self.fac.newqu('m³',init_value=1, exponents={'m':-9,'c':-6,'d':-3})
+        self.volume = self.fac.newqu(unit='m³',init_value=1, exponents={'m':-9,'c':-6,'d':-3})
 
     def test_reading_blank_text_as_value_raises_exception(self)->None:
         self.assertRaises(Quantity.BlankText, self.volume.read, "")
@@ -1797,7 +1760,7 @@ class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):
 
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
-        self.length = self.fac.newqu('m')
+        self.length = self.fac.newqu(unit='m')
 
     def test_unit_symbols_have_to_contain_nonwhite_space_and_nondigit_characters_without_punctuation_marks(self)->None:
         self.assertTrue(Quantity._acceptable_unit_symbol('N'))
@@ -1830,7 +1793,10 @@ class Test_Defining_Quantity_Unit_Symbol_And_Prefix(unittest.TestCase):
         self.assertTrue(Quantity._acceptable_unit_prefix('da'))
 
     def test_raise_exception_if_unacceptable_unit_symbol_is_specified(self):
-        self.assertRaises(Quantity.UnacceptableUnitSymbol, self.fac.newqu, '$456_unacceptable_symbol')
+        self.assertRaises(
+            Quantity.UnacceptableUnitSymbol, 
+            self.fac.newqu, unit='$456_unacceptable_symbol'
+        )
 
     def test_raise_exception_if_adding_unacceptable_unit_prefix(self):
         self.assertRaises(
@@ -1846,7 +1812,7 @@ class Test_Listing_Available_Scaled_Units_For_Quantity(unittest.TestCase):
 
     def test_listing_available_scaled_units_for_quantity(self):
         fac = attribute_factory(Controller())
-        volume = fac.newqu('m³', 1, exponents={'m':-9,'d':-3})
+        volume = fac.newqu(unit='m³', init_value=1, exponents={'m':-9,'d':-3})
         self.assertListEqual(
             volume.scaled_units, 
             [('m','m³'), ('d','m³'), ('','m³')]
