@@ -20,12 +20,16 @@ class ItemCreator:
         self._controller = Controller()
         self._attrfac = attribute_factory(self._controller)
         self.__templates:Dict[str,Template] = {}
+        self.__file_path:str = "."
 
     def template(self, label:str)->Template: return self.__templates[label]
 
     @property
     def attr(self)->Attribute_Data_Constructor:
         return self._attrfac.data_constructor
+    
+    @property
+    def file_path(self)->str: return self.__file_path
 
     def add_template(
         self,        
@@ -65,6 +69,11 @@ class ItemCreator:
     def new(self,name:str,attr_info:Dict[str,str]={})->Item:
         return ItemImpl(name, self.__get_attrs(attr_info), self)
     
+    import os
+    def set_file_path(self,path:str)->None:
+        if not self.os.path.isdir(path): raise ItemCreator.NonexistentDirectory(path)
+        self.__file_path = path
+
     def undo(self):
         self._controller.undo()
     
@@ -84,6 +93,7 @@ class ItemCreator:
             attributes[label] = self._attrfac.new(name=label, atype=info) 
         return attributes
     
+    class NonexistentDirectory(Exception): pass
     class TemplateAlreadyExists(Exception): pass
     class UndefinedTemplate(Exception): pass
 
@@ -674,3 +684,4 @@ class ItemImpl(Item):
 
     class ChildAttributeTypeConflict(Exception): pass
         
+
