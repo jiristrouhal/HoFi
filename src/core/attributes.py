@@ -412,12 +412,8 @@ class Attribute(AbstractAttribute):
     def read(self,text:str)->None: pass # pragma: no cover
         
     def set(self,value:Any)->None: 
-        if self._dependency is not DependencyImpl.NULL: 
-            return
-        elif self.is_valid(value): 
-            self._run_set_command(value)
-        else:
-            raise Attribute.InvalidValue(value)
+        if self._dependency is not DependencyImpl.NULL: return
+        if self.is_valid(value): self._run_set_command(value)
         
     def set_validity_condition(self,func:Callable[[Any],bool])->None:
         self.__customary_condition = func
