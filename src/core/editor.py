@@ -55,10 +55,6 @@ class Editor:
     @property
     def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes
 
-    @property
-    def attr(self)->Attribute_Data_Constructor:
-        return self.__creator.attr
-
     def contains_case(self,case:Item)->bool:
         return self.__root.is_parent_of(case)
 
