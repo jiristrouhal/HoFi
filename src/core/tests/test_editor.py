@@ -5,7 +5,7 @@ sys.path.insert(1,"src")
 
 import unittest
 from src.core.editor import new_editor, blank_case_template, Case_Template, Editor
-
+NBSP = u"\u00A0"
 
 class Test_Creating_Case(unittest.TestCase):
 
@@ -194,17 +194,29 @@ class Test_Accessing_Item_Attributes_Via_Editor(unittest.TestCase):
         self.assertEqual(editor.attributes, {'xA':self.attrc.real(),'yA':self.attrc.real(),'xB':self.attrc.integer()})
 
     def test_accessing_attribute_value(self):
-        self.case_template.add('Item',{'x':self.attrc.integer()},())
-        self.case_template.add_case_child_label('Item')
+        self.case_template.add(
+            'Item with mass',
+            {'mass':self.attrc.quantity(init_value=0,unit='kg')},
+            ()
+        )
+        self.case_template.add(
+            'Counter',
+            {'count':self.attrc.integer(init_value=0)},
+            ()
+        )
+        self.case_template.add_case_child_label('Item with mass', 'Counter')
+
         editor = new_editor(self.case_template)
-        case = editor.new_case('Case')
-        item = editor.new(case, 'Item')
-        item.set('x', 5)
+        newcase = editor.new_case("Case")
+        item = editor.new(newcase, 'Item with mass')
+        counter = editor.new(newcase, 'Counter')
+        item.set("mass",5.5)
+        counter.set('count',3)
 
-        self.assertEqual(editor.value(item,'x'), "5")
+        self.assertEqual(editor.value(item,'mass',trailing_zeros=False), f"5.5{NBSP}kg")
+        self.assertEqual(editor.value(counter,'count'), "3")
 
-
-
+        
 
 if __name__=="__main__": unittest.main()
 
