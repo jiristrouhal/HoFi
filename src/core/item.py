@@ -369,10 +369,10 @@ class ItemImpl(Item):
         @property
         def child_itypes(self)->Optional[Tuple[str,...]]: return None   # pragma: no cover
         @property
-        def command(self)->Dict[Command_Type,Composed_Command]: return {}
+        def command(self)->Dict[Command_Type,Composed_Command]: return {}  # pragma: no cover
 
         def bind(self,*args)->None: raise self.SettingDependencyOnNull
-        def copy(self)->Item: return self
+        def copy(self)->Item: return self  # pragma: no cover
         def free(self,*args)->None: raise self.SettingDependencyOnNull
         def adopt(self,child:Item)->None: 
             if child.parent is not self: child.parent.leave(child)
