@@ -87,7 +87,7 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         acase = editor.new_case("Case")
 
         self.assertRaises(
-            Editor.InvalidChildTypeUnderGivenParent,
+            Editor.UndefinedTemplate,
             editor.new, 
             acase,
             'Nonexistent template label'
@@ -236,6 +236,26 @@ class Test_Check_Template_Labels_Do_Not_Contains_Only_Alphanumeric_Characters(un
     def test_czech_letters_with_diacritics_is_allowed(self):
         self.case_template.add('ůúěščřžýáíéťď',{}, ())
         self.case_template.add('ůúěščřžýáíéťď'.upper(),{}, ())
+
+
+class Test_Setting_Item_Attribute_Dependency_In_Editor(unittest.TestCase):
+
+    def test_setting_dependency_of_one_of_items_attribute_on_another(self):
+        case_template = blank_case_template()
+        def square(x:int)->int: return x*x
+        case_template.add(
+            'Item', 
+            {'y':case_template.attr.integer(0), 'x':case_template.attr.integer(2)},
+            dependencies=[Case_Template.Dependency('y', square, 'x')]
+        )
+        case_template.add_case_child_label('Item')
+        editor = new_editor(case_template)
+
+        caseA = editor.new_case('Case A')
+        item = editor.new(caseA, 'Item')
+        item.set('x',3)
+
+        self.assertEqual(item('y'),9)
         
 
 if __name__=="__main__": unittest.main()

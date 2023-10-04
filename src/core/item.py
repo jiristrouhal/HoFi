@@ -13,7 +13,7 @@ class Template:
     item_type:str
     attribute_info:Dict[str,Dict[str,Any]]
     child_itypes:Optional[Tuple[str,...]] = None
-    dependencies:Tuple[Template.Dependency,...] = ()
+    dependencies:Optional[List[Template.Dependency]] = None
 
     @staticmethod
     def dependency(dependent:str, func:Callable[[Any],Any], *free:str)->Dependency:
@@ -47,7 +47,7 @@ class ItemCreator:
         label:str,
         attributes:Dict[str,Dict[str,Any]]={}, 
         child_itypes:Optional[Tuple[str,...]]=None,
-        dependencies:Tuple[Template.Dependency,...] = (),
+        dependencies:Optional[List[Template.Dependency]] = None
         )->None:
 
         if label in self.__templates: raise ItemCreator.TemplateAlreadyExists(label)
@@ -71,6 +71,8 @@ class ItemCreator:
                 raise ItemCreator.UndefinedTemplate(itype)
 
     def from_template(self,label:str,name:str="")->Item:
+        if label not in self.__templates:
+            raise ItemCreator.UndefinedTemplate(label)
         template = self.__templates[label]
         attributes = self.__get_attrs_from_template(template.attribute_info)
         if name.strip()=="": name = template.item_type
@@ -81,8 +83,9 @@ class ItemCreator:
             itype = template.item_type, 
             child_itypes = template.child_itypes
         )
-        for dep in template.dependencies:
-            item.bind(dep.dependent, dep.func, *dep.free)
+        if template.dependencies is not None:
+            for dep in template.dependencies:
+                item.bind(dep.dependent, dep.func, *dep.free)
         return item
 
     def new(self,name:str,attr_info:Dict[str,str]={})->Item:
