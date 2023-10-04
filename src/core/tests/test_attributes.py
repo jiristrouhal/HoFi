@@ -1857,6 +1857,38 @@ class Test_Specifying_Unit_With_Prefix(unittest.TestCase):
         self.assertEqual(self.mass.print(trailing_zeros=False), f"2{NBSP}kg")
 
 
+class Test_Undo_And_Redo_Setting_Quantity_Value(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.distance = self.fac.newqu(unit="km", init_value=2, exponents={'k':3,'c':-2,'m':-3})
+
+    def test_changes_in_unit_prefix_are_not_affected_by_undo_and_redo(self):
+        self.distance.set(5)
+        self.assertEqual(self.distance.value, 5)
+        self.assertEqual(self.distance.print(trailing_zeros=False), f"5{NBSP}km")
+
+        self.fac.undo()
+        self.assertEqual(self.distance.value, 2)
+        self.assertEqual(self.distance.print(trailing_zeros=False), f"2{NBSP}km")
+
+        self.distance.set_prefix('')
+        self.assertEqual(self.distance.value, 2)
+        self.assertEqual(self.distance.print(trailing_zeros=False), f"2000{NBSP}m")
+
+        self.fac.redo()
+        self.assertEqual(self.distance.value, 5)
+        self.assertEqual(self.distance.print(trailing_zeros=False), f"5000{NBSP}m")
+
+    def test_undo_and_redo_setting_value_by_reading_from_text(self)->None:
+        self.distance.read("600 m")
+        self.distance.set_prefix('')
+        self.assertEqual(self.distance.value, Decimal('0.6'))
+        self.assertEqual(self.distance.print(trailing_zeros=False), f"600{NBSP}m")
+
+        self.fac.undo()
+        self.assertEqual(self.distance.value, 2)
+        self.assertEqual(self.distance.print(trailing_zeros=False), f"2000{NBSP}m")
 
 
 if __name__=="__main__": unittest.main()
