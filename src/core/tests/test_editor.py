@@ -219,18 +219,23 @@ class Test_Accessing_Item_Attributes_Via_Editor(unittest.TestCase):
 
 class Test_Check_Template_Labels_Do_Not_Contains_Only_Alphanumeric_Characters(unittest.TestCase):
         
+    def setUp(self) -> None:
+        self.case_template = blank_case_template()
+
     def test_other_than_alphanumeric_characters_plus_underscore_in_the_template_label_raise_exception(self):
-        case_template = blank_case_template()
-        self.assertRaises(Case_Template.InvalidCharactersInLabel,case_template.add,
+        self.assertRaises(Case_Template.InvalidCharactersInLabel,self.case_template.add,
             'Label with spaces',{}, ()
         )
-        self.assertRaises(Case_Template.InvalidCharactersInLabel,case_template.add,
+        self.assertRaises(Case_Template.InvalidCharactersInLabel,self.case_template.add,
             '????',{}, ()
         )
 
     def test_greek_letters_are_allowed(self):
-        case_template = blank_case_template()
-        case_template.add('ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω',{}, ())
+        self.case_template.add('ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω',{}, ())
+
+    def test_czech_letters_with_diacritics_is_allowed(self):
+        self.case_template.add('ůúěščřžýáíéťď',{}, ())
+        self.case_template.add('ůúěščřžýáíéťď'.upper(),{}, ())
         
 
 if __name__=="__main__": unittest.main()
