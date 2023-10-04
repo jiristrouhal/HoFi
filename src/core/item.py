@@ -36,8 +36,14 @@ class ItemCreator:
         )->None:
 
         if label in self.__templates: raise ItemCreator.TemplateAlreadyExists(label)
-        if child_itypes is not None: self.__check_child_template_presence(label,child_itypes)
+        if child_itypes is not None: 
+            self.__check_child_template_presence(label,child_itypes)
+        self.__check_attribute_info(attributes)
         self.__templates[label] = Template(label, attributes, child_itypes)
+
+    def __check_attribute_info(self,attribute_info:Dict[str,Dict[str,Any]])->None:
+        for info in attribute_info.values():
+            self.attr._check(info)
 
     def __check_child_template_presence(self, label:str, child_itypes:Tuple[str,...])->None:
         for itype in child_itypes:  

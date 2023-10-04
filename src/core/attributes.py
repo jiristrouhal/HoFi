@@ -1127,6 +1127,25 @@ class Quantity(Real_Attribute):
 
 class Attribute_Data_Constructor:
 
+    def __init__(self)->None:
+        self.types = {
+            'text':Text_Attribute,
+            'bool':Bool_Attribute,
+            'integer':Integer_Attribute,
+            'real':Real_Attribute_Dimensionless,
+            'choice':Choice_Attribute,
+            'date':Date_Attribute,
+            'money':Monetary_Attribute,
+            'quantity':Quantity,
+        }
+        
+    def _check(self,info:Dict[str,Any])->None:
+        if 'atype' not in info: 
+            raise Attribute_Data_Constructor.MissingAttributeType(info)
+        elif info['atype'] not in self.types:
+            raise Attribute_Data_Constructor.UndefinedAttributeType(info['atype'])
+        attr = self.types[info['atype']](Attribute_Factory(Controller()),**info)
+
     def integer(self, init_value:int=0)->Dict[str,Any]:
         return {'atype':"integer", 'init_value':init_value}
     
@@ -1154,25 +1173,21 @@ class Attribute_Data_Constructor:
     
     def text(self, init_value:str="")->Dict[str,Any]:
         return {'atype':"text", 'init_value':init_value}
+    
+    class MissingAttributeType(Exception): pass
+    class UndefinedAttributeType(Exception): pass
 
 
 from typing import Type
 @dataclasses.dataclass
 class Attribute_Factory:
     controller:Controller
-    types:Dict[str,Type[Attribute]] = dataclasses.field(default_factory=dict,init=False)
     data_constructor:Attribute_Data_Constructor = dataclasses.field(init=False)
     def __post_init__(self)->None:
-        self.types['text'] = Text_Attribute
-        self.types['bool'] = Bool_Attribute
-        self.types['integer'] = Integer_Attribute
-        self.types['real'] = Real_Attribute_Dimensionless
-        self.types['choice'] = Choice_Attribute
-        self.types['date'] = Date_Attribute
-        self.types['money'] = Monetary_Attribute
-        self.types['quantity'] = Quantity
-
         self.data_constructor = Attribute_Data_Constructor()
+
+    @property
+    def types(self)->Dict: return self.data_constructor.types
 
     def newlist(self,atype:str='text', init_items:List[Any]|None=None, name:str="")->Attribute_List:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)

@@ -1136,6 +1136,7 @@ class Test_Running_Additional_Command_When_Leaving_Child(unittest.TestCase):
         self.assertEqual(self.message_after.text, "Left Child")
 
 
+from src.core.attributes import Attribute_Data_Constructor
 class Test_Defining_Item_Attributes_Via_Special_Methods(unittest.TestCase):
 
     def test_define_item_via_template(self):
@@ -1156,6 +1157,28 @@ class Test_Defining_Item_Attributes_Via_Special_Methods(unittest.TestCase):
         self.assertEqual(item('description'),"..."),
         self.assertEqual(item('cost'), decimal.Decimal('15.1')),
         self.assertEqual(item('weight'), 2.5)
+
+    def test_using_dictionary_specifying_undefined_attribute_type_raises_exception(self):
+        cr = ItemCreator()
+        self.assertRaises(
+            Attribute_Data_Constructor.UndefinedAttributeType, 
+            cr.add_template, 
+            'Item', 
+            attributes = {
+                'x':{'atype':'invalid_attribute_type','init_value':5}
+            }
+        )
+        
+    def test_missing_attribute_type_in_attribute_info_raises_exception(self):
+        cr = ItemCreator()
+        self.assertRaises(
+            Attribute_Data_Constructor.MissingAttributeType, 
+            cr.add_template, 
+            'Item', 
+            attributes = {
+                'x':{}
+            }
+        )
 
 
 if __name__=="__main__": unittest.main()
