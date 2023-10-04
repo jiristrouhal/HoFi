@@ -74,5 +74,21 @@ class Test_Checking_Template_Existence(unittest.TestCase):
         self.assertRaises(ItemCreator.TemplateAlreadyExists, cr.add_template, 'Item')
 
 
+from src.core.item import Template
+class Test_Specify_Dependency_In_Template(unittest.TestCase):
+
+    def test_single_depency_of_one_items_attribute_on_another(self):
+        cr = ItemCreator()
+        def double(x:int)->int: return 2*x
+        cr.add_template(
+            'ItemTemplate', 
+            {'x': cr.attr.integer(1), 'y': cr.attr.integer(0)},
+            dependencies = (Template.dependency('y', double, 'x'),)
+        )
+        item = cr.from_template('ItemTemplate','Item')
+        item.set('x', 5)
+        self.assertEqual(item('y'), 10)
+
+
 if __name__=="__main__": unittest.main()
 

@@ -12,7 +12,18 @@ import abc
 class Template:
     item_type:str
     attribute_info:Dict[str,Dict[str,Any]]
-    child_itypes:Optional[Tuple[str,...]]
+    child_itypes:Optional[Tuple[str,...]] = None
+    dependencies:Tuple[Template.Dependency,...] = ()
+
+    @staticmethod
+    def dependency(dependent:str, func:Callable[[Any],Any], *free:str)->Dependency:
+        return Template.Dependency(dependent, func, free)
+
+    @dataclasses.dataclass(frozen=True)
+    class Dependency:
+        dependent:str
+        func:Callable[[Any],Any]
+        free:Tuple[str,...]
 
 
 class ItemCreator:
@@ -35,15 +46,20 @@ class ItemCreator:
         self,        
         label:str,
         attributes:Dict[str,Dict[str,Any]]={}, 
-
-        child_itypes:Optional[Tuple[str,...]]=None
+        child_itypes:Optional[Tuple[str,...]]=None,
+        dependencies:Tuple[Template.Dependency,...] = (),
         )->None:
 
         if label in self.__templates: raise ItemCreator.TemplateAlreadyExists(label)
         if child_itypes is not None: 
             self.__check_child_template_presence(label,child_itypes)
         self.__check_attribute_info(attributes)
-        self.__templates[label] = Template(label, attributes, child_itypes)
+        self.__templates[label] = Template(
+            label, 
+            attributes, 
+            child_itypes,
+            dependencies
+        )
 
     def __check_attribute_info(self,attribute_info:Dict[str,Dict[str,Any]])->None:
         for info in attribute_info.values():
@@ -58,13 +74,16 @@ class ItemCreator:
         template = self.__templates[label]
         attributes = self.__get_attrs_from_template(template.attribute_info)
         if name.strip()=="": name = template.item_type
-        return ItemImpl(
+        item = ItemImpl(
             name, 
             attributes, 
             self, 
             itype = template.item_type, 
             child_itypes = template.child_itypes
         )
+        for dep in template.dependencies:
+            item.bind(dep.dependent, dep.func, *dep.free)
+        return item
 
     def new(self,name:str,attr_info:Dict[str,str]={})->Item:
         return ItemImpl(name, self.__get_attrs(attr_info), self)
