@@ -59,7 +59,7 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         self.assertRaises(
             Case_Template.UndefinedTemplate, 
             self.case_template.add_case_child_label, 
-            'Nonexistent template label'
+            'Nonexistent_template_label'
         )
 
     def test_changing_case_template_after_creating_the_editor_does_not_affect_the_editor(self):
@@ -67,8 +67,8 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         self.case_template.add_case_child_label('Item')
         editor = new_editor(self.case_template)
 
-        self.case_template.add('Other Item Type', {}, ())
-        self.case_template.add_case_child_label('Other Item Type')
+        self.case_template.add('Other_Item_Type', {}, ())
+        self.case_template.add_case_child_label('Other_Item_Type')
         acase = editor.new_case("Case")
 
         # the 'Other Item Type' is not included in the editor types
@@ -77,7 +77,7 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         # the new type is included if the editor is created after adding the type to the case template
         editor_2 = new_editor(self.case_template)
         acase_2 = editor_2.new_case("Case")
-        self.assertEqual(editor_2.item_types_to_create(acase_2), ('Item', 'Other Item Type'))
+        self.assertEqual(editor_2.item_types_to_create(acase_2), ('Item', 'Other_Item_Type'))
 
     def test_creating_item_without_existing_template_raises_exception(self):
         self.case_template.add('Item', {}, (),)
@@ -195,7 +195,7 @@ class Test_Accessing_Item_Attributes_Via_Editor(unittest.TestCase):
 
     def test_accessing_attribute_value(self):
         self.case_template.add(
-            'Item with mass',
+            'Item_with_mass',
             {'mass':self.attrc.quantity(init_value=0,unit='kg')},
             ()
         )
@@ -204,11 +204,11 @@ class Test_Accessing_Item_Attributes_Via_Editor(unittest.TestCase):
             {'count':self.attrc.integer(init_value=0)},
             ()
         )
-        self.case_template.add_case_child_label('Item with mass', 'Counter')
+        self.case_template.add_case_child_label('Item_with_mass', 'Counter')
 
         editor = new_editor(self.case_template)
         newcase = editor.new_case("Case")
-        item = editor.new(newcase, 'Item with mass')
+        item = editor.new(newcase, 'Item_with_mass')
         counter = editor.new(newcase, 'Counter')
         item.set("mass",5.5)
         counter.set('count',3)
@@ -216,6 +216,21 @@ class Test_Accessing_Item_Attributes_Via_Editor(unittest.TestCase):
         self.assertEqual(editor.value(item,'mass',trailing_zeros=False), f"5.5{NBSP}kg")
         self.assertEqual(editor.value(counter,'count'), "3")
 
+
+class Test_Check_Template_Labels_Do_Not_Contains_Only_Alphanumeric_Characters(unittest.TestCase):
+        
+    def test_other_than_alphanumeric_characters_plus_underscore_in_the_template_label_raise_exception(self):
+        case_template = blank_case_template()
+        self.assertRaises(Case_Template.InvalidCharactersInLabel,case_template.add,
+            'Label with spaces',{}, ()
+        )
+        self.assertRaises(Case_Template.InvalidCharactersInLabel,case_template.add,
+            '????',{}, ()
+        )
+
+    def test_greek_letters_are_allowed(self):
+        case_template = blank_case_template()
+        case_template.add('ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω',{}, ())
         
 
 if __name__=="__main__": unittest.main()

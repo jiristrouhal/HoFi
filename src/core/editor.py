@@ -5,6 +5,8 @@ from typing import Tuple, Dict, List, Any
 from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor
 
 
+import re
+
 class Case_Template:
     def __init__(self)->None:
         self.__templates:Dict[str, Template] = {}
@@ -22,7 +24,14 @@ class Case_Template:
     def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes.copy()
 
     def add(self,label:str, attribute_info:Dict[str,Dict[str,Any]], child_template_labels)->None:
-        if label.strip()=='': raise Case_Template.BlankTemplateLabel
+        label = label.strip()
+        if label=='': raise Case_Template.BlankTemplateLabel
+        
+        if re.fullmatch('[\w]+',label) is None: 
+            raise Case_Template.InvalidCharactersInLabel(
+                f"Invalid label '{label}'. Only alphanumeric characters"
+                 "(a-z, A-Z and 0-9) plus '_' are allowed.")
+
         for attr, info in attribute_info.items():
             if attr not in self.__attributes: self.__attributes[attr] = info
             elif info['atype'] != self.__attributes[attr]['atype']: 
@@ -40,6 +49,7 @@ class Case_Template:
     class BlankTemplateLabel(Exception): pass
     class ReaddingAttributeWithDifferentType(Exception): pass
     class UndefinedTemplate(Exception): pass
+    class InvalidCharactersInLabel(Exception): pass
 
 
 from src.core.item import Attribute_Data_Constructor
