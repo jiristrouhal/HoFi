@@ -128,25 +128,36 @@ class Test_Saving_And_Loading_Items_With_Children(unittest.TestCase):
 
     def setUp(self) -> None: # pragma: no cover
         build_dir(self.DIRPATH)
+        self.cr = ItemCreator()
+        self.cr.set_dir_path(self.DIRPATH)
+        self.cr.add_template('Item', {}, ('Item',))
+        self.parent = self.cr.from_template('Item','Parent')
+        self.child = self.cr.from_template('Item','Child')
+        self.parent.adopt(self.child)
 
     def test_saving_and_loading_item_with_single_child(self)->None:
-        cr = ItemCreator()
-        cr.set_dir_path(self.DIRPATH)
-        cr.add_template('Item', {}, ('Item',))
-        parent = cr.from_template('Item','Parent')
-        child = cr.from_template('Item','Child')
-        parent.adopt(child)
-
-        cr.save(parent,"xml")
-        loaded_parent = cr.load(self.DIRPATH,"Parent","xml")
+        self.cr.save(self.parent,"xml")
+        loaded_parent = self.cr.load(self.DIRPATH,"Parent","xml")
         self.assertTrue(loaded_parent.has_children())
         loaded_child = loaded_parent.pick_child('Child')
         self.assertFalse(loaded_child.is_null())
         self.assertEqual(loaded_child.name, "Child")
 
+    def test_saving_and_loading_items_with_multiple_levels_of_descendants(self):
+        grandchildA = self.cr.from_template('Item','Grandchild A')
+        grandchildB = self.cr.from_template('Item','Grandchild B')
+        self.child.adopt(grandchildA)
+        self.child.adopt(grandchildB)
+        self.cr.save(self.parent, "xml")
+        
+        loaded_parent = self.cr.load(self.DIRPATH, "Parent", "xml")
+        loaded_child = loaded_parent.pick_child("Child")
+        self.assertFalse(loaded_child.pick_child('Grandchild A').is_null())
+        self.assertFalse(loaded_child.pick_child('Grandchild B').is_null())
+
     def tearDown(self) -> None: # pragma: no cover
         remove_dir(self.DIRPATH)
-
+        
 
 if __name__=="__main__": unittest.main()
 
