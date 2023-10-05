@@ -1198,6 +1198,16 @@ class Test_Formal_Adoption(unittest.TestCase):
         self.parent.adopt(self.child)
         self.assertFalse(self.child in self.parent.formal_children)
 
+    def test_actual_child_cannot_be_adopted_formally(self):
+        self.parent.adopt(self.child)
+        self.assertRaises(ItemImpl.AlreadyAChild, self.parent.adopt_formally, self.child)
+
+    def test_leaving_formal_child(self):
+        self.parent.adopt_formally(self.child)
+        self.parent.leave_formal_child(self.child)
+        self.assertRaises(Item.FormalChildNotFound, self.parent.leave_formal_child, self.child)
+    
+
 
 if __name__=="__main__": unittest.main()
 

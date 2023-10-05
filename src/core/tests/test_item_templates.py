@@ -34,6 +34,12 @@ class Test_Adding_Item_Template(unittest.TestCase):
         self.assertEqual(itemA('x'),5)
         self.assertEqual(itemB('x'),-1)
 
+    def test_creating_template_via_special_method(self):
+        t = self.cr.template('Template', {'x':self.cr.attr.integer(4)}, ('Item',))
+        self.assertEqual(t.label, "Template")
+        self.assertTrue('x' in t.attribute_info)
+        self.assertEqual(t.child_itypes, ('Item',))
+        self.assertTrue(t.dependencies is None)
 
 class Test_Specifying_Children_Types(unittest.TestCase):
     
