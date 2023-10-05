@@ -33,7 +33,7 @@ class Case_Template:
         self,
         label:str, 
         attribute_info:Dict[str,Dict[str,Any]], 
-        child_template_labels:Optional[Tuple[str,...]] = None,
+        child_template_labels:Tuple[str,...] = (),
         dependencies:Optional[List[Template.Dependency]] = None
         )->None:
 
@@ -122,9 +122,7 @@ class Editor:
         return item.itype==CASE_TEMPLATE_LABEL
 
     def item_types_to_create(self,parent:Item)->Tuple[str,...]:
-        types = self.__creator.get_template(parent.itype).child_itypes
-        if types is None: return ()
-        else: return types
+        return self.__creator.get_template(parent.itype).child_itypes
 
     def load_case(self,dirpath:str,case_name:str,filetype:FileType)->Item:
         case = self.__creator.load(dirpath, case_name, filetype)

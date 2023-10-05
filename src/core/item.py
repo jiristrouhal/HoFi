@@ -12,7 +12,7 @@ import abc
 class Template:
     label:str
     attribute_info:Dict[str,Dict[str,Any]]
-    child_itypes:Optional[Tuple[str,...]] = None
+    child_itypes:Tuple[str,...] = ()
     dependencies:Optional[List[Template.Dependency]] = None
 
     @staticmethod
@@ -44,7 +44,7 @@ class ItemCreator:
         self, 
         label:str, 
         attributes:Dict[str,Dict[str,Any]]={}, 
-        child_itypes:Optional[Tuple[str,...]] = None,
+        child_itypes:Tuple[str,...] = (),
         dependencies:Optional[List[Template.Dependency]]=None
         )->Template:
 
@@ -73,7 +73,7 @@ class ItemCreator:
         self,      
         label:str,
         attributes:Dict[str,Dict[str,Any]]={}, 
-        child_itypes:Optional[Tuple[str,...]]=None,
+        child_itypes:Tuple[str,...]=(),
         dependencies:Optional[List[Template.Dependency]] = None
         )->None:
 
