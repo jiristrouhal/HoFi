@@ -256,7 +256,34 @@ class Test_Setting_Item_Attribute_Dependency_In_Editor(unittest.TestCase):
         item.set('x',3)
 
         self.assertEqual(item('y'),9)
-        
+
+
+from src.core.editor import ItemCreator
+class Test_Adding_Templates_Of_Items_That_Can_Be_Both_Parents_Of_Each_Other(unittest.TestCase):
+
+    def test_adding_templates_of_items_that_can_be_parents_of_each_other(self):
+        case_template = blank_case_template()
+        case_template.add('typeA', {}, child_template_labels=('typeB',))
+        case_template.add_case_child_label('typeA')
+        self.assertRaises(ItemCreator.UndefinedTemplate, new_editor, case_template)
+
+        case_template.add('typeB', {}, child_template_labels=('typeA',))
+        editor = new_editor(case_template)
+
+
+class Test_Saving_And_Loading_Case(unittest.TestCase):
+
+    def test_saving_and_loading_case(self):
+        case_template = blank_case_template()
+        case_template.add('Item',{},child_template_labels=('Item',))
+        case_template.add_case_child_label('Item')
+        editor = new_editor(case_template)
+        caseA = editor.new_case('Case A')
+        item = editor.new(caseA, 'Item')
+        item.rename('Item X')
+
+
+
 
 if __name__=="__main__": unittest.main()
 

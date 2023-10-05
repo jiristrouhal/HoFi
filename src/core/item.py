@@ -10,7 +10,7 @@ import abc
 
 @dataclasses.dataclass(frozen=True)
 class Template:
-    item_type:str
+    label:str
     attribute_info:Dict[str,Dict[str,Any]]
     child_itypes:Optional[Tuple[str,...]] = None
     dependencies:Optional[List[Template.Dependency]] = None
@@ -35,7 +35,17 @@ class ItemCreator:
         self.__templates:Dict[str,Template] = {}
         self.__file_path:str = "."
 
-    def template(self, label:str)->Template: return self.__templates[label]
+    def get_template(self, label:str)->Template: return self.__templates[label]
+    
+    def template(
+        self, 
+        label:str, 
+        attributes:Dict[str,Dict[str,Any]]={}, 
+        child_itypes:Optional[Tuple[str,...]] = None,
+        dependencies:Optional[List[Template.Dependency]]=None
+        )->Template:
+
+        return Template(label,attributes,child_itypes,dependencies)
 
     def dependency(self, dependent:str, func:Callable[[Any],Any], *free:str)->Template.Dependency:
         return Template.dependency(dependent,func,*free)
@@ -47,25 +57,24 @@ class ItemCreator:
     @property
     def file_path(self)->str: return self.__file_path
 
+    def add_templates(self,*templates:Template)->None:
+        new_labels = [t.label for t in templates]
+        for t in templates:
+            if t.label in self.__templates: raise ItemCreator.TemplateAlreadyExists(t.label)
+            if t.child_itypes is not None: 
+                self.__check_child_template_presence(t.child_itypes, *new_labels)
+            self.__check_attribute_info(t.attribute_info)
+        self.__templates.update({t.label:t for t in templates})
+
     def add_template(
-        self,        
+        self,      
         label:str,
         attributes:Dict[str,Dict[str,Any]]={}, 
         child_itypes:Optional[Tuple[str,...]]=None,
         dependencies:Optional[List[Template.Dependency]] = None
         )->None:
 
-        if label in self.__templates: raise ItemCreator.TemplateAlreadyExists(label)
-        if child_itypes is not None: 
-            self.__check_child_template_presence(label,child_itypes)
-        self.__check_attribute_info(attributes)
-        self.__templates[label] = Template(
-            label, 
-            attributes, 
-            child_itypes,
-            dependencies
-        )
-
+        self.add_templates(Template(label, attributes, child_itypes, dependencies))
 
     import xml.etree.ElementTree as et
     import os
@@ -141,12 +150,12 @@ class ItemCreator:
             raise ItemCreator.UndefinedTemplate(label)
         template = self.__templates[label]
         attributes = self.__get_attrs_from_template(template.attribute_info)
-        if name.strip()=="": name = template.item_type
+        if name.strip()=="": name = template.label
         item = ItemImpl(
             name, 
             attributes, 
             self, 
-            itype = template.item_type, 
+            itype = template.label, 
             child_itypes = template.child_itypes
         )
         if template.dependencies is not None:
@@ -167,10 +176,10 @@ class ItemCreator:
         for info in attribute_info.values():
             self.attr._check(info)
 
-    def __check_child_template_presence(self, label:str, child_itypes:Tuple[str,...])->None:
-        for itype in child_itypes:  
-            if not ((itype in self.__templates) or (itype==label)):  
-                raise ItemCreator.UndefinedTemplate(itype)
+    def __check_child_template_presence(self, child_itypes:Tuple[str,...], *templates_being_defined:str)->None:
+        for child_itype in child_itypes:  
+            if not (child_itype in self.__templates or child_itype in templates_being_defined):  
+                raise ItemCreator.UndefinedTemplate(child_itype)
 
     def __get_attrs_from_template(self,attribute_info:Dict[str,Dict[str,Any]])->Dict[str,Attribute]:
         attributes = {}

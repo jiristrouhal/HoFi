@@ -55,8 +55,7 @@ class Case_Template:
             self.__case_child_labels.append(label)
 
 
-    class Dependency(Template.Dependency):
-        pass
+    class Dependency(Template.Dependency): pass
 
     class BlankTemplateLabel(Exception): pass
     class ReaddingAttributeWithDifferentType(Exception): pass
@@ -68,8 +67,7 @@ from src.core.item import Attribute_Data_Constructor
 class Editor:
     def __init__(self, case_template:Case_Template)->None:
         self.__creator = ItemCreator()
-        for label, template in case_template.templates.items():
-            self.__creator.add_template(label, template.attribute_info, template.child_itypes, template.dependencies)
+        self.__creator.add_templates(*case_template.templates.values())
         self.__creator.add_template('', {}, case_template.case_child_labels)
         self.__root = self.__creator.new("_")
         self.__attributes =  case_template.attributes
@@ -91,7 +89,7 @@ class Editor:
         return case
 
     def item_types_to_create(self,parent:Item)->Tuple[str,...]:
-        types = self.__creator.template(parent.itype).child_itypes
+        types = self.__creator.get_template(parent.itype).child_itypes
         if types is None: return ()
         else: return types
 
@@ -128,7 +126,7 @@ class Editor:
         return item.attribute(attribute_name).print(**options)
 
     class InvalidChildTypeUnderGivenParent(Exception): pass
-    class UndefinedTemplate(Exception): pass
+    class UndefinedTemplate(ItemCreator.UndefinedTemplate): pass
 
 
 def new_editor(case_template:Case_Template)->Editor:
