@@ -287,7 +287,7 @@ class Test_Saving_And_Loading_Case(unittest.TestCase):
         self.item.rename('Item X')
 
     def test_saving_and_loading_case(self):
-        self.editor.save_as_case(self.caseA, 'xml')
+        self.editor.save(self.caseA, 'xml')
         self.editor.remove_case(self.caseA)
         self.assertFalse(self.editor.contains_case(self.caseA))
 
@@ -309,8 +309,104 @@ class Test_Saving_And_Loading_Case(unittest.TestCase):
         self.assertFalse(self.editor.contains_case(loaded_case))
 
     def tearDown(self) -> None: # pragma: no cover
+        remove_dir(self.DIRPATH)
+
+
+class Test_Setting_Up_Under_Which_Parents_Item_Can_Be_Inserted(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.case_template = blank_case_template()
+        self.case_template.add('folder',{},('file','folder'))
+        self.case_template.add('file', {}, ())
+        self.case_template.add_case_child_label('folder')
+
+    def test_setting_up_insertable_type_of_item(self):
+        self.case_template.set_insertable('folder') 
+        self.editor = new_editor(self.case_template)
+        self.assertEqual(self.editor.insertable, 'folder')
+
+    def test_setting_up_insertable_for_which_template_does_not_exist_raises_exception(self):
+        self.assertRaises(
+            Case_Template.UndefinedTemplate, 
+            self.case_template.set_insertable, 'nonexistent type'
+        ) 
+
+    def test_determining_if_insertable_can_be_inserted_under_given_item_type(self):
+        self.case_template.set_insertable('folder')
+        self.editor = new_editor(self.case_template)
+        case = self.editor.new_case('CaseX')
+        folder = self.editor.new(case,'folder')
+        file = self.editor.new(folder,'file')
+        self.assertTrue(self.editor.can_insert_under(case))
+        self.assertTrue(self.editor.can_insert_under(folder))
+        self.assertFalse(self.editor.can_insert_under(file))
+
+
+class Test_Saving_And_Importing_Items(unittest.TestCase):
+
+    DIRPATH = "./__test_saving_case_2"
+    def setUp(self) -> None: # pragma: no cover
+        build_dir(self.DIRPATH)
+        self.case_template = blank_case_template()
+        self.case_template.add('can_be_child_of_case', {}, ('cannot_be_child_of_case',))
+        self.case_template.add('cannot_be_child_of_case', {})
+        self.case_template.add_case_child_label('can_be_child_of_case')
+
+    def test_cannot_save_as_item_if_no_insertable_item_type_was_set_in_case_template(self):
+        editor = new_editor(self.case_template)
+        somecase = editor.new_case("Case")
+        someitem = editor.new(somecase, "can_be_child_of_case")
+        self.assertFalse(editor.can_save_as_item(someitem))
+        self.assertRaises(Editor.CannotSaveAsItem, editor.save, someitem, "xml")
+
+    def test_item_can_be_saved_and_loaded_if_its_type_was_specified_as_insertable(self):
+        self.case_template.set_insertable('can_be_child_of_case')
+        editor = new_editor(self.case_template)
+        editor.set_dir_path(self.DIRPATH)
+        somecase = editor.new_case("Case")
+        someitem = editor.new(somecase, "can_be_child_of_case")
+        someitem.rename("Some Item")
+        self.assertTrue(editor.can_save_as_item(someitem))
+        editor.save(someitem, "xml")
+        somecase.leave(someitem)
+
+        self.assertTrue(somecase.pick_child("Some Item").is_null())
+        editor.insert_from_file(somecase,self.DIRPATH,"Some Item", "xml")
+        self.assertFalse(somecase.pick_child("Some Item").is_null())
+
+    def test_inserting_insertable_item_under_parent_for_which_insertable_is_not_specified_as_child_type_raises_exception(self):
+        self.case_template.set_insertable("cannot_be_child_of_case")
+        editor = new_editor(self.case_template)
+        editor.set_dir_path(self.DIRPATH)
+
+        somecase = editor.new_case("Case")
+        itemA = editor.new(somecase, "can_be_child_of_case")
+        itemB = editor.new(itemA, "cannot_be_child_of_case")
+        itemA.rename("Item A")
+        itemB.rename("Item B")
+        self.assertFalse(editor.can_save_as_item(itemA))
+        self.assertTrue(editor.can_save_as_item(itemB))
+        editor.save(itemB, "xml")
+        itemA.leave(itemB)
+
+        self.assertTrue(itemA.pick_child("Item B").is_null())
+        editor.insert_from_file(itemA, self.DIRPATH, "Item B", "xml")
+        self.assertFalse(itemA.pick_child("Item B").is_null())
+        editor.undo()
+        self.assertTrue(itemA.pick_child("Item B").is_null())
+        editor.redo()
+        self.assertFalse(itemA.pick_child("Item B").is_null())
+
+        self.assertRaises(
+            Editor.CannotInsertItemUnderSelectedParent,
+            editor.insert_from_file, somecase, self.DIRPATH, "Item B", "xml"
+        )
+
+
+    def tearDown(self) -> None: # pragma: no cover
         # remove_dir(self.DIRPATH)
         pass
+
 
 import os
 def build_dir(dirpath:str)->None: # pragma: no cover

@@ -35,6 +35,9 @@ class ItemCreator:
         self.__templates:Dict[str,Template] = {}
         self.__file_path:str = "."
 
+    @property
+    def templates(self)->Tuple[str,...]: return tuple(self.__templates.keys())
+
     def get_template(self, label:str)->Template: return self.__templates[label]
     
     def template(
