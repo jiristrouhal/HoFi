@@ -273,7 +273,7 @@ class Test_Adding_Templates_Of_Items_That_Can_Be_Both_Parents_Of_Each_Other(unit
 class Test_Saving_And_Loading_Case(unittest.TestCase):
 
     DIRPATH = "./__test_saving_case_1"
-    def setUp(self) -> None:
+    def setUp(self) -> None: # pragma: no cover
         build_dir(self.DIRPATH)
 
     def test_saving_and_loading_case(self):
@@ -294,6 +294,9 @@ class Test_Saving_And_Loading_Case(unittest.TestCase):
         loaded_case = editor.load_case(self.DIRPATH,"Case A","xml")
         self.assertTrue(editor.contains_case(loaded_case))
         self.assertFalse(loaded_case.pick_child('Item X').is_null())
+
+    def tearDown(self) -> None: # pragma: no cover
+        remove_dir(self.DIRPATH)
 
 import os
 def build_dir(dirpath:str)->None: # pragma: no cover
