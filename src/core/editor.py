@@ -2,10 +2,13 @@ from __future__ import annotations
 
 
 from typing import Tuple, Dict, List, Any, Optional
-from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor
+from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor, FileType
 
 
 import re
+
+
+CASE_TEMPLATE_LABEL = "__Case__"
 
 class Case_Template:
     def __init__(self)->None:
@@ -68,7 +71,7 @@ class Editor:
     def __init__(self, case_template:Case_Template)->None:
         self.__creator = ItemCreator()
         self.__creator.add_templates(*case_template.templates.values())
-        self.__creator.add_template('', {}, case_template.case_child_labels)
+        self.__creator.add_template(CASE_TEMPLATE_LABEL, {}, case_template.case_child_labels)
         self.__root = self.__creator.new("_")
         self.__attributes =  case_template.attributes
 
@@ -80,7 +83,7 @@ class Editor:
 
     from src.core.item import Parentage_Data
     def duplicate_as_case(self,item:Item)->Item:
-        case = self.__creator.from_template("", item.name)
+        case = self.__creator.from_template(CASE_TEMPLATE_LABEL, item.name)
         item_dupl = item.copy()
         self.__root.controller.run(
             *self.__root.command['adopt'](self.Parentage_Data(self.__root, case)),
@@ -92,6 +95,11 @@ class Editor:
         types = self.__creator.get_template(parent.itype).child_itypes
         if types is None: return ()
         else: return types
+
+    def load_case(self,dirpath:str,case_name:str,filetype:FileType)->Item:
+        case = self.__creator.load(dirpath, case_name, filetype)
+        self.__root.adopt(case)
+        return case
 
     def new(self,parent:Item,itype:str)->Item:
         try:
@@ -106,7 +114,7 @@ class Editor:
         return item
     
     def new_case(self,name:str)->Item:
-        case = self.__creator.from_template("",name)
+        case = self.__creator.from_template(CASE_TEMPLATE_LABEL,name)
         self.__root.adopt(case)
         return case
 
@@ -115,6 +123,12 @@ class Editor:
 
     def remove_case(self,case:Item)->None:
         self.__root.leave(case)
+
+    def save_as_case(self,item:Item,filetype:FileType)->None:
+        self.__creator.save(item,filetype)
+
+    def set_dir_path(self,dirpath:str)->None:
+        self.__creator.set_dir_path(dirpath)
     
     def undo(self)->None:
         self.__creator.undo()

@@ -270,8 +270,11 @@ class Test_Adding_Templates_Of_Items_That_Can_Be_Both_Parents_Of_Each_Other(unit
         case_template.add('typeB', {}, child_template_labels=('typeA',))
         editor = new_editor(case_template)
 
-
 class Test_Saving_And_Loading_Case(unittest.TestCase):
+
+    DIRPATH = "./__test_saving_case_1"
+    def setUp(self) -> None:
+        build_dir(self.DIRPATH)
 
     def test_saving_and_loading_case(self):
         case_template = blank_case_template()
@@ -279,10 +282,30 @@ class Test_Saving_And_Loading_Case(unittest.TestCase):
         case_template.add_case_child_label('Item')
         editor = new_editor(case_template)
         caseA = editor.new_case('Case A')
-        item = editor.new(caseA, 'Item')
+        item = editor.new(caseA,'Item')
         item.rename('Item X')
+  
+        editor.set_dir_path(self.DIRPATH)
+        editor.save_as_case(caseA, 'xml')
 
+        editor.remove_case(caseA)
+        self.assertFalse(editor.contains_case(caseA))
 
+        loaded_case = editor.load_case(self.DIRPATH,"Case A","xml")
+        self.assertTrue(editor.contains_case(loaded_case))
+        self.assertFalse(loaded_case.pick_child('Item X').is_null())
+
+import os
+def build_dir(dirpath:str)->None: # pragma: no cover
+    if not os.path.isdir(dirpath): 
+        os.mkdir(dirpath)
+
+def remove_dir(dirpath:str)->None: # pragma: no cover
+    if os.path.isdir(dirpath):
+        for f in os.listdir(dirpath): 
+            os.remove(os.path.join(dirpath,f))
+            pass
+        os.rmdir(dirpath)
 
 
 if __name__=="__main__": unittest.main()
