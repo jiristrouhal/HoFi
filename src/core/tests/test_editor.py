@@ -417,10 +417,8 @@ class Test_Saving_And_Importing_Items(unittest.TestCase):
         itemB = editor.new(itemA, 'cannot_be_child_of_case')
         self.assertFalse(editor.can_insert_under(itemB))
 
-
     def tearDown(self) -> None: # pragma: no cover
-        # remove_dir(self.DIRPATH)
-        pass
+        remove_dir(self.DIRPATH)
 
 
 class Test_Creating_New_Items_Of_Specified_Types(unittest.TestCase):
