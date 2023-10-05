@@ -308,7 +308,6 @@ class Test_Saving_And_Loading_Case(unittest.TestCase):
         self.editor.undo()
         self.assertFalse(self.editor.contains_case(loaded_case))
 
-
     def tearDown(self) -> None: # pragma: no cover
         # remove_dir(self.DIRPATH)
         pass

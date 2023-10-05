@@ -1181,6 +1181,24 @@ class Test_Defining_Item_Attributes_Via_Special_Methods(unittest.TestCase):
         )
 
 
+class Test_Formal_Adoption(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.cr = ItemCreator()
+        self.parent = self.cr.new('Parent')
+        self.child = self.cr.new('Child')
+        self.parent.adopt_formally(self.child)
+
+    def test_child_adopted_formally_does_not_know_about_its_formal_parent(self):
+        self.assertTrue(self.child in self.parent.formal_children)
+        self.assertTrue(self.child.parent is ItemImpl.NULL)
+        self.assertFalse(self.parent.is_parent_of(self.child))
+
+    def test_actually_adopting_child_removes_it_from_formal_child_set(self):
+        self.parent.adopt(self.child)
+        self.assertFalse(self.child in self.parent.formal_children)
+
+
 if __name__=="__main__": unittest.main()
 
 
