@@ -131,8 +131,7 @@ class Editor:
     def save_as_case(self,item:Item,filetype:FileType)->None:
         if not Editor.is_case(item):
             case = self.__creator.from_template(CASE_TEMPLATE_LABEL, item.name)
-            case._adopt(item.copy())
-            assert(case.has_children())
+            case.adopt_formally(item)
         else:
             case = item
         self.__creator.save(case,filetype)

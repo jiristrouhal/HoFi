@@ -301,6 +301,14 @@ class Test_Saving_And_Loading_Case(unittest.TestCase):
         self.assertTrue(self.editor.contains_case(loaded_case))
         self.assertFalse(loaded_case.pick_child('Item X').is_null())
 
+        self.editor.undo()
+        self.assertFalse(self.editor.contains_case(loaded_case))
+        self.editor.redo()
+        self.assertTrue(self.editor.contains_case(loaded_case))
+        self.editor.undo()
+        self.assertFalse(self.editor.contains_case(loaded_case))
+
+
     def tearDown(self) -> None: # pragma: no cover
         # remove_dir(self.DIRPATH)
         pass

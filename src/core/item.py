@@ -131,7 +131,7 @@ class ItemCreator:
     
     def __create_xml_items_hierarchy(self, item:Item)->et.Element:
         xml_elem = self.__create_single_xml_item(item)
-        for child in item.children:
+        for child in set.union(item.children, item.formal_children):
             xml_elem.append(self.__create_xml_items_hierarchy(child))
         return xml_elem
     
@@ -361,6 +361,14 @@ class Item(abc.ABC): # pragma: no cover
     def child_itypes(self)->Optional[Tuple[str,...]]: pass
     @abc.abstractproperty
     def command(self)->Dict[Command_Type,Composed_Command]: pass
+    @abc.abstractproperty
+    def formal_children(self)->Set[Item]: pass
+
+    @abc.abstractmethod
+    def adopt_formally(self,child:Item)->None: pass
+
+    @abc.abstractmethod
+    def leave_formal_child(self,child:Item)->None: pass
 
     @abc.abstractmethod
     def bind(self, output_name:str, func:Callable[[Any],Any], *input_names:str)->None:
@@ -461,6 +469,7 @@ class Item(abc.ABC): # pragma: no cover
     class AdoptingNULL(Exception): pass
     class BlankName(Exception): pass
     class CannotAdoptItemOfType(Exception): pass
+    class FormalChildNotFound(Exception): pass
     class ItemAdoptsItself(Exception): pass
     class NonexistentAttribute(Exception): pass
     class NonexistentCommandType(Exception): pass
@@ -493,6 +502,11 @@ class ItemImpl(Item):
         def child_itypes(self)->Optional[Tuple[str,...]]: return None   # pragma: no cover
         @property
         def command(self)->Dict[Command_Type,Composed_Command]: return {}  # pragma: no cover
+        @property
+        def formal_children(self)->Set[Item]: return set()
+
+        def adopt_formally(self,child:Item)->None: raise self.NullCannotAdoptFormally # pragma: no cover
+        def leave_formal_child(self,child:Item)->None: raise Item.FormalChildNotFound(child) # pragma: no cover
 
         def bind(self,*args)->None: raise self.SettingDependencyOnNull
         def copy(self)->Item: return self  # pragma: no cover
@@ -529,6 +543,7 @@ class ItemImpl(Item):
 
         class AddingAttributeToNullItem(Exception): pass
         class CannotAccessChildrenOfNull(Exception): pass
+        class NullCannotAdoptFormally(Exception): pass
         class NullCannotLeaveChild(Exception): pass
         class SettingDependencyOnNull(Exception): pass
 
@@ -540,6 +555,7 @@ class ItemImpl(Item):
         self.__attributes = attributes
         self._rename(name)
         self.__children:Set[Item] = set()
+        self.__formal_children:Set[Item] = set()
         self.__parent:Item = self.NULL
         self._bindings:Dict[str, Item.BindingInfo] = dict()
         self.__command:Dict[Command_Type,Composed_Command] = {
@@ -571,6 +587,16 @@ class ItemImpl(Item):
     def child_itypes(self)->Optional[Tuple[str,...]]: return self.__child_itypes
     @property
     def command(self)->Dict[Command_Type,Composed_Command]: return self.__command
+    @property
+    def formal_children(self)->Set[Item]: return self.__formal_children.copy()
+
+    def adopt_formally(self,child:Item)->None:
+        if child in self.__children: raise ItemImpl.AlreadyAChild(child)
+        else: self.__formal_children.add(child)
+
+    def leave_formal_child(self,child:Item)->None:
+        if child not in self.__formal_children: raise Item.FormalChildNotFound(child)
+        else: self.__formal_children.remove(child)
  
     def attribute(self,label:str)->Attribute:
         if not label in self.__attributes: 
@@ -719,6 +745,8 @@ class ItemImpl(Item):
         if self.parent is self.NULL: self.__parent = item
 
     def _adopt(self, child:Item)->None:
+        if child in self.__formal_children: 
+            self.__formal_children.remove(child)
         child._accept_parent(self)
         self.__make_child_to_rename_if_its_name_already_taken(child)
         if self is child.parent: self.__children.add(child)
@@ -791,6 +819,7 @@ class ItemImpl(Item):
         if name=="": raise self.BlankName
 
 
+    class AlreadyAChild(Exception): pass
     class ChildAttributeTypeConflict(Exception): pass
         
 
