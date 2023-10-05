@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Any, Set, Callable, Optional, Literal
+from typing import Dict, Any, Set, Callable, Optional, Literal, List
 import dataclasses
 from src.cmd.commands import Command, Controller, Composed_Command, Timing, Empty_Command
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
@@ -72,17 +72,22 @@ class ItemCreator:
     def load(self, dirpath:str, name:str, ftype:FileType)->Item:
         filepath = self.__create_and_check_filepath(dirpath,name,ftype)
         root_elem = self.et.parse(filepath).getroot()
-        loaded_item = self.__build_item_from_xml(root_elem)
+        loaded_item, adoption_cmds = self.__build_item_from_xml(root_elem)
+        self._controller.run(*adoption_cmds)
         return loaded_item
     
-    def __build_item_from_xml(self, xml_elem:et.Element)->Item:
+    def __build_item_from_xml(self, xml_elem:et.Element)->Tuple[Item, List[Command]]:
         self.__check_template_is_available(xml_elem.tag)
         item = self.from_template(xml_elem.tag)
         item.rename(xml_elem.attrib['name'])
         self.__read_attribute_values_from_xml_elem(item, xml_elem)
+
+        cmds:List[Command] = list()
         for sub_elem in xml_elem:
-            item._adopt(self.__build_item_from_xml(sub_elem))
-        return item
+            child, child_adopt_cmds = self.__build_item_from_xml(sub_elem)
+            cmds.extend(child_adopt_cmds)
+            cmds.extend(item.command['adopt'](Parentage_Data(item,child)))
+        return item, cmds
     
     def __create_and_check_filepath(self,dirpath:str,name:str,ftype:FileType)->str:
         filepath = dirpath+"/"+name+"."+ftype

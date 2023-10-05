@@ -157,7 +157,56 @@ class Test_Saving_And_Loading_Items_With_Children(unittest.TestCase):
 
     def tearDown(self) -> None: # pragma: no cover
         remove_dir(self.DIRPATH)
+
+
+from typing import List
+from decimal import Decimal
+import math
+
+class Test_Loading_Item_With_Attribute_Depending_On_Items_Children(unittest.TestCase):
+    
+    DIRPATH = "./__test_dir_5"
+
+    def setUp(self) -> None: # pragma: no cover
+        build_dir(self.DIRPATH)
+
+    def test_saving_and_loading_parent_calculating_average_of_its_childrens_attribute(self):
+        cr = ItemCreator()
+        cr.set_dir_path(self.DIRPATH)
+        def average(x:List[float|Decimal])->float|Decimal:
+            if len(x)==0: return math.nan
+            return sum(x)/len(x)
         
+        cr.add_template(
+            'ChildType', 
+            {'x':cr.attr.real(1)}, 
+        )
+
+        cr.add_template(
+            'ParentType', 
+            {'avg':cr.attr.real(0)}, 
+            ('ChildType',), 
+            dependencies=[cr.dependency('avg',average,'[x:real]')]
+        )
+
+        parent = cr.from_template('ParentType', 'Parent')
+        child_1 = cr.from_template('ChildType', 'Child 1')
+        child_2 = cr.from_template('ChildType', 'Child 2')
+        child_1.set('x',3)
+        child_2.set('x',2)
+        parent.adopt(child_1)
+        parent.adopt(child_2)
+        cr.save(parent,'xml')
+
+        loaded_parent = cr.load(self.DIRPATH,"Parent",'xml')
+        self.assertEqual(loaded_parent('avg'),2.5)
+        loaded_parent.pick_child('Child 1').set('x', 0)
+        self.assertEqual(loaded_parent('avg'),1)
+
+
+    def tearDown(self) -> None: # pragma: no cover
+        remove_dir(self.DIRPATH)
+
 
 if __name__=="__main__": unittest.main()
 
