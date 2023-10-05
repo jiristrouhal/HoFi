@@ -5,12 +5,12 @@ import os
 
 
 import unittest
-from src.core.item import ItemCreator, Item, ItemImpl
+from src.core.item import ItemCreator
 
 
 class Test_Setting_File_Path_For_Item_Saving_And_Loading(unittest.TestCase):
 
-    def setUp(self) -> None:
+    def setUp(self) -> None: # pragma: no cover
         os.mkdir("./__test_dir")
 
     def test_setting_file_path_for_export_and_import_of_items(self):
@@ -26,7 +26,7 @@ class Test_Setting_File_Path_For_Item_Saving_And_Loading(unittest.TestCase):
             "./__$nonexistent_directory__"
         )
 
-    def tearDown(self):
+    def tearDown(self): # pragma: no cover
         if os.path.isdir("./__test_dir"): 
             os.rmdir("./__test_dir")
 
@@ -105,7 +105,7 @@ class Test_Loading_Item_From_XML(unittest.TestCase):
         self.assertEqual(item('description'),'This is the description.')
         self.assertEqual(item('weight'),5)
 
-    def tearDown(self) -> None:
+    def tearDown(self) -> None: # pragma: no cover
         if os.path.isdir(self.DIRPATH):
             for f in os.listdir(self.DIRPATH): 
                 os.remove(os.path.join(self.DIRPATH,f))
