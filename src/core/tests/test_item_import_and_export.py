@@ -49,7 +49,7 @@ class Test_Saving_Items_As_XML(unittest.TestCase):
         self.cr.save(item,"xml")
         filepath = "./__test_dir_2/Item_X.xml"
         file_was_created = os.path.isfile(filepath)
-        if file_was_created: 
+        if file_was_created:   # pragma: no cover
             os.remove(filepath)   
 
         self.assertTrue(file_was_created)
