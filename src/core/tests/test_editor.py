@@ -275,28 +275,35 @@ class Test_Saving_And_Loading_Case(unittest.TestCase):
     DIRPATH = "./__test_saving_case_1"
     def setUp(self) -> None: # pragma: no cover
         build_dir(self.DIRPATH)
+        self.case_template = blank_case_template()
+        self.case_template.add('Item',{},child_template_labels=('Item',))
+        self.case_template.add_case_child_label('Item')
+
+        self.editor = new_editor(self.case_template)
+        self.editor.set_dir_path(self.DIRPATH)
+
+        self.caseA = self.editor.new_case('Case A')
+        self.item = self.editor.new(self.caseA,'Item')
+        self.item.rename('Item X')
 
     def test_saving_and_loading_case(self):
-        case_template = blank_case_template()
-        case_template.add('Item',{},child_template_labels=('Item',))
-        case_template.add_case_child_label('Item')
-        editor = new_editor(case_template)
-        caseA = editor.new_case('Case A')
-        item = editor.new(caseA,'Item')
-        item.rename('Item X')
-  
-        editor.set_dir_path(self.DIRPATH)
-        editor.save_as_case(caseA, 'xml')
+        self.editor.save_as_case(self.caseA, 'xml')
+        self.editor.remove_case(self.caseA)
+        self.assertFalse(self.editor.contains_case(self.caseA))
 
-        editor.remove_case(caseA)
-        self.assertFalse(editor.contains_case(caseA))
+        loaded_case = self.editor.load_case(self.DIRPATH,"Case A","xml")
+        self.assertTrue(self.editor.contains_case(loaded_case))
+        self.assertFalse(loaded_case.pick_child('Item X').is_null())
 
-        loaded_case = editor.load_case(self.DIRPATH,"Case A","xml")
-        self.assertTrue(editor.contains_case(loaded_case))
+    def test_saving_and_loading_item_as_a_case(self):
+        self.editor.save_as_case(self.item,'xml')
+        loaded_case = self.editor.load_case(self.DIRPATH, "Item X", "xml")
+        self.assertTrue(self.editor.contains_case(loaded_case))
         self.assertFalse(loaded_case.pick_child('Item X').is_null())
 
     def tearDown(self) -> None: # pragma: no cover
-        remove_dir(self.DIRPATH)
+        # remove_dir(self.DIRPATH)
+        pass
 
 import os
 def build_dir(dirpath:str)->None: # pragma: no cover

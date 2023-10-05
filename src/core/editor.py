@@ -91,6 +91,10 @@ class Editor:
         )
         return case
 
+    @staticmethod
+    def is_case(item:Item)->bool:
+        return item.itype==CASE_TEMPLATE_LABEL
+
     def item_types_to_create(self,parent:Item)->Tuple[str,...]:
         types = self.__creator.get_template(parent.itype).child_itypes
         if types is None: return ()
@@ -125,7 +129,13 @@ class Editor:
         self.__root.leave(case)
 
     def save_as_case(self,item:Item,filetype:FileType)->None:
-        self.__creator.save(item,filetype)
+        if not Editor.is_case(item):
+            case = self.__creator.from_template(CASE_TEMPLATE_LABEL, item.name)
+            case._adopt(item.copy())
+            assert(case.has_children())
+        else:
+            case = item
+        self.__creator.save(case,filetype)
 
     def set_dir_path(self,dirpath:str)->None:
         self.__creator.set_dir_path(dirpath)
