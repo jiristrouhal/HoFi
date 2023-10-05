@@ -73,7 +73,7 @@ class ItemCreator:
         filepath = self.__create_and_check_filepath(dirpath,name,ftype)
         root_elem = self.et.parse(filepath).getroot()
         loaded_item, adoption_cmds = self.__build_item_from_xml(root_elem)
-        self._controller.run(*adoption_cmds)
+        self.__build_hierarchy(*adoption_cmds)
         return loaded_item
     
     def __build_item_from_xml(self, xml_elem:et.Element)->Tuple[Item, List[Command]]:
@@ -88,6 +88,9 @@ class ItemCreator:
             cmds.extend(child_adopt_cmds)
             cmds.extend(item.command['adopt'](Parentage_Data(item,child)))
         return item, cmds
+    
+    def __build_hierarchy(self, *adoption_commands:Command)->None:
+        self._controller.run(*adoption_commands)
     
     def __create_and_check_filepath(self,dirpath:str,name:str,ftype:FileType)->str:
         filepath = dirpath+"/"+name+"."+ftype
