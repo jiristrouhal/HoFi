@@ -83,7 +83,7 @@ class ItemCreator:
 
         attrib:Dict[str,str] = {}
         attrib['name'] = item.name
-        for label,attr in item.attributes.items(): 
+        for label,attr in item.attributes.items():
             attrib[label] = attr.print()
  
         xml_elem = self.et.Element(item.itype, attrib)

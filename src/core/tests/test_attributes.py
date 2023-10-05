@@ -481,7 +481,7 @@ class Test_Attribute_Value_Formatting(unittest.TestCase):
         self.assertEqual(x.print(precision=2), '3.14')
         x.set(150.254)
         self.assertEqual(x.print(precision=0), '150')
-        self.assertEqual(x.print(precision=5), '150.25400')
+        self.assertEqual(x.print(precision=5, trailing_zeros=True), '150.25400')
 
     def test_text_attribute(self):
         fac = attribute_factory(Controller())
@@ -577,8 +577,8 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
     def test_printing_real_value(self):
         fac = attribute_factory(Controller())
         attr = fac.new("real", 5.3)
-        self.assertEqual(attr.print(trailing_zeros=False), "5.3")
-        self.assertEqual(attr.print(precision=5), "5.30000")
+        self.assertEqual(attr.print(trailing_zeros=True, precision=5), "5.30000")
+        self.assertEqual(attr.print(precision=5), "5.3")
 
         attr.set(5.45)
         self.assertEqual(attr.print(precision=1), "5.4")
@@ -668,7 +668,7 @@ class Test_Thousands_Separator(unittest.TestCase):
         self.assertEqual(attr.print(use_thousands_separator=True, trailing_zeros=False), f'12{NBSP}000.00505')
 
         attr.set(12000.000)
-        self.assertEqual(attr.print(precision=5, use_thousands_separator=True), f'12{NBSP}000.00000')
+        self.assertEqual(attr.print(precision=5, use_thousands_separator=True), f'12{NBSP}000')
 
 
 class Test_Reading_Value_With_Space_As_Thousands_Separator(unittest.TestCase):

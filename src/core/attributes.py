@@ -566,7 +566,7 @@ class Real_Attribute(Number_Attribute):
         locale_code:Locale_Code = "en_us",
         use_thousands_separator:bool=False,
         precision:int=28,
-        trailing_zeros:bool=True,
+        trailing_zeros:bool=False,
         adjust:Optional[Callable[[float|Decimal],float|Decimal]] = None,
         *args
         )->str:
@@ -583,7 +583,8 @@ class Real_Attribute(Number_Attribute):
 
         str_value = format(value, f',.{precision}f')
         str_value = self._set_thousands_separator(str_value, use_thousands_separator)
-        if not trailing_zeros: str_value = str_value.rstrip('0').rstrip('.')
+        if "." in str_value and not trailing_zeros: 
+            str_value = str_value.rstrip('0').rstrip('.')
         str_value = self._adjust_decimal_separator(str_value, locale_code)
         return str_value
         
@@ -991,7 +992,7 @@ class Quantity(Real_Attribute):
         locale_code:Locale_Code="en_us",
         use_thousands_separator:bool=False,
         precision:int=28,
-        trailing_zeros:bool=True,
+        trailing_zeros:bool=False,
         adjust:Optional[Callable[[Decimal|float],Decimal|float]] = None,
         include_unit:bool=True,
         *args

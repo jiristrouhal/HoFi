@@ -59,7 +59,6 @@ class Test_Saving_Items_As_XML(unittest.TestCase):
             os.rmdir("./__test_dir_2")
 
 
-from decimal import Decimal
 class Test_Loading_Item_From_XML(unittest.TestCase):
 
     DIRPATH = "./__test_dir_3"
@@ -110,7 +109,9 @@ class Test_Loading_Item_From_XML(unittest.TestCase):
         if os.path.isdir(self.DIRPATH):
             for f in os.listdir(self.DIRPATH): 
                 os.remove(os.path.join(self.DIRPATH,f))
+                pass
             os.rmdir(self.DIRPATH)
+
 
 
 if __name__=="__main__": unittest.main()
