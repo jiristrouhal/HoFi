@@ -295,6 +295,12 @@ class Test_Saving_And_Loading_Case(unittest.TestCase):
         self.assertTrue(self.editor.contains_case(loaded_case))
         self.assertFalse(loaded_case.pick_child('Item X').is_null())
 
+    def test_saving_case_as_a_case_is_equivalent_to_calling_save_method(self):
+        self.editor.save_as_case(self.caseA, 'xml')
+        self.editor.remove_case(self.caseA)
+        loaded_case = self.editor.load_case(self.DIRPATH,"Case A","xml")
+        self.assertTrue(self.editor.contains_case(loaded_case))
+
     def test_saving_and_loading_item_as_a_case(self):
         self.editor.save_as_case(self.item,'xml')
         loaded_case = self.editor.load_case(self.DIRPATH, "Item X", "xml")
@@ -402,10 +408,42 @@ class Test_Saving_And_Importing_Items(unittest.TestCase):
             editor.insert_from_file, somecase, self.DIRPATH, "Item B", "xml"
         )
 
+    def test_cannot_insert_under_item_without_child_of_any_type_allowed(self):
+        self.case_template.set_insertable("cannot_be_child_of_case")
+        editor = new_editor(self.case_template)
+        editor.set_dir_path(self.DIRPATH)
+        somecase = editor.new_case("Some Case")
+        itemA = editor.new(somecase, 'can_be_child_of_case')
+        itemB = editor.new(itemA, 'cannot_be_child_of_case')
+        self.assertFalse(editor.can_insert_under(itemB))
+
 
     def tearDown(self) -> None: # pragma: no cover
         # remove_dir(self.DIRPATH)
         pass
+
+
+class Test_Creating_New_Items_Of_Specified_Types(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.case_template = blank_case_template()
+        self.case_template.add("typeA",{},('typeB',))
+        self.case_template.add('typeB',{},())
+        self.case_template.add_case_child_label('typeA')
+        self.editor = new_editor(self.case_template)
+        self.case = self.editor.new_case('Case')
+
+    def test_listing_of_available_types_to_be_created_under_given_parent(self):
+        itemA = self.editor.new(self.case, 'typeA')
+        self.assertEqual(self.editor.item_types_to_create(itemA), ('typeB',))
+        itemB = self.editor.new(itemA, 'typeB')
+        self.assertEqual(self.editor.item_types_to_create(itemB), ())
+
+    def test_trying_to_create_item_of_type_unavailable_for_current_parent_raises_exception(self):
+        self.assertRaises(
+            Editor.InvalidChildTypeUnderGivenParent,
+            self.editor.new, self.case, 'typeB'
+        )
 
 
 import os

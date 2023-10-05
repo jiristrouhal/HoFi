@@ -132,15 +132,16 @@ class Editor:
         return case
 
     def new(self,parent:Item,itype:str)->Item:
-        try:
-            item = self.__creator.from_template(itype)
-            parent.adopt(item)
-        except Item.CannotAdoptItemOfType:
+        if itype not in self.__creator.templates:
+            raise Editor.UndefinedTemplate(itype)
+        
+        available_itypes = self.item_types_to_create(parent)
+        if (available_itypes is None) or (itype not in available_itypes):
             raise Editor.InvalidChildTypeUnderGivenParent(
                 f"Parent type: {parent.itype}, child type: {itype}."
             )
-        except ItemCreator.UndefinedTemplate:
-            raise Editor.UndefinedTemplate(itype)
+        item = self.__creator.from_template(itype)
+        parent.adopt(item)
         return item
     
     def new_case(self,name:str)->Item:
