@@ -28,6 +28,7 @@ class Template:
 
 FileType = Literal['xml']
 class ItemCreator:
+
     def __init__(self)->None:
         self._controller = Controller()
         self._attrfac = attribute_factory(self._controller)
@@ -35,6 +36,9 @@ class ItemCreator:
         self.__file_path:str = "."
 
     def template(self, label:str)->Template: return self.__templates[label]
+
+    def dependency(self, dependent:str, func:Callable[[Any],Any], *free:str)->Template.Dependency:
+        return Template.dependency(dependent,func,*free)
 
     @property
     def attr(self)->Attribute_Data_Constructor:
@@ -62,35 +66,67 @@ class ItemCreator:
             dependencies
         )
 
+
     import xml.etree.ElementTree as et
     import os
     def load(self, dirpath:str, name:str, ftype:FileType)->Item:
-        filepath = dirpath+"/"+name+"."+ftype
-        if not self.os.path.isfile(filepath): 
-            raise ItemCreator.FileDoesNotExist(filepath)
+        filepath = self.__create_and_check_filepath(dirpath,name,ftype)
         root_elem = self.et.parse(filepath).getroot()
-        if root_elem.tag not in self.__templates:
-            raise ItemCreator.NoTemplateAvailable
-        xml_attributes = root_elem.attrib
-        loaded_item = self.from_template(root_elem.tag)
-        for attr_name in loaded_item.attributes:
-            loaded_item.attributes[attr_name].read(xml_attributes[attr_name])
+        loaded_item = self.__build_item_from_xml(root_elem)
         return loaded_item
+    
+    def __build_item_from_xml(self, xml_elem:et.Element)->Item:
+        self.__check_template_is_available(xml_elem.tag)
+        item = self.from_template(xml_elem.tag)
+        item.rename(xml_elem.attrib['name'])
+        self.__read_attribute_values_from_xml_elem(item, xml_elem)
+        for sub_elem in xml_elem:
+            item._adopt(self.__build_item_from_xml(sub_elem))
+        return item
+    
+    def __create_and_check_filepath(self,dirpath:str,name:str,ftype:FileType)->str:
+        filepath = dirpath+"/"+name+"."+ftype
+        if self.os.path.isfile(filepath): return filepath
+        else: raise ItemCreator.FileDoesNotExist(filepath)
+    
+    def __check_template_is_available(self,label:str)->None:
+        if label not in self.__templates:
+            raise ItemCreator.UnknownTemplate(label)
 
+    def __read_attribute_values_from_xml_elem(self,loaded_item:Item,xml_elem:et.Element)->None:
+        for attr_name in loaded_item.attributes:
+            if not loaded_item.attributes[attr_name].dependent:
+                loaded_item.attributes[attr_name].read(xml_elem.attrib[attr_name])
+    
     def save(self, item:Item, filetype:FileType)->None:
-        if item.itype.strip()=="":
-            raise ItemCreator.NoTemplateIsAssigned(item.name)
-
-        attrib:Dict[str,str] = {}
-        attrib['name'] = item.name
-        for label,attr in item.attributes.items():
-            attrib[label] = attr.print()
- 
-        xml_elem = self.et.Element(item.itype, attrib)
-        filepath = self.file_path+"/"+item.name+".xml"
-        xml_tree = self.et.ElementTree(xml_elem)
+        xml_tree = self.et.ElementTree(self.__create_xml_items_hierarchy(item))
         self.et.indent(xml_tree,space="\t")
+        filepath = self.file_path+"/"+item.name+"."+filetype
         xml_tree.write(filepath,encoding='UTF-8')
+
+    def set_dir_path(self,path:str)->None:
+        if not self.os.path.isdir(path): raise ItemCreator.NonexistentDirectory(path)
+        self.__file_path = path 
+
+    def __check_template_exists_for_item(self,item:Item)->None:
+        if item.itype.strip()=="" or item.itype not in self.__templates: 
+            raise ItemCreator.NoTemplateIsAssigned(item.name)
+    
+    def __create_xml_items_hierarchy(self, item:Item)->et.Element:
+        xml_elem = self.__create_single_xml_item(item)
+        for child in item.children:
+            xml_elem.append(self.__create_xml_items_hierarchy(child))
+        return xml_elem
+    
+    def __create_single_xml_item(self,item:Item)->et.Element:
+        self.__check_template_exists_for_item(item)
+        return self.et.Element(item.itype, self.__get_printed_attributes(item))
+    
+    def __get_printed_attributes(self,item:Item)->Dict[str,str]:
+        printed_attribs:Dict[str,str] = {'name':item.name}
+        for label,attr in item.attributes.items(): printed_attribs[label] = attr.print()
+        return printed_attribs
+
 
     def from_template(self,label:str,name:str="")->Item:
         if label not in self.__templates:
@@ -112,11 +148,6 @@ class ItemCreator:
 
     def new(self,name:str,attr_info:Dict[str,str]={})->Item:
         return ItemImpl(name, self.__get_attrs(attr_info), self)
-    
-    import os
-    def set_file_path(self,path:str)->None:
-        if not self.os.path.isdir(path): raise ItemCreator.NonexistentDirectory(path)
-        self.__file_path = path
 
     def undo(self):
         self._controller.undo()
@@ -148,10 +179,10 @@ class ItemCreator:
     
     class NonexistentDirectory(Exception): pass
     class FileDoesNotExist(Exception): pass
-    class NoTemplateAvailable(Exception): pass
     class NoTemplateIsAssigned(Exception): pass
     class TemplateAlreadyExists(Exception): pass
     class UndefinedTemplate(Exception): pass
+    class UnknownTemplate(Exception): pass
 
 
 @dataclasses.dataclass
@@ -356,6 +387,9 @@ class Item(abc.ABC): # pragma: no cover
     def has_children(self)->bool: pass
 
     @abc.abstractmethod
+    def is_null(self)->bool: pass
+
+    @abc.abstractmethod
     def is_parent_of(self, child:Item)->bool: pass
     
     @abc.abstractmethod
@@ -456,6 +490,7 @@ class ItemImpl(Item):
         def _create_child_attr_list(self,*args)->None: raise self.AddingAttributeToNullItem
         def duplicate(self)->ItemImpl.__ItemNull: return self
         def has_children(self)->bool: return True
+        def is_null(self)->bool: return True # pragma: no cover
         def is_parent_of(self, child:Item)->bool: return child.parent is self
         def is_ancestor_of(self, child:Item)->bool: return child==self
         def leave(self, child:Item)->None: raise self.NullCannotLeaveChild
@@ -645,6 +680,8 @@ class ItemImpl(Item):
 
     def has_children(self)->bool:
         return bool(self.__children)
+    
+    def is_null(self)->bool: return False # pragma: no cover
 
     def is_parent_of(self, child:Item)->bool: 
         return child in self.__children
@@ -667,8 +704,7 @@ class ItemImpl(Item):
     def _adopt(self, child:Item)->None:
         child._accept_parent(self)
         self.__make_child_to_rename_if_its_name_already_taken(child)
-        if self is child.parent:
-            self.__children.add(child)
+        if self is child.parent: self.__children.add(child)
 
     def _can_be_parent_of(self,item:Item)->bool:
         if self.child_itypes is not None:
