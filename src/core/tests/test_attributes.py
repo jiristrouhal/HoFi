@@ -1704,6 +1704,17 @@ class Test_Reading_Quantity_Value(unittest.TestCase):
         self.assertEqual(self.volume.value, 1.5)
         self.volume.read("4,5 m³")
         self.assertEqual(self.volume.value, 4.5)
+
+    def test_read_text_can_use_any_spacelike_character_to_separate_value_and_unit_or_even_no_space(self):
+        self.volume.read("1.5 m³")
+        self.assertEqual(self.volume.value, 1.5)
+        self.volume.read(f"2.4{NBSP}m³")
+        self.assertEqual(self.volume.value, Decimal('2.4'))
+        self.volume.read(f"3.3\tm³")
+        self.assertEqual(self.volume.value, Decimal('3.3'))
+        self.volume.read(f"4.2m³")
+        self.assertEqual(self.volume.value, Decimal('4.2'))
+
     
     def test_reading_quantity_preserves_setup_for_quantity_unit_and_prefix(self):
         self.volume.add_unit(

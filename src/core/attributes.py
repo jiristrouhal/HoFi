@@ -1012,7 +1012,7 @@ class Quantity(Real_Attribute):
     def read(self, text:str)->None:
         text = text.strip()
         if text=="": raise Quantity.BlankText(text)
-        matchobj = re.fullmatch('(?P<value>[\S]+) '+f'(?P<possible_scaled_unit>{Quantity.COMPLETE_UNIT_PATTERN})', text)
+        matchobj = re.fullmatch(f'(?P<value>[\S]+)[ \t({NBSP})]?'+f'(?P<possible_scaled_unit>{Quantity.COMPLETE_UNIT_PATTERN})', text)
         if matchobj is None: 
             raise Quantity.CannotExtractQuantity(text)
 

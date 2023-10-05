@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Any, Set, Callable, Optional
+from typing import Dict, Any, Set, Callable, Optional, Literal
 import dataclasses
 from src.cmd.commands import Command, Controller, Composed_Command, Timing, Empty_Command
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
@@ -26,6 +26,7 @@ class Template:
         free:Tuple[str,...]
 
 
+FileType = Literal['xml']
 class ItemCreator:
     def __init__(self)->None:
         self._controller = Controller()
@@ -61,14 +62,35 @@ class ItemCreator:
             dependencies
         )
 
-    def __check_attribute_info(self,attribute_info:Dict[str,Dict[str,Any]])->None:
-        for info in attribute_info.values():
-            self.attr._check(info)
+    import xml.etree.ElementTree as et
+    import os
+    def load(self, dirpath:str, name:str, ftype:FileType)->Item:
+        filepath = dirpath+"/"+name+"."+ftype
+        if not self.os.path.isfile(filepath): 
+            raise ItemCreator.FileDoesNotExist(filepath)
+        root_elem = self.et.parse(filepath).getroot()
+        if root_elem.tag not in self.__templates:
+            raise ItemCreator.NoTemplateAvailable
+        xml_attributes = root_elem.attrib
+        loaded_item = self.from_template(root_elem.tag)
+        for attr_name in loaded_item.attributes:
+            loaded_item.attributes[attr_name].read(xml_attributes[attr_name])
+        return loaded_item
 
-    def __check_child_template_presence(self, label:str, child_itypes:Tuple[str,...])->None:
-        for itype in child_itypes:  
-            if not ((itype in self.__templates) or (itype==label)):  
-                raise ItemCreator.UndefinedTemplate(itype)
+    def save(self, item:Item, filetype:FileType)->None:
+        if item.itype.strip()=="":
+            raise ItemCreator.NoTemplateIsAssigned(item.name)
+
+        attrib:Dict[str,str] = {}
+        attrib['name'] = item.name
+        for label,attr in item.attributes.items(): 
+            attrib[label] = attr.print()
+ 
+        xml_elem = self.et.Element(item.itype, attrib)
+        filepath = self.file_path+"/"+item.name+".xml"
+        xml_tree = self.et.ElementTree(xml_elem)
+        self.et.indent(xml_tree,space="\t")
+        xml_tree.write(filepath,encoding='UTF-8')
 
     def from_template(self,label:str,name:str="")->Item:
         if label not in self.__templates:
@@ -102,6 +124,15 @@ class ItemCreator:
     def redo(self):
         self._controller.redo()
 
+    def __check_attribute_info(self,attribute_info:Dict[str,Dict[str,Any]])->None:
+        for info in attribute_info.values():
+            self.attr._check(info)
+
+    def __check_child_template_presence(self, label:str, child_itypes:Tuple[str,...])->None:
+        for itype in child_itypes:  
+            if not ((itype in self.__templates) or (itype==label)):  
+                raise ItemCreator.UndefinedTemplate(itype)
+
     def __get_attrs_from_template(self,attribute_info:Dict[str,Dict[str,Any]])->Dict[str,Attribute]:
         attributes = {}
         for label, info in attribute_info.items():
@@ -116,6 +147,9 @@ class ItemCreator:
         return attributes
     
     class NonexistentDirectory(Exception): pass
+    class FileDoesNotExist(Exception): pass
+    class NoTemplateAvailable(Exception): pass
+    class NoTemplateIsAssigned(Exception): pass
     class TemplateAlreadyExists(Exception): pass
     class UndefinedTemplate(Exception): pass
 
