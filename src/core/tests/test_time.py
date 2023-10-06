@@ -6,7 +6,7 @@ sys.path.insert(1,"src")
 import unittest
 from typing import List
 import datetime
-from src.core.time import Timeline, Timepoint, TimepointInit
+from src.core.time import Timeline, TimepointInit
 from src.core.item import ItemCreator
 
 
@@ -26,26 +26,39 @@ class Test_Creating_Timeline_And_Timepoints(unittest.TestCase):
         self.assertDictEqual(self.tline.timepoints, {})
 
     def test_after_specifying_timelike_attribute_label_the_timeline_creates_timepoint_for_every_added_item_with_new_value_of_timelike_attribute(self):
-        item = self.cr.new('Item', {'date':'date'})
+        item_1 = self.cr.new('Item', {'date':'date'})
+        item_2 = self.cr.new('Item', {'date':'date'})
         the_date = datetime.date(2021,12,18)
-        item.set('date', the_date)
-        self.root.adopt(item)
+        item_1.set('date', the_date)
+        item_2.set('date', the_date)
+        self.root.adopt(item_1)
+        self.root.adopt(item_2)
+        self.assertTrue(the_date in self.tline.timepoints)
+        self.cr.undo()
         self.assertTrue(the_date in self.tline.timepoints)
         self.cr.undo()
         self.assertFalse(the_date in self.tline.timepoints)
         self.cr.redo()
+        self.cr.redo()
         self.assertTrue(the_date in self.tline.timepoints)
 
     def test_removing_timepoint_when_leaving_only_item_with_timelike_attribute_corresponding_to_the_timepoint(self):
-        item = self.cr.new('Item', {'date':'date'})
+        item_1 = self.cr.new('Item', {'date':'date'})
+        item_2 = self.cr.new('Item', {'date':'date'})
         the_date = datetime.date(2021,12,18)
-        item.set('date', the_date)
-        self.root.adopt(item)
+        item_1.set('date', the_date)
+        item_2.set('date', the_date)
+        self.root.adopt(item_1)
+        self.root.adopt(item_2)
 
-        self.root.leave(item)
+        self.root.leave(item_1)
+        self.assertTrue(the_date in self.tline.timepoints)
+        self.root.leave(item_2)
         self.assertFalse(the_date in self.tline.timepoints)
         self.cr.undo()
+        self.cr.undo()
         self.assertTrue(the_date in self.tline.timepoints)
+        self.cr.redo()
         self.cr.redo()
         self.assertFalse(the_date in self.tline.timepoints)
 
@@ -205,7 +218,6 @@ class Test_Timeline_Variable(unittest.TestCase):
         item_2 = self.cr.new('Item 2', {'seconds':'real'})
         item.set('seconds', 3)
         self.assertRaises(Timeline.TimelikeVariableTypeConflict, root.adopt, item_2)
-
     
 
 

@@ -51,7 +51,7 @@ class Remove_Timepoint(Command):
     def undo(self)->None:
         if not self.timepoint.has_items():
             self.data.tline._add_timepoint(self.timepoint)
-            self.timepoint._add_item(self.data.item)
+        self.timepoint._add_item(self.data.item)
 
     def redo(self)->None:
         self.timepoint._remove_item(self.data.item)
