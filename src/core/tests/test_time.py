@@ -124,10 +124,10 @@ class Test_Picking_Timepoints(unittest.TestCase):
         self.assertEqual(self.tline.pick_point(datetime.date(1823,12,26)), init_point)
 
     def test_latest_point_before_or_at_given_time_is_picked_if_specified_time_is_at_or_after_first_timepoint(self):
-        self.tline._add_timepoint(datetime.date(1900,3,20), self.tline.create_timepoint(self.tline))
-        self.tline._add_timepoint(datetime.date(2000,3,20), self.tline.create_timepoint(self.tline))
-        point1 = self.tline.timepoints[datetime.date(1900,3,20)]
-        point2 = self.tline.timepoints[datetime.date(2000,3,20)]
+        point1 = self.tline.create_timepoint(datetime.date(1900,3,20),self.tline)
+        point2 = self.tline.create_timepoint(datetime.date(2000,3,20),self.tline)
+        self.tline._add_timepoint(point1)
+        self.tline._add_timepoint(point2)
         self.assertEqual(self.tline.pick_point(datetime.date(2100,3,20)), point2)
         self.assertEqual(self.tline.pick_point(datetime.date(2000,3,20)), point2)
         self.assertEqual(self.tline.pick_point(datetime.date(1950,3,20)), point1)
@@ -173,6 +173,30 @@ class Test_Timeline_Variable(unittest.TestCase):
         self.assertEqual(self.tline('y',datetime.date(2023,10,15)), 8)
         self.assertEqual(self.tline('y',datetime.date(2023,10,16)), 8)
         self.assertEqual(self.tline('y',datetime.date(2023,10,17)), 10)
+        self.assertEqual(self.tline('y',datetime.date(2023,11,17)), 10)
+        
+        self.cr.undo()
+        self.assertEqual(self.tline('y',datetime.date(2023,11,17)), 8)
+
+    def test_binding_nonexistent_variables_raises_exception(self):
+        def add_sum_of_x(y:int, x:List[int])->int:
+            return y+sum(x)
+        self.assertRaises(
+            Timeline.BindingNonexistentVarible,
+            self.tline.bind, 'nonexistent_var', add_sum_of_x, '[x:integer]'
+        )
+
+    def test_using_integer_as_a_timelike_variable(self):
+        timeline = Timeline(self.root, self.cr._attrfac, 'seconds', 'integer')
+        point1 = timeline.create_timepoint(5)
+        point2 = timeline.create_timepoint(8)
+        timeline._add_timepoint(point1)
+        timeline._add_timepoint(point2)
+        self.assertTrue(timeline.pick_point(1).is_init())
+        self.assertEqual(timeline.pick_point(7), point1)
+        self.assertEqual(timeline.pick_point(9), point2)
+
+    
 
 
 if __name__=="__main__": unittest.main()

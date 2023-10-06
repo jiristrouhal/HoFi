@@ -22,7 +22,7 @@ class Add_Timepoint(Command):
     def run(self)->None:
         if self.data.time not in self.data.tline.timepoints:
             self.timepoint = self.data.tline.create_timepoint(self.data.time)
-            self.data.tline._add_timepoint(self.data.time, self.timepoint)
+            self.data.tline._add_timepoint(self.timepoint)
         else:
             self.timepoint = self.data.tline.timepoints[self.data.time]
         self.timepoint._add_item(self.data.item)
@@ -34,7 +34,7 @@ class Add_Timepoint(Command):
 
     def redo(self)->None:
         if not self.timepoint.has_items():
-            self.data.tline._add_timepoint(self.data.time, self.timepoint)
+            self.data.tline._add_timepoint(self.timepoint)
         self.timepoint._add_item(self.data.item)
 
 
@@ -50,7 +50,7 @@ class Remove_Timepoint(Command):
 
     def undo(self)->None:
         if not self.timepoint.has_items():
-            self.data.tline._add_timepoint(self.data.time, self.timepoint)
+            self.data.tline._add_timepoint(self.timepoint)
             self.timepoint._add_item(self.data.item)
 
     def redo(self)->None:
@@ -104,6 +104,7 @@ class Timeline:
     def bindings(self)->Dict[str,Binding]: return self.__bindings.copy()
 
     def bind(self, dependent:str, func:Callable[[Any],Any], *free:str)->None:
+        if dependent not in self.__vars: raise Timeline.BindingNonexistentVarible(dependent)
         self.__bindings[dependent] = Binding(dependent, func, free)
 
     def create_timepoint(self, time:Any, init:bool=False)->Timepoint:
@@ -148,11 +149,12 @@ class Timeline:
         if previous_time_of_timepoint is None: return self.__init_point
         else: return self.__timepoints[previous_time_of_timepoint]
 
-    def _add_timepoint(self,time:Any, timepoint:Timepoint)->None:
+    def _add_timepoint(self,timepoint:Timepoint)->None:
+        time = timepoint.var('')
         if not self.__times: 
             self.__times.append(time)
         if time<min(self.__times): 
-            self.__times.insert(0,time)
+            self.__times.insert(0,time) 
         elif time>max(self.__times): 
             self.__times.append(time)
         else: 
@@ -168,7 +170,7 @@ class Timeline:
             return Empty_Command()
         else: 
             return Add_Timepoint(
-                Timepoint_Data(self,data.child,data.child(self.__tlike_label))
+                Timepoint_Data(self,data.child, data.child(self.__tlike_label))
             )
 
     def __leaving_of_descendant_of_root(self, data:Parentage_Data)->Command:
@@ -207,6 +209,8 @@ class Timeline:
                 return mid_index
             else: 
                 return 0
+            
+    class BindingNonexistentVarible(Exception): pass
 
 
 from typing import Set
@@ -251,12 +255,6 @@ class TimepointRegular(Timepoint):
         
     def _remove_item(self,item:Item)->None:
         self._items.remove(item)
-
-    def __append_to_var_list(self, item_var_label:str, item_var:Attribute)->None:
-        self.__item_var_lists[item_var_label].append(item_var)
-
-    def __remove_from_var_list(self, item_var_label:str, item_var:Attribute)->None:
-        self.__item_var_lists[item_var_label].remove(item_var)
 
     def item_var(self,label:str)->Attribute_List:
         return self.__item_var_lists[label]
