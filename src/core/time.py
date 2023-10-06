@@ -73,12 +73,13 @@ class Timeline:
         self, 
         root:Item, 
         attribute_factory:Attribute_Factory,
-        timelike_attr_label:str,
-        timelike_attr_type:str,
+        timelike_var_label:str,
+        timelike_var_type:str,
         tvars:Dict[str,Dict[str,Any]]={}
         )->None:
 
-        self.__tlike_label = timelike_attr_label
+        self.__tlike_label = timelike_var_label
+        self.__timelike_var_type = timelike_var_type
         self.__id = str(id(self))
 
         self.__root = root
@@ -95,7 +96,7 @@ class Timeline:
         self.__init_point = self.create_timepoint(time=None, init=True)
 
     @property
-    def timepoints(self)->Dict[str,Timepoint]: return self.__timepoints.copy()
+    def timepoints(self)->Dict[Any,Timepoint]: return self.__timepoints.copy()
     @property
     def var_info(self)->Dict[str,Dict[str,Any]]: return self.__vars.copy()
     @property
@@ -168,6 +169,10 @@ class Timeline:
     def __new_descendant_of_root(self, data:Parentage_Data)->Command:
         if not data.child.has_attribute(self.__tlike_label): 
             return Empty_Command()
+        elif data.child.attribute(self.__tlike_label).type != self.__timelike_var_type:
+            raise Timeline.TimelikeVariableTypeConflict(
+                f"Trying to add '{data.child.attribute('seconds').type}' instead of '{self.__timelike_var_type}'."
+            )
         else: 
             return Add_Timepoint(
                 Timepoint_Data(self,data.child, data.child(self.__tlike_label))
@@ -211,6 +216,7 @@ class Timeline:
                 return 0
             
     class BindingNonexistentVarible(Exception): pass
+    class TimelikeVariableTypeConflict(Exception): pass
 
 
 from typing import Set

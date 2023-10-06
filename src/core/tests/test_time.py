@@ -15,7 +15,7 @@ class Test_Creating_Timeline_And_Timepoints(unittest.TestCase):
     def setUp(self) -> None:
         self.cr = ItemCreator()
         self.root = self.cr.new('Root')
-        self.tline = Timeline(self.root, self.cr._attrfac, timelike_attr_label = 'date', timelike_attr_type='date')
+        self.tline = Timeline(self.root, self.cr._attrfac, timelike_var_label = 'date', timelike_var_type='date')
 
     def test_defining_timeline_without_any_event_yields_empty_dict_of_timepoints(self):
         self.assertDictEqual(self.tline.timepoints, {})
@@ -187,7 +187,8 @@ class Test_Timeline_Variable(unittest.TestCase):
         )
 
     def test_using_integer_as_a_timelike_variable(self):
-        timeline = Timeline(self.root, self.cr._attrfac, 'seconds', 'integer')
+        root = self.cr.new('Root')
+        timeline = Timeline(root, self.cr._attrfac, 'seconds', 'integer')
         point1 = timeline.create_timepoint(5)
         point2 = timeline.create_timepoint(8)
         timeline._add_timepoint(point1)
@@ -195,6 +196,15 @@ class Test_Timeline_Variable(unittest.TestCase):
         self.assertTrue(timeline.pick_point(1).is_init())
         self.assertEqual(timeline.pick_point(7), point1)
         self.assertEqual(timeline.pick_point(9), point2)
+        
+        item = self.cr.new('Item', {'seconds':'integer'})
+        item.set('seconds', 2)
+        root.adopt(item)
+        self.assertTrue(2 in timeline.timepoints)
+
+        item_2 = self.cr.new('Item 2', {'seconds':'real'})
+        item.set('seconds', 3)
+        self.assertRaises(Timeline.TimelikeVariableTypeConflict, root.adopt, item_2)
 
     
 
