@@ -64,8 +64,7 @@ class ItemCreator:
         new_labels = [t.label for t in templates]
         for t in templates:
             if t.label in self.__templates: raise ItemCreator.TemplateAlreadyExists(t.label)
-            if t.child_itypes is not None: 
-                self.__check_child_template_presence(t.child_itypes, *new_labels)
+            self.__check_child_template_presence(t.child_itypes, *new_labels)
             self.__check_attribute_info(t.attribute_info)
         self.__templates.update({t.label:t for t in templates})
 

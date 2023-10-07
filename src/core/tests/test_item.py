@@ -1208,6 +1208,12 @@ class Test_Formal_Adoption(unittest.TestCase):
         self.assertRaises(Item.FormalChildNotFound, self.parent.leave_formal_child, self.child)
     
 
+class Test_Creating_Item_From_Template(unittest.TestCase):
+
+    def test_creating_item_from_nonexistent_template_raises_exception(self):
+        cr = ItemCreator()
+        self.assertRaises(ItemCreator.UndefinedTemplate, cr.from_template, 'Nonexistent template')
+
 
 if __name__=="__main__": unittest.main()
 
