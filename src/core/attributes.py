@@ -974,7 +974,7 @@ class Quantity(Real_Attribute):
         if from_basic is None: from_basic = lambda x: x
         if to_basic is None: to_basic = lambda x: x
         Quantity._check_conversion_from_and_to_basic_units(from_basic,to_basic)
-        self.__units[symbol] = self.__create_unit(
+        self.__units[symbol] = Quantity.__create_unit(
             symbol,
             exponents,
             space_after_value,
