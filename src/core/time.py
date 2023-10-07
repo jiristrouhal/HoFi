@@ -337,26 +337,7 @@ class Move_Item_In_Time(Command):
     def redo(self)->None: 
         self.data.timeline._remove_item(self.data.item, self.prev_time)
         self.data.timeline._add_item(self.data.item, self.new_time)
-
-
-@dataclasses.dataclass
-class Remove_Old_And_Create_New_Timepoint(Command):
-    data:Moving_In_Time_Data
-    def run(self)->None:
-        # remove item from timepoint, remove timepoint
-        self.data.tpoint._remove_item(self.data.item)
-        if not self.data.tpoint.has_items():
-            self.data.timeline._remove_timepoint(self.data.tpoint.var(''))
-        # add new timepoint, add item to it
-        new_tpoint = self.data.timeline.create_point(self.data.item(self.data.timeline.timelike_var_label))
-        self.data.timeline._add_timepoint(new_tpoint)
-        new_tpoint._add_item(self.data.item)
-    
-    def undo(self)->None:
-        pass
-    def redo(self)->None:
-        pass
-
+        
 
 class TimepointRegular(Timepoint):
 
