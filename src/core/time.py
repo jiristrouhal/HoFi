@@ -62,9 +62,9 @@ class Remove_Timepoint(Command):
 from typing import Tuple, List
 @dataclasses.dataclass(frozen=True)
 class Binding:
-    dependent:str
+    output:str
     func:Callable[[Any],Any]
-    free:Tuple[str,...]
+    input:Tuple[str,...]
 
 
 class Timeline:
@@ -93,7 +93,8 @@ class Timeline:
         self.__bindings:Dict[str, Binding] = dict()
         self.__attribute_factory = attribute_factory
 
-        self.__init_point = self.__create_initial_timepoint()
+        self.__init_tpoint = self.__create_initial_timepoint()
+        self.__set_up_init_timepoint_bindings()
 
     @property
     def timepoints(self)->Dict[Any,TimepointRegular]: return self.__timepoints.copy()
@@ -105,91 +106,17 @@ class Timeline:
     def bind(self, dependent:str, func:Callable[[Any],Any], *free:str)->None:
         if dependent not in self.__vars: raise Timeline.BindingNonexistentVarible(dependent)
         self.__bindings[dependent] = Binding(dependent, func, free)
-        for point in self.__timepoints.values():
-            self.__set_up_timepoint_bindings(point)
-        self.__set_up_init_timepoint_bindings(self.__init_point)
-
-    def __create_initial_timepoint(self)->TimepointInit:
-        vars = self.__create_vars()
-        return self.__initial_timepoint(vars)
-
-    def create_timepoint(self, time:Any)->TimepointRegular:
-        vars = self.__create_vars()
-        vars[''] = time
-        return self.__regular_timepoint(vars)
-
-    def set_init(self, var_label:str,value:Any)->None:
-        self.__init_point.init_var(var_label).set(value)
-
-    def __create_vars(self)->Dict[str,Attribute]:
-        vars:Dict[str,Attribute] = {}
-        var_info = self.var_info
-        for label, info in var_info.items():
-            vars[label] = self.attrfac.new_from_dict(**info)
-            vars[label].rename(label)
-        return vars
-
-    def __initial_timepoint(self,vars:Dict[str,Attribute])->TimepointInit:
-        tpoint = TimepointInit(vars,self)
-        self.__set_up_init_timepoint_bindings(tpoint)
-        return tpoint
-    
-    def __regular_timepoint(self,vars:Dict[str,Attribute])->TimepointRegular:
-        tpoint = TimepointRegular(vars,self)
-        self.__set_up_timepoint_bindings(tpoint)
-        return tpoint
-    
-    def __get_prev_timepoint(self, tpoint:TimepointRegular)->Timepoint:
-        time_index = self.__index_of_nearest_smaller(tpoint.var(''), self.__times)
-        prev_tpoint:Timepoint|None = None
-        if time_index<0: return self.__init_point
-        else: return self.__timepoints[self.__times[time_index-1]]
-
-    def __break_existing_dependency(self, var:Attribute)->None:
-        if var.dependent: var.break_dependency()
-    
-    def __set_up_timepoint_bindings(self, tpoint:TimepointRegular)->None:
-        prev_tpoint = self.__get_prev_timepoint(tpoint)
-        for b in self.__bindings.values():
-            self.__break_existing_dependency(tpoint.vars[b.dependent])
-            free_vars = self.__collect_free_vars(tpoint, *b.free)
-            if prev_tpoint is not None:
-                tpoint.var(b.dependent).add_dependency(b.func, prev_tpoint.var(b.dependent), *free_vars)
-        self.__bind_to_prev_timepoint_value_if_no_dependency_is_set(tpoint,prev_tpoint)
-
-    def __set_up_init_timepoint_bindings(self, tpoint:TimepointInit)->None:
-        for b in self.__bindings.values():
-            self.__break_existing_dependency(tpoint.vars[b.dependent])
-            free_vars = self.__collect_free_vars(tpoint, *b.free)
-            prev_tpoint_var = self.__init_point.dep_var(b.dependent)
-            tpoint.var(b.dependent).add_dependency(b.func, prev_tpoint_var, *free_vars)
-        self.__bind_to_prev_timepoint_value_if_no_dependency_is_set(tpoint,tpoint)
-
-    def __bind_to_prev_timepoint_value_if_no_dependency_is_set(
-        self, 
-        tpoint:Timepoint, 
-        prev_tpoint:Timepoint
-        )->None:
-
-        for label,var in tpoint.vars.items():
-            if label=='': continue
-            if not var.dependent: var.add_dependency(lambda var0: var0, prev_tpoint.dep_var(label))
-
-    def __collect_free_vars(self, timepoint:Timepoint, *free_var_labels:str)->List[AbstractAttribute]:
-        free_vars:List[AbstractAttribute] = list()
-        for f in free_var_labels: 
-            if f[0]=='[' and f[-1]==']': 
-                f_label, f_type = f[1:-1].split(":")
-                timepoint._add_var_list(f_label, self.attrfac.newlist(f_type))
-                free_vars.append(timepoint.item_var(f_label))
-            else:
-                free_vars.append(timepoint.dep_var(f))
-        return free_vars
+        for point in self.__timepoints.values(): self.__set_up_timepoint_bindings(point)
+        self.__set_up_init_timepoint_bindings()
 
     def pick_point(self, time:Any)->Timepoint:
         previous_time_of_timepoint = self.__pick_timepoint_time(time)
-        if previous_time_of_timepoint is None: return self.__init_point
+        if previous_time_of_timepoint is None: return self.__init_tpoint
         else: return self.__timepoints[previous_time_of_timepoint]
+
+    def set_init(self, var_label:str,value:Any)->None:
+        self.__init_tpoint.init_var(var_label).set(value)
+
 
     def _add_timepoint(self,timepoint:TimepointRegular)->None:
         time = timepoint.var('')
@@ -206,6 +133,78 @@ class Timeline:
     def _remove_timepoint(self,time:Any)->None:
         self.__timepoints.pop(time)
         self.__times.remove(time)
+
+
+    def __create_initial_timepoint(self)->TimepointInit:
+        vars = self.__create_vars()
+        return self.__initial_timepoint(vars)
+
+    def create_timepoint(self, time:Any)->TimepointRegular:
+        vars = self.__create_vars()
+        vars[''] = time
+        return self.__regular_timepoint(vars)
+
+    def __break_existing_dependency(self, var:Attribute)->None:
+        if var.dependent: var.break_dependency()
+
+    def __create_vars(self)->Dict[str,Attribute]:
+        vars:Dict[str,Attribute] = {}
+        var_info = self.var_info
+        for label, info in var_info.items():
+            vars[label] = self.attrfac.new_from_dict(**info)
+            vars[label].rename(label)
+        return vars
+    
+    def __get_prev_timepoint(self, tpoint:TimepointRegular)->Timepoint:
+        time_index = self.__index_of_nearest_smaller(tpoint.var(''), self.__times)
+        if time_index<0: return self.__init_tpoint
+        else: return self.__timepoints[self.__times[time_index-1]]
+
+    def __initial_timepoint(self,vars:Dict[str,Attribute])->TimepointInit:
+        tpoint = TimepointInit(vars,self)
+        return tpoint
+    
+    def __regular_timepoint(self,vars:Dict[str,Attribute])->TimepointRegular:
+        tpoint = TimepointRegular(vars,self)
+        self.__set_up_timepoint_bindings(tpoint)
+        return tpoint
+    
+    def __set_up_timepoint_bindings(self, tpoint:TimepointRegular)->None:
+        prev_tpoint = self.__get_prev_timepoint(tpoint)
+        self.__set_dependencies(tpoint,prev_tpoint)
+ 
+    def __set_up_init_timepoint_bindings(self)->None:
+        self.__set_dependencies(self.__init_tpoint,self.__init_tpoint)
+
+    def __set_dependencies(self, tpoint:Timepoint, prev_tpoint:Timepoint)->None:
+        bound_var_labels = [dep.output for dep in self.__bindings.values()]
+        for var_label in tpoint.vars:
+            if var_label in bound_var_labels: 
+                self.__apply_defined_dependencies(self.__bindings[var_label], tpoint, prev_tpoint)
+            else: 
+                self.__bind_to_prev_timepoint(var_label,tpoint,prev_tpoint)
+
+    def __apply_defined_dependencies(self, binding:Binding, tpoint:Timepoint, prev_tpoint:Timepoint)->None:
+        self.__break_existing_dependency(tpoint.vars[binding.output])
+        free_vars = self.__collect_free_vars(tpoint, *binding.input)
+        tpoint.var(binding.output).add_dependency(
+            binding.func, prev_tpoint.dep_var(binding.output), *free_vars
+        )
+
+    def __bind_to_prev_timepoint(self, var_label:str, tpoint:Timepoint, prev_tpoint:Timepoint)->None:
+        if not var_label=='' and not tpoint.var(var_label).dependent:
+            tpoint.var(var_label).add_dependency(lambda var0: var0, prev_tpoint.dep_var(var_label))
+
+    def __collect_free_vars(self, timepoint:Timepoint, *free_var_labels:str)->List[AbstractAttribute]:
+        free_vars:List[AbstractAttribute] = list()
+        for f in free_var_labels: 
+            if f[0]=='[' and f[-1]==']': 
+                f_label, f_type = f[1:-1].split(":")
+                timepoint._add_var_list(f_label, self.attrfac.newlist(f_type))
+                free_vars.append(timepoint.item_var(f_label))
+            else:
+                free_vars.append(timepoint.dep_var(f))
+        return free_vars
 
     def __new_descendant_of_root(self, data:Parentage_Data)->Command:
         if not data.child.has_attribute(self.__tlike_label): 
@@ -286,7 +285,7 @@ class Timepoint(abc.ABC):
     def dep_var(self,label:str)->Attribute: pass # pragma: no cover
 
     @abc.abstractmethod
-    def _add_item(self,item:Item)->None: pass
+    def _add_item(self,item:Item)->None: pass # pragma: no cover
 
     def _add_var_list(self,label:str, varlist:Attribute_List)->None:
         self._item_var_lists[label] = varlist
@@ -295,10 +294,10 @@ class Timepoint(abc.ABC):
         return self._item_var_lists[label]
 
     @abc.abstractmethod
-    def _remove_item(self,item:Item)->None: pass
+    def _remove_item(self,item:Item)->None: pass # pragma: no cover
 
     @abc.abstractmethod
-    def is_init(self)->bool: pass
+    def is_init(self)->bool: pass # pragma: no cover
 
     class UndefinedVariable(Exception): pass
 
