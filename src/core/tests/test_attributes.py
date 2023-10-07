@@ -1902,4 +1902,12 @@ class Test_Undo_And_Redo_Setting_Quantity_Value(unittest.TestCase):
         self.assertEqual(self.distance.print(trailing_zeros=False), f"2000{NBSP}m")
 
 
+class Test_Creating_Attribute_From_Dictionary(unittest.TestCase):
+
+    def test_invalid_attribute_type_in_dict_raises_exception(self):
+        invalid_dict = {'atype':'invalid type'}
+        fac = attribute_factory(Controller())
+        self.assertRaises(Attribute.InvalidAttributeType, fac.new_from_dict, **invalid_dict)
+
+
 if __name__=="__main__": unittest.main()
