@@ -182,6 +182,7 @@ class Test_Picking_Timepoints(unittest.TestCase):
         self.tline._add_timepoint(point1)
         self.tline._add_timepoint(point2)
         self.assertEqual(self.tline.pick_point(10), point2)
+        self.assertFalse(self.tline.pick_point(10).is_init())
         self.assertEqual(self.tline.pick_point(5), point2)
         self.assertEqual(self.tline.pick_point(4), point1)
         self.assertEqual(self.tline.pick_point(3), point1)
@@ -240,7 +241,7 @@ class Test_Timeline_Variable(unittest.TestCase):
     def test_setting_initial_value(self):
         self.tline.set_init('y',-5)
         self.assertEqual(self.tline('y',datetime.date(2021,10,18)), -5)
-        self.assertRaises(Timepoint.UndefinedVariable, self.tline.set_init, 'q', -5)
+        self.assertRaises(Timeline.UndefinedVariable, self.tline.set_init, 'q', -5)
 
     def test_setting_mutual_dependencies_of_timeline_variables(self):
         self.tline.bind('z', lambda z0,y: 2*y, 'y')
@@ -266,7 +267,7 @@ class Test_Timeline_Variable(unittest.TestCase):
         def add_sum_of_x(y:int, x:List[int])->int:
             return y+sum(x)
         self.assertRaises(
-            Timeline.BindingNonexistentVarible,
+            Timeline.UndefinedVariable,
             self.tline.bind, 'nonexistent_var', add_sum_of_x, '[x:integer]'
         )
 

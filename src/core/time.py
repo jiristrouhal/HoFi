@@ -104,7 +104,7 @@ class Timeline:
     def attrfac(self)->Attribute_Factory: return self.__attribute_factory
 
     def bind(self, dependent:str, func:Callable[[Any],Any], *free:str)->None:
-        if dependent not in self.__vars: raise Timeline.BindingNonexistentVarible(dependent)
+        if dependent not in self.__vars: raise Timeline.UndefinedVariable(dependent)
         self.__bindings[dependent] = Binding(dependent, func, free)
         for point in self.__timepoints.values(): self.__set_up_timepoint_bindings(point)
         self.__set_up_init_timepoint_bindings()
@@ -115,6 +115,8 @@ class Timeline:
         else: return self.__timepoints[previous_time_of_timepoint]
 
     def set_init(self, var_label:str,value:Any)->None:
+        if var_label not in self.__vars: 
+            raise Timeline.UndefinedVariable(var_label)
         self.__init_tpoint.init_var(var_label).set(value)
 
 
@@ -273,10 +275,10 @@ class Timeline:
             elif x>thelist[m]: return Timeline._index_of_nearest_smaller_or_equal(x,thelist[m:],m)
             else: return Timeline._index_of_nearest_smaller_or_equal(x,thelist[:m],start)
             
-    class BindingNonexistentVarible(Exception): pass
     class MissingItemVariableLabel(Exception):pass
     class MissingItemVariableType(Exception): pass
     class TimelikeVariableTypeConflict(Exception): pass
+    class UndefinedVariable(Exception): pass
 
 
 from typing import Set
@@ -291,13 +293,11 @@ class Timepoint(abc.ABC):
     def vars(self)->Dict[str,Attribute]: return self.__vars.copy()
 
     def __call__(self,var_label:str)->Any:
-        if var_label not in self.__vars: raise Timepoint.UndefinedVariable(var_label)
         return self.__vars[var_label].value
 
     def has_items(self)->bool: return bool(self._items)
 
     def var(self,label:str)->Attribute: 
-        if label not in self.__vars: raise Timepoint.UndefinedVariable(label)
         return self.__vars[label]
     
     @abc.abstractmethod
@@ -317,8 +317,6 @@ class Timepoint(abc.ABC):
 
     @abc.abstractmethod
     def is_init(self)->bool: pass # pragma: no cover
-
-    class UndefinedVariable(Exception): pass
 
 
 class TimepointRegular(Timepoint):
@@ -352,11 +350,9 @@ class TimepointInit(Timepoint):
     def is_init(self)->bool: return True
 
     def dep_var(self, label: str) -> Attribute:
-        if label not in self.__init_vars: raise Timepoint.UndefinedVariable(label)
         return self.__init_vars[label]
     
     def init_var(self,label:str)->Attribute: 
-        if label not in self.__init_vars: raise Timepoint.UndefinedVariable(label)
         return self.__init_vars[label]
 
     class CannotAddItem(Exception): pass
