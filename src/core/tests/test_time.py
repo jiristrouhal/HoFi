@@ -6,7 +6,7 @@ sys.path.insert(1,"src")
 import unittest
 from typing import List
 import datetime
-from src.core.time import Timeline, TimepointInit
+from src.core.time import Timeline, TimepointInit, Timepoint
 from src.core.item import ItemCreator
 
 
@@ -137,8 +137,8 @@ class Test_Picking_Timepoints(unittest.TestCase):
         self.assertEqual(self.tline.pick_point(datetime.date(1823,12,26)), init_point)
 
     def test_latest_point_before_or_at_given_time_is_picked_if_specified_time_is_at_or_after_first_timepoint(self):
-        point1 = self.tline.create_timepoint(datetime.date(1900,3,20),self.tline)
-        point2 = self.tline.create_timepoint(datetime.date(2000,3,20),self.tline)
+        point1 = self.tline.create_timepoint(datetime.date(1900,3,20))
+        point2 = self.tline.create_timepoint(datetime.date(2000,3,20))
         self.tline._add_timepoint(point1)
         self.tline._add_timepoint(point2)
         self.assertEqual(self.tline.pick_point(datetime.date(2100,3,20)), point2)
@@ -153,7 +153,13 @@ class Test_Timeline_Variable(unittest.TestCase):
     def setUp(self) -> None:
         self.cr = ItemCreator()
         self.root = self.cr.new('Root')
-        self.tline = Timeline(self.root, self.cr._attrfac, 'date', 'date', tvars={'y':self.cr.attr.integer(3)})
+        self.tline = Timeline(
+            self.root, 
+            self.cr._attrfac, 
+            'date', 
+            'date', 
+            tvars={'y':self.cr.attr.integer(3), 'z':self.cr.attr.integer(-1)}
+        )
 
     def test_adding_timeline_variable_without_any_timepoints_always_returns_the_initial_value(self):
         self.assertEqual(self.tline('y',datetime.date(1491,4,20)), 3)
@@ -190,6 +196,31 @@ class Test_Timeline_Variable(unittest.TestCase):
         
         self.cr.undo()
         self.assertEqual(self.tline('y',datetime.date(2023,11,17)), 8)
+
+    def test_setting_initial_value(self):
+        self.tline.set_init('y',-5)
+        self.assertEqual(self.tline('y',datetime.date(2021,10,18)), -5)
+        self.assertRaises(Timepoint.UndefinedVariable, self.tline.set_init, 'q', -5)
+
+    def test_setting_mutual_dependencies_of_timeline_variables(self):
+        self.tline.bind('z', lambda z0,y: 2*y, 'y')
+        self.tline.set_init('y',7)
+        self.assertEqual(self.tline('z',datetime.date(2021,10,19)), 14)
+
+    def test_binding_timeline_variables_to_each_other(self):
+        def add_sum_of_x(y:int, x:List[int])->int:
+            return y+sum(x)
+        self.tline.bind('y', add_sum_of_x, '[x:integer]')
+        self.tline.bind('z', lambda z_old, y: 2*y, 'y')
+        itemA = self.cr.new('Item', {'date':'date', 'x':'integer'})
+        itemA.set('x',5)
+        itemA.set('date',datetime.date(2023,10,15))
+        self.root.adopt(itemA)
+        self.assertEqual(self.tline('y',datetime.date(2023,10,14)), 3)
+        self.assertEqual(self.tline('y',datetime.date(2023,10,15)), 8)
+        self.assertEqual(self.tline('z',datetime.date(2023,10,14)), 6)
+        self.assertEqual(self.tline('z',datetime.date(2023,10,15)), 16)
+
 
     def test_binding_nonexistent_variables_raises_exception(self):
         def add_sum_of_x(y:int, x:List[int])->int:

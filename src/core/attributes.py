@@ -241,7 +241,8 @@ class AbstractAttribute(abc.ABC):
         self._dependency = DependencyImpl(self, func, *attributes)
 
     def break_dependency(self)->None:
-        if not self.dependent: raise Attribute.NoDependencyIsSet
+        if not self.dependent: 
+            raise Attribute.NoDependencyIsSet(self.name)
         self._dependency.release()
 
     @abc.abstractmethod
