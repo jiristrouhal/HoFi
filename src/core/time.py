@@ -6,6 +6,7 @@ from typing import Dict, Any, Callable
 from src.core.item import Item, Parentage_Data
 from src.cmd.commands import Command, Empty_Command
 from src.core.attributes import Attribute, Attribute_Factory, Attribute_List, AbstractAttribute
+from src.core.attributes import Set_Attr_Data
 
 
 @dataclasses.dataclass
@@ -18,45 +19,23 @@ class Timepoint_Data:
 @dataclasses.dataclass
 class Add_Timepoint(Command):
     data:Timepoint_Data
-    timepoint:TimepointRegular = dataclasses.field(init=False)
     def run(self)->None:
-        if self.data.time not in self.data.tline.timepoints:
-            self.timepoint = self.data.tline.create_point(self.data.time)
-            self.data.tline._add_timepoint(self.timepoint)
-        else:
-            self.timepoint = self.data.tline.timepoints[self.data.time]
-        self.timepoint._add_item(self.data.item)
-
+        self.data.tline._add_item(self.data.item, self.data.time)
     def undo(self)->None:
-        self.timepoint._remove_item(self.data.item)
-        if not self.timepoint.has_items():
-            self.data.tline._remove_timepoint(self.data.time)
-
+        self.data.tline._remove_item(self.data.item, self.data.time)
     def redo(self)->None:
-        if not self.timepoint.has_items():
-            self.data.tline._add_timepoint(self.timepoint)
-        self.timepoint._add_item(self.data.item)
+        self.data.tline._add_item(self.data.item, self.data.time)
 
 
 @dataclasses.dataclass
 class Remove_Timepoint(Command):
     data:Timepoint_Data
-    timepoint:TimepointRegular = dataclasses.field(init=False)
     def run(self)->None:
-        self.timepoint = self.data.tline.timepoints[self.data.time]
-        self.timepoint._remove_item(self.data.item)
-        if not self.timepoint.has_items():
-            self.data.tline._remove_timepoint(self.data.time)
-
+        self.data.tline._remove_item(self.data.item, self.data.time)
     def undo(self)->None:
-        if not self.timepoint.has_items():
-            self.data.tline._add_timepoint(self.timepoint)
-        self.timepoint._add_item(self.data.item)
-
+        self.data.tline._add_item(self.data.item, self.data.time)
     def redo(self)->None:
-        self.timepoint._remove_item(self.data.item)
-        if not self.timepoint.has_items():
-            self.data.tline._remove_timepoint(self.data.time)
+        self.data.tline._remove_item(self.data.item, self.data.time)
 
 
 from typing import Tuple, List
@@ -78,7 +57,7 @@ class Timeline:
         tvars:Dict[str,Dict[str,Any]]={}
         )->None:
 
-        self.__tlike_label = timelike_var_label
+        self.__timelike_var_label = timelike_var_label
         self.__timelike_var_type = timelike_var_type
         self.__id = str(id(self))
 
@@ -102,6 +81,8 @@ class Timeline:
     def var_info(self)->Dict[str,Dict[str,Any]]: return self.__vars.copy()
     @property
     def attrfac(self)->Attribute_Factory: return self.__attribute_factory
+    @property
+    def timelike_var_label(self)->str: return self.__timelike_var_label
 
     def bind(self, dependent:str, func:Callable[[Any],Any], *free:str)->None:
         if dependent not in self.__vars: raise Timeline.UndefinedVariable(dependent)
@@ -135,6 +116,20 @@ class Timeline:
     def _remove_timepoint(self,time:Any)->None:
         self.__timepoints.pop(time)
         self.__times.remove(time)
+
+
+    def _add_item(self,item:Item,time:Any)->None:
+        if time not in self.__timepoints:
+            tpoint = self.create_point(time)
+            self._add_timepoint(tpoint)
+        else:
+            tpoint = self.__timepoints[time]
+        tpoint._add_item(item)
+    
+    def _remove_item(self,item:Item,time:Any)->None:
+        tpoint = self.__timepoints[time]
+        tpoint._remove_item(item)
+        if not tpoint.has_items(): self._remove_timepoint(time)
 
 
     def __create_initial_timepoint(self)->TimepointInit:
@@ -219,20 +214,20 @@ class Timeline:
         return f_label, f_type
 
     def __new_descendant_of_root(self, data:Parentage_Data)->Command:
-        if not data.child.has_attribute(self.__tlike_label): 
+        if not data.child.has_attribute(self.__timelike_var_label): 
             return Empty_Command()
-        elif data.child.attribute(self.__tlike_label).type != self.__timelike_var_type:
+        elif data.child.attribute(self.__timelike_var_label).type != self.__timelike_var_type:
             raise Timeline.TimelikeVariableTypeConflict(
                 f"Trying to add '{data.child.attribute('seconds').type}'"
                 "instead of '{self.__timelike_var_type}'."
             )
         else: 
             return Add_Timepoint(
-                Timepoint_Data(self,data.child, data.child(self.__tlike_label))
+                Timepoint_Data(self,data.child, data.child(self.__timelike_var_label))
             )
 
     def __leaving_of_descendant_of_root(self, data:Parentage_Data)->Command:
-        time = data.child(self.__tlike_label)
+        time = data.child(self.__timelike_var_label)
         return Remove_Timepoint(Timepoint_Data(self,data.child,time))
     
     def __pick_timepoint_time(self, time:Any)->Any:
@@ -319,10 +314,58 @@ class Timepoint(abc.ABC):
     def is_init(self)->bool: pass # pragma: no cover
 
 
+@dataclasses.dataclass
+class Moving_In_Time_Data:
+    timeline:Timeline
+    tpoint:TimepointRegular
+    item:Item
+
+
+@dataclasses.dataclass
+class Move_Item_In_Time(Command):
+    data:Moving_In_Time_Data
+    prev_time:Any = dataclasses.field(init=False)
+    new_time:Any = dataclasses.field(init=False)
+    def run(self)->None: 
+        self.prev_time = self.data.tpoint.var('')
+        self.new_time = self.data.item(self.data.timeline.timelike_var_label)
+        self.data.timeline._remove_item(self.data.item, self.prev_time)
+        self.data.timeline._add_item(self.data.item, self.new_time)
+    def undo(self)->None: 
+        self.data.timeline._remove_item(self.data.item, self.new_time)
+        self.data.timeline._add_item(self.data.item, self.prev_time)
+    def redo(self)->None: 
+        self.data.timeline._remove_item(self.data.item, self.prev_time)
+        self.data.timeline._add_item(self.data.item, self.new_time)
+
+
+@dataclasses.dataclass
+class Remove_Old_And_Create_New_Timepoint(Command):
+    data:Moving_In_Time_Data
+    def run(self)->None:
+        # remove item from timepoint, remove timepoint
+        self.data.tpoint._remove_item(self.data.item)
+        if not self.data.tpoint.has_items():
+            self.data.timeline._remove_timepoint(self.data.tpoint.var(''))
+        # add new timepoint, add item to it
+        new_tpoint = self.data.timeline.create_point(self.data.item(self.data.timeline.timelike_var_label))
+        self.data.timeline._add_timepoint(new_tpoint)
+        new_tpoint._add_item(self.data.item)
+    
+    def undo(self)->None:
+        pass
+    def redo(self)->None:
+        pass
+
+
 class TimepointRegular(Timepoint):
 
     def __init__(self, vars:Dict[str,Attribute], timeline:Timeline)->None:
         super().__init__(vars)
+        self.__timeline = timeline
+
+    @property
+    def n_items(self)->int: return len(self._items)
 
     def dep_var(self, label:str)->Attribute: return self.var(label)
 
@@ -331,6 +374,13 @@ class TimepointRegular(Timepoint):
         for attr_label, attr in item.attributes.items():
             if attr_label in self._item_var_lists: 
                 self._item_var_lists[attr_label].append(attr)
+
+        def move_in_time(data:Set_Attr_Data)->Command:
+            return Move_Item_In_Time(Moving_In_Time_Data(self.__timeline,self,item))
+
+        item.attribute(self.__timeline.timelike_var_label).command['set'].add(
+            'timeline', move_in_time, timing='post'
+        )
         
     def _remove_item(self,item:Item)->None:
         self._items.remove(item)

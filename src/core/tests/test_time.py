@@ -308,7 +308,66 @@ class Test_Timeline_Variable(unittest.TestCase):
         item_2 = self.cr.new('Item 2', {'seconds':'real'})
         item.set('seconds', 3)
         self.assertRaises(Timeline.TimelikeVariableTypeConflict, root.adopt, item_2)
-    
+
+
+class Test_Moving_Items_In_Time(unittest.TestCase):
+
+    def test_moving_single_item_removes_its_timepoint_and_creates_new_one(self):
+        cr = ItemCreator()
+        root = cr.new('Root')
+        timeline = Timeline(root, cr._attrfac, 'seconds', 'integer')
+        item = cr.new('Item', {'seconds':'integer'})
+        item.set('seconds',5)
+        root.adopt(item)
+
+        self.assertTrue(5 in timeline.timepoints)
+
+        item.set('seconds',7)
+        self.assertFalse(5 in timeline.timepoints)
+        self.assertTrue(7 in timeline.timepoints)
+
+        cr.undo()
+        self.assertFalse(7 in timeline.timepoints)
+        self.assertTrue(5 in timeline.timepoints)
+
+        cr.redo()
+        self.assertFalse(5 in timeline.timepoints)
+        self.assertTrue(7 in timeline.timepoints)
+
+    def test_moving_one_of_two_items_under_the_same_timepoint_keeps_the_original_timepoint_and_creates_a_new_one(self):
+        cr = ItemCreator()
+        root = cr.new('Root')
+        timeline = Timeline(root, cr._attrfac, 'seconds', 'integer')
+        itemA = cr.new('Item A', {'seconds':'integer'})
+        itemA.set('seconds',5)
+        itemB = cr.new('Item B', {'seconds':'integer'})
+        itemB.set('seconds',5)
+        root.adopt(itemA)
+        root.adopt(itemB)
+
+        self.assertTrue(5 in timeline.timepoints)
+
+        itemA.set('seconds',7)
+        self.assertTrue(5 in timeline.timepoints)
+        self.assertTrue(7 in timeline.timepoints)
+
+        #after moving the second item also, the original timepoint is deleted
+        itemB.set('seconds',7)
+        self.assertFalse(5 in timeline.timepoints)
+        self.assertTrue(7 in timeline.timepoints)
+
+        cr.undo()
+        self.assertTrue(5 in timeline.timepoints)
+        self.assertTrue(7 in timeline.timepoints)
+
+        cr.undo()
+        self.assertTrue(5 in timeline.timepoints)
+        self.assertFalse(7 in timeline.timepoints)
+
+        cr.redo()
+        cr.redo()
+        self.assertFalse(5 in timeline.timepoints)
+        self.assertTrue(7 in timeline.timepoints)
 
 
 if __name__=="__main__": unittest.main()
