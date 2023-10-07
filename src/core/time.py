@@ -337,16 +337,13 @@ class Move_Item_In_Time(Command):
     def redo(self)->None: 
         self.data.timeline._remove_item(self.data.item, self.prev_time)
         self.data.timeline._add_item(self.data.item, self.new_time)
-        
+
 
 class TimepointRegular(Timepoint):
 
     def __init__(self, vars:Dict[str,Attribute], timeline:Timeline)->None:
         super().__init__(vars)
         self.__timeline = timeline
-
-    @property
-    def n_items(self)->int: return len(self._items)
 
     def dep_var(self, label:str)->Attribute: return self.var(label)
 
