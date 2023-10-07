@@ -249,7 +249,7 @@ class Test_Timeline_Variable(unittest.TestCase):
         self.assertEqual(self.tline('z',datetime.date(2021,10,19)), 14)
 
     def test_binding_timeline_variables_to_each_other(self):
-        def add_sum_of_x(y:int, x:List[int])->int:
+        def add_sum_of_x(y:int, x:List[int])->int:  # pragma: no cover
             return y+sum(x)
         self.tline.bind('y', add_sum_of_x, '[x:integer]')
         self.tline.bind('z', lambda z_old, y: 2*y, 'y')
@@ -264,7 +264,7 @@ class Test_Timeline_Variable(unittest.TestCase):
 
 
     def test_binding_nonexistent_variables_raises_exception(self):
-        def add_sum_of_x(y:int, x:List[int])->int:
+        def add_sum_of_x(y:int, x:List[int])->int:  # pragma: no cover
             return y+sum(x)
         self.assertRaises(
             Timeline.UndefinedVariable,
@@ -272,7 +272,7 @@ class Test_Timeline_Variable(unittest.TestCase):
         )
 
     def test_item_variable_specification_has_to_consist_of_label_and_attribute_type_separated_with_colon_and_enclosed_in_square_brackets(self):
-        def add_sum_of_x(y:int, x:List[int])->int: return y+sum(x)
+        def add_sum_of_x(y:int, x:List[int])->int: return y+sum(x) # pragma: no cover
         # missing input variable type
         self.assertRaises(
             Timeline.MissingItemVariableType,
@@ -311,7 +311,6 @@ class Test_Timeline_Variable(unittest.TestCase):
     
 
 
-if __name__=="__main__": 
-    unittest.main()
+if __name__=="__main__": unittest.main()
 
 
