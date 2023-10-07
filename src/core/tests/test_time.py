@@ -95,6 +95,46 @@ class Test_Init_Timepoint(unittest.TestCase):
         self.assertRaises(TimepointInit.No_Items_At_Init_Timepoint, init_point._remove_item, item)
 
 
+from typing import Any
+class Test_Finding_Index_Of_Nearest_Smaller_Item_Of_Ordered_List(unittest.TestCase):
+
+    def index_test(self,value:Any, thelist:List[Any], expected_index:int|None)->None:
+        self.assertEqual(Timeline._index_of_nearest_smaller(value, thelist), expected_index)
+
+    def test_lists(self)->None:
+        self.index_test(4, [], -1)
+        self.index_test(4, [5], -1)
+        self.index_test(4, [3], 0)
+        self.index_test(4, [3,5], 0)
+        self.index_test(4, [1,2,6], 1)
+        self.index_test(4, [1,2,3], 2)
+        self.index_test(4, [1,4,5], 0)
+        self.index_test(4, [0,1,4,5,6], 1)
+        self.index_test(-10, [0,1,4,5,6], -1)
+        self.index_test(1000, [0,1,4,5,6], 4)
+        self.index_test(6, [0,1,4,5,6], 3)
+
+class Test_Finding_Index_Of_Nearest_Lesser_Or_Equal_Item_Of_Ordered_List(unittest.TestCase):
+
+    def index_test(self,value:Any, thelist:List[Any], expected_index:int|None)->None:
+        self.assertEqual(Timeline._index_of_nearest_smaller_or_equal(value, thelist), expected_index)
+
+    def test_lists(self)->None:
+        self.index_test(4, [], -1)
+        self.index_test(4, [5], -1)
+        self.index_test(4, [3], 0)
+        self.index_test(4, [3,5], 0)
+        self.index_test(4, [1,2,6], 1)
+        self.index_test(4, [1,2,4], 2)
+        self.index_test(4, [1,4,5], 1)
+        self.index_test(4, [0,1,4,5,6], 2)
+        self.index_test(-10, [0,1,4,5,6], -1)
+        self.index_test(1000, [0,1,4,5,6], 4)
+        self.index_test(6, [0,1,4,5,6], 4)
+        self.index_test(4, [4,], 0)
+
+
+
 class Test_Insert_Into_Ordered_List(unittest.TestCase):
 
     def test_insert_into_empty_list(self)->None:
@@ -128,24 +168,24 @@ class Test_Picking_Timepoints(unittest.TestCase):
     def setUp(self) -> None:
         self.cr = ItemCreator()
         self.root = self.cr.new('Root')
-        self.tline = Timeline(self.root, self.cr._attrfac, 'date', 'date')
+        self.tline = Timeline(self.root, self.cr._attrfac, 'seconds', 'integer')
 
     def test_init_timepoint_is_always_picked_if_no_items_were_added_to_root(self)->None:
-        init_point = self.tline.pick_point(datetime.date(2023,12,26))
+        init_point = self.tline.pick_point(-6)
         self.assertTrue(init_point.is_init())
-        self.assertEqual(self.tline.pick_point(datetime.date(2123,12,26)), init_point)
-        self.assertEqual(self.tline.pick_point(datetime.date(1823,12,26)), init_point)
+        self.assertEqual(self.tline.pick_point(10), init_point)
+        self.assertEqual(self.tline.pick_point(10000), init_point)
 
     def test_latest_point_before_or_at_given_time_is_picked_if_specified_time_is_at_or_after_first_timepoint(self):
-        point1 = self.tline.create_timepoint(datetime.date(1900,3,20))
-        point2 = self.tline.create_timepoint(datetime.date(2000,3,20))
+        point1 = self.tline.create_point(3)
+        point2 = self.tline.create_point(5)
         self.tline._add_timepoint(point1)
         self.tline._add_timepoint(point2)
-        self.assertEqual(self.tline.pick_point(datetime.date(2100,3,20)), point2)
-        self.assertEqual(self.tline.pick_point(datetime.date(2000,3,20)), point2)
-        self.assertEqual(self.tline.pick_point(datetime.date(1950,3,20)), point1)
-        self.assertEqual(self.tline.pick_point(datetime.date(1900,3,20)), point1)
-        self.assertTrue(self.tline.pick_point(datetime.date(1800,3,20)).is_init())
+        self.assertEqual(self.tline.pick_point(10), point2)
+        self.assertEqual(self.tline.pick_point(5), point2)
+        self.assertEqual(self.tline.pick_point(4), point1)
+        self.assertEqual(self.tline.pick_point(3), point1)
+        self.assertTrue(self.tline.pick_point(2).is_init())
 
 
 class Test_Timeline_Variable(unittest.TestCase):
@@ -230,11 +270,29 @@ class Test_Timeline_Variable(unittest.TestCase):
             self.tline.bind, 'nonexistent_var', add_sum_of_x, '[x:integer]'
         )
 
+    def test_item_variable_specification_has_to_consist_of_label_and_attribute_type_separated_with_colon_and_enclosed_in_square_brackets(self):
+        def add_sum_of_x(y:int, x:List[int])->int: return y+sum(x)
+        # missing input variable type
+        self.assertRaises(
+            Timeline.MissingItemVariableType,
+            self.tline.bind, 'y', add_sum_of_x, '[x]'
+        )
+        # missing input variable label
+        self.assertRaises(
+            Timeline.MissingItemVariableLabel,
+            self.tline.bind, 'y', add_sum_of_x, '[:integer]'
+        )
+        # blank input variable type
+        self.assertRaises(
+            Timeline.MissingItemVariableType,
+            self.tline.bind, 'y', add_sum_of_x, '[x:]'
+        )
+
     def test_using_integer_as_a_timelike_variable(self):
         root = self.cr.new('Root')
         timeline = Timeline(root, self.cr._attrfac, 'seconds', 'integer')
-        point1 = timeline.create_timepoint(5)
-        point2 = timeline.create_timepoint(8)
+        point1 = timeline.create_point(5)
+        point2 = timeline.create_point(8)
         timeline._add_timepoint(point1)
         timeline._add_timepoint(point2)
         self.assertTrue(timeline.pick_point(1).is_init())
@@ -252,5 +310,7 @@ class Test_Timeline_Variable(unittest.TestCase):
     
 
 
-if __name__=="__main__": unittest.main()
+if __name__=="__main__": 
+    unittest.main()
+
 

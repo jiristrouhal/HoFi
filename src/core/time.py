@@ -21,7 +21,7 @@ class Add_Timepoint(Command):
     timepoint:TimepointRegular = dataclasses.field(init=False)
     def run(self)->None:
         if self.data.time not in self.data.tline.timepoints:
-            self.timepoint = self.data.tline.create_timepoint(self.data.time)
+            self.timepoint = self.data.tline.create_point(self.data.time)
             self.data.tline._add_timepoint(self.timepoint)
         else:
             self.timepoint = self.data.tline.timepoints[self.data.time]
@@ -139,7 +139,7 @@ class Timeline:
         vars = self.__create_vars()
         return self.__initial_timepoint(vars)
 
-    def create_timepoint(self, time:Any)->TimepointRegular:
+    def create_point(self, time:Any)->TimepointRegular:
         vars = self.__create_vars()
         vars[''] = time
         return self.__regular_timepoint(vars)
@@ -151,12 +151,11 @@ class Timeline:
         vars:Dict[str,Attribute] = {}
         var_info = self.var_info
         for label, info in var_info.items():
-            vars[label] = self.attrfac.new_from_dict(**info)
-            vars[label].rename(label)
+            vars[label] = self.attrfac.new_from_dict(**info,name=label)
         return vars
     
     def __get_prev_timepoint(self, tpoint:TimepointRegular)->Timepoint:
-        time_index = self.__index_of_nearest_smaller(tpoint.var(''), self.__times)
+        time_index = self._index_of_nearest_smaller(tpoint.var(''), self.__times)
         if time_index<0: return self.__init_tpoint
         else: return self.__timepoints[self.__times[time_index-1]]
 
@@ -199,12 +198,23 @@ class Timeline:
         free_vars:List[AbstractAttribute] = list()
         for f in free_var_labels: 
             if f[0]=='[' and f[-1]==']': 
-                f_label, f_type = f[1:-1].split(":")
+                f_label, f_type = self.__extract_item_variable_label_and_type(f)
                 timepoint._add_var_list(f_label, self.attrfac.newlist(f_type))
                 free_vars.append(timepoint.item_var(f_label))
             else:
                 free_vars.append(timepoint.dep_var(f))
         return free_vars
+    
+    @staticmethod
+    def __extract_item_variable_label_and_type(text:str)->Tuple[str,str]:
+        if ":" not in text: 
+            raise Timeline.MissingItemVariableType(text)
+        f_label, f_type = text[1:-1].split(":")
+        if f_label.strip()=="": 
+            raise Timeline.MissingItemVariableLabel(text)
+        if f_type.strip()=="": 
+            raise Timeline.MissingItemVariableType(text)
+        return f_label, f_type
 
     def __new_descendant_of_root(self, data:Parentage_Data)->Command:
         if not data.child.has_attribute(self.__tlike_label): 
@@ -224,39 +234,48 @@ class Timeline:
         return Remove_Timepoint(Timepoint_Data(self,data.child,time))
     
     def __pick_timepoint_time(self, time:Any)->Any:
-        if not self.__times or time<self.__times[0]: 
-            return None
-        elif time==self.__times[0]:
-            return self.__times[0]
-        else:
-            return self.__times[self.__index_of_nearest_smaller(time, self.__times)]
-        
+        time_index = self._index_of_nearest_smaller_or_equal(time, self.__times)
+        if time_index<0: return None
+        else: return self.__times[time_index]
+
     def __call__(self,variable_label:str, time:Any)->Any:
         timepoint = self.pick_point(time)
         return timepoint(variable_label)
     
     @staticmethod
     def insert(x:Any, thelist:List[Any]):
-        insertion_index = Timeline.__index_of_nearest_smaller(x,thelist)+1
+        insertion_index = Timeline._index_of_nearest_smaller(x,thelist)+1
         if insertion_index>=len(thelist):
             thelist.append(x)
         elif not x==thelist[insertion_index]: 
             thelist.insert(insertion_index, x)
 
     @staticmethod
-    def __index_of_nearest_smaller(x:Any, thelist:List[Any])->int:
-        if not thelist or x<=thelist[0]: 
-            return -1
-        elif thelist[-1]<=x: 
-            return len(thelist)-1
+    def _index_of_nearest_smaller(x:Any, thelist:List[Any], start:int=0)->int:
+        if not thelist: return -1
+        elif x<=thelist[0]: return -1 + start
+        elif x>thelist[-1]: return len(thelist)-1 + start
         else:
-            mid_index = int(len(thelist)/2)
-            if x>thelist[mid_index]: 
-                return mid_index
-            else: 
-                return 0
+            m = int((len(thelist)+1)/2)
+            if x==thelist[m]: return m-1 + start
+            elif x>thelist[m]: return Timeline._index_of_nearest_smaller(x,thelist[m:],m)
+            else: return Timeline._index_of_nearest_smaller(x,thelist[:m],start)
+
+    @staticmethod
+    def _index_of_nearest_smaller_or_equal(x:Any, thelist:List[Any], start:int=0)->int:
+        if not thelist: return -1
+        elif x==thelist[0]: return start
+        elif x<thelist[0]: return -1 + start
+        elif x>thelist[-1]: return len(thelist)-1 + start
+        else:
+            m = int((len(thelist)+1)/2)
+            if x==thelist[m]: return m + start
+            elif x>thelist[m]: return Timeline._index_of_nearest_smaller_or_equal(x,thelist[m:],m)
+            else: return Timeline._index_of_nearest_smaller_or_equal(x,thelist[:m],start)
             
     class BindingNonexistentVarible(Exception): pass
+    class MissingItemVariableLabel(Exception):pass
+    class MissingItemVariableType(Exception): pass
     class TimelikeVariableTypeConflict(Exception): pass
 
 
