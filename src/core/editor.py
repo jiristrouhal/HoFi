@@ -92,10 +92,7 @@ class Editor:
 
     def can_insert_under(self,parent:Item)->bool:
         parent_template = self.__creator.get_template(parent.itype)
-        if parent_template.child_itypes is None: 
-            return False
-        else:
-            return self.__insertable in parent_template.child_itypes
+        return self.__insertable in parent_template.child_itypes
 
     def contains_case(self,case:Item)->bool:
         return self.__root.is_parent_of(case)
