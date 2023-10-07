@@ -369,6 +369,24 @@ class Test_Moving_Items_In_Time(unittest.TestCase):
         self.assertFalse(5 in timeline.timepoints)
         self.assertTrue(7 in timeline.timepoints)
 
+    def test_moving_single_item_while_on_of_timelines_variables_depends_on_items_attribute(self):
+        cr = ItemCreator()
+        root = cr.new('Root')
+        timeline = Timeline(root, cr._attrfac, 'seconds', 'integer', {'y':cr.attr.integer(-5)})
+        timeline.bind('y', lambda y0, xlist: y0+sum(xlist), '[x:integer]')
+        item = cr.new('Item', {'seconds':'integer', 'x':'integer'})
+        item.set('seconds',15)
+        item.set('x',10)
+        root.adopt(item)
+
+        self.assertEqual(timeline('y',14), -5)
+        self.assertEqual(timeline('y',15), 5)    
+
+        item.set('seconds', 16)
+        self.assertEqual(timeline('y',14), -5)
+        self.assertEqual(timeline('y',15), -5)    
+        self.assertEqual(timeline('y',16), 5)  
+
 
 if __name__=="__main__": unittest.main()
 
