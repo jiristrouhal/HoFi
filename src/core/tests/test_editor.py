@@ -444,6 +444,23 @@ class Test_Creating_New_Items_Of_Specified_Types(unittest.TestCase):
         )
 
 
+class Test_Insertable_Item_Type(unittest.TestCase):
+
+    def test_determining_if_some_item_can_be_inserted_under_given_parent(self):
+        case_template = blank_case_template()
+        case_template.add('Parent',{},('Child','Parent'))
+        case_template.add('Child',{})
+        case_template.add_case_child_label('Parent')
+        case_template.set_insertable('Parent')
+        editor = new_editor(case_template)
+        new_case = editor.new_case('Case')
+        parent = editor.new(new_case, 'Parent')
+        child = editor.new(parent,'Child')
+        self.assertTrue(editor.can_insert_under(new_case))
+        self.assertTrue(editor.can_insert_under(parent))
+        self.assertFalse(editor.can_insert_under(child))
+
+
 import os
 def build_dir(dirpath:str)->None: # pragma: no cover
     if not os.path.isdir(dirpath): 
