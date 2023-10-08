@@ -438,6 +438,9 @@ class Item(abc.ABC): # pragma: no cover
     def set(self, attribute_name:str, value:Any)->None: pass
 
     @abc.abstractmethod
+    def multiset(self, vals_to_labels:Dict[str, Any])->None: pass
+
+    @abc.abstractmethod
     def __call__(self, attr_name:str)->Any: pass
 
     @abc.abstractmethod
@@ -532,6 +535,7 @@ class ItemImpl(Item):
         def pick_child(self, name:str)->Item: raise self.CannotAccessChildrenOfNull
         def rename(self,name:str)->None: return
         def set(self, attr_name:str,value:Any)->None: raise Item.NonexistentAttribute   # pragma: no cover
+        def multiset(self, vals_to_labels:Dict[str, Any])->None: raise Item.NonexistentAttribute # pragma: no cover
         def __call__(self, attr_name:str)->Any: raise Item.NonexistentAttribute   # pragma: no cover
         def _adopt(self, child:Item)->None: return # pragma: no cover
         def _accept_parent(self,item:Item)->None: raise Item.AdoptingNULL
@@ -703,6 +707,15 @@ class ItemImpl(Item):
 
     def set(self,attrib_label:str, value:Any)->None:
         self.attribute(attrib_label).set(value)
+
+    def multiset(self, attr_to_value_dict:Dict[str,Any])->None:
+        attrs:Dict[Attribute, Any] = dict()
+        for label in  attr_to_value_dict: 
+            if label in self.__attributes: 
+                attrs[self.__attributes[label]] = attr_to_value_dict[label]
+            else:
+                raise Item.NonexistentAttribute(label)
+        Attribute.set_multiple(attrs)
 
     def on_adoption(self,owner:str,func:Callable[[Parentage_Data],Command],timing:Timing)->None:
         self.command['adopt'].add(owner, func, timing)

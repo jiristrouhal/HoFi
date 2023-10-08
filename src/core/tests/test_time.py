@@ -458,6 +458,39 @@ class Test_Mutltilevel_Hierarchy(unittest.TestCase):
         self.assertFalse(7 in self.tline.timepoints)
 
 
+class Test_Switching_Order_Of_Two_Items_In_Time(unittest.TestCase):
+
+    def test_switching_order_of_two_items(self):
+        cr = ItemCreator()
+        root = cr.new('Root')
+        timeline = Timeline(root, cr._attrfac, 'time', 'integer', {'y':cr.attr.integer(0)})
+        timeline.bind('y', lambda y0,x: y0+sum(x), '[x:integer]')
+        itemA = cr.new('Item A', {'time':'integer', 'x':'integer'})
+        itemB = cr.new('Item B', {'time':'integer', 'x':'integer'})
+
+        itemA.multiset({'time':5,'x':2})
+        itemB.multiset({'time':8,'x':3})
+        root.adopt(itemA)
+        root.adopt(itemB)
+
+        self.assertEqual(timeline('y',4), 0)
+        self.assertEqual(timeline('y',5), 2)
+        self.assertEqual(timeline('y',8), 5)
+
+        itemA.set('time',8)
+        itemB.set('time',5)
+
+        pointA = timeline.timepoints[8]
+        pointB = timeline.timepoints[5]
+
+        self.assertEqual(timeline.prev_timepoint(pointA), pointB)
+        # self.assertEqual(timeline('y',4), 0)
+        # self.assertEqual(timeline('y',5), 3)
+        # self.assertEqual(timeline('y',8), 5)
+
+
 if __name__=="__main__": 
     unittest.main()
+    # runner = unittest.TextTestRunner()
+    # runner.run(Test_Switching_Order_Of_Two_Items_In_Time("test_switching_order_of_two_items"))
 
