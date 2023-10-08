@@ -388,6 +388,76 @@ class Test_Moving_Items_In_Time(unittest.TestCase):
         self.assertEqual(timeline('y',16), 5)  
 
 
-if __name__=="__main__": unittest.main()
+class Test_Creating_Timeline_Using_Root_Already_Having_Children(unittest.TestCase):
 
+    def test_adding_root_with_single_chid_creates_necessary_timepoint(self):
+        cr = ItemCreator()
+        root = cr.new('Root')
+        item = cr.new('Item', {'seconds':'integer'})
+        item.set('seconds',5)
+        root.adopt(item)
+
+        timeline = Timeline(root, cr._attrfac, 'seconds', 'integer')
+        self.assertTrue(5 in timeline.timepoints)
+
+
+class Test_Mutltilevel_Hierarchy(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.cr = ItemCreator()
+        self.root = self.cr.new('Root')
+        self.tline = Timeline(self.root, self.cr._attrfac, 'seconds', 'integer')
+        self.parent = self.cr.new('Parent')
+        self.child = self.cr.new('Child', {'seconds':'integer'})
+        self.child.set('seconds',7)
+        self.grandchild = self.cr.new('Grandchild', {'seconds':'integer'})
+        self.grandchild.set('seconds',9)
+        self.root.adopt(self.parent)
+
+    def test_item_adopted_by_roots_child_item_is_assigned_a_timepoint(self):
+        self.parent.adopt(self.child)
+        self.assertTrue(7 in self.tline.timepoints)
+        self.child.adopt(self.grandchild)
+        self.assertTrue(9 in self.tline.timepoints)
+
+    def test_adopting_item_already_having_a_child(self):
+        self.child.adopt(self.grandchild)
+        self.parent.adopt(self.child)
+        self.assertTrue(7 in self.tline.timepoints)
+        self.assertTrue(9 in self.tline.timepoints)
+
+    def test_item_outside_hierarchy_no_longer_interacts_with_the_timeline(self):
+        self.root.leave(self.parent)
+
+        # parent now does not affect timepoints
+        self.parent.adopt(self.child)
+        self.assertFalse(7 in self.tline.timepoints)
+        self.child.adopt(self.grandchild)
+        self.assertFalse(9 in self.tline.timepoints)
+
+        #after readopting by root, timepoints are readded to the timeline
+        self.root.adopt(self.parent)
+        self.assertTrue(7 in self.tline.timepoints)
+        self.assertTrue(9 in self.tline.timepoints)
+
+        self.cr.undo()
+        self.assertFalse(7 in self.tline.timepoints)
+        self.assertFalse(9 in self.tline.timepoints)
+
+        self.cr.redo()
+        self.assertTrue(7 in self.tline.timepoints)
+        self.assertTrue(9 in self.tline.timepoints)
+
+    def test_item_having_child_in_time(self):
+        self.parent.adopt(self.child)
+        self.child.adopt(self.grandchild)
+
+        self.child.set('seconds', 10)
+        self.assertTrue(9 in self.tline.timepoints)
+        self.assertTrue(10 in self.tline.timepoints)
+        self.assertFalse(7 in self.tline.timepoints)
+
+
+if __name__=="__main__": 
+    unittest.main()
 

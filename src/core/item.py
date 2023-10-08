@@ -739,12 +739,12 @@ class ItemImpl(Item):
 
     def __call__(self, attr_name:str)->Any: 
         if attr_name not in self.attributes: 
-            raise Item.NonexistentAttribute
+            raise Item.NonexistentAttribute(attr_name)
         else:
             return self.attribute(attr_name).value
 
     def _accept_parent(self,item:Item)->None:
-        if self.parent is self.NULL: self.__parent = item
+        if self.__parent is self.NULL: self.__parent = item
 
     def _adopt(self, child:Item)->None:
         if child in self.__formal_children: 
@@ -754,11 +754,11 @@ class ItemImpl(Item):
         if self is child.parent: self.__children.add(child)
 
     def _can_be_parent_of(self,item:Item)->bool:
-        if self.child_itypes is not None:
-            if item.itype not in self.child_itypes: raise Item.CannotAdoptItemOfType(item.itype)
+        if self.__child_itypes is not None:
+            if item.itype not in self.__child_itypes: raise Item.CannotAdoptItemOfType(item.itype)
 
-        if item.is_ancestor_of(self): raise Item.AdoptionOfAncestor
-        elif item==self: raise Item.ItemAdoptsItself
+        if item.is_ancestor_of(self): raise Item.AdoptionOfAncestor(item.name)
+        elif item==self: raise Item.ItemAdoptsItself(item.name)
         else: return True
 
     def _duplicate_items(self)->ItemImpl:
