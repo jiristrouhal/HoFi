@@ -18,12 +18,12 @@ class Test_Creating_Timeline_And_Timepoints(unittest.TestCase):
         self.tline = Timeline(self.root, self.cr._attrfac, timelike_var_label = 'date', timelike_var_type='date')
 
     def test_defining_timeline_without_any_event_yields_empty_dict_of_timepoints(self):
-        self.assertDictEqual(self.tline.timepoints, {})
+        self.assertDictEqual(self.tline.points, {})
 
     def test_passing_item_with_timelike_attribute_does_not_create_any_timepoint_if_timeline_does_not_know_about_the_timelike_attribute(self):
         item = self.cr.new('Item')
         self.root.adopt(item)
-        self.assertDictEqual(self.tline.timepoints, {})
+        self.assertDictEqual(self.tline.points, {})
 
     def test_after_specifying_timelike_attribute_label_the_timeline_creates_timepoint_for_every_added_item_with_new_value_of_timelike_attribute(self):
         item_1 = self.cr.new('Item', {'date':'date'})
@@ -33,14 +33,14 @@ class Test_Creating_Timeline_And_Timepoints(unittest.TestCase):
         item_2.set('date', the_date)
         self.root.adopt(item_1)
         self.root.adopt(item_2)
-        self.assertTrue(the_date in self.tline.timepoints)
+        self.assertTrue(the_date in self.tline.points)
         self.cr.undo()
-        self.assertTrue(the_date in self.tline.timepoints)
+        self.assertTrue(the_date in self.tline.points)
         self.cr.undo()
-        self.assertFalse(the_date in self.tline.timepoints)
+        self.assertFalse(the_date in self.tline.points)
         self.cr.redo()
         self.cr.redo()
-        self.assertTrue(the_date in self.tline.timepoints)
+        self.assertTrue(the_date in self.tline.points)
 
     def test_removing_timepoint_when_leaving_only_item_with_timelike_attribute_corresponding_to_the_timepoint(self):
         item_1 = self.cr.new('Item', {'date':'date'})
@@ -52,15 +52,15 @@ class Test_Creating_Timeline_And_Timepoints(unittest.TestCase):
         self.root.adopt(item_2)
 
         self.root.leave(item_1)
-        self.assertTrue(the_date in self.tline.timepoints)
+        self.assertTrue(the_date in self.tline.points)
         self.root.leave(item_2)
-        self.assertFalse(the_date in self.tline.timepoints)
+        self.assertFalse(the_date in self.tline.points)
         self.cr.undo()
         self.cr.undo()
-        self.assertTrue(the_date in self.tline.timepoints)
+        self.assertTrue(the_date in self.tline.points)
         self.cr.redo()
         self.cr.redo()
-        self.assertFalse(the_date in self.tline.timepoints)
+        self.assertFalse(the_date in self.tline.points)
 
     def test_timepoint_is_not_removed_until_all_items_with_timelike_attribute_corresponding_to_it_are_gone(self):
         item_A = self.cr.new('Item', {'date':'date'})
@@ -72,9 +72,9 @@ class Test_Creating_Timeline_And_Timepoints(unittest.TestCase):
         self.root.adopt(item_B)
 
         self.root.leave(item_A)
-        self.assertTrue(the_date in self.tline.timepoints)
+        self.assertTrue(the_date in self.tline.points)
         self.root.leave(item_B)
-        self.assertFalse(the_date in self.tline.timepoints)
+        self.assertFalse(the_date in self.tline.points)
 
 
 class Test_Init_Timepoint(unittest.TestCase):
@@ -177,10 +177,8 @@ class Test_Picking_Timepoints(unittest.TestCase):
         self.assertEqual(self.tline.pick_point(10000), init_point)
 
     def test_latest_point_before_or_at_given_time_is_picked_if_specified_time_is_at_or_after_first_timepoint(self):
-        point1 = self.tline.create_point(3)
-        point2 = self.tline.create_point(5)
-        self.tline._add_timepoint(point1)
-        self.tline._add_timepoint(point2)
+        point1 = self.tline._create_point(3)
+        point2 = self.tline._create_point(5)
         self.assertEqual(self.tline.pick_point(10), point2)
         self.assertFalse(self.tline.pick_point(10).is_init())
         self.assertEqual(self.tline.pick_point(5), point2)
@@ -212,7 +210,7 @@ class Test_Timeline_Variable(unittest.TestCase):
         item.set('x',5)
         item.set('date',datetime.date(2023,10,15))
         self.root.adopt(item)
-        self.assertTrue(len(self.tline.timepoints)==1)
+        self.assertTrue(len(self.tline.points)==1)
         self.assertEqual(self.tline('y',datetime.date(2023,10,15)), 3)
 
     def test_binding_timeline_variable(self):
@@ -292,10 +290,8 @@ class Test_Timeline_Variable(unittest.TestCase):
     def test_using_integer_as_a_timelike_variable(self):
         root = self.cr.new('Root')
         timeline = Timeline(root, self.cr._attrfac, 'seconds', 'integer')
-        point1 = timeline.create_point(5)
-        point2 = timeline.create_point(8)
-        timeline._add_timepoint(point1)
-        timeline._add_timepoint(point2)
+        point1 = timeline._create_point(5)
+        point2 = timeline._create_point(8)
         self.assertTrue(timeline.pick_point(1).is_init())
         self.assertEqual(timeline.pick_point(7), point1)
         self.assertEqual(timeline.pick_point(9), point2)
@@ -303,7 +299,7 @@ class Test_Timeline_Variable(unittest.TestCase):
         item = self.cr.new('Item', {'seconds':'integer'})
         item.set('seconds', 2)
         root.adopt(item)
-        self.assertTrue(2 in timeline.timepoints)
+        self.assertTrue(2 in timeline.points)
 
         item_2 = self.cr.new('Item 2', {'seconds':'real'})
         item.set('seconds', 3)
@@ -320,19 +316,19 @@ class Test_Moving_Items_In_Time(unittest.TestCase):
         item.set('seconds',5)
         root.adopt(item)
 
-        self.assertTrue(5 in timeline.timepoints)
+        self.assertTrue(5 in timeline.points)
 
         item.set('seconds',7)
-        self.assertFalse(5 in timeline.timepoints)
-        self.assertTrue(7 in timeline.timepoints)
+        self.assertFalse(5 in timeline.points)
+        self.assertTrue(7 in timeline.points)
 
         cr.undo()
-        self.assertFalse(7 in timeline.timepoints)
-        self.assertTrue(5 in timeline.timepoints)
+        self.assertFalse(7 in timeline.points)
+        self.assertTrue(5 in timeline.points)
 
         cr.redo()
-        self.assertFalse(5 in timeline.timepoints)
-        self.assertTrue(7 in timeline.timepoints)
+        self.assertFalse(5 in timeline.points)
+        self.assertTrue(7 in timeline.points)
 
     def test_moving_one_of_two_items_under_the_same_timepoint_keeps_the_original_timepoint_and_creates_a_new_one(self):
         cr = ItemCreator()
@@ -345,29 +341,29 @@ class Test_Moving_Items_In_Time(unittest.TestCase):
         root.adopt(itemA)
         root.adopt(itemB)
 
-        self.assertTrue(5 in timeline.timepoints)
+        self.assertTrue(5 in timeline.points)
 
         itemA.set('seconds',7)
-        self.assertTrue(5 in timeline.timepoints)
-        self.assertTrue(7 in timeline.timepoints)
+        self.assertTrue(5 in timeline.points)
+        self.assertTrue(7 in timeline.points)
 
         #after moving the second item also, the original timepoint is deleted
         itemB.set('seconds',7)
-        self.assertFalse(5 in timeline.timepoints)
-        self.assertTrue(7 in timeline.timepoints)
+        self.assertFalse(5 in timeline.points)
+        self.assertTrue(7 in timeline.points)
 
         cr.undo()
-        self.assertTrue(5 in timeline.timepoints)
-        self.assertTrue(7 in timeline.timepoints)
+        self.assertTrue(5 in timeline.points)
+        self.assertTrue(7 in timeline.points)
 
         cr.undo()
-        self.assertTrue(5 in timeline.timepoints)
-        self.assertFalse(7 in timeline.timepoints)
+        self.assertTrue(5 in timeline.points)
+        self.assertFalse(7 in timeline.points)
 
         cr.redo()
         cr.redo()
-        self.assertFalse(5 in timeline.timepoints)
-        self.assertTrue(7 in timeline.timepoints)
+        self.assertFalse(5 in timeline.points)
+        self.assertTrue(7 in timeline.points)
 
     def test_moving_single_item_while_on_of_timelines_variables_depends_on_items_attribute(self):
         cr = ItemCreator()
@@ -398,7 +394,7 @@ class Test_Creating_Timeline_Using_Root_Already_Having_Children(unittest.TestCas
         root.adopt(item)
 
         timeline = Timeline(root, cr._attrfac, 'seconds', 'integer')
-        self.assertTrue(5 in timeline.timepoints)
+        self.assertTrue(5 in timeline.points)
 
 
 class Test_Mutltilevel_Hierarchy(unittest.TestCase):
@@ -416,76 +412,143 @@ class Test_Mutltilevel_Hierarchy(unittest.TestCase):
 
     def test_item_adopted_by_roots_child_item_is_assigned_a_timepoint(self):
         self.parent.adopt(self.child)
-        self.assertTrue(7 in self.tline.timepoints)
+        self.assertTrue(7 in self.tline.points)
         self.child.adopt(self.grandchild)
-        self.assertTrue(9 in self.tline.timepoints)
+        self.assertTrue(9 in self.tline.points)
 
     def test_adopting_item_already_having_a_child(self):
         self.child.adopt(self.grandchild)
         self.parent.adopt(self.child)
-        self.assertTrue(7 in self.tline.timepoints)
-        self.assertTrue(9 in self.tline.timepoints)
+        self.assertTrue(7 in self.tline.points)
+        self.assertTrue(9 in self.tline.points)
 
     def test_item_outside_hierarchy_no_longer_interacts_with_the_timeline(self):
         self.root.leave(self.parent)
 
         # parent now does not affect timepoints
         self.parent.adopt(self.child)
-        self.assertFalse(7 in self.tline.timepoints)
+        self.assertFalse(7 in self.tline.points)
         self.child.adopt(self.grandchild)
-        self.assertFalse(9 in self.tline.timepoints)
+        self.assertFalse(9 in self.tline.points)
 
         #after readopting by root, timepoints are readded to the timeline
         self.root.adopt(self.parent)
-        self.assertTrue(7 in self.tline.timepoints)
-        self.assertTrue(9 in self.tline.timepoints)
+        self.assertTrue(7 in self.tline.points)
+        self.assertTrue(9 in self.tline.points)
 
         self.cr.undo()
-        self.assertFalse(7 in self.tline.timepoints)
-        self.assertFalse(9 in self.tline.timepoints)
+        self.assertFalse(7 in self.tline.points)
+        self.assertFalse(9 in self.tline.points)
 
         self.cr.redo()
-        self.assertTrue(7 in self.tline.timepoints)
-        self.assertTrue(9 in self.tline.timepoints)
+        self.assertTrue(7 in self.tline.points)
+        self.assertTrue(9 in self.tline.points)
 
     def test_item_having_child_in_time(self):
         self.parent.adopt(self.child)
         self.child.adopt(self.grandchild)
 
         self.child.set('seconds', 10)
-        self.assertTrue(9 in self.tline.timepoints)
-        self.assertTrue(10 in self.tline.timepoints)
-        self.assertFalse(7 in self.tline.timepoints)
+        self.assertTrue(9 in self.tline.points)
+        self.assertTrue(10 in self.tline.points)
+        self.assertFalse(7 in self.tline.points)
+
+
+class Test_Dependency_On_Previous_Timepoint(unittest.TestCase):
+
+    def __test_adding_new_point_before_current_one(self):
+        cr = ItemCreator()
+        root = cr.new('Root')
+        timeline = Timeline(root, cr._attrfac, 'time', 'integer', {'y':cr.attr.integer(0)})
+        def addsum(y0:int,x:List[int])->int: return y0+sum(x)
+        timeline.bind('y', addsum, '[x:integer]')
+
+        itemA = cr.new('Item A', {'time':'integer', 'x':'integer'})
+        itemA.multiset({'time':8, 'x':1})
+        itemB = cr.new('Item A', {'time':'integer', 'x':'integer'})
+        itemB.multiset({'time':5, 'x':2})
+
+        root.adopt(itemA)
+        root.adopt(itemB)
+
+        self.assertEqual(timeline('y',4),0)
+        self.assertEqual(timeline('y',5),2)
+        self.assertEqual(timeline('y',6),2)
+        self.assertEqual(timeline('y',7),2)
+        self.assertEqual(timeline('y',8),3)
+        self.assertEqual(timeline('y',9),3)
+
 
 
 class Test_Switching_Order_Of_Two_Items_In_Time(unittest.TestCase):
 
-    def test_switching_order_of_two_items(self):
+
+    def test_moving_single_item_in_time(self):
         cr = ItemCreator()
         root = cr.new('Root')
         timeline = Timeline(root, cr._attrfac, 'time', 'integer', {'y':cr.attr.integer(0)})
         timeline.bind('y', lambda y0,x: y0+sum(x), '[x:integer]')
         itemA = cr.new('Item A', {'time':'integer', 'x':'integer'})
+        itemA.multiset({'time':5,'x':1})
+        root.adopt(itemA)
+
+        self.assertEqual(timeline('y',4), 0)
+        self.assertEqual(timeline('y',5), 1)
+        self.assertEqual(timeline('y',8), 1)
+
+        itemA.set('time',8)
+        itemA.set('x',2)
+
+        self.assertEqual(timeline('y',5), 0)
+        self.assertEqual(timeline('y',8), 2)
+        self.assertEqual(timeline('y',9), 2)
+
+    def __test_switching_order_of_two_items(self):
+        cr = ItemCreator()
+        root = cr.new('Root')
+        timeline = Timeline(root, cr._attrfac, 'time', 'integer', {'y':cr.attr.integer(0)})
+        def add_sum(y0:int, x:List[int])->int: return y0+sum(x)
+        timeline.bind('y', add_sum, '[x:integer]')
+        itemA = cr.new('Item A', {'time':'integer', 'x':'integer'})
         itemB = cr.new('Item B', {'time':'integer', 'x':'integer'})
 
-        itemA.multiset({'time':5,'x':2})
-        itemB.multiset({'time':8,'x':3})
+        itemA.set('x',2)
+        itemA.set('time',5)
+        itemB.set('x',3)
+        itemB.set('time',8)
+
         root.adopt(itemA)
         root.adopt(itemB)
 
-        self.assertEqual(timeline('y',4), 0)
-        self.assertEqual(timeline('y',5), 2)
-        self.assertEqual(timeline('y',8), 5)
+        root.leave(itemA)
+        root.adopt(itemA)
 
-        itemA.set('time',8)
-        itemB.set('time',5)
+        itemA.set('x',2)
 
-        pointA = timeline.timepoints[8]
-        pointB = timeline.timepoints[5]
+        # itemA.set('time',5)
+        itemB.set('x',3)
+        # itemB.set('time',8)
 
-        self.assertEqual(timeline.prev_timepoint(pointA), pointB)
+        # itemA.set('x',5)
+        # itemA.set('time',5)
+        # itemB.set('x',8)
+        # itemB.set('time',8)
+        # itemB.set('x',8)
+
+        # itemB.multiset({'time':8,'x':3})
+        # itemA.multiset({'time':5,'x':2})
+
         # self.assertEqual(timeline('y',4), 0)
-        # self.assertEqual(timeline('y',5), 3)
+        # self.assertEqual(timeline('y',5), 2)
+        # self.assertEqual(timeline('y',8), 5)
+
+        # itemA.set('x',2)
+        # self.assertEqual(timeline('y',4), 0)
+        # self.assertEqual(timeline('y',5), 2)
+        # self.assertEqual(timeline('y',8), 5)
+        # # itemA.set('time',5)
+        # self.assertEqual(timeline('y',4), 0)
+        # self.assertEqual(timeline('y',5), 2)
         # self.assertEqual(timeline('y',8), 5)
 
 

@@ -84,7 +84,9 @@ class Dependency(abc.ABC):
         except ZeroDivisionError:
             return float('nan')
         except TypeError:
-            raise self.InvalidArgumentType
+            raise self.InvalidArgumentType(
+                f"Func {self.func.__annotations__} received values: {values}, expected types :{[i.type for i in self.inputs]}"
+            )
         except: # pragma: no cover
             return None # pragma: no cover
         
@@ -102,6 +104,13 @@ class DependencyImpl(Dependency):
             self.func:Callable = lambda x: None  
             self.attributes:List[AbstractAttribute] = list()
         def release(self)->None: pass  
+
+        def __str__(self)->str:
+            return "NULL"
+
+    
+    # def __str__(self)->str:
+    #     return f"'{self._output.name}' = f({[i.name for i in self.inputs]})"
 
     NULL = NullDependency()
 
