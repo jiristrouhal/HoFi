@@ -387,6 +387,15 @@ class Planner:
         for e in self.__planned:
             if e.time<=self.__now(): tbc.append(e)
         return tbc
+    
+    def confirm(self, event:Event)->None:
+        if event not in self.__planned: raise Planner.EventNotPlanned(event)
+        elif event.time<=self.__now(): self.__planned.remove(event)
+        else: raise Planner.CannotConfirmFutureEvent(f"Event '{event}' at time '{event.time}'")
+
+    def dismiss(self, event:Event)->None:
+        if event not in self.__planned: raise Planner.EventNotPlanned(event)
+        else: self.__planned.remove(event)
 
     def pending_confirmation(self)->bool: 
         if not self.__planned: 
@@ -398,12 +407,14 @@ class Planner:
         event = Event(time)
         bisect.insort(self.__planned, event, key=lambda x: x.time)
         return event
+    
+    class CannotConfirmFutureEvent(Exception): pass
+    class EventNotPlanned(Exception): pass
 
 
 @dataclasses.dataclass(frozen=True)
 class Event:
     time:Any
-
 
 
 

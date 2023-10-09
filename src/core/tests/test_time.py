@@ -599,7 +599,7 @@ class Test_Input_Impact_On_Output(unittest.TestCase):
 
 
 from src.core.time import Planner, Event
-class Test_Planned_Events(unittest.TestCase):
+class Test_Creating_Planned_Events(unittest.TestCase):
 
     def setUp(self) -> None:
         self.time_now = 5
@@ -645,6 +645,34 @@ class Test_Planned_Events(unittest.TestCase):
         # the events requiring confirmation are shown from earliest to latest
         self.assertListEqual(self.planner.to_be_confirmed, [event_1, event_2])
         self.assertTrue(self.planner.pending_confirmation())
+
+    def test_confirming_or_dismissing_event_removes_it_from_the_planner(self):
+        self.time_now = 5
+        event_1 = self.planner.new(time=7)
+        event_2 = self.planner.new(time=12)
+        event_3 = self.planner.new(time=15)
+
+        self.time_now = 12
+        self.planner.confirm(event_2)
+        self.assertListEqual(self.planner.planned, [event_1, event_3])
+        self.assertListEqual(self.planner.to_be_confirmed, [event_1])
+        
+        self.planner.dismiss(event_1)
+        self.assertListEqual(self.planner.planned, [event_3])
+        self.assertListEqual(self.planner.to_be_confirmed, [])
+
+    def test_future_event_can_be_only_dismissed(self):
+        self.time_now = 5
+        event = self.planner.new(time=7)
+        self.assertRaises(Planner.CannotConfirmFutureEvent, self.planner.confirm, event)
+        self.planner.dismiss(event)
+        self.assertListEqual(self.planner.planned, [])
+
+    def test_confirming_dismissed_or_confirmed_event_raises_exception(self)->None:
+        self.time_now = 5
+        event = self.planner.new(time=7)
+        self.planner.dismiss(event)
+        self.assertRaises(Planner.EventNotPlanned, self.planner.dismiss, event)
 
 
 if __name__=="__main__":  unittest.main()
