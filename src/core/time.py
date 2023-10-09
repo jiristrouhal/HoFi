@@ -147,7 +147,7 @@ class Timeline:
     def __new_point(self, time:Any)->TimepointRegular:
         vars = self.__create_vars()
         vars[self.__timename] = self.attrfac.new(self.__time_type, time, self.timename)
-        Timeline.insert(time, self.__time)
+        insert_to_sorted_list(time, self.__time)
         self.__points[time] = TimepointRegular(vars,self)
         return self.__points[time]
 
@@ -232,44 +232,13 @@ class Timeline:
         return f_label, f_type
     
     def __last_point_time(self, time:Any)->Any:
-        time_index = self._index_of_nearest_smaller_or_equal(time, self.__time)
+        time_index = _index_of_nearest_smaller_or_equal(time, self.__time)
         if time_index<0: return None
         else: return self.__time[time_index]
 
     def __call__(self,variable_label:str, time:Any)->Any:
         timepoint = self._pick_last_point(time)
         return timepoint(variable_label)
-    
-    @staticmethod
-    def insert(x:Any, thelist:List[Any]):
-        insertion_index = Timeline._index_of_nearest_smaller(x,thelist)+1
-        if insertion_index>=len(thelist):
-            thelist.append(x)
-        elif not x==thelist[insertion_index]: 
-            thelist.insert(insertion_index, x)
-
-    @staticmethod
-    def _index_of_nearest_smaller(x:Any, thelist:List[Any], start:int=0)->int:
-        if not thelist: return -1
-        elif x<=thelist[0]: return -1 + start
-        elif x>thelist[-1]: return len(thelist)-1 + start
-        else:
-            m = int((len(thelist)+1)/2)
-            if x==thelist[m]: return m-1 + start
-            elif x>thelist[m]: return Timeline._index_of_nearest_smaller(x,thelist[m:],m)
-            else: return Timeline._index_of_nearest_smaller(x,thelist[:m],start)
-
-    @staticmethod
-    def _index_of_nearest_smaller_or_equal(x:Any, thelist:List[Any], start:int=0)->int:
-        if not thelist: return -1
-        elif x==thelist[0]: return start
-        elif x<thelist[0]: return -1 + start
-        elif x>thelist[-1]: return len(thelist)-1 + start
-        else:
-            m = int((len(thelist)+1)/2)
-            if x==thelist[m]: return m + start
-            elif x>thelist[m]: return Timeline._index_of_nearest_smaller_or_equal(x,thelist[m:],m)
-            else: return Timeline._index_of_nearest_smaller_or_equal(x,thelist[:m],start)
             
     class MissingItemVariableLabel(Exception):pass
     class MissingItemVariableType(Exception): pass
@@ -401,3 +370,67 @@ class TimepointInit(Timepoint):
 
     class CannotAddItem(Exception): pass
     class No_Items_At_Init_Timepoint(Exception): pass
+
+
+import bisect
+class Planner:
+
+    def __init__(self, get_current_time:Callable[[],Any])->None:
+        self.__planned:List[Event] = list()
+        self.__now = get_current_time
+    
+    @property
+    def planned(self)->List[Any]: return self.__planned
+    @property
+    def to_be_confirmed(self)->List[Any]: 
+        tbc:List[Event] = list()
+        for e in self.__planned:
+            if e.time<=self.__now(): tbc.append(e)
+        return tbc
+
+    def pending_confirmation(self)->bool: 
+        if not self.__planned: 
+            return False
+        else:
+            return self.__planned[0].time<self.__now()
+
+    def new(self,time:Any)->Event: 
+        event = Event(time)
+        bisect.insort(self.__planned, event, key=lambda x: x.time)
+        return event
+
+
+@dataclasses.dataclass(frozen=True)
+class Event:
+    time:Any
+
+
+
+
+def _index_of_nearest_smaller(x:Any, thelist:List[Any], start:int=0)->int:
+    if not thelist: return -1
+    elif x<=thelist[0]: return -1 + start
+    elif x>thelist[-1]: return len(thelist)-1 + start
+    else:
+        m = int((len(thelist)+1)/2)
+        if x==thelist[m]: return m-1 + start
+        elif x>thelist[m]: return _index_of_nearest_smaller(x,thelist[m:],m)
+        else: return _index_of_nearest_smaller(x,thelist[:m],start)
+
+def _index_of_nearest_smaller_or_equal(x:Any, thelist:List[Any], start:int=0)->int:
+    if not thelist: return -1
+    elif x==thelist[0]: return start
+    elif x<thelist[0]: return -1 + start
+    elif x>thelist[-1]: return len(thelist)-1 + start
+    else:
+        m = int((len(thelist)+1)/2)
+        if x==thelist[m]: return m + start
+        elif x>thelist[m]: return _index_of_nearest_smaller_or_equal(x,thelist[m:],m)
+        else: return _index_of_nearest_smaller_or_equal(x,thelist[:m],start)
+
+def insert_to_sorted_list(x:Any, thelist:List[Any]):
+    insertion_index = _index_of_nearest_smaller(x,thelist)+1
+    if insertion_index>=len(thelist):
+        thelist.append(x)
+    elif not x==thelist[insertion_index]: 
+        thelist.insert(insertion_index, x)

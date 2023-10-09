@@ -100,10 +100,11 @@ class Test_Init_Timepoint(unittest.TestCase):
 
 
 from typing import Any
+from src.core.time import _index_of_nearest_smaller, _index_of_nearest_smaller_or_equal
 class Test_Finding_Index_Of_Nearest_Smaller_Item_Of_Ordered_List(unittest.TestCase):
 
     def index_test(self,value:Any, thelist:List[Any], expected_index:int|None)->None:
-        self.assertEqual(Timeline._index_of_nearest_smaller(value, thelist), expected_index)
+        self.assertEqual(_index_of_nearest_smaller(value, thelist), expected_index)
 
     def test_lists(self)->None:
         self.index_test(4, [], -1)
@@ -121,7 +122,7 @@ class Test_Finding_Index_Of_Nearest_Smaller_Item_Of_Ordered_List(unittest.TestCa
 class Test_Finding_Index_Of_Nearest_Lesser_Or_Equal_Item_Of_Ordered_List(unittest.TestCase):
 
     def index_test(self,value:Any, thelist:List[Any], expected_index:int|None)->None:
-        self.assertEqual(Timeline._index_of_nearest_smaller_or_equal(value, thelist), expected_index)
+        self.assertEqual(_index_of_nearest_smaller_or_equal(value, thelist), expected_index)
 
     def test_lists(self)->None:
         self.index_test(4, [], -1)
@@ -138,32 +139,32 @@ class Test_Finding_Index_Of_Nearest_Lesser_Or_Equal_Item_Of_Ordered_List(unittes
         self.index_test(4, [4,], 0)
 
 
-
+from src.core.time import insert_to_sorted_list
 class Test_Insert_Into_Ordered_List(unittest.TestCase):
 
     def test_insert_into_empty_list(self)->None:
         thelist:List[float] = []
-        Timeline.insert(5,thelist)
+        insert_to_sorted_list(5,thelist)
         self.assertListEqual(thelist, [5])
 
     def test_insert_value_larger_than_list_max(self)->None:
         thelist:List[float] = [7,8]
-        Timeline.insert(10,thelist)
+        insert_to_sorted_list(10,thelist)
         self.assertListEqual(thelist, [7,8,10])
 
     def test_insert_value_smaller_than_list_min(self)->None:
         thelist:List[float] = [7,8]
-        Timeline.insert(5,thelist)
+        insert_to_sorted_list(5,thelist)
         self.assertListEqual(thelist, [5,7,8])
 
     def test_inserting_already_present_value_has_no_effect(self)->None:
         thelist:List[float] = [7,8]
-        Timeline.insert(7,thelist)
+        insert_to_sorted_list(7,thelist)
         self.assertListEqual(thelist, [7,8])
 
     def test_inserting_value_between_two_list_values(self)->None:
         thelist:List[float] = [7,8]
-        Timeline.insert(7.9, thelist)
+        insert_to_sorted_list(7.9, thelist)
         self.assertListEqual(thelist, [7, 7.9, 8])
 
 
@@ -588,13 +589,62 @@ class Test_Input_Impact_On_Output(unittest.TestCase):
         item = cr.new('Item', {'time':'real','x':'integer'})
         item.multiset({'time':5, 'x':2})
         root.adopt(item)
-        def addsum(y:int,x:List[int])->int: return sum(x)+y
+        def addsum(y:int, x:List[int])->int: return sum(x)+y
         timeline.bind('y', addsum, 'y', '[x:integer]')
 
         self.assertEqual(timeline.response(item.attribute('x'), +1,'y', 5), +1)
         self.assertEqual(timeline.response(item.attribute('time'), +1,'y', 5), -2)
         # change at time equal_or_later than input change occurs is always zero
         self.assertEqual(timeline.response(item.attribute('x'), +1,'y', 4), 0)
+
+
+from src.core.time import Planner, Event
+class Test_Planned_Events(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.time_now = 5
+        self.planner = Planner(get_current_time = self.current_time)
+
+    def current_time(self)->int:
+        return self.time_now
+
+    def test_after_creating_the_planned_the_planned_and_to_be_confirmed_events_lists_are_empty(self)->None:
+        self.assertListEqual(self.planner.planned, [])
+        self.assertListEqual(self.planner.to_be_confirmed, [])
+        self.assertFalse(self.planner.pending_confirmation())
+
+    def test_creating_an_event(self)->None:
+        event = Event(time=10)
+        self.assertEqual(event.time, 10)
+
+    def test_creating_an_event_in_planner(self):
+        event = self.planner.new(time=17)
+        self.assertListEqual(self.planner.planned, [event])
+        
+    def test_creating_future_event_leaves_does_not_require_any_confirmation(self):
+        self.time_now = 5
+        self.planner.new(time=7)
+        self.assertListEqual(self.planner.to_be_confirmed, [])
+        self.assertFalse(self.planner.pending_confirmation())
+
+    def test_future_event_after_reaching_the_scheduled_time_requires_confirmation(self):
+        self.time_now = 5
+        event = self.planner.new(time=7)
+        self.time_now = 10
+        self.assertListEqual(self.planner.to_be_confirmed, [event])
+        self.assertTrue(self.planner.pending_confirmation())
+
+    def test_two_of_three_events_require_confirmation(self):
+        self.time_now = 5
+        event_1 = self.planner.new(time=7)
+        event_2 = self.planner.new(time=12)
+        event_3 = self.planner.new(time=15)
+
+        self.time_now = 12
+        self.assertListEqual(self.planner.planned, [event_1, event_2, event_3])
+        # the events requiring confirmation are shown from earliest to latest
+        self.assertListEqual(self.planner.to_be_confirmed, [event_1, event_2])
+        self.assertTrue(self.planner.pending_confirmation())
 
 
 if __name__=="__main__":  unittest.main()
