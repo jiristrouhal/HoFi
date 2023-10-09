@@ -693,18 +693,9 @@ class Test_Running_Methods_On_Event_Confirmation_And_Dismissal(unittest.TestCase
         def on_confirmation()->None: self.confirmation_counter += 1
         def on_dismissal()->None: self.dismissal_counter += 1
 
-        event_A = self.planner.new(
-            time=7, 
-            on_confirmation=on_confirmation,
-        )
-        event_B = self.planner.new(
-            time=7, 
-            on_dismissal=on_dismissal,
-        )
-        event_C = self.planner.new(
-            time=8, 
-            on_dismissal=on_dismissal,
-        )
+        event_A = self.planner.new(time=7, on_confirmation=on_confirmation)
+        event_B = self.planner.new(time=7, on_dismissal=on_dismissal)
+        event_C = self.planner.new(time=8, on_dismissal=on_dismissal)
 
         self.time_now = 10
         self.planner.confirm(event_A)
@@ -714,6 +705,4 @@ class Test_Running_Methods_On_Event_Confirmation_And_Dismissal(unittest.TestCase
         self.assertEqual(self.dismissal_counter, 2)
 
     
-
-
 if __name__=="__main__":  unittest.main()
