@@ -512,5 +512,36 @@ class Test_Switching_Order_Of_Two_Items_In_Time(unittest.TestCase):
         self.assertEqual(timeline('y',8), 3)
 
 
+class Test_Next_Point(unittest.TestCase):
+
+    def test_next_point_from_init_point_is_the_first_regular_point_on_timeline(self):
+        cr = ItemCreator()
+        root = cr.new('Root')
+        itemA = cr.new('Item A', {'time':'integer'})
+        itemA.set('time',12)
+        root.adopt(itemA)
+        timeline = Timeline(root, cr._attrfac, 'time', 'integer')
+        
+        init_point = timeline.pick_last_point(11)
+        self.assertTrue(timeline.next_point(init_point) == timeline.points[12])
+
+
+class Test_Adding_Items_Without_Input_Attribute(unittest.TestCase):
+
+    def test_adding_items_without_input_attribute(self):
+        cr = ItemCreator()
+        root = cr.new('Root')
+        timeline = Timeline(root, cr._attrfac, 'time', 'integer', {'y':cr.attr.integer(0)})
+        timeline.bind('y', lambda y0,x: y0+sum(x), 'y', '[x:integer]')
+        itemA = cr.new('Item A', {'time':'integer', 'x':'integer'})
+        itemB = cr.new('Item A', {'time':'integer'})
+
+        itemA.multiset({'time':12,'x':5})
+        root.adopt(itemA)
+        root.adopt(itemB)
+
+        self.assertEqual(timeline('y',11),0)
+        self.assertEqual(timeline('y',12),5)
+
 
 if __name__=="__main__":  unittest.main()

@@ -74,8 +74,6 @@ class Timeline:
         self._add_item_tree_to_timeline(root)
 
     @property
-    def id(self)->str: return self.__id
-    @property
     def points(self)->Dict[Any,TimepointRegular]: return self.__points.copy()
     @property
     def var_info(self)->Dict[str,Dict[str,Any]]: return self.__vars.copy()
@@ -83,11 +81,6 @@ class Timeline:
     def attrfac(self)->Attribute_Factory: return self.__attribute_factory
     @property
     def timename(self)->str: return self.__timename
-    @property
-    def time(self)->List[str]: return self.__time.copy()
-    @property
-    def bindings(self)->Dict[str,Binding]: return self.__bindings.copy()
-
 
     def bind(self, dependent:str, func:Callable[[Any],Any], *free:str)->None:
         if dependent not in self.__vars: 
@@ -160,7 +153,7 @@ class Timeline:
 
     def next_point(self, point:Timepoint)->Timepoint|None:
         if point==self.__init_point and self.__points: 
-            return self.__points[0]
+            return self.__points[self.__time[0]]
         i = self.__time.index(point.time)
         if i<len(self.__time)-1: 
             return self.__points[self.__time[i+1]]
@@ -287,10 +280,8 @@ class Timepoint(abc.ABC):
 
     @property
     def vars(self)->Dict[str,Attribute]: return self.__vars.copy()
-    @property
-    def item_names(self)->List[str]: return [i.name for i in self._items]
     @abc.abstractproperty
-    def time(self)->Any: pass
+    def time(self)->Any: pass  # pragma: no cover
     @property
     def timeline(self)->Timeline: return self.__timeline
 
@@ -301,12 +292,6 @@ class Timepoint(abc.ABC):
 
     def var(self,label:str)->Attribute: 
         return self.__vars[label]
-    
-    @abc.abstractmethod
-    def dep_var(self,label:str)->Attribute: pass # pragma: no cover
-
-    @abc.abstractmethod
-    def _add_item(self,item:Item)->None: pass # pragma: no cover
 
     def get_item_var_list(self, label:str, var_type:str)->Attribute_List:
         if label not in self._item_var_lists:
@@ -319,14 +304,15 @@ class Timepoint(abc.ABC):
     def _add_var_list(self,label:str, varlist:Attribute_List)->None:
         self._item_var_lists[label] = varlist
 
-    def item_var(self,label:str)->Attribute_List:
-        return self._item_var_lists[label]
-
+    @abc.abstractmethod
+    def dep_var(self,label:str)->Attribute: pass # pragma: no cover
+    @abc.abstractmethod
+    def _add_item(self,item:Item)->None: pass # pragma: no cover
     @abc.abstractmethod
     def _remove_item(self,item:Item)->None: pass # pragma: no cover
-
     @abc.abstractmethod
     def is_init(self)->bool: pass # pragma: no cover
+
 
 
 @dataclasses.dataclass
