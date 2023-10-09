@@ -675,4 +675,45 @@ class Test_Creating_Planned_Events(unittest.TestCase):
         self.assertRaises(Planner.EventNotPlanned, self.planner.dismiss, event)
 
 
+class Test_Running_Methods_On_Event_Confirmation_And_Dismissal(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.time_now = 5
+        self.planner = Planner(
+            get_current_time = self.current_time
+        )
+
+    def current_time(self)->int:
+        return self.time_now
+
+    def test_running_method_on_event_confirmation_and_dismissal(self)->None:
+        self.confirmation_counter = 0
+        self.dismissal_counter = 0
+
+        def on_confirmation()->None: self.confirmation_counter += 1
+        def on_dismissal()->None: self.dismissal_counter += 1
+
+        event_A = self.planner.new(
+            time=7, 
+            on_confirmation=on_confirmation,
+        )
+        event_B = self.planner.new(
+            time=7, 
+            on_dismissal=on_dismissal,
+        )
+        event_C = self.planner.new(
+            time=8, 
+            on_dismissal=on_dismissal,
+        )
+
+        self.time_now = 10
+        self.planner.confirm(event_A)
+        self.planner.dismiss(event_B)
+        self.planner.dismiss(event_C)
+        self.assertEqual(self.confirmation_counter, 1)
+        self.assertEqual(self.dismissal_counter, 2)
+
+    
+
+
 if __name__=="__main__":  unittest.main()

@@ -373,6 +373,7 @@ class TimepointInit(Timepoint):
 
 
 import bisect
+from typing import Optional
 class Planner:
 
     def __init__(self, get_current_time:Callable[[],Any])->None:
@@ -390,12 +391,16 @@ class Planner:
     
     def confirm(self, event:Event)->None:
         if event not in self.__planned: raise Planner.EventNotPlanned(event)
-        elif event.time<=self.__now(): self.__planned.remove(event)
+        elif event.time<=self.__now(): 
+            self.__planned.remove(event)
+            if event.on_confirmation is not None: event.on_confirmation()
         else: raise Planner.CannotConfirmFutureEvent(f"Event '{event}' at time '{event.time}'")
 
     def dismiss(self, event:Event)->None:
         if event not in self.__planned: raise Planner.EventNotPlanned(event)
-        else: self.__planned.remove(event)
+        else: 
+            self.__planned.remove(event)
+            if event.on_dismissal is not None: event.on_dismissal()
 
     def pending_confirmation(self)->bool: 
         if not self.__planned: 
@@ -403,8 +408,14 @@ class Planner:
         else:
             return self.__planned[0].time<self.__now()
 
-    def new(self,time:Any)->Event: 
-        event = Event(time)
+    def new(
+        self,
+        time:Any,
+        on_confirmation:Optional[Callable[[],None]] = None,
+        on_dismissal:Optional[Callable[[],None]] = None
+        )->Event: 
+
+        event = Event(time, on_confirmation, on_dismissal)
         bisect.insort(self.__planned, event, key=lambda x: x.time)
         return event
     
@@ -415,7 +426,8 @@ class Planner:
 @dataclasses.dataclass(frozen=True)
 class Event:
     time:Any
-
+    on_confirmation:Optional[Callable[[],None]] = None
+    on_dismissal:Optional[Callable[[],None]] = None
 
 
 def _index_of_nearest_smaller(x:Any, thelist:List[Any], start:int=0)->int:
