@@ -386,7 +386,6 @@ class TimepointRegular(Timepoint):
     def is_init(self)->bool: return False
 
 
-
 class TimepointInit(Timepoint):
 
     def __init__(self, vars:Dict[str,Attribute], timeline:Timeline)->None:

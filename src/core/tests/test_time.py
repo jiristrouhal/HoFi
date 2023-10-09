@@ -513,5 +513,4 @@ class Test_Switching_Order_Of_Two_Items_In_Time(unittest.TestCase):
 
 
 
-if __name__=="__main__": 
-    unittest.main()
+if __name__=="__main__":  unittest.main()

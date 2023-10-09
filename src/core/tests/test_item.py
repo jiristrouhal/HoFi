@@ -1215,6 +1215,17 @@ class Test_Creating_Item_From_Template(unittest.TestCase):
         self.assertRaises(ItemCreator.UndefinedTemplate, cr.from_template, 'Nonexistent template')
 
 
+class Test_Setting_Mutliple_Attributes_At_Once(unittest.TestCase):
+
+    def test_setting_multiple_item_attributes_at_once(self):
+        cr = ItemCreator()
+        item = cr.new('Item', {'x':'integer', 'y':'integer'})
+        item.multiset({'x':5, 'y':15})
+        self.assertEqual(item('x'),5)
+        self.assertEqual(item('y'),15)
+        self.assertRaises(Item.NonexistentAttribute, item.multiset, {'nonexistent_attributes':6})
+
+
 if __name__=="__main__": unittest.main()
 
 
