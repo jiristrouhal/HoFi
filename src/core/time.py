@@ -86,17 +86,19 @@ class Timeline:
         if dependent not in self.__vars: 
             raise Timeline.UndefinedVariable(dependent)
         self.__bindings[dependent] = Binding(dependent, func, free)
-        self.set_dependency(dependent, self.__init_point, self.__init_point)
+        self.__set_dependency(dependent, self.__init_point, self.__init_point)
         prev_point:Timepoint = self.__init_point
         for time in self.__time:
             point = self.__points[time]
-            self.set_dependency(dependent, point, prev_point)
+            self.__set_dependency(dependent, point, prev_point)
             prev_point = point
 
-    def pick_last_point(self, time:Any)->Timepoint:
-        last_point_time = self.__last_point_time(time)
-        if last_point_time is None: return self.__init_point
-        else: return self.__points[last_point_time]
+    def response(self, variable:Attribute, input_change:Any, output_label:str, time:Any)->Any:
+        current_value = self(output_label,time)
+        variable.set(variable.value+input_change)
+        updated_value = self(output_label,time)
+        self.attrfac.undo_and_forget()
+        return (updated_value-current_value)
 
     def set_init(self, var_label:str,value:Any)->None:
         if var_label not in self.__vars: raise Timeline.UndefinedVariable(var_label)
@@ -119,6 +121,11 @@ class Timeline:
         next_point = self.next_point(point)
         if next_point is not None: self.__update_dependencies(next_point)
         return point
+    
+    def _pick_last_point(self, time:Any)->Timepoint:
+        last_point_time = self.__last_point_time(time)
+        if last_point_time is None: return self.__init_point
+        else: return self.__points[last_point_time]
 
 
     def _remove_item_tree(self, item:Item)->None:
@@ -184,9 +191,9 @@ class Timeline:
         prev_point = self.prev_point(point)
         for label in point.vars:
             if label==self.__timename: continue
-            self.set_dependency(label, point, prev_point)
+            self.__set_dependency(label, point, prev_point)
 
-    def set_dependency(self, var_label:str, point:Timepoint, prev_point:Timepoint)->None:
+    def __set_dependency(self, var_label:str, point:Timepoint, prev_point:Timepoint)->None:
         b = self.__bindings[var_label]
         if self.timename in b.inputs and point==self.__init_point: return 
         x = self.__collect_inputs(point,prev_point,b)
@@ -230,7 +237,7 @@ class Timeline:
         else: return self.__time[time_index]
 
     def __call__(self,variable_label:str, time:Any)->Any:
-        timepoint = self.pick_last_point(time)
+        timepoint = self._pick_last_point(time)
         return timepoint(variable_label)
     
     @staticmethod

@@ -1251,6 +1251,7 @@ class Attribute_Factory:
     def run(self,*cmds:Command)->None:
         self.controller.run(*cmds)
     def undo(self)->None: self.controller.undo()
+    def undo_and_forget(self)->None: self.controller.undo_and_forget()
 
 
 def attribute_factory(controller:Controller)->Attribute_Factory:

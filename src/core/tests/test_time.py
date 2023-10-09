@@ -85,17 +85,17 @@ class Test_Init_Timepoint(unittest.TestCase):
         self.tline = Timeline(self.root, self.cr._attrfac, 'date', 'date')
 
     def test_adding_items_to_init_point_raises_exception(self)->None:
-        init_point = self.tline.pick_last_point(datetime.date(2023,12,26))
+        init_point = self.tline._pick_last_point(datetime.date(2023,12,26))
         item = self.cr.new('Item')
         self.assertRaises(TimepointInit.CannotAddItem, init_point._add_item, item)
     
     def test_removing_items_from_init_point_raises_exception(self)->None:
-        init_point = self.tline.pick_last_point(datetime.date(2023,12,26))
+        init_point = self.tline._pick_last_point(datetime.date(2023,12,26))
         item = self.cr.new('Item')
         self.assertRaises(TimepointInit.No_Items_At_Init_Timepoint, init_point._remove_item, item)
 
     def test_time_of_init_point_is_none(self)->None:
-        init_point = self.tline.pick_last_point(datetime.date(2023,12,26))
+        init_point = self.tline._pick_last_point(datetime.date(2023,12,26))
         self.assertTrue(init_point.time is None)
 
 
@@ -175,20 +175,20 @@ class Test_Picking_Timepoints(unittest.TestCase):
         self.tline = Timeline(self.root, self.cr._attrfac, 'seconds', 'integer')
 
     def test_init_timepoint_is_always_picked_if_no_items_were_added_to_root(self)->None:
-        init_point = self.tline.pick_last_point(-6)
+        init_point = self.tline._pick_last_point(-6)
         self.assertTrue(init_point.is_init())
-        self.assertEqual(self.tline.pick_last_point(10), init_point)
-        self.assertEqual(self.tline.pick_last_point(10000), init_point)
+        self.assertEqual(self.tline._pick_last_point(10), init_point)
+        self.assertEqual(self.tline._pick_last_point(10000), init_point)
 
     def test_latest_point_before_or_at_given_time_is_picked_if_specified_time_is_at_or_after_first_timepoint(self):
         point1 = self.tline._create_point(3)
         point2 = self.tline._create_point(5)
-        self.assertEqual(self.tline.pick_last_point(10), point2)
-        self.assertFalse(self.tline.pick_last_point(10).is_init())
-        self.assertEqual(self.tline.pick_last_point(5), point2)
-        self.assertEqual(self.tline.pick_last_point(4), point1)
-        self.assertEqual(self.tline.pick_last_point(3), point1)
-        self.assertTrue(self.tline.pick_last_point(2).is_init())
+        self.assertEqual(self.tline._pick_last_point(10), point2)
+        self.assertFalse(self.tline._pick_last_point(10).is_init())
+        self.assertEqual(self.tline._pick_last_point(5), point2)
+        self.assertEqual(self.tline._pick_last_point(4), point1)
+        self.assertEqual(self.tline._pick_last_point(3), point1)
+        self.assertTrue(self.tline._pick_last_point(2).is_init())
 
 
 class Test_Timeline_Variable(unittest.TestCase):
@@ -296,9 +296,9 @@ class Test_Timeline_Variable(unittest.TestCase):
         timeline = Timeline(root, self.cr._attrfac, 'seconds', 'integer')
         point1 = timeline._create_point(5)
         point2 = timeline._create_point(8)
-        self.assertTrue(timeline.pick_last_point(1).is_init())
-        self.assertEqual(timeline.pick_last_point(7), point1)
-        self.assertEqual(timeline.pick_last_point(9), point2)
+        self.assertTrue(timeline._pick_last_point(1).is_init())
+        self.assertEqual(timeline._pick_last_point(7), point1)
+        self.assertEqual(timeline._pick_last_point(9), point2)
         
         item = self.cr.new('Item', {'seconds':'integer'})
         item.set('seconds', 2)
@@ -526,7 +526,7 @@ class Test_Next_Point(unittest.TestCase):
         root.adopt(itemA)
         timeline = Timeline(root, cr._attrfac, 'time', 'integer')
         
-        init_point = timeline.pick_last_point(11)
+        init_point = timeline._pick_last_point(11)
         self.assertTrue(timeline.next_point(init_point) == timeline.points[12])
 
 
@@ -577,6 +577,24 @@ class Test_Using_Time_As_Input_In_Timeline_Dependency(unittest.TestCase):
         self.assertEqual(timeline('y',5), 10)
         # the time value is always evaluated for the last timepoint
         self.assertEqual(timeline('y',6), 10)
+
+
+class Test_Input_Impact_On_Output(unittest.TestCase):
+
+    def test_change_of_output_at_later_time_corresponding_to_earlier_change_in_input(self)->None:
+        cr = ItemCreator()
+        root = cr.new('Root')
+        timeline = Timeline(root, cr._attrfac, 'time', 'real', {'y':cr.attr.integer(0)})
+        item = cr.new('Item', {'time':'real','x':'integer'})
+        item.multiset({'time':5, 'x':2})
+        root.adopt(item)
+        def addsum(y:int,x:List[int])->int: return sum(x)+y
+        timeline.bind('y', addsum, 'y', '[x:integer]')
+
+        self.assertEqual(timeline.response(item.attribute('x'), +1,'y', 5), +1)
+        self.assertEqual(timeline.response(item.attribute('time'), +1,'y', 5), -2)
+        # change at time equal_or_later than input change occurs is always zero
+        self.assertEqual(timeline.response(item.attribute('x'), +1,'y', 4), 0)
 
 
 if __name__=="__main__":  unittest.main()

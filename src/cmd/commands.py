@@ -85,6 +85,14 @@ class Controller:
         self.__undo_stack.append(batch)
         self.__switch_last_symbol()
 
+    def undo_and_forget(self)->None:
+        if not self.__undo_stack: return 
+        batch = self.__undo_stack.pop()   
+        for cmd in reversed(batch): 
+            cmd.undo()
+            if cmd.message.strip() != "":
+                self.__history.append(f"{self.__last_symbol}Undo: {cmd.message}")
+
 Timing = Literal['pre','post']
 from typing import Tuple
 class Composed_Command(abc.ABC):
