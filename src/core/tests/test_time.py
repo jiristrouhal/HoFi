@@ -94,6 +94,10 @@ class Test_Init_Timepoint(unittest.TestCase):
         item = self.cr.new('Item')
         self.assertRaises(TimepointInit.No_Items_At_Init_Timepoint, init_point._remove_item, item)
 
+    def test_time_of_init_point_is_none(self)->None:
+        init_point = self.tline.pick_last_point(datetime.date(2023,12,26))
+        self.assertTrue(init_point.time is None)
+
 
 from typing import Any
 class Test_Finding_Index_Of_Nearest_Smaller_Item_Of_Ordered_List(unittest.TestCase):
@@ -537,11 +541,14 @@ class Test_Adding_Items_Without_Input_Attribute(unittest.TestCase):
         itemB = cr.new('Item A', {'time':'integer'})
 
         itemA.multiset({'time':12,'x':5})
+        itemA.set('time',12)
         root.adopt(itemA)
         root.adopt(itemB)
 
         self.assertEqual(timeline('y',11),0)
         self.assertEqual(timeline('y',12),5)
+
+        root.leave(itemB)
 
 
 if __name__=="__main__":  unittest.main()
