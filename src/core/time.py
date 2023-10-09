@@ -139,7 +139,7 @@ class Timeline:
 
     def __new_point(self, time:Any)->TimepointRegular:
         vars = self.__create_vars()
-        vars[self.__timename] = time
+        vars[self.__timename] = self.attrfac.new(self.__time_type, time, self.timename)
         Timeline.insert(time, self.__time)
         self.__points[time] = TimepointRegular(vars,self)
         return self.__points[time]
@@ -188,6 +188,7 @@ class Timeline:
 
     def set_dependency(self, var_label:str, point:Timepoint, prev_point:Timepoint)->None:
         b = self.__bindings[var_label]
+        if self.timename in b.inputs and point==self.__init_point: return 
         x = self.__collect_inputs(point,prev_point,b)
         y = point.var(b.output)
         if y.dependent: y.break_dependency()
@@ -346,7 +347,7 @@ class TimepointRegular(Timepoint):
         super().__init__(vars, timeline)
 
     @property
-    def time(self)->Any: return self.vars[self.timeline.timename]
+    def time(self)->Any: return self.vars[self.timeline.timename].value
 
     def dep_var(self, label:str)->Attribute: return self.var(label)
 

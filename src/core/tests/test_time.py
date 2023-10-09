@@ -551,4 +551,32 @@ class Test_Adding_Items_Without_Input_Attribute(unittest.TestCase):
         root.leave(itemB)
 
 
+class Test_Using_Time_As_Input_In_Timeline_Dependency(unittest.TestCase):
+
+    def test_timeline_variable_depending_on_time_is_always_equal_to_its_initial_value_if_no_regular_timepoints_are_created(self):
+        cr = ItemCreator()
+        root = cr.new('Root')
+        timeline = Timeline(root, cr._attrfac, 'time', 'integer', {'y':cr.attr.integer(0)})
+        timeline.bind('y', lambda t: 2*t, 'time') # pragma: no cover
+        
+        self.assertEqual(timeline('y',-1000),0)
+        self.assertEqual(timeline('y',1000),0)
+
+    def test_timeline_variable_is_first_equal_to_its_initial_value_and_since_the_first_regular_timepoint_it_follows_the_dependency(self):
+        cr = ItemCreator()
+        root = cr.new('Root')
+        INIT_VALUE = -2
+        timeline = Timeline(root, cr._attrfac, 'time', 'integer', {'y':cr.attr.integer(INIT_VALUE)})
+        timeline.bind('y', lambda t: 2*t, 'time')
+        
+        item = cr.new('Item', {'time':'integer'})
+        item.set('time',5)
+        root.adopt(item)
+
+        self.assertEqual(timeline('y',4), INIT_VALUE)
+        self.assertEqual(timeline('y',5), 10)
+        # the time value is always evaluated for the last timepoint
+        self.assertEqual(timeline('y',6), 10)
+
+
 if __name__=="__main__":  unittest.main()
