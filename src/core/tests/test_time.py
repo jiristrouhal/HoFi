@@ -586,11 +586,10 @@ class Test_Input_Impact_On_Output(unittest.TestCase):
         cr = ItemCreator()
         root = cr.new('Root')
         timeline = Timeline(root, cr._attrfac, 'time', 'real', {'y':cr.attr.integer(0)})
+        timeline.bind('y', lambda y0,x: y0+sum(x), 'y', '[x:integer]')
         item = cr.new('Item', {'time':'real','x':'integer'})
         item.multiset({'time':5, 'x':2})
         root.adopt(item)
-        def addsum(y:int, x:List[int])->int: return sum(x)+y
-        timeline.bind('y', addsum, 'y', '[x:integer]')
 
         self.assertEqual(timeline.response(item.attribute('x'), +1,'y', 5), +1)
         self.assertEqual(timeline.response(item.attribute('time'), +1,'y', 5), -2)
