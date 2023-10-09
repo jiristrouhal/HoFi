@@ -85,12 +85,12 @@ class Test_Init_Timepoint(unittest.TestCase):
         self.tline = Timeline(self.root, self.cr._attrfac, 'date', 'date')
 
     def test_adding_items_to_init_point_raises_exception(self)->None:
-        init_point = self.tline.pick_point(datetime.date(2023,12,26))
+        init_point = self.tline.pick_last_point(datetime.date(2023,12,26))
         item = self.cr.new('Item')
         self.assertRaises(TimepointInit.CannotAddItem, init_point._add_item, item)
     
     def test_removing_items_from_init_point_raises_exception(self)->None:
-        init_point = self.tline.pick_point(datetime.date(2023,12,26))
+        init_point = self.tline.pick_last_point(datetime.date(2023,12,26))
         item = self.cr.new('Item')
         self.assertRaises(TimepointInit.No_Items_At_Init_Timepoint, init_point._remove_item, item)
 
@@ -171,20 +171,20 @@ class Test_Picking_Timepoints(unittest.TestCase):
         self.tline = Timeline(self.root, self.cr._attrfac, 'seconds', 'integer')
 
     def test_init_timepoint_is_always_picked_if_no_items_were_added_to_root(self)->None:
-        init_point = self.tline.pick_point(-6)
+        init_point = self.tline.pick_last_point(-6)
         self.assertTrue(init_point.is_init())
-        self.assertEqual(self.tline.pick_point(10), init_point)
-        self.assertEqual(self.tline.pick_point(10000), init_point)
+        self.assertEqual(self.tline.pick_last_point(10), init_point)
+        self.assertEqual(self.tline.pick_last_point(10000), init_point)
 
     def test_latest_point_before_or_at_given_time_is_picked_if_specified_time_is_at_or_after_first_timepoint(self):
         point1 = self.tline._create_point(3)
         point2 = self.tline._create_point(5)
-        self.assertEqual(self.tline.pick_point(10), point2)
-        self.assertFalse(self.tline.pick_point(10).is_init())
-        self.assertEqual(self.tline.pick_point(5), point2)
-        self.assertEqual(self.tline.pick_point(4), point1)
-        self.assertEqual(self.tline.pick_point(3), point1)
-        self.assertTrue(self.tline.pick_point(2).is_init())
+        self.assertEqual(self.tline.pick_last_point(10), point2)
+        self.assertFalse(self.tline.pick_last_point(10).is_init())
+        self.assertEqual(self.tline.pick_last_point(5), point2)
+        self.assertEqual(self.tline.pick_last_point(4), point1)
+        self.assertEqual(self.tline.pick_last_point(3), point1)
+        self.assertTrue(self.tline.pick_last_point(2).is_init())
 
 
 class Test_Timeline_Variable(unittest.TestCase):
@@ -216,7 +216,7 @@ class Test_Timeline_Variable(unittest.TestCase):
     def test_binding_timeline_variable(self):
         def add_sum_of_x(y:int, x:List[int])->int:
             return y+sum(x)
-        self.tline.bind('y', add_sum_of_x, '[x:integer]')
+        self.tline.bind('y', add_sum_of_x, 'y', '[x:integer]')
 
         itemA = self.cr.new('Item', {'date':'date', 'x':'integer'})
         itemB = self.cr.new('Item', {'date':'date', 'x':'integer'})
@@ -242,15 +242,15 @@ class Test_Timeline_Variable(unittest.TestCase):
         self.assertRaises(Timeline.UndefinedVariable, self.tline.set_init, 'q', -5)
 
     def test_setting_mutual_dependencies_of_timeline_variables(self):
-        self.tline.bind('z', lambda z0,y: 2*y, 'y')
+        self.tline.bind('z', lambda y: 2*y, 'y')
         self.tline.set_init('y',7)
         self.assertEqual(self.tline('z',datetime.date(2021,10,19)), 14)
 
     def test_binding_timeline_variables_to_each_other(self):
         def add_sum_of_x(y:int, x:List[int])->int:  # pragma: no cover
             return y+sum(x)
-        self.tline.bind('y', add_sum_of_x, '[x:integer]')
-        self.tline.bind('z', lambda z_old, y: 2*y, 'y')
+        self.tline.bind('y', add_sum_of_x, 'y', '[x:integer]')
+        self.tline.bind('z', lambda z_old, y: 2*y, 'z', 'y')
         itemA = self.cr.new('Item', {'date':'date', 'x':'integer'})
         itemA.set('x',5)
         itemA.set('date',datetime.date(2023,10,15))
@@ -266,7 +266,7 @@ class Test_Timeline_Variable(unittest.TestCase):
             return y+sum(x)
         self.assertRaises(
             Timeline.UndefinedVariable,
-            self.tline.bind, 'nonexistent_var', add_sum_of_x, '[x:integer]'
+            self.tline.bind, 'nonexistent_var', add_sum_of_x, 'y', '[x:integer]'
         )
 
     def test_item_variable_specification_has_to_consist_of_label_and_attribute_type_separated_with_colon_and_enclosed_in_square_brackets(self):
@@ -274,17 +274,17 @@ class Test_Timeline_Variable(unittest.TestCase):
         # missing input variable type
         self.assertRaises(
             Timeline.MissingItemVariableType,
-            self.tline.bind, 'y', add_sum_of_x, '[x]'
+            self.tline.bind, 'y', add_sum_of_x, 'y', '[x]'
         )
         # missing input variable label
         self.assertRaises(
             Timeline.MissingItemVariableLabel,
-            self.tline.bind, 'y', add_sum_of_x, '[:integer]'
+            self.tline.bind, 'y', add_sum_of_x, 'y', '[:integer]'
         )
         # blank input variable type
         self.assertRaises(
             Timeline.MissingItemVariableType,
-            self.tline.bind, 'y', add_sum_of_x, '[x:]'
+            self.tline.bind, 'y', add_sum_of_x, 'y', '[x:]'
         )
 
     def test_using_integer_as_a_timelike_variable(self):
@@ -292,9 +292,9 @@ class Test_Timeline_Variable(unittest.TestCase):
         timeline = Timeline(root, self.cr._attrfac, 'seconds', 'integer')
         point1 = timeline._create_point(5)
         point2 = timeline._create_point(8)
-        self.assertTrue(timeline.pick_point(1).is_init())
-        self.assertEqual(timeline.pick_point(7), point1)
-        self.assertEqual(timeline.pick_point(9), point2)
+        self.assertTrue(timeline.pick_last_point(1).is_init())
+        self.assertEqual(timeline.pick_last_point(7), point1)
+        self.assertEqual(timeline.pick_last_point(9), point2)
         
         item = self.cr.new('Item', {'seconds':'integer'})
         item.set('seconds', 2)
@@ -369,7 +369,7 @@ class Test_Moving_Items_In_Time(unittest.TestCase):
         cr = ItemCreator()
         root = cr.new('Root')
         timeline = Timeline(root, cr._attrfac, 'seconds', 'integer', {'y':cr.attr.integer(-5)})
-        timeline.bind('y', lambda y0, xlist: y0+sum(xlist), '[x:integer]')
+        timeline.bind('y', lambda y0, xlist: y0+sum(xlist), 'y', '[x:integer]')
         item = cr.new('Item', {'seconds':'integer', 'x':'integer'})
         item.set('seconds',15)
         item.set('x',10)
@@ -454,106 +454,64 @@ class Test_Mutltilevel_Hierarchy(unittest.TestCase):
         self.assertFalse(7 in self.tline.points)
 
 
-class Test_Dependency_On_Previous_Timepoint(unittest.TestCase):
+class Test_Adding_Dependency_After_Adding_An_Item(unittest.TestCase):
 
-    def __test_adding_new_point_before_current_one(self):
+    def test_adding_new_dependency_after_adding_an_item(self):
         cr = ItemCreator()
         root = cr.new('Root')
         timeline = Timeline(root, cr._attrfac, 'time', 'integer', {'y':cr.attr.integer(0)})
-        def addsum(y0:int,x:List[int])->int: return y0+sum(x)
-        timeline.bind('y', addsum, '[x:integer]')
-
         itemA = cr.new('Item A', {'time':'integer', 'x':'integer'})
         itemA.multiset({'time':8, 'x':1})
-        itemB = cr.new('Item A', {'time':'integer', 'x':'integer'})
-        itemB.multiset({'time':5, 'x':2})
 
         root.adopt(itemA)
-        root.adopt(itemB)
+        pointA = timeline.points[8]
 
-        self.assertEqual(timeline('y',4),0)
-        self.assertEqual(timeline('y',5),2)
-        self.assertEqual(timeline('y',6),2)
-        self.assertEqual(timeline('y',7),2)
-        self.assertEqual(timeline('y',8),3)
-        self.assertEqual(timeline('y',9),3)
-
+        def addsum(y0:int,x:List[int])->int: return y0+sum(x)
+        timeline.bind('y', addsum, 'y', '[x:integer]')
+        self.assertEqual(len(pointA._item_var_lists['x'].attributes), 1)
+        self.assertEqual(timeline('y',7),0)
+        self.assertEqual(timeline('y',8),1)
 
 
 class Test_Switching_Order_Of_Two_Items_In_Time(unittest.TestCase):
 
-
-    def test_moving_single_item_in_time(self):
+    def test_switching_positions_of_two_items_in_time(self):
         cr = ItemCreator()
         root = cr.new('Root')
         timeline = Timeline(root, cr._attrfac, 'time', 'integer', {'y':cr.attr.integer(0)})
-        timeline.bind('y', lambda y0,x: y0+sum(x), '[x:integer]')
-        itemA = cr.new('Item A', {'time':'integer', 'x':'integer'})
-        itemA.multiset({'time':5,'x':1})
-        root.adopt(itemA)
+        timeline.bind('y', lambda y0,x: y0+sum(x), 'y', '[x:integer]')
 
-        self.assertEqual(timeline('y',4), 0)
-        self.assertEqual(timeline('y',5), 1)
-        self.assertEqual(timeline('y',8), 1)
-
-        itemA.set('time',8)
-        itemA.set('x',2)
-
-        self.assertEqual(timeline('y',5), 0)
-        self.assertEqual(timeline('y',8), 2)
-        self.assertEqual(timeline('y',9), 2)
-
-    def __test_switching_order_of_two_items(self):
-        cr = ItemCreator()
-        root = cr.new('Root')
-        timeline = Timeline(root, cr._attrfac, 'time', 'integer', {'y':cr.attr.integer(0)})
-        def add_sum(y0:int, x:List[int])->int: return y0+sum(x)
-        timeline.bind('y', add_sum, '[x:integer]')
         itemA = cr.new('Item A', {'time':'integer', 'x':'integer'})
         itemB = cr.new('Item B', {'time':'integer', 'x':'integer'})
-
-        itemA.set('x',2)
-        itemA.set('time',5)
-        itemB.set('x',3)
-        itemB.set('time',8)
+        itemA.multiset({'time':5,'x':1})
+        itemB.multiset({'time':8,'x':2})
 
         root.adopt(itemA)
         root.adopt(itemB)
 
-        root.leave(itemA)
-        root.adopt(itemA)
+        self.assertEqual(timeline('y',4), 0)
+        self.assertEqual(timeline('y',5), 1)
+        self.assertEqual(timeline('y',8), 3)
 
-        itemA.set('x',2)
+        itemA.set('time',8)
 
-        # itemA.set('time',5)
-        itemB.set('x',3)
-        # itemB.set('time',8)
+        self.assertEqual(timeline('y',4), 0)
+        self.assertEqual(timeline('y',5), 0)
+        self.assertEqual(timeline('y',8), 3)
+        self.assertEqual(timeline('y',9), 3)
 
-        # itemA.set('x',5)
-        # itemA.set('time',5)
-        # itemB.set('x',8)
-        # itemB.set('time',8)
-        # itemB.set('x',8)
+        itemB.set('time',5)
 
-        # itemB.multiset({'time':8,'x':3})
-        # itemA.multiset({'time':5,'x':2})
+        self.assertSetEqual(timeline.points[5]._items, {itemB})
+        self.assertSetEqual(timeline.points[8]._items, {itemA})
+        self.assertEqual(len(timeline.points[5]._item_var_lists['x'].attributes),1)
+        self.assertEqual(len(timeline.points[8]._item_var_lists['x'].attributes),1)
 
-        # self.assertEqual(timeline('y',4), 0)
-        # self.assertEqual(timeline('y',5), 2)
-        # self.assertEqual(timeline('y',8), 5)
+        self.assertEqual(timeline('y',4), 0)
+        self.assertEqual(timeline('y',5), 2)
+        self.assertEqual(timeline('y',8), 3)
 
-        # itemA.set('x',2)
-        # self.assertEqual(timeline('y',4), 0)
-        # self.assertEqual(timeline('y',5), 2)
-        # self.assertEqual(timeline('y',8), 5)
-        # # itemA.set('time',5)
-        # self.assertEqual(timeline('y',4), 0)
-        # self.assertEqual(timeline('y',5), 2)
-        # self.assertEqual(timeline('y',8), 5)
 
 
 if __name__=="__main__": 
     unittest.main()
-    # runner = unittest.TextTestRunner()
-    # runner.run(Test_Switching_Order_Of_Two_Items_In_Time("test_switching_order_of_two_items"))
-

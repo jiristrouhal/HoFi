@@ -41,7 +41,7 @@ from typing import Tuple, List
 class Binding:
     output:str
     func:Callable[[Any],Any]
-    input:Tuple[str,...]
+    inputs:Tuple[str,...]
 
 
 class Timeline:
@@ -63,9 +63,9 @@ class Timeline:
         self.__time:List[Any] = list()
         self.__vars:Dict[str,Dict[str, Any]] = tvars
 
-        self.__bindings:Dict[str, Binding] = {
-            var_label:Binding(var_label, lambda x:x, ()) for var_label in self.__vars
-        }
+        self.__bindings:Dict[str, Binding] = dict()
+        for label in self.__vars: self.__bindings[label] = Binding(label, lambda x:x, (label,)) 
+
         self.__attribute_factory = attribute_factory
 
         self.__init_point = TimepointInit(self.__create_vars(), self)
@@ -93,12 +93,15 @@ class Timeline:
         if dependent not in self.__vars: 
             raise Timeline.UndefinedVariable(dependent)
         self.__bindings[dependent] = Binding(dependent, func, free)
-        self.__set_dependency(dependent, self.__init_point, self.__init_point)
-        for point in self.__points.values():
-            self.__set_dependency(dependent, point, self.prev_point(point))
+        self.set_dependency(dependent, self.__init_point, self.__init_point)
+        prev_point:Timepoint = self.__init_point
+        for time in self.__time:
+            point = self.__points[time]
+            self.set_dependency(dependent, point, prev_point)
+            prev_point = point
 
-    def pick_point(self, time:Any)->Timepoint:
-        last_point_time = self.__pick_timepoint_time(time)
+    def pick_last_point(self, time:Any)->Timepoint:
+        last_point_time = self.__last_point_time(time)
         if last_point_time is None: return self.__init_point
         else: return self.__points[last_point_time]
 
@@ -109,42 +112,39 @@ class Timeline:
 
     def _add_item_tree_to_timeline(self,item:Item)->None:
         self.__set_up_hierarchy_edit_commands(item)
-        if self.__has_time(item): self._add_item_to_timeline(item)
+        if self.__has_time(item): self._add_item_to_timeline(item, item(self.timename))
         for child in item.children: self._add_item_tree_to_timeline(child)
 
-    def _add_item_to_timeline(self, item:Item, time:Any=None)->None:
-        if time is None: time = item(self.timename)
-        if time not in self.__points:
-            point = self._create_point(time)
-        else:
-            point = self.__points[time]
+    def _add_item_to_timeline(self, item:Item, time:Any)->None:
+        if time not in self.__points: point=self._create_point(time)
+        else: point = self.__points[time]
         point._add_item(item)
 
     def _create_point(self, time:Any)->TimepointRegular:
-        point = self.__new_timepoint(time)
-        self.__update_dependencies_of_next_point(point)
+        point = self.__new_point(time)
         self.__update_dependencies(point)
+        next_point = self.next_point(point)
+        if next_point is not None: self.__update_dependencies(next_point)
         return point
 
 
     def _remove_item_tree(self, item:Item)->None:
         for child in item.children: self._remove_item_tree(child)
-        if self.__has_time(item): self._remove_item_from_timeline(item)
+        if self.__has_time(item): self._remove_item_from_timeline(item, item(self.timename))
         self.__clean_up_hierarchy_edit_commands(item)
 
-    def _remove_item_from_timeline(self,item:Item,time:Any=None)->None:
-        if time is None: time = item(self.timename)
-        tpoint = self.__points[time]
-        tpoint._remove_item(item)
-        if not tpoint.has_items(): self._remove_timepoint(time)
+    def _remove_item_from_timeline(self,item:Item,time:Any)->None:
+        point = self.__points[time]
+        point._remove_item(item)
+        if not point.has_items(): self._remove_point(point)
 
-    def _remove_timepoint(self,time:Any)->None:
-        next_timepoint = self.next_point(self.__points[time])
-        self.__points.pop(time)
-        self.__time.remove(time)
-        if next_timepoint is not None: self.__update_dependencies(next_timepoint)
+    def _remove_point(self,point:TimepointRegular)->None:
+        next_point = self.next_point(point)
+        self.__points.pop(point.time)
+        self.__time.remove(point.time)
+        if next_point is not None: self.__update_dependencies(next_point)
 
-    def __new_timepoint(self, time:Any)->TimepointRegular:
+    def __new_point(self, time:Any)->TimepointRegular:
         vars = self.__create_vars()
         vars[self.__timename] = time
         Timeline.insert(time, self.__time)
@@ -186,44 +186,39 @@ class Timeline:
         def __leave(data:Parentage_Data): return Remove_Item(Timepoint_Data(self,data.child))
         item.command['adopt'].add(self.__id, __adopt, 'post')
         item.command['leave'].add(self.__id, __leave, 'pre')
+    
+    def __update_dependencies(self, point:Timepoint)->None:
+        prev_point = self.prev_point(point)
+        for label in point.vars:
+            if label==self.__timename: continue
+            self.set_dependency(label, point, prev_point)
 
+    def set_dependency(self, var_label:str, point:Timepoint, prev_point:Timepoint)->None:
+        b = self.__bindings[var_label]
+        x = self.__collect_inputs(point,prev_point,b)
+        y = point.var(b.output)
+        if y.dependent: y.break_dependency()
+        y.add_dependency(b.func, *x)
+
+    def __collect_inputs(self, point:Timepoint, prev_point:Timepoint, binding:Binding)->List[AbstractAttribute]:
+        inputs:List[AbstractAttribute] = list()
+        for f in binding.inputs: 
+            if f[0]=='[' and f[-1]==']': 
+                f_label, f_type = self.__extract_item_variable_label_and_type(f)
+                inputs.append(point.get_item_var_list(f_label, f_type))
+            elif f==binding.output:
+                inputs.append(prev_point.dep_var(f))
+            else:
+                inputs.append(point.dep_var(f))
+        return inputs
+    
     def __create_vars(self)->Dict[str,Attribute]:
         vars:Dict[str,Attribute] = {}
         var_info = self.var_info
         for label, info in var_info.items():
             vars[label] = self.attrfac.new_from_dict(**info, name=label)
         return vars
-    
-    def __update_dependencies(self, point:Timepoint)->None:
-        prev_point = self.prev_point(point)
-        for label in point.vars:
-            if label==self.__timename: continue
-            self.__set_dependency(label, point, prev_point)
 
-    def __update_dependencies_of_next_point(self, point:TimepointRegular)->None:
-        next_point = self.next_point(point)
-        if next_point is not None: 
-            self.__update_dependencies(next_point)
-
-    def __set_dependency(self, var_label:str, point:Timepoint, prev_point:Timepoint)->None:
-        b = self.__bindings[var_label]
-        x = self.__collect_inputs(point, *b.input)
-        y = point.var(b.output)
-        y0 = prev_point.dep_var(b.output)
-        if y.dependent: y.break_dependency()
-        y.add_dependency(b.func, y0, *x)
-
-    def __collect_inputs(self, timepoint:Timepoint, *input_labels:str)->List[AbstractAttribute]:
-        inputs:List[AbstractAttribute] = list()
-        for f in input_labels: 
-            if f[0]=='[' and f[-1]==']': 
-                f_label, f_type = self.__extract_item_variable_label_and_type(f)
-                timepoint._add_var_list(f_label, self.attrfac.newlist(f_type,name=f_label))
-                inputs.append(timepoint.item_var(f_label))
-            else:
-                inputs.append(timepoint.dep_var(f))
-        return inputs
-    
     @staticmethod
     def __extract_item_variable_label_and_type(text:str)->Tuple[str,str]:
         if ":" not in text: 
@@ -235,13 +230,13 @@ class Timeline:
             raise Timeline.MissingItemVariableType(text)
         return f_label, f_type
     
-    def __pick_timepoint_time(self, time:Any)->Any:
+    def __last_point_time(self, time:Any)->Any:
         time_index = self._index_of_nearest_smaller_or_equal(time, self.__time)
         if time_index<0: return None
         else: return self.__time[time_index]
 
     def __call__(self,variable_label:str, time:Any)->Any:
-        timepoint = self.pick_point(time)
+        timepoint = self.pick_last_point(time)
         return timepoint(variable_label)
     
     @staticmethod
@@ -284,10 +279,11 @@ class Timeline:
 from typing import Set
 import abc
 class Timepoint(abc.ABC): 
-    def __init__(self, vars:Dict[str,Attribute])->None:
+    def __init__(self, vars:Dict[str,Attribute], timeline:Timeline)->None:
         self._items:Set[Item] = set()
         self.__vars = vars
         self._item_var_lists:Dict[str, Attribute_List] = dict()
+        self.__timeline = timeline
 
     @property
     def vars(self)->Dict[str,Attribute]: return self.__vars.copy()
@@ -295,6 +291,8 @@ class Timepoint(abc.ABC):
     def item_names(self)->List[str]: return [i.name for i in self._items]
     @abc.abstractproperty
     def time(self)->Any: pass
+    @property
+    def timeline(self)->Timeline: return self.__timeline
 
     def __call__(self,var_label:str)->Any:
         return self.__vars[var_label].value
@@ -309,6 +307,14 @@ class Timepoint(abc.ABC):
 
     @abc.abstractmethod
     def _add_item(self,item:Item)->None: pass # pragma: no cover
+
+    def get_item_var_list(self, label:str, var_type:str)->Attribute_List:
+        if label not in self._item_var_lists:
+            self._add_var_list(label, self.__timeline.attrfac.newlist(var_type,name=var_type))
+            for item in self._items:
+                if item.has_attribute(label):
+                    self._item_var_lists[label].append(item.attribute(label))
+        return self._item_var_lists[label]
 
     def _add_var_list(self,label:str, varlist:Attribute_List)->None:
         self._item_var_lists[label] = varlist
@@ -339,23 +345,22 @@ class Move_Item_In_Time(Command):
         self.prev_time = self.data.tpoint.time
         self.new_time = self.data.item(self.data.timeline.timename)
         self.data.timeline._remove_item_from_timeline(self.data.item, self.prev_time)
-        self.data.timeline._add_item_to_timeline(self.data.item)
+        self.data.timeline._add_item_to_timeline(self.data.item, self.new_time)
     def undo(self)->None: 
-        self.data.timeline._remove_item_from_timeline(self.data.item)
+        self.data.timeline._remove_item_from_timeline(self.data.item, self.new_time)
         self.data.timeline._add_item_to_timeline(self.data.item, self.prev_time)
     def redo(self)->None: 
         self.data.timeline._remove_item_from_timeline(self.data.item, self.prev_time)
-        self.data.timeline._add_item_to_timeline(self.data.item)
+        self.data.timeline._add_item_to_timeline(self.data.item, self.new_time)
 
 
 class TimepointRegular(Timepoint):
 
     def __init__(self, vars:Dict[str,Attribute], timeline:Timeline)->None:
-        super().__init__(vars)
-        self.__timeline = timeline
+        super().__init__(vars, timeline)
 
     @property
-    def time(self)->Any: return self.vars[self.__timeline.timename]
+    def time(self)->Any: return self.vars[self.timeline.timename]
 
     def dep_var(self, label:str)->Attribute: return self.var(label)
 
@@ -366,14 +371,17 @@ class TimepointRegular(Timepoint):
                 self._item_var_lists[attr_label].append(attr)
 
         def move_in_time(*args)->Command:
-            return Move_Item_In_Time(Moving_In_Time_Data(self.__timeline,self,item))
+            return Move_Item_In_Time(Moving_In_Time_Data(self.timeline,self,item))
 
-        item.attribute(self.__timeline.timename).command['set'].add(
+        item.attribute(self.timeline.timename).command['set'].add(
             'timeline', move_in_time, timing='post'
         )
         
     def _remove_item(self,item:Item)->None:
         self._items.remove(item)
+        for label in self._item_var_lists:
+            if label in item.attributes: 
+                self._item_var_lists[label].remove(item.attribute(label))
 
     def is_init(self)->bool: return False
 
@@ -382,7 +390,7 @@ class TimepointRegular(Timepoint):
 class TimepointInit(Timepoint):
 
     def __init__(self, vars:Dict[str,Attribute], timeline:Timeline)->None:
-        super().__init__(vars)
+        super().__init__(vars, timeline)
         self.__init_vars:Dict[str,Attribute] = {label:var.copy() for label,var in vars.items()}
 
     @property
