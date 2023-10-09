@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Tuple, Dict, List, Any, Optional
 from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor, FileType
+from src.core.attributes import Locale_Code
 
 
 import re
@@ -74,18 +75,21 @@ class Case_Template:
 
 from src.core.item import Attribute_Data_Constructor
 class Editor:
-    def __init__(self, case_template:Case_Template)->None:
+    def __init__(self, case_template:Case_Template, locale_code:Locale_Code)->None:
         self.__creator = ItemCreator()
         self.__creator.add_templates(*case_template.templates.values())
         self.__creator.add_template(CASE_TEMPLATE_LABEL, {}, case_template.case_child_labels)
         self.__root = self.__creator.new("_")
         self.__attributes =  case_template.attributes
         self.__insertable = case_template.insertable
+        self.__locale_code = locale_code
 
     @property
     def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes
     @property
     def insertable(self)->str: return self.__insertable
+    @property
+    def locale_code(self)->Locale_Code: return self.__locale_code
 
     def can_save_as_item(self,item:Item)->bool:
         return item.itype == self.__insertable
@@ -183,8 +187,8 @@ class Editor:
     class UndefinedTemplate(ItemCreator.UndefinedTemplate): pass
 
 
-def new_editor(case_template:Case_Template)->Editor:
-    return Editor(case_template)
+def new_editor(case_template:Case_Template, locale_code:Locale_Code="en_us")->Editor:
+    return Editor(case_template, locale_code)
 
 
 def blank_case_template()->Case_Template:
