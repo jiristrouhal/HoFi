@@ -248,7 +248,7 @@ class Action_Menu:
 
     def open(self, commands:Dict[str,Callable[[],None]])->None: 
         if not commands: raise Action_Menu.NoCommands
-        self.__commands = commands
+        self.__commands = commands.copy()
 
     def run(self, command_label:str)->None: 
         if command_label not in self.__commands: raise Action_Menu.UndefinedCommand(command_label)
