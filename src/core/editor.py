@@ -207,7 +207,7 @@ class EditorUI:
     def __init__(self, editor:Editor)->None:
         self.__editor = editor
         self.__action_menu = Action_Menu()
-        self.__item_window = Edit_Window()
+        self.__item_window = Item_Window()
         self.__planner = Planner()
 
     @property
@@ -215,7 +215,7 @@ class EditorUI:
     @property
     def command_running(self)->bool: return False
     @property
-    def item_window(self)->Edit_Window: return self.__item_window
+    def item_window(self)->Item_Window: return self.__item_window
     @property
     def planner(self)->Planner: return self.__planner
     @property
@@ -226,6 +226,7 @@ class EditorUI:
 
     def open_item_window(self, item:Item)->None:
         if self.__action_menu.is_open: raise EditorUI.ActionMenuOpened
+        self.__item_window.open(item)
 
     def open_planner(self)->None:
         if self.__action_menu.is_open: raise EditorUI.ActionMenuOpened
@@ -234,9 +235,41 @@ class EditorUI:
     class ActionMenuOpened(Exception): pass
 
 
-class Edit_Window:
+
+import dataclasses
+@dataclasses.dataclass(frozen=True)
+class Item_Attribute:
+    orig_value:Any
+    validation_func:Callable[[Any],bool]
+    set_func:Callable[[Any],None]
+    options:Dict[str,Tuple[Any,...]] = dataclasses.field(default_factory=dict)
+
+
+
+
+class Item_Window:
+
+    def __init__(self)->None:
+        self.__item:Optional[Item] = None
+        self.__attributes:Dict[str, Item_Attribute] = {}
+
     @property
-    def is_open(self)->bool: return False
+    def is_open(self)->bool: return self.__item is not None
+
+    @property
+    def attributes(self)->Dict[str, Item_Attribute]: return self.__attributes.copy()
+    
+    def open(self, item:Item)->None:
+        self.__item = item
+        for label, attr in self.__item.attributes.items():
+            self.__attributes[label] = Item_Attribute(
+                orig_value = attr.value, 
+                validation_func = attr.is_valid, 
+                set_func = attr.set
+            )
+
+    def close(self)->None:
+        self.__item = None
 
 
 class Action_Menu:

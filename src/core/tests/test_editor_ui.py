@@ -67,7 +67,36 @@ class Test_Opening_Action_Menu(unittest.TestCase):
         self.assertRaises(EditorUI.ActionMenuOpened, self.ui.open_planner)
         self.assertRaises(EditorUI.ActionMenuOpened, self.ui.open_item_window, self.case)
 
-    
+
+
+from src.core.editor import Item_Attribute
+class Test_Item_Window(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.case_template = blank_case_template()
+        attr = self.case_template.attr
+        self.case_template.add('Item', {
+            'weight':attr.quantity('kg', {'k':3}, 1),
+            'description':attr.text('...'),
+        })
+        self.case_template.add_case_child_label('Item')
+        self.editor = new_editor(self.case_template)
+        self.ui = EditorUI(self.editor)
+
+        self.case = self.editor.new_case("New case")
+        self.item = self.editor.new(self.case, "Item")
+        
+    def test_opening_and_closing_item_window(self)->None:
+        self.ui.open_item_window(self.item)
+        self.assertTrue(self.ui.item_window.is_open)
+        self.ui.item_window.close()
+        self.assertFalse(self.ui.item_window.is_open)
+
+    def test_listing_item_attribute_values(self)->None:
+        self.ui.open_item_window(self.item)
+        self.assertEqual(tuple(self.ui.item_window.attributes.keys()), ('weight','description'))
+        self.assertEqual(self.ui.item_window.attributes['weight'].orig_value, 1)
+        
 
 
 if __name__=="__main__": unittest.main()
