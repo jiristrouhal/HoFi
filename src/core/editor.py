@@ -198,3 +198,29 @@ def new_editor(case_template:Case_Template, locale_code:Locale_Code="en_us")->Ed
 
 def blank_case_template()->Case_Template:
     return Case_Template()
+
+
+class EditorUI:
+
+    def __init__(self)->None:
+        self.__action_menu = Action_Menu()
+        self.__item_window = Edit_Window()
+
+    @property
+    def action_menu(self)->Action_Menu: return self.__action_menu
+    @property
+    def command_running(self)->bool: return False
+    @property
+    def item_window(self)->Edit_Window: return self.__item_window
+    @property
+    def selected_items(self)->List[Item]: return list()
+
+
+class Edit_Window:
+    @property
+    def is_open(self)->bool: return False
+
+
+class Action_Menu:
+    @property
+    def is_open(self)->bool: return False
