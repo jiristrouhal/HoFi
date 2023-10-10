@@ -91,7 +91,6 @@ class Editor:
         self.__attributes =  case_template.attributes
         self.__insertable = case_template.insertable
         self.__locale_code = locale_code
-        self.__currency = case_template.currency
 
     @property
     def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes
@@ -187,9 +186,6 @@ class Editor:
         self.__creator.redo()
 
     def print(self,item:Item,attribute_name:str,**options)->str:
-        if item.attribute(attribute_name).type=="money": 
-            options['currency_code'] = self.__currency
-
         return item.attribute(attribute_name).print(**options)
 
     class CannotExportCaseAsItem(Exception): pass
