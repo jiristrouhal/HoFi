@@ -790,10 +790,25 @@ class Choice_Attribute(Attribute):
     def __init__(
         self, 
         factory:Attribute_Factory, 
-        name:str="")->None:
+        atype:str,
+        name:str="",
+        init_value:Any=None,
+        options:List[Any] = list()
+        )->None:
         
-        self.options:List[Any] = list()
         super().__init__(factory, atype='choice', name=name)
+        self.options:List[Any] = list()
+        if options:
+            self.add_options(*options)
+            if init_value is None: 
+                self._value = options[0]
+            elif init_value in options: 
+                self._value = init_value
+            else: 
+                raise Choice_Attribute.UndefinedOption(init_value)
+        if not options and init_value is not None:
+            raise Choice_Attribute.UndefinedOption(init_value)
+
 
     @property
     def value(self)->Any: 
@@ -1168,6 +1183,15 @@ class Attribute_Data_Constructor:
         )->Dict[str,Any]:
 
         return {'atype':"date", 'init_value':init_value}
+    
+    def choice(
+        self,
+        options:Optional[List[Any]] = None,
+        init_option:Any = None
+        )->Dict[str,Any]:
+
+        if options is None: options = []
+        return {'atype':"choice", 'init_value':init_option, 'options':options}
 
     def integer(self, init_value:int=0)->Dict[str,Any]:
         return {'atype':"integer", 'init_value':init_value}
@@ -1241,10 +1265,10 @@ class Attribute_Factory:
             space_after_value=space_after_value
         )
 
-    def new(self,atype:str='text',init_value:Any=None, name:str="")->Attribute:
+    def new(self,atype:str='text',init_value:Any=None, name:str="", **kwargs)->Attribute:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         else:
-            return self.types[atype](self,atype,init_value,name)
+            return self.types[atype](factory=self,atype=atype,init_value=init_value,name=name,**kwargs)
         
     def new_from_dict(self,**dict)->Attribute:
         if dict['atype'] not in self.types: raise Attribute.InvalidAttributeType(dict['atype'])

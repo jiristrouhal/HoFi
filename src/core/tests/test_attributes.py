@@ -809,6 +809,23 @@ class Test_Make_Choice_Attribute_Dependent(unittest.TestCase):
         self.assertEqual(comp.value, "a is greater than b")
 
 
+class Test_Adding_Default_Options_To_Choice_Attribute(unittest.TestCase):
+
+    def test_creating_choice_with_default_options(self):
+        fac = attribute_factory(Controller())
+        choice = fac.new('choice', name="choice", init_value='B', options=['A','B','C'])
+
+        choice_2_data = fac.data_constructor.choice(options=['C','D'], init_option='D')
+        choice_2 = fac.new_from_dict(**choice_2_data, name='choice 2')
+
+        self.assertEqual(choice.value, 'B')
+        self.assertEqual(choice_2.value, 'D')
+
+        # if init_value is not specified (i.e. equal to None), choice is initialized with first option from the list
+        choice_3 = fac.new('choice', name="choice", options=['A','B','C'])
+        self.assertEqual(choice_3.value, 'A')
+
+
 import datetime
 from src.core.attributes import Date_Attribute
 import re
