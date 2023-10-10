@@ -200,11 +200,15 @@ def blank_case_template()->Case_Template:
     return Case_Template()
 
 
+from typing import Literal, Callable
 class EditorUI:
+    EditorLocation = Literal['tree']
 
-    def __init__(self)->None:
+    def __init__(self, editor:Editor)->None:
+        self.__editor = editor
         self.__action_menu = Action_Menu()
         self.__item_window = Edit_Window()
+        self.__planner = Planner()
 
     @property
     def action_menu(self)->Action_Menu: return self.__action_menu
@@ -213,7 +217,21 @@ class EditorUI:
     @property
     def item_window(self)->Edit_Window: return self.__item_window
     @property
+    def planner(self)->Planner: return self.__planner
+    @property
     def selected_items(self)->List[Item]: return list()
+
+    def open_action_menu(self, commands:Dict[str,Callable[[],None]])->None:
+        self.__action_menu.open(commands)
+
+    def open_item_window(self, item:Item)->None:
+        if self.__action_menu.is_open: raise EditorUI.ActionMenuOpened
+
+    def open_planner(self)->None:
+        if self.__action_menu.is_open: raise EditorUI.ActionMenuOpened
+
+
+    class ActionMenuOpened(Exception): pass
 
 
 class Edit_Window:
@@ -222,5 +240,27 @@ class Edit_Window:
 
 
 class Action_Menu:
+    def __init__(self)->None:
+        self.__commands:Dict[str,Callable[[],None]] = {}
+
+    @property
+    def is_open(self)->bool: return bool(self.__commands)
+
+    def open(self, commands:Dict[str,Callable[[],None]])->None: 
+        if not commands: raise Action_Menu.NoCommands
+        self.__commands = commands
+
+    def run(self, command_label:str)->None: 
+        if command_label not in self.__commands: raise Action_Menu.UndefinedCommand(command_label)
+        self.__commands[command_label]()
+        self.__commands.clear()
+
+    class NoCommands(Exception): pass
+    class UndefinedCommand(Exception): pass
+
+
+class Planner:
     @property
     def is_open(self)->bool: return False
+
+    def open(self)->None: pass
