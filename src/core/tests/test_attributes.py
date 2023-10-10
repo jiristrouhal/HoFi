@@ -825,6 +825,14 @@ class Test_Adding_Default_Options_To_Choice_Attribute(unittest.TestCase):
         choice_3 = fac.new('choice', name="choice", options=['A','B','C'])
         self.assertEqual(choice_3.value, 'A')
 
+    def test_setting_init_option_without_setting_list_of_options_raises_exception(self):
+        fac = attribute_factory(Controller())
+        self.assertRaises(Choice_Attribute.UndefinedOption, fac.new, 'choice', init_value='B')
+
+    def test_init_option_not_included_in_list_of_options_raises_exception(self):
+        fac = attribute_factory(Controller())
+        self.assertRaises(Choice_Attribute.UndefinedOption, fac.new, 'choice', init_value='Z', options=['A','B'])
+
 
 import datetime
 from src.core.attributes import Date_Attribute
