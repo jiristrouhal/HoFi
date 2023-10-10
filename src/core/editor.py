@@ -241,12 +241,12 @@ import dataclasses
 class Item_Attribute:
     orig_value:Any
     validation_func:Callable[[Any],bool]
-    set_func:Callable[[Any],None]
-    options:Dict[str,Tuple[Any,...]] = dataclasses.field(default_factory=dict)
+    set_funcs:Dict[str,Callable[[Any],None]]
+    options:Dict[str,Dict[str, Any]] = dataclasses.field(default_factory=dict)
 
 
 
-
+from src.core.attributes import Quantity
 class Item_Window:
 
     def __init__(self)->None:
@@ -262,10 +262,17 @@ class Item_Window:
     def open(self, item:Item)->None:
         self.__item = item
         for label, attr in self.__item.attributes.items():
+            options = {}
+            set_funcs:Dict[str,Callable] = {'value':attr.set}
+            if isinstance(attr, Quantity): 
+                options['unit'] = {label:prefix_val_tuple for label, prefix_val_tuple in zip(attr.scaled_units_single_str, attr.scaled_units)}
+                set_funcs['unit'] = attr.set_unit
+                set_funcs['prefix'] = attr.set_prefix
             self.__attributes[label] = Item_Attribute(
                 orig_value = attr.value, 
                 validation_func = attr.is_valid, 
-                set_func = attr.set
+                set_funcs = set_funcs,
+                options = options
             )
 
     def close(self)->None:

@@ -69,7 +69,7 @@ class Test_Opening_Action_Menu(unittest.TestCase):
 
 
 
-from src.core.editor import Item_Attribute
+from src.core.editor import Item_Attribute, Quantity
 class Test_Item_Window(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -92,10 +92,21 @@ class Test_Item_Window(unittest.TestCase):
         self.ui.item_window.close()
         self.assertFalse(self.ui.item_window.is_open)
 
-    def test_listing_item_attribute_values(self)->None:
+    def test_listing_item_attributes(self)->None:
         self.ui.open_item_window(self.item)
-        self.assertEqual(tuple(self.ui.item_window.attributes.keys()), ('weight','description'))
-        self.assertEqual(self.ui.item_window.attributes['weight'].orig_value, 1)
+        wattrs = self.ui.item_window.attributes
+        self.assertEqual(tuple(wattrs.keys()), ('weight','description'))
+
+        self.assertEqual(wattrs['weight'].orig_value, 1)
+        self.assertEqual(wattrs['weight'].options, {'unit':{'kg':('k','g'), 'g':('','g')}})
+        self.assertEqual(set(wattrs['weight'].set_funcs.keys()), {'value', 'prefix', 'unit'})
+        self.assertEqual(wattrs['description'].orig_value, '...')
+        self.assertEqual(wattrs['description'].options, {})
+        self.assertDictEqual(wattrs['description'].set_funcs, {
+            'value':self.item.attribute('description').set,
+        })
+
+    
         
 
 
