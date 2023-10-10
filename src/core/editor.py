@@ -65,9 +65,6 @@ class Case_Template:
         for label in labels:
             if label not in self.__templates: raise Case_Template.UndefinedTemplate(label)
             self.__case_child_labels.append(label)
-    
-    def set(self, currency:Currency_Code="USD")->None:
-        self.__currency = currency
 
     def set_insertable(self,template_label:str)->None:
         if template_label not in self.__templates: raise Case_Template.UndefinedTemplate(template_label)
