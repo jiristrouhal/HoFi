@@ -879,6 +879,7 @@ class Choice_Attribute(Attribute):
 class Bool_Attribute(Attribute):
     default_value = False
 
+
     def _check_input_type(self, value: Any) -> None:
         if bool(value)==value: return
         else: raise Attribute.InvalidValueType

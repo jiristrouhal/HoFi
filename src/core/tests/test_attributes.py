@@ -1902,4 +1902,25 @@ class Test_Creating_Attribute_From_Dictionary(unittest.TestCase):
         self.assertRaises(Attribute.InvalidAttributeType, fac.new_from_dict, **invalid_dict)
 
 
+class Test_Creating_Attribute_Via_Special_Method(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac_cz = attribute_factory(Controller(), locale_code="cs_cz")
+        self.fac_us = attribute_factory(Controller(), locale_code="en_us")
+
+    def test_creating_date_attribute(self):
+        attr_data = self.fac_cz.data_constructor.date(datetime.date(2026,4,16))
+        date_cz = self.fac_cz.new_from_dict(name="date", **attr_data)
+        date_us = self.fac_us.new_from_dict(name="date", **attr_data)
+        self.assertEqual(date_cz.print(), "16.04.2026")
+        self.assertEqual(date_us.print(), "2026-04-16")
+
+    def test_creating_boolean_attribute(self):
+        attr_data = self.fac_cz.data_constructor.boolean(init_value=True)
+        bool_cz = self.fac_cz.new_from_dict(name="date", **attr_data)
+        bool_us = self.fac_us.new_from_dict(name="date", **attr_data)
+        self.assertEqual(bool_cz.print(), "True")
+        self.assertEqual(bool_us.print(), "True")
+
+
 if __name__=="__main__": unittest.main()
