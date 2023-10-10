@@ -13,11 +13,6 @@ NBSP = u"\u00A0"
 from decimal import Decimal, getcontext
 getcontext().prec = 28
 Locale_Code = Literal['cs_cz','en_us']
-class UnknownLocaleCode(Exception): pass
-def verify_and_format_locale_code(locale_code:Locale_Code)->str:
-    if not locale_code.lower() in get_args(Locale_Code): raise UnknownLocaleCode(locale_code)
-    code = locale_code.lower()
-    return code
 
 
 class Dependency(abc.ABC):
@@ -107,10 +102,6 @@ class DependencyImpl(Dependency):
 
         def __str__(self)->str:
             return "NULL"
-
-    
-    # def __str__(self)->str:
-    #     return f"'{self._output.name}' = f({[i.name for i in self.inputs]})"
 
     NULL = NullDependency()
 
@@ -660,7 +651,7 @@ class Monetary_Attribute(Number_Attribute):
         *options
         )->str:
     
-        locale = verify_and_format_locale_code(self.factory.locale_code)
+        locale = self.factory.locale_code
         if not currency_code in self.__currencies: raise self.CurrencyNotDefined
         currency = self.__currencies[currency_code]
 
@@ -1214,11 +1205,14 @@ class Attribute_Data_Constructor:
 
 
 from typing import Type
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class Attribute_Factory:
     controller:Controller
     locale_code:Locale_Code = "en_us"
     data_constructor:Attribute_Data_Constructor = Attribute_Data_Constructor()
+    
+    def __post_init__(self)->None:
+        self.__verify_and_format_locale_code()
 
     @property
     def types(self)->Dict: return self.data_constructor.types
@@ -1265,6 +1259,12 @@ class Attribute_Factory:
         self.controller.run(*cmds)
     def undo(self)->None: self.controller.undo()
     def undo_and_forget(self)->None: self.controller.undo_and_forget()
+
+    class UnknownLocaleCode(Exception): pass
+
+    def __verify_and_format_locale_code(self)->None:
+        if not self.locale_code in get_args(Locale_Code): 
+            raise Attribute_Factory.UnknownLocaleCode(self.locale_code)
 
 
 def attribute_factory(

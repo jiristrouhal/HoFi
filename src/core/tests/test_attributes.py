@@ -8,14 +8,20 @@ import unittest
 import dataclasses
 from typing import Any
 
-from src.core.attributes import attribute_factory, Attribute, Set_Attr_Data, UnknownLocaleCode, NBSP
+from src.core.attributes import attribute_factory, Attribute, Set_Attr_Data, NBSP, Attribute_Factory
 from src.cmd.commands import Controller, Command
 
 
-class Test_Accessing_Item_Attributes(unittest.TestCase):
+class Test_Creating_Attributes(unittest.TestCase):
 
     def setUp(self) -> None:
         self.attrfac = attribute_factory(Controller())
+
+    def test_raising_exception_when_passing_unknown_locale_code_to_attribute_factory(self)->None:
+        self.assertRaises(
+            Attribute_Factory.UnknownLocaleCode, 
+            attribute_factory, Controller(), locale_code="unknown locale code"
+        )
     
     def test_default_attribute_type_is_text(self)->None:
         a1 = self.attrfac.new()
