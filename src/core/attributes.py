@@ -416,7 +416,7 @@ class Attribute(AbstractAttribute):
         self.command['set'].add(owner, func, timing)
 
     @abc.abstractmethod
-    def print(self, locale_code:Locale_Code = "en_us")->str: pass # pragma: no cover
+    def print(self, *options)->str: pass # pragma: no cover
     
     @abc.abstractmethod
     def read(self,text:str)->None: pass # pragma: no cover
@@ -482,8 +482,8 @@ class Number_Attribute(Attribute):
     @abc.abstractmethod # pragma: no cover
     def print(
         self, 
-        locale_code:Locale_Code = "en_us",
-        use_thousands_separator:bool=False
+        use_thousands_separator:bool=False,
+        *options
         )->str:
 
         pass
@@ -531,9 +531,9 @@ class Integer_Attribute(Number_Attribute):
     def _is_value_valid(self, value:Any)->bool: return True
         
     def print(
-        self, 
-        locale_code:Locale_Code = "en_us",
-        use_thousands_separator:bool=False
+        self,
+        use_thousands_separator:bool=False,
+        *options
         )->str:
 
         value_str = f'{self._value:,}'
@@ -573,7 +573,6 @@ class Real_Attribute(Number_Attribute):
 
     def print(
         self,
-        locale_code:Locale_Code = "en_us",
         use_thousands_separator:bool=False,
         precision:int=28,
         trailing_zeros:bool=False,
@@ -595,7 +594,7 @@ class Real_Attribute(Number_Attribute):
         str_value = self._set_thousands_separator(str_value, use_thousands_separator)
         if "." in str_value and not trailing_zeros: 
             str_value = str_value.rstrip('0').rstrip('.')
-        str_value = self._adjust_decimal_separator(str_value, locale_code)
+        str_value = self._adjust_decimal_separator(str_value, self.factory.locale_code)
         return str_value
         
     def set(self,value:Decimal|float|int)->None:
@@ -654,14 +653,14 @@ class Monetary_Attribute(Number_Attribute):
 
     def print(
         self,
-        locale_code:Locale_Code = 'en_us',
         use_thousands_separator:bool = False,
         currency_code:Currency_Code = "USD",
         trailing_zeros:bool = True,
-        enforce_plus:bool = False
+        enforce_plus:bool = False,
+        *options
         )->str:
     
-        locale = verify_and_format_locale_code(locale_code)
+        locale = verify_and_format_locale_code(self.factory.locale_code)
         if not currency_code in self.__currencies: raise self.CurrencyNotDefined
         currency = self.__currencies[currency_code]
 
@@ -772,9 +771,8 @@ class Date_Attribute(Attribute):
         self._check_input_type(value)
         return self._is_value_valid(value)
     
-    def print(self, locale_code:Locale_Code="en_us",*options)->str:
-        locale = verify_and_format_locale_code(locale_code)
-        date_format = self.__date_formats[locale]
+    def print(self,*options)->str:
+        date_format = self.__date_formats[self.factory.locale_code]
         return datetime.date.strftime(self._value,date_format)
     
     def read(self,text:str)->None:
@@ -798,7 +796,11 @@ from src.utils.naming import strip_and_join_spaces
 class Choice_Attribute(Attribute):
     default_value = ""
 
-    def __init__(self, factory:Attribute_Factory, name:str="")->None:
+    def __init__(
+        self, 
+        factory:Attribute_Factory, 
+        name:str="")->None:
+        
         self.options:List[Any] = list()
         super().__init__(factory, atype='choice', name=name)
 
@@ -838,8 +840,8 @@ class Choice_Attribute(Attribute):
 
     def print(
         self,
-        locale_code:Locale_Code = "en_us",
-        lower_case:bool = False
+        lower_case:bool = False,
+        *options
         )->str:
 
         return self._str_value(self._value,lower_case)
@@ -893,7 +895,7 @@ class Bool_Attribute(Attribute):
     def _is_value_valid(self, value: Any) -> bool:
         return True
     
-    def print(self, locale_code: Locale_Code = "en_us") -> str:
+    def print(self, *options) -> str:
         return str(bool(self._value))
     
     def read(self, text: str) -> None:
@@ -999,7 +1001,6 @@ class Quantity(Real_Attribute):
 
     def print(
         self,
-        locale_code:Locale_Code="en_us",
         use_thousands_separator:bool=False,
         precision:int=28,
         trailing_zeros:bool=False,
@@ -1009,7 +1010,6 @@ class Quantity(Real_Attribute):
         )->str:
 
         str_val = super().print(
-            locale_code,
             use_thousands_separator,
             precision,trailing_zeros,
             adjust=self.__adjust_func,
@@ -1167,11 +1167,21 @@ class Attribute_Data_Constructor:
             raise Attribute_Data_Constructor.UndefinedAttributeType(info['atype'])
         attr = self.types[info['atype']](Attribute_Factory(Controller()),**info)
 
+    def boolean(self, init_value:int=False)->Dict[str,Any]:
+        return {'atype':"bool", 'init_value':init_value}
+    
+    def date(
+        self, 
+        init_value:datetime.date = datetime.date.today()
+        )->Dict[str,Any]:
+
+        return {'atype':"date", 'init_value':init_value}
+
     def integer(self, init_value:int=0)->Dict[str,Any]:
         return {'atype':"integer", 'init_value':init_value}
     
     def money(self, init_value:Decimal|float|int=0.0)->Dict[str,Any]:
-        return {'atype':"real", 'init_value':init_value}
+        return {'atype':"money", 'init_value':init_value}
     
     def quantity(
         self, 
@@ -1189,7 +1199,11 @@ class Attribute_Data_Constructor:
             'space_after_value':space_after_value
         }
     
-    def real(self, init_value:Decimal|float|int=0.0)->Dict[str,Any]:
+    def real(
+        self, 
+        init_value:Decimal|float|int=0.0
+        )->Dict[str,Any]:
+
         return {'atype':"real", 'init_value':init_value}
     
     def text(self, init_value:str="")->Dict[str,Any]:
@@ -1200,12 +1214,11 @@ class Attribute_Data_Constructor:
 
 
 from typing import Type
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Attribute_Factory:
     controller:Controller
-    data_constructor:Attribute_Data_Constructor = dataclasses.field(init=False)
-    def __post_init__(self)->None:
-        self.data_constructor = Attribute_Data_Constructor()
+    locale_code:Locale_Code = "en_us"
+    data_constructor:Attribute_Data_Constructor = Attribute_Data_Constructor()
 
     @property
     def types(self)->Dict: return self.data_constructor.types
@@ -1254,5 +1267,9 @@ class Attribute_Factory:
     def undo_and_forget(self)->None: self.controller.undo_and_forget()
 
 
-def attribute_factory(controller:Controller)->Attribute_Factory:
-    return Attribute_Factory(controller)
+def attribute_factory(
+    controller:Controller,
+    locale_code:Locale_Code="en_us"
+    )->Attribute_Factory:
+
+    return Attribute_Factory(controller,locale_code)

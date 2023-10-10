@@ -213,8 +213,8 @@ class Test_Accessing_Item_Attributes_Via_Editor(unittest.TestCase):
         item.set("mass",5.5)
         counter.set('count',3)
 
-        self.assertEqual(editor.value(item,'mass',trailing_zeros=False), f"5.5{NBSP}kg")
-        self.assertEqual(editor.value(counter,'count'), "3")
+        self.assertEqual(editor.print(item,'mass',trailing_zeros=False), f"5.5{NBSP}kg")
+        self.assertEqual(editor.print(counter,'count'), "3")
 
 
 class Test_Check_Template_Labels_Do_Not_Contains_Only_Alphanumeric_Characters(unittest.TestCase):
@@ -443,6 +443,32 @@ class Test_Creating_New_Items_Of_Specified_Types(unittest.TestCase):
             self.editor.new, self.case, 'typeB'
         )
 
+
+class Test_Attribute_Localization_Is_Set_By_Editor(unittest.TestCase):
+
+    def test_currency_for_money_attribute_is_set_by_case_template(self):
+        self.case_template = blank_case_template()
+        attr = self.case_template.attr
+        self.case_template.add('Item', {'cost':attr.money(8)})
+        self.case_template.add_case_child_label('Item')
+        self.case_template.set(
+            currency = "CZK"
+        )
+        editor = new_editor(self.case_template, locale_code="en_us")
+        new_case = editor.new_case("Case")
+        item = editor.new(new_case, 'Item')
+        item.set('cost',8)
+        self.assertEqual(editor.print(item,"cost"), f"8.00{NBSP}Kč")
+
+        self.case_template.set(
+            currency = "USD"
+        )
+        editor = new_editor(self.case_template, locale_code="cs_cz")
+        new_case = editor.new_case("Case")
+        item = editor.new(new_case, 'Item')
+        item.set('cost',8)
+        self.assertEqual(editor.print(item,"cost"), f"8,00{NBSP}$")
+       
 
 import os
 def build_dir(dirpath:str)->None: # pragma: no cover

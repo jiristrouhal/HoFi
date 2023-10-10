@@ -11,6 +11,8 @@ import re
 
 CASE_TEMPLATE_LABEL = "__Case__"
 
+
+from src.core.attributes import Currency_Code
 class Case_Template:
     def __init__(self)->None:
         self.__templates:Dict[str, Template] = {}
@@ -18,6 +20,7 @@ class Case_Template:
         self.__attributes:Dict[str,Dict[str,Any]] = {}
         self.__constructor = Attribute_Data_Constructor()
         self.__insertable:str = ""
+        self.__currency:Currency_Code = "USD"
 
     @property
     def attr(self)->Attribute_Data_Constructor: return self.__constructor
@@ -29,6 +32,8 @@ class Case_Template:
     def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes.copy()
     @property
     def insertable(self)->str: return self.__insertable
+    @property
+    def currency(self)->Currency_Code: return self.__currency
 
     def add(
         self,
@@ -60,6 +65,9 @@ class Case_Template:
         for label in labels:
             if label not in self.__templates: raise Case_Template.UndefinedTemplate(label)
             self.__case_child_labels.append(label)
+    
+    def set(self, currency:Currency_Code="USD")->None:
+        self.__currency = currency
 
     def set_insertable(self,template_label:str)->None:
         if template_label not in self.__templates: raise Case_Template.UndefinedTemplate(template_label)
@@ -76,13 +84,14 @@ class Case_Template:
 from src.core.item import Attribute_Data_Constructor
 class Editor:
     def __init__(self, case_template:Case_Template, locale_code:Locale_Code)->None:
-        self.__creator = ItemCreator()
+        self.__creator = ItemCreator(locale_code)
         self.__creator.add_templates(*case_template.templates.values())
         self.__creator.add_template(CASE_TEMPLATE_LABEL, {}, case_template.case_child_labels)
         self.__root = self.__creator.new("_")
         self.__attributes =  case_template.attributes
         self.__insertable = case_template.insertable
         self.__locale_code = locale_code
+        self.__currency = case_template.currency
 
     @property
     def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes
@@ -177,7 +186,10 @@ class Editor:
     def redo(self)->None:
         self.__creator.redo()
 
-    def value(self,item:Item,attribute_name:str,**options)->str:
+    def print(self,item:Item,attribute_name:str,**options)->str:
+        if item.attribute(attribute_name).type=="money": 
+            options['currency_code'] = self.__currency
+
         return item.attribute(attribute_name).print(**options)
 
     class CannotExportCaseAsItem(Exception): pass

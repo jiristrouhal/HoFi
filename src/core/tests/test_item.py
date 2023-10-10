@@ -1155,7 +1155,7 @@ class Test_Defining_Item_Attributes_Via_Special_Methods(unittest.TestCase):
         self.assertEqual(item('x'),5)
         self.assertEqual(item('y'),7.5)
         self.assertEqual(item('description'),"..."),
-        self.assertEqual(item('cost'), decimal.Decimal('15.1')),
+        self.assertEqual(item('cost'), 15.1),
         self.assertEqual(item('weight'), 2.5)
 
     def test_using_dictionary_specifying_undefined_attribute_type_raises_exception(self):
