@@ -389,7 +389,7 @@ class Attribute(AbstractAttribute):
     default_value:Any = ""
     
     def __init__(self,factory:Attribute_Factory, atype:str='text',init_value:Any=None, name:str="")->None:  
-        self.__customary_condition:Callable[[Any],bool] = lambda x: True
+        self.__custom_condition:Callable[[Any],bool] = lambda x: True
         super().__init__(factory,atype,name)
         if init_value is not None and self.is_valid(init_value):
             self._value = init_value
@@ -417,14 +417,18 @@ class Attribute(AbstractAttribute):
         if self.is_valid(value): self._run_set_command(value)
         
     def set_validity_condition(self,func:Callable[[Any],bool])->None:
-        self.__customary_condition = func
+        self.__custom_condition = func
 
-    def is_valid(self, value:Any)->bool: 
-        self._check_input_type(value)
-        return self._is_value_valid(value) and self.__customary_condition(value)==True
-    
+    def is_valid(self, value:Any, raise_value_type_exception:bool=True)->bool: 
+        if not self._is_type_valid(value): 
+            if raise_value_type_exception:
+                raise Attribute.InvalidValueType(type(value))
+            else: 
+                return False
+        return self._is_value_valid(value) and self.__custom_condition(value)
+
     @abc.abstractmethod
-    def _check_input_type(self,value:Any)->None: pass # pragma: no cover
+    def _is_type_valid(self,value:Any)->bool: pass # pragma: no cover
 
     def _get_set_commands(self,value:Any)->List[Command]:
         value_getter = lambda: value
@@ -467,8 +471,8 @@ class Number_Attribute(Attribute):
     _reading_exception:Type[Exception] = CannotExtractNumber
 
     @abc.abstractmethod
-    def _check_input_type(self, value: Any) -> None:  # pragma: no cover
-        return super()._check_input_type(value)
+    def _is_type_valid(self, value: Any) -> bool:  # pragma: no cover
+        pass
 
     @abc.abstractmethod # pragma: no cover
     def print(
@@ -484,10 +488,13 @@ class Number_Attribute(Attribute):
         text = self.remove_thousands_separators(text)
         try:
             value = Decimal(text)
-            if not self.is_valid(value): raise
-            else: self.set(value)
+            if self.is_valid(value): self.set(value)
         except:
             raise self._reading_exception
+        
+    @staticmethod
+    def _is_a_number(value:Any)->bool:
+        return isinstance(value,int) or isinstance(value,Decimal) or isinstance(value,float)
 
     __Comma_Separator:Set[str] = {"cs_cz",}
     @staticmethod
@@ -514,12 +521,14 @@ class Integer_Attribute(Number_Attribute):
     class CannotExtractInteger(Exception): pass
     _reading_exception:Type[Exception] = CannotExtractInteger
 
-    def _check_input_type(self, value: Any) -> None:
-        try: 
-            if not int(value)==value: raise
-        except: raise Attribute.InvalidValueType(type(value))
+    def _is_type_valid(self, value: Any)->bool:
+        if Number_Attribute._is_a_number(value):
+            return Decimal(int(value))==Decimal(str(value))
+        else:
+            return False
 
-    def _is_value_valid(self, value:Any)->bool: return True
+    def _is_value_valid(self, value:Any)->bool: 
+        return True
         
     def print(
         self,
@@ -532,7 +541,6 @@ class Integer_Attribute(Number_Attribute):
         return value_str
 
     
-import math
 class Real_Attribute(Number_Attribute):
     class CannotExtractReal(Exception): pass
     _reading_exception:Type[Exception] = CannotExtractReal
@@ -552,12 +560,8 @@ class Real_Attribute(Number_Attribute):
         if init_value is not None and self.is_valid(init_value):
             init_value = Decimal(str(init_value))
 
-    def _check_input_type(self, value: Decimal|float|int) -> None:
-        try: 
-            if math.isnan(float(value)): return
-            elif not Decimal(value)==value: raise
-        except: 
-            raise Attribute.InvalidValueType(type(value))
+    def _is_type_valid(self, value: Decimal|float|int) -> bool:
+        return Number_Attribute._is_a_number(value)
 
     def _is_value_valid(self, value:Any)->bool:
         return True
@@ -623,11 +627,8 @@ class Monetary_Attribute(Number_Attribute):
         preferred_by:Set[Locale_Code] = {'en_us'}
         return locale_code in preferred_by
     
-    def _check_input_type(self, value:float|int|Decimal) -> None:
-        try: 
-            if math.isnan(float(value)): return
-            if not Decimal(value)==value: raise
-        except: raise Attribute.InvalidValueType(type(value))
+    def _is_type_valid(self, value:float|int|Decimal) -> bool:
+        return Number_Attribute._is_a_number(value)
 
     def _is_value_valid(self, value:float|int|Decimal)->bool:
         return True
@@ -718,8 +719,8 @@ class Monetary_Attribute(Number_Attribute):
 
 class Text_Attribute(Attribute):
 
-    def _check_input_type(self, value: Any) -> None:
-        if not isinstance(value,str): raise Attribute.InvalidValueType(type(value))
+    def _is_type_valid(self, value: Any) -> bool:
+        return isinstance(value,str)
 
     def _is_value_valid(self,value:Any)->bool:
         return True
@@ -751,17 +752,12 @@ class Date_Attribute(Attribute):
     YMD_PATT = YEARPATT + SEPARATOR + MONTHPATT + SEPARATOR + DAYPATT
     DMY_PATT = DAYPATT + SEPARATOR + MONTHPATT + SEPARATOR + YEARPATT
 
-    def _check_input_type(self, value: Any) -> None:
-        if not isinstance(value, datetime.date): 
-            raise Attribute.InvalidValueType(type(value))
+    def _is_type_valid(self, value: Any) -> bool:
+        return isinstance(value, datetime.date)
 
     def _is_value_valid(self, value: Any) -> bool:
         return True
 
-    def is_valid(self, value: Any) -> bool:
-        self._check_input_type(value)
-        return self._is_value_valid(value)
-    
     def print(self,*options)->str:
         date_format = self.__date_formats[self.factory.locale_code]
         return datetime.date.strftime(self._value,date_format)
@@ -831,15 +827,15 @@ class Choice_Attribute(Attribute):
     def clear_options(self)->None:
         self.options.clear()
 
-    def _check_input_type(self, value: Any) -> None: 
-        pass
+    def _is_type_valid(self, value: Any) -> bool: 
+        return True
 
     def _is_value_valid(self,value:Any)->bool: 
         if value not in self.options: 
             raise Choice_Attribute.UndefinedOption(
                 f"Unknown option: {value}; available options are: {self.options}"
             )
-        return value in self.options
+        return True
 
     def is_option(self, value:Any)->bool:
         return value in self.options
@@ -895,9 +891,8 @@ class Bool_Attribute(Attribute):
     default_value = False
 
 
-    def _check_input_type(self, value: Any) -> None:
-        if bool(value)==value: return
-        else: raise Attribute.InvalidValueType
+    def _is_type_valid(self, value: Any) -> bool:
+        return bool(value)==value
 
     def _is_value_valid(self, value: Any) -> bool:
         return True

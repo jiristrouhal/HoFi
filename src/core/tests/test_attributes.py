@@ -1948,4 +1948,16 @@ class Test_Creating_Attribute_Via_Special_Method(unittest.TestCase):
         self.assertEqual(bool_us.print(), "True")
 
 
+class Test_Value_Validation_Without_Raising_Exception(unittest.TestCase):
+
+    def test_value_validation(self):
+        fac = attribute_factory(Controller())
+        intattr = fac.new('integer')
+        self.assertTrue(intattr.is_valid(4, raise_value_type_exception=False))
+        self.assertFalse(intattr.is_valid(4.5, raise_value_type_exception=False))
+        self.assertFalse(intattr.is_valid("abc", raise_value_type_exception=False))
+        self.assertFalse(intattr.is_valid("", raise_value_type_exception=False))
+        
+
+
 if __name__=="__main__": unittest.main()
