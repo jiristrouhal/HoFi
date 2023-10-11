@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Tuple, Dict, List, Any, Optional
 from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor, FileType
-from src.core.attributes import Locale_Code
+from src.core.attributes import Locale_Code, AttributeType
 
 
 import re
@@ -236,14 +236,47 @@ class EditorUI:
 
 
 
+from src.core.attributes import Attribute, Monetary_Attribute
+from decimal import Decimal
+def attr_entry_data(attr:Attribute)->Attr_Entry_Data:
+    match attr.type:
+        case 'integer':
+            def set_from_str(value:str)->None: attr.set(int(value))
+            return Attr_Entry_Data(
+                attr.print(), 
+                attr.type, 
+                validation_func=attr._is_text_valid,
+                set_funcs={'value':set_from_str}
+            )
+        case 'real':
+            def set_from_str(value:str)->None: attr.set(Decimal(value))
+            return Attr_Entry_Data(
+                attr.print(), 
+                attr.type, 
+                validation_func=attr._is_text_valid,
+                set_funcs={'value':set_from_str}
+            )
+        case 'money':
+            def set_from_str(value:str)->None: attr.set(Decimal(value))
+            return Attr_Entry_Data(
+                attr.print(), 
+                attr.type, 
+                validation_func=attr._is_text_valid,
+                set_funcs={'value':set_from_str}
+            )
+        
+        case _:
+            raise ValueError(attr.type)
+
 import dataclasses
 @dataclasses.dataclass(frozen=True)
-class Item_Attribute:
+class Attr_Entry_Data:
     orig_value:Any
+    type:AttributeType
     validation_func:Callable[[Any],bool]
     set_funcs:Dict[str,Callable[[Any],None]]
     options:Dict[str,Dict[str, Any]] = dataclasses.field(default_factory=dict)
-
+    symbol:Optional[str] = None
 
 
 from src.core.attributes import Quantity
@@ -251,13 +284,13 @@ class Item_Window:
 
     def __init__(self)->None:
         self.__item:Optional[Item] = None
-        self.__attributes:Dict[str, Item_Attribute] = {}
+        self.__attributes:Dict[str, Attr_Entry_Data] = {}
 
     @property
     def is_open(self)->bool: return self.__item is not None
 
     @property
-    def attributes(self)->Dict[str, Item_Attribute]: return self.__attributes.copy()
+    def attributes(self)->Dict[str, Attr_Entry_Data]: return self.__attributes.copy()
     
     def open(self, item:Item)->None:
         self.__item = item
@@ -268,8 +301,9 @@ class Item_Window:
                 options['unit'] = {label:prefix_val_tuple for label, prefix_val_tuple in zip(attr.scaled_units_single_str, attr.scaled_units)}
                 set_funcs['unit'] = attr.set_unit
                 set_funcs['prefix'] = attr.set_prefix
-            self.__attributes[label] = Item_Attribute(
+            self.__attributes[label] = Attr_Entry_Data(
                 orig_value = attr.value, 
+                type = attr.type,
                 validation_func = attr.is_valid, 
                 set_funcs = set_funcs,
                 options = options

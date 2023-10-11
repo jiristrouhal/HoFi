@@ -210,7 +210,7 @@ class Remove_From_Attribute_List(Command):
 class AbstractAttribute(abc.ABC):
     NullDependency = DependencyImpl.NULL
 
-    def __init__(self, factory:Attribute_Factory, atype:str, name:str="")->None:
+    def __init__(self, factory:Attribute_Factory, atype:AttributeType, name:str="")->None:
         if not isinstance(name,str): 
             raise AbstractAttribute.Invalid_Name
         self.__name = name
@@ -229,7 +229,7 @@ class AbstractAttribute(abc.ABC):
     @property
     def id(self)->str: return self.__id
     @property
-    def type(self)->str: return self.__type
+    def type(self)->AttributeType: return self.__type
 
     @property
     def dependency(self)->Dependency: return self._dependency
@@ -284,7 +284,7 @@ class Attribute_List(AbstractAttribute):
     def __init__(
         self, 
         factory:Attribute_Factory, 
-        atype:str, 
+        atype:AttributeType, 
         name:str="",
         init_attributes:List[Any]|None = None, 
         )->None:
@@ -388,7 +388,7 @@ from typing import Set, List
 class Attribute(AbstractAttribute):
     default_value:Any = ""
     
-    def __init__(self,factory:Attribute_Factory, atype:str='text',init_value:Any=None, name:str="")->None:  
+    def __init__(self,factory:Attribute_Factory, atype:AttributeType='text',init_value:Any=None, name:str="")->None:  
         self.__custom_condition:Callable[[Any],bool] = lambda x: True
         super().__init__(factory,atype,name)
         if init_value is not None and self.is_valid(init_value):
@@ -436,6 +436,9 @@ class Attribute(AbstractAttribute):
 
     @abc.abstractmethod
     def _is_value_valid(self,value:Any)->bool: pass # pragma: no cover
+
+    @abc.abstractmethod
+    def _is_text_valid(self,value:str)->bool: pass # pragma: no cover
 
     def _run_set_command(self,value:Any)->None:
         self.factory.controller.run(*self._get_set_commands(value))
@@ -492,9 +495,25 @@ class Number_Attribute(Attribute):
         except:
             raise self._reading_exception
         
+    def _is_text_valid(self,value:str)->bool:
+        if self.factory.locale_code in Number_Attribute.__Comma_Separator: 
+            value = value.replace(',','.')
+        if Number_Attribute._is_text_a_number(str(value)): 
+            if value[-1] in ('+','-'): value += "0"
+            number = Decimal(value)
+            return self.is_valid(number, raise_value_type_exception=False)
+        else:
+            return False
+        
     @staticmethod
     def _is_a_number(value:Any)->bool:
         return isinstance(value,int) or isinstance(value,Decimal) or isinstance(value,float)
+    
+    @staticmethod
+    def _is_text_a_number(value:str)->bool:
+        DECIMAL_PATT =  '(([\-\+]?[0-9]+)|([\-\+][0-9]*))(\.[0-9]*)?'
+        return re.fullmatch(f'{DECIMAL_PATT}', value)  is not None
+    
 
     __Comma_Separator:Set[str] = {"cs_cz",}
     @staticmethod
@@ -548,7 +567,7 @@ class Real_Attribute(Number_Attribute):
     def __init__(
         self,
         factory:Attribute_Factory, 
-        atype:str,
+        atype:AttributeType,
         init_value:Any=None,
         name:str="", 
         )->None:
@@ -649,6 +668,7 @@ class Monetary_Attribute(Number_Attribute):
         currency_code:Currency_Code = "USD",
         trailing_zeros:bool = True,
         enforce_plus:bool = False,
+        show_symbol:bool = True,
         *options
         )->str:
     
@@ -663,7 +683,8 @@ class Monetary_Attribute(Number_Attribute):
         # decimal separator is adjusted AFTER setting thousands separator to avoid collisions when comma 
         # is used for one or the other
         value_str = self._adjust_decimal_separator(value_str,locale)
-        value_str = self.__add_symbol_to_printed_value(value_str, locale, currency)
+        if show_symbol:
+            value_str = self.__add_symbol_to_printed_value(value_str, locale, currency)
         if enforce_plus and self._value>0: value_str = '+'+value_str
         return value_str
 
@@ -719,6 +740,9 @@ class Monetary_Attribute(Number_Attribute):
 
 class Text_Attribute(Attribute):
 
+    def _is_text_valid(self, value: str) -> bool:
+        return True
+
     def _is_type_valid(self, value: Any) -> bool:
         return isinstance(value,str)
 
@@ -758,25 +782,33 @@ class Date_Attribute(Attribute):
     def _is_value_valid(self, value: Any) -> bool:
         return True
 
+    def _is_text_valid(self, value: str) -> bool:
+        return self.__extract_date_from_string(value) is not None
+
     def print(self,*options)->str:
         date_format = self.__date_formats[self.factory.locale_code]
         return datetime.date.strftime(self._value,date_format)
     
-    def read(self,text:str)->None:
+    def __extract_date_from_string(self,text:str)->None|Dict:
         text = self.__remove_spaces(text)
         date_match = re.fullmatch(self.YMD_PATT, text)
         if date_match is None: date_match = re.fullmatch(self.DMY_PATT, text)
-        if date_match is None: raise Date_Attribute.CannotExtractDate(text)
-        date = date_match.groupdict()
-        year, month, day = map(int,(date['year'], date['month'], date['day']))
-        self.set(datetime.date(year, month, day))
+        if date_match is None: return None
+        return date_match.groupdict()
+    
+    def read(self,text:str)->None:
+        date = self.__extract_date_from_string(text)
+        if date is None: 
+            raise Date_Attribute.CannotExtractDate(text)
+        else:
+            year, month, day = map(int,(date['year'], date['month'], date['day']))
+            self.set(datetime.date(year, month, day))
 
     def __remove_spaces(self,text:str)->str: 
         for sp in (" ",NBSP,"\t"): text = text.replace(sp, "")
         return text
     
     class CannotExtractDate(Exception): pass
-
 
 
 from src.utils.naming import strip_and_join_spaces
@@ -786,7 +818,7 @@ class Choice_Attribute(Attribute):
     def __init__(
         self, 
         factory:Attribute_Factory, 
-        atype:str,
+        atype:AttributeType,
         name:str="",
         init_value:Any=None,
         options:List[Any] = list()
@@ -826,6 +858,9 @@ class Choice_Attribute(Attribute):
 
     def clear_options(self)->None:
         self.options.clear()
+
+    def _is_text_valid(self, value: str) -> bool:
+        return self._is_value_valid(value)
 
     def _is_type_valid(self, value: Any) -> bool: 
         return True
@@ -890,6 +925,8 @@ class Choice_Attribute(Attribute):
 class Bool_Attribute(Attribute):
     default_value = False
 
+    def _is_text_valid(self, value: str) -> bool:
+        return value.strip() in ("True","False","true","false")
 
     def _is_type_valid(self, value: Any) -> bool:
         return bool(value)==value
@@ -901,7 +938,7 @@ class Bool_Attribute(Attribute):
         return str(bool(self._value))
     
     def read(self, text: str) -> None:
-        if text.strip() in ("True","False","true","false"): 
+        if self._is_text_valid(text):
             self._value = bool(text)
         else: raise Bool_Attribute.CannotReadBooleanFromText(text)
 
@@ -933,7 +970,7 @@ class Quantity(Real_Attribute):
     def __init__(
         self,
         factory:Attribute_Factory,
-        atype:str,
+        atype:AttributeType,
         init_value:Optional[float|Decimal|int]=None, 
         name:str="",
         unit:str="",
@@ -1148,6 +1185,8 @@ class Quantity(Real_Attribute):
     class UnknownUnitInText(Exception): pass
 
 
+
+AttributeType = Literal['bool','choice','date','integer','money','quantity','real','text']
 class Attribute_Data_Constructor:
 
     def __init__(self)->None:
@@ -1237,7 +1276,7 @@ class Attribute_Factory:
     @property
     def types(self)->Dict: return self.data_constructor.types
 
-    def newlist(self,atype:str='text', init_items:List[Any]|None=None, name:str="")->Attribute_List:
+    def newlist(self,atype:AttributeType='text', init_items:List[Any]|None=None, name:str="")->Attribute_List:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         return Attribute_List(self, atype, init_attributes=init_items, name=name)
     
@@ -1260,7 +1299,7 @@ class Attribute_Factory:
             space_after_value=space_after_value
         )
 
-    def new(self,atype:str='text',init_value:Any=None, name:str="", **kwargs)->Attribute:
+    def new(self,atype:AttributeType='text',init_value:Any=None, name:str="", **kwargs)->Attribute:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         else:
             return self.types[atype](factory=self,atype=atype,init_value=init_value,name=name,**kwargs)
@@ -1271,7 +1310,7 @@ class Attribute_Factory:
             return self.types[dict['atype']](self,**dict)
         
     def choice(self, name:str="")->Choice_Attribute:
-        return Choice_Attribute(self,name)
+        return Choice_Attribute(self,atype="choice",name=name)
         
 
     def redo(self)->None: self.controller.redo()

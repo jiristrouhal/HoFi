@@ -1957,7 +1957,24 @@ class Test_Value_Validation_Without_Raising_Exception(unittest.TestCase):
         self.assertFalse(intattr.is_valid(4.5, raise_value_type_exception=False))
         self.assertFalse(intattr.is_valid("abc", raise_value_type_exception=False))
         self.assertFalse(intattr.is_valid("", raise_value_type_exception=False))
+
+
+class Test_Is_String_A_Number(unittest.TestCase):
+
+    def test_is_numeric(self):
+        foo = Number_Attribute._is_text_a_number
+        self.assertTrue(foo("0"))
+        self.assertTrue(foo("1.56"))
+        self.assertTrue(foo("0.45"))
+        self.assertTrue(foo("1."))
+        self.assertTrue(foo("-"))
+        self.assertTrue(foo("+"))
         
+        self.assertFalse(foo(""))
+        self.assertFalse(foo("  "))
+        self.assertFalse(foo("4566f"))
+        self.assertFalse(foo("abc"))
+        self.assertFalse(foo(".45"))
 
 
 if __name__=="__main__": unittest.main()
