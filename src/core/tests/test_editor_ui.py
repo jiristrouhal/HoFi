@@ -68,8 +68,6 @@ class Test_Opening_Action_Menu(unittest.TestCase):
         self.assertRaises(EditorUI.ActionMenuOpened, self.ui.open_item_window, self.case)
 
 
-
-from src.core.editor import Item_Attribute, Quantity
 class Test_Item_Window(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -100,6 +98,8 @@ class Test_Item_Window(unittest.TestCase):
         self.assertEqual(wattrs['weight'].orig_value, 1)
         self.assertEqual(wattrs['weight'].options, {'unit':{'kg':('k','g'), 'g':('','g')}})
         self.assertEqual(set(wattrs['weight'].set_funcs.keys()), {'value', 'prefix', 'unit'})
+        self.assertEqual(wattrs['weight'].validation_func, self.item.attribute('weight').is_valid)
+        
         self.assertEqual(wattrs['description'].orig_value, '...')
         self.assertEqual(wattrs['description'].options, {})
         self.assertDictEqual(wattrs['description'].set_funcs, {
