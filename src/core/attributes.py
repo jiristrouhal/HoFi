@@ -997,6 +997,8 @@ class Quantity(Real_Attribute):
     @property
     def unit(self)->str: return self.__unit.symbol
     @property
+    def type(self)->AttributeType: return 'quantity'
+    @property
     def prefix(self)->str: return self.__prefix
     @property
     def scaled_units(self)->List[Tuple[str,str]]: 

@@ -236,20 +236,38 @@ class EditorUI:
 
 
 
-from src.core.attributes import Attribute, Monetary_Attribute
+from src.core.attributes import Attribute, Choice_Attribute, Bool_Attribute
 from decimal import Decimal
 def attr_entry_data(attr:Attribute)->Attr_Entry_Data:
     match attr.type:
-        case 'integer':
-            def set_from_str(value:str)->None: attr.set(int(value))
+        case 'bool':
+            def set_from_str(value:str)->None: attr.set(bool(value))
+            assert(isinstance(attr, Bool_Attribute))
+            return Attr_Entry_Data(
+                attr.print(),
+                attr.type,
+                validation_func=attr._is_text_valid,
+                set_funcs={'value':set_from_str}
+            )
+        case 'choice':
+            assert(isinstance(attr, Choice_Attribute))
             return Attr_Entry_Data(
                 attr.print(), 
                 attr.type, 
                 validation_func=attr._is_text_valid,
-                set_funcs={'value':set_from_str}
+                set_funcs={'value':attr.set},
+                values=attr.options
+            )  
+        case 'date':
+            return Attr_Entry_Data(
+                attr.value, 
+                attr.type, 
+                validation_func=attr._is_text_valid,
+                set_funcs={'value':attr.set},
+                locale_code=attr.factory.locale_code
             )
-        case 'real':
-            def set_from_str(value:str)->None: attr.set(Decimal(value))
+        case 'integer':
+            def set_from_str(value:str)->None: attr.set(int(value))
             return Attr_Entry_Data(
                 attr.print(), 
                 attr.type, 
@@ -264,6 +282,36 @@ def attr_entry_data(attr:Attribute)->Attr_Entry_Data:
                 validation_func=attr._is_text_valid,
                 set_funcs={'value':set_from_str}
             )
+        case 'real':
+            def set_from_str(value:str)->None: attr.set(Decimal(value))
+            return Attr_Entry_Data(
+                attr.print(), 
+                attr.type, 
+                validation_func=attr._is_text_valid,
+                set_funcs={'value':set_from_str}
+            )
+        case 'quantity':
+            def set_from_str(value:str)->None: attr.set(Decimal(value))
+            assert(isinstance(attr,Quantity))
+            return Attr_Entry_Data(
+                attr.print(include_unit=False), 
+                attr.type, 
+                validation_func=attr._is_text_valid,
+                set_funcs={'value':set_from_str},
+                options={
+                    'unit':{s:pu for s,pu in zip(attr.scaled_units_single_str, attr.scaled_units)}
+                },
+                chosen_options={
+                    'unit':attr.prefix+attr.unit
+                }
+            )
+        case 'text':
+            return Attr_Entry_Data(
+                attr.print(),
+                attr.type,
+                validation_func=attr._is_text_valid,
+                set_funcs={'value':attr.set}
+            )
         
         case _:
             raise ValueError(attr.type)
@@ -275,8 +323,11 @@ class Attr_Entry_Data:
     type:AttributeType
     validation_func:Callable[[Any],bool]
     set_funcs:Dict[str,Callable[[Any],None]]
+    values:List[Any] = dataclasses.field(default_factory=list)
     options:Dict[str,Dict[str, Any]] = dataclasses.field(default_factory=dict)
+    chosen_options:Dict[str,Any] = dataclasses.field(default_factory=dict)
     symbol:Optional[str] = None
+    locale_code:str = "en_us"
 
 
 from src.core.attributes import Quantity
