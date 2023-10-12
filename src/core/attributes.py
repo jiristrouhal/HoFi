@@ -950,7 +950,7 @@ class Unit:
     symbol:str
     exponents:Dict[str,int]
     from_basic:Callable[[float|Decimal],Decimal|float]
-    to_basic:Callable[[float|Decimal],Decimal|float]
+    to_basic:Callable[[float|Decimal],Decimal]
     space:bool=True
     default_prefix:str=""
 
@@ -1017,14 +1017,14 @@ class Quantity(Real_Attribute):
         self, 
         symbol:str, 
         exponents:Optional[Dict[str,int]]=None, 
-        from_basic:Optional[Callable[[Decimal|float],Decimal|float]] = None,
-        to_basic:Optional[Callable[[Decimal|float],Decimal|float]] = None,
+        from_basic:Optional[Callable[[Decimal|float],Decimal]] = None,
+        to_basic:Optional[Callable[[Decimal|float],Decimal]] = None,
         space_after_value:bool=True
         )->None:
 
         if symbol in self.__units: raise Quantity.UnitAlreadyDefined(symbol)
-        if from_basic is None: from_basic = lambda x: x
-        if to_basic is None: to_basic = lambda x: x
+        if from_basic is None: from_basic = lambda x: Decimal(x)
+        if to_basic is None: to_basic = lambda x: Decimal(x)
         Quantity._check_conversion_from_and_to_basic_units(from_basic,to_basic)
         self.__units[symbol] = Quantity.__create_unit(
             symbol,
@@ -1034,6 +1034,17 @@ class Quantity(Real_Attribute):
             to_basic=to_basic
         )
         self.__scaled_units.extend([(prefix, symbol) for prefix in self.__units[symbol].exponents])
+
+    def convert(self,value:Decimal|float, source_unit:str, target_unit:str)->Decimal:
+        new_value = Decimal(str(value))
+        src_prefix, src_unit = self._separate_prefix_from_unit(source_unit)
+        tgt_prefix, tgt_unit = self._separate_prefix_from_unit(target_unit)
+        new_value *= Decimal(10)**Decimal(self.__units[src_unit].exponents[src_prefix])
+        if src_unit!=tgt_unit:
+            new_value = Decimal(self.__units[src_unit].to_basic(new_value))
+            new_value = Decimal(self.__units[tgt_unit].from_basic(new_value))
+        new_value *= Decimal(10)**Decimal(-self.__units[tgt_unit].exponents[tgt_prefix])
+        return Decimal(str(new_value))
 
     def pick_scaled_unit(self,id:int)->None:
         picked = self.__scaled_units[id]
@@ -1117,8 +1128,8 @@ class Quantity(Real_Attribute):
     
     @staticmethod
     def _check_conversion_from_and_to_basic_units(
-        from_basic:Callable[[Decimal|float],Decimal|float],
-        to_basic:Callable[[Decimal|float],Decimal|float],
+        from_basic:Callable[[Decimal|float],Decimal],
+        to_basic:Callable[[Decimal|float],Decimal],
         test_value:Decimal|float = Decimal('0')
         )->None:
 
@@ -1141,8 +1152,8 @@ class Quantity(Real_Attribute):
         symbol:str, 
         exponents:Optional[Dict[str,int]]=None, 
         space:bool=True,
-        from_basic:Callable[[Decimal|float], Decimal|float] = lambda x: x,
-        to_basic:Callable[[Decimal|float], Decimal|float] = lambda x: x,
+        from_basic:Callable[[Decimal|float], Decimal] = lambda x: Decimal(x),
+        to_basic:Callable[[Decimal|float], Decimal] = lambda x: Decimal(x),
         )->Unit:
 
         symbol = symbol.strip()

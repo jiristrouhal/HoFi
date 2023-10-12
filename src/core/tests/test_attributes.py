@@ -1977,4 +1977,24 @@ class Test_Is_String_A_Number(unittest.TestCase):
         self.assertFalse(foo(".45"))
 
 
+class Test_Recalculating_Quantity_Value_On_Chaning_Unit(unittest.TestCase):
+
+    def test_lenght(self)->None:
+        fac = attribute_factory(Controller())
+        length = fac.newqu(unit="m")
+
+        self.assertEqual(length.convert(0.15, "m", "mm"), 150)
+
+    def test_temperature(self)->None:
+        fac = attribute_factory(Controller())
+        temperature = fac.newqu(unit="K", exponents={})
+        temperature.add_unit(
+            "°C", 
+            exponents={}, 
+            from_basic=lambda x: Decimal(x)-Decimal('273.15'),
+            to_basic=lambda x: Decimal(x)+Decimal('273.15')
+        )
+        self.assertEqual(temperature.convert(293.15, "K", "°C"), 20)
+
+
 if __name__=="__main__": unittest.main()

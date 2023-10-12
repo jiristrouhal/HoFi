@@ -134,8 +134,8 @@ class Quantity_Entry(Attribute_Entry):
         self.__frame = tk.Frame(self.master)
         vcmd = (self.__frame.register(validation_func),'%P')
         self.__value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
-        self.__value.insert(0, self.attr.value)
         self.__value.grid(row=0, column=0)
+        self.__update_value(self.attr.value)
     
     def _create_options(self) -> None:
         assert(isinstance(self.attr,Quantity))
@@ -154,12 +154,17 @@ class Quantity_Entry(Attribute_Entry):
         self.option('unit').set(self.attr.prefix+self.attr.unit)
         self.option('unit').grid(row=0,column=1)
 
-    def set(self,value:Any,value_label:str=""): 
+    def __update_value(self,new_value:Any)->None:
+        self.__value.delete(0, tk.END)
+        self.__value.insert(0, self.attr.value)
+
+    def set(self,value:Any,value_label:str=""):
+        assert(isinstance(self.attr,Quantity))
         if value_label=="":
-            self.__value.delete(0,tk.END)
-            self.__value.insert(0,value)
+            self.__update_value(value)
         elif value_label=="unit":
             self.option("unit").set(value)
+            self.__update_value(self.attr.print(include_unit=False))
     
     def value(self, value_label:str = "") -> Any:
         if value_label=="": return self.__value.get()
