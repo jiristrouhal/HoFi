@@ -29,6 +29,11 @@ class Attribute_Entry(abc.ABC):
     def _create_entry(self)->None: pass
     @abc.abstractmethod
     def _create_options(self)->None: pass
+
+    @abc.abstractmethod
+    def ok(self)->None: pass
+    @abc.abstractmethod
+    def revert(self)->None: pass
     @abc.abstractmethod
     def set(self,value:Any,value_label:str="")->None: pass
 
@@ -48,6 +53,12 @@ class Bool_Entry(Attribute_Entry):
         self.__value = tk.Checkbutton(self.master, variable=self.__var, onvalue=True, offvalue=False)
     
     def _create_options(self) -> None: pass
+
+    def ok(self)->None:
+        self.attr.set(self.__var.get())
+
+    def revert(self)->None:
+        self.set(self.attr.value)
 
     def set(self,value:bool,value_label:str="")->None: self.__var.set(value)
 
@@ -70,6 +81,12 @@ class Choice_Entry(Attribute_Entry):
         self.__choice.set(self.attr.value)
 
     def _create_options(self) -> None: pass
+    
+    def ok(self)->None:
+        self.attr.set(self.__choice.get())
+
+    def revert(self)->None:
+        self.__choice.set(self.attr.value)
 
     def set(self, value:str, value_label:str="")->None:
         self.__choice.set(value)
@@ -90,6 +107,12 @@ class Date_Entry(Attribute_Entry):
         
     def _create_options(self) -> None:
         pass
+
+    def ok(self)->None:
+        self.attr.set(self.__date_entry.get_date())
+    
+    def revert(self)->None:
+        self.__date_entry.set_date(self.attr.value)
 
     def set(self, value:datetime.date, value_label:str="")->None:
         self.__date_entry.set_date(value)
@@ -112,6 +135,18 @@ class Money_Entry(Attribute_Entry):
         self.__entry.grid(column=0,row=0)
     
     def _create_options(self) -> None: pass
+
+    def ok(self)->None:
+        str_value = self.__entry.get()
+        if str_value in ("","+","-"): 
+            value = Decimal(0)
+        else:
+            value = Decimal(str_value)
+        self.attr.set(value)
+
+    def revert(self)->None:
+        self.__entry.delete(0,tk.END)
+        self.__entry.insert(0,str(self.attr.value))
 
     def set(self, value: Any, value_label: str = "") -> None:
         self.__entry.delete(0,tk.END)
@@ -179,18 +214,25 @@ class Quantity_Entry(Attribute_Entry):
                 str_value = str_value.rstrip("0").rstrip(",").rstrip(".")
             self.__update_value(str_value)
 
+    def ok(self)->None:
+        assert(isinstance(self.attr,Quantity))
+        prefix,unit = self.attr._separate_prefix_from_unit(self.__unit.get())
+        self.attr.set_unit(unit)
+        self.attr.set_prefix(prefix)
+        self.attr.read(self.__value.get()+' '+prefix+unit)
+
+    def revert(self)->None:
+        assert(isinstance(self.attr,Quantity))
+        self.__unit.set(self.attr.prefix+self.attr.unit)
+        self.__update_value(self.attr.print(include_unit=False))
+
     def set(self,value:Any,value_label:str=""):
         assert(isinstance(self.attr,Quantity))
         if value_label=="":
             self.__update_value(value)
         elif value_label=="unit":
-            prev_unit = self.__unit.get()
-            new_unit = value
             self.__unit.set(value)
-            curr_value = self.value()
-            if self.attr._is_text_valid(curr_value):
-                converted_value = self.attr.convert(Decimal(curr_value), prev_unit, new_unit)
-                self.__update_value(converted_value)
+            self.__update_displayed_value_on_unit_update()
     
     def value(self, value_label:str = "") -> Any:
         if value_label=="": 
@@ -213,6 +255,18 @@ class Number_Entry(Attribute_Entry):
 
     def _create_options(self) -> None: pass
 
+    def ok(self)->None:
+        str_value = self.__value.get()
+        if str_value in ("","+","-"): 
+            value = Decimal(0)
+        else:
+            value = Decimal(str_value)
+        self.attr.set(value)
+
+    def revert(self)->None:
+        self.__value.delete(0,tk.END)
+        self.__value.insert(0,str(self.attr.value))
+
     def set(self, value:Any, value_label:str="")->None:
         self.__value.delete(0, tk.END)
         self.__value.insert(0, value)
@@ -231,6 +285,13 @@ class Text_Entry(Attribute_Entry):
         self.__text.insert(1.0, self.attr.value)
     
     def _create_options(self) -> None: pass
+
+    def ok(self)->None:
+        self.attr.set(self.__text.get(1.0, tk.END)[:-1])
+
+    def revert(self)->None:
+        self.__text.delete(1.0, tk.END)
+        self.__text.insert(1.0, self.attr.value)
     
     def set(self,value:str,value_label:str="")->None: 
         self.__text.delete(1.0, tk.END)
