@@ -236,7 +236,7 @@ class EditorUI:
 
 
 
-from src.core.attributes import Quantity, Attribute
+from src.core.attributes import Attribute
 class Item_Window:
 
     def __init__(self)->None:

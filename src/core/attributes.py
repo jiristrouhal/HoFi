@@ -473,6 +473,10 @@ class Number_Attribute(Attribute):
     class CannotExtractNumber(Exception): pass
     _reading_exception:Type[Exception] = CannotExtractNumber
 
+    @property
+    def comma_as_dec_separator(self)->bool:
+        return self.factory.locale_code in Number_Attribute.__Comma_Separator
+
     @abc.abstractmethod
     def _is_type_valid(self, value: Any) -> bool:  # pragma: no cover
         pass
@@ -1134,7 +1138,7 @@ class Quantity(Real_Attribute):
         )->None:
 
         orig = Decimal(str(test_value))
-        converted_to_alt_and_back = from_basic(to_basic(orig))
+        converted_to_alt_and_back = from_basic((to_basic(orig)))
         if converted_to_alt_and_back != orig:
             raise Quantity.Conversion_To_Alternative_Units_And_Back_Does_Not_Give_The_Original_Value(
                 f"{orig} != {converted_to_alt_and_back}"

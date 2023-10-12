@@ -122,6 +122,7 @@ class Money_Entry(Attribute_Entry):
 
 
 from src.core.attributes import Quantity
+from decimal import Decimal
 class Quantity_Entry(Attribute_Entry):
 
     @property
@@ -143,32 +144,59 @@ class Quantity_Entry(Attribute_Entry):
         def validate_unit(unit:str)->bool:  
             return unit in scaled_units
         unit_vcmd = (self.__frame.register(validate_unit),'%P')
-        self.add_option('unit', ttk.Combobox(
+        self.__prev_scaled_unit = self.attr.prefix + self.attr.unit
+        self.__unit_var = tk.StringVar(self.__frame)
+        self.__unit = ttk.Combobox(
             self.__frame, 
             width=7,
             values=scaled_units, 
             name="unit",
             validate="key",
             validatecommand=unit_vcmd,
-        ))
-        self.option('unit').set(self.attr.prefix+self.attr.unit)
-        self.option('unit').grid(row=0,column=1)
+            textvariable=self.__unit_var
+        )
+        self.__unit.set(self.attr.prefix+self.attr.unit)
+        self.__unit.grid(row=0,column=1)
+        self.__unit_var.trace_add("write", self.__update_displayed_value_on_unit_update)
 
     def __update_value(self,new_value:Any)->None:
+        str_value = str(new_value)
+        assert(isinstance(self.attr,Quantity))
+        if self.attr.comma_as_dec_separator: str_value = str_value.replace(".",",")
         self.__value.delete(0, tk.END)
-        self.__value.insert(0, self.attr.value)
+        self.__value.insert(0, str_value)
+
+    def __update_displayed_value_on_unit_update(self, *args)->None:
+        prev_unit = self.__prev_scaled_unit
+        new_unit = self.__unit.get()
+        self.__prev_scaled_unit = new_unit
+        curr_value = str(self.value()).replace(",",".")
+        assert(isinstance(self.attr,Quantity))
+        if self.attr._is_text_valid(curr_value):
+            converted_value = self.attr.convert(Decimal(curr_value), prev_unit, new_unit)
+            str_value = str(converted_value)
+            if "." in str_value or "," in str_value: 
+                str_value = str_value.rstrip("0").rstrip(",").rstrip(".")
+            self.__update_value(str_value)
 
     def set(self,value:Any,value_label:str=""):
         assert(isinstance(self.attr,Quantity))
         if value_label=="":
             self.__update_value(value)
         elif value_label=="unit":
-            self.option("unit").set(value)
-            self.__update_value(self.attr.print(include_unit=False))
+            prev_unit = self.__unit.get()
+            new_unit = value
+            self.__unit.set(value)
+            curr_value = self.value()
+            if self.attr._is_text_valid(curr_value):
+                converted_value = self.attr.convert(Decimal(curr_value), prev_unit, new_unit)
+                self.__update_value(converted_value)
     
     def value(self, value_label:str = "") -> Any:
-        if value_label=="": return self.__value.get()
-        elif value_label=="unit": return self.option("unit").get()
+        if value_label=="": 
+            return self.__value.get()
+        elif value_label=="unit": 
+            return self.__unit.get()
 
 
 class Number_Entry(Attribute_Entry):

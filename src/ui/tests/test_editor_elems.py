@@ -147,6 +147,7 @@ class Test_Quantity_Entry(unittest.TestCase):
         q.set("25.4")
         self.assertEqual(q.value(), "25.4")
         self.assertEqual(q.value('unit'),'cm²')
+
         q.set('m²',value_label='unit')
         self.assertEqual(q.value('unit'),'m²')
         self.assertEqual(q.value(), "0.00254")
@@ -167,9 +168,6 @@ class Test_Bool_Entry(unittest.TestCase):
         self.assertEqual(entry.value(), True)
         entry.set(False)
         self.assertEqual(entry.value(), False)
-
-
-        
 
 
 if __name__=="__main__": unittest.main()
