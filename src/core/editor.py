@@ -236,129 +236,21 @@ class EditorUI:
 
 
 
-from src.core.attributes import Attribute, Choice_Attribute, Bool_Attribute
-from decimal import Decimal
-def attr_entry_data(attr:Attribute)->Attr_Entry_Data:
-    match attr.type:
-        case 'bool':
-            def set_from_str(value:str)->None: attr.set(bool(value))
-            assert(isinstance(attr, Bool_Attribute))
-            return Attr_Entry_Data(
-                attr.print(),
-                attr.type,
-                validation_func=attr._is_text_valid,
-                set_funcs={'value':set_from_str}
-            )
-        case 'choice':
-            assert(isinstance(attr, Choice_Attribute))
-            return Attr_Entry_Data(
-                attr.print(), 
-                attr.type, 
-                validation_func=attr._is_text_valid,
-                set_funcs={'value':attr.set},
-                values=attr.options
-            )  
-        case 'date':
-            return Attr_Entry_Data(
-                attr.value, 
-                attr.type, 
-                validation_func=attr._is_text_valid,
-                set_funcs={'value':attr.set},
-                locale_code=attr.factory.locale_code
-            )
-        case 'integer':
-            def set_from_str(value:str)->None: attr.set(int(value))
-            return Attr_Entry_Data(
-                attr.print(), 
-                attr.type, 
-                validation_func=attr._is_text_valid,
-                set_funcs={'value':set_from_str}
-            )
-        case 'money':
-            def set_from_str(value:str)->None: attr.set(Decimal(value))
-            return Attr_Entry_Data(
-                attr.print(), 
-                attr.type, 
-                validation_func=attr._is_text_valid,
-                set_funcs={'value':set_from_str}
-            )
-        case 'real':
-            def set_from_str(value:str)->None: attr.set(Decimal(value))
-            return Attr_Entry_Data(
-                attr.print(), 
-                attr.type, 
-                validation_func=attr._is_text_valid,
-                set_funcs={'value':set_from_str}
-            )
-        case 'quantity':
-            def set_from_str(value:str)->None: attr.set(Decimal(value))
-            assert(isinstance(attr,Quantity))
-            return Attr_Entry_Data(
-                attr.print(include_unit=False), 
-                attr.type, 
-                validation_func=attr._is_text_valid,
-                set_funcs={'value':set_from_str},
-                options={
-                    'unit':{s:pu for s,pu in zip(attr.scaled_units_single_str, attr.scaled_units)}
-                },
-                chosen_options={
-                    'unit':attr.prefix+attr.unit
-                }
-            )
-        case 'text':
-            return Attr_Entry_Data(
-                attr.print(),
-                attr.type,
-                validation_func=attr._is_text_valid,
-                set_funcs={'value':attr.set}
-            )
-        
-        case _:
-            raise ValueError(attr.type)
-
-import dataclasses
-@dataclasses.dataclass(frozen=True)
-class Attr_Entry_Data:
-    orig_value:Any
-    type:AttributeType
-    validation_func:Callable[[Any],bool]
-    set_funcs:Dict[str,Callable[[Any],None]]
-    values:List[Any] = dataclasses.field(default_factory=list)
-    options:Dict[str,Dict[str, Any]] = dataclasses.field(default_factory=dict)
-    chosen_options:Dict[str,Any] = dataclasses.field(default_factory=dict)
-    symbol:Optional[str] = None
-    locale_code:str = "en_us"
-
-
-from src.core.attributes import Quantity
+from src.core.attributes import Quantity, Attribute
 class Item_Window:
 
     def __init__(self)->None:
         self.__item:Optional[Item] = None
-        self.__attributes:Dict[str, Attr_Entry_Data] = {}
+        self.__attributes:Dict[str, Attribute] = {}
 
     @property
     def is_open(self)->bool: return self.__item is not None
 
     @property
-    def attributes(self)->Dict[str, Attr_Entry_Data]: return self.__attributes.copy()
+    def attributes(self)->Dict[str, Attribute]: return self.__attributes.copy()
     
     def open(self, item:Item)->None:
         self.__item = item
-        for label, attr in self.__item.attributes.items():
-            options = {}
-            set_funcs:Dict[str,Callable] = {'value':attr.set}
-            if isinstance(attr, Quantity): 
-                options['unit'] = {label:prefix_val_tuple for label, prefix_val_tuple in zip(attr.scaled_units_single_str, attr.scaled_units)}
-                set_funcs['unit'] = attr.set_unit
-                set_funcs['prefix'] = attr.set_prefix
-            self.__attributes[label] = Attr_Entry_Data(
-                orig_value = attr.value, 
-                type = attr.type,
-                validation_func = attr.is_valid, 
-                set_funcs = set_funcs,
-                options = options
-            )
 
     def close(self)->None:
         self.__item = None

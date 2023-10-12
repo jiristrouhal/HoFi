@@ -1,6 +1,5 @@
 import tkinter as tk
 from src.ui.editor_elems import Item_Window
-from src.core.editor import attr_entry_data
 from src.core.attributes import attribute_factory
 from src.cmd.commands import Controller
 
@@ -17,12 +16,12 @@ date = fac.new('date')
 
 root = tk.Tk()
 attrs = {
-    'flag':attr_entry_data(boolattr),
-    'x':attr_entry_data(intattr),
-    'y':attr_entry_data(realattr),
-    'length':attr_entry_data(length),
-    'choice':attr_entry_data(choice),
-    'date':attr_entry_data(date)
+    'flag':boolattr,
+    'x':intattr,
+    'y':realattr,
+    'length':length,
+    'choice':choice,
+    'date':date
 }
 
 

@@ -90,21 +90,7 @@ class Test_Item_Window(unittest.TestCase):
         self.ui.item_window.close()
         self.assertFalse(self.ui.item_window.is_open)
 
-    def test_listing_item_attributes(self)->None:
-        self.ui.open_item_window(self.item)
-        wattrs = self.ui.item_window.attributes
-        self.assertEqual(tuple(wattrs.keys()), ('weight','description'))
 
-        self.assertEqual(wattrs['weight'].orig_value, 1)
-        self.assertEqual(wattrs['weight'].options, {'unit':{'kg':('k','g'), 'g':('','g')}})
-        self.assertEqual(set(wattrs['weight'].set_funcs.keys()), {'value', 'prefix', 'unit'})
-        self.assertEqual(wattrs['weight'].validation_func, self.item.attribute('weight').is_valid)
-        
-        self.assertEqual(wattrs['description'].orig_value, '...')
-        self.assertEqual(wattrs['description'].options, {})
-        self.assertDictEqual(wattrs['description'].set_funcs, {
-            'value':self.item.attribute('description').set,
-        })
 
     
         

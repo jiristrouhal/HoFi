@@ -7,7 +7,6 @@ import unittest
 import tkinter as tk
 import tkinter.ttk as ttk
 from src.ui.editor_elems import Item_Window, Entry_Creator
-from src.core.editor import attr_entry_data
 from src.core.attributes import attribute_factory
 from src.cmd.commands import Controller
 
@@ -28,8 +27,7 @@ class Test_Choice_Entry(unittest.TestCase):
     def test_entry(self):
         self.fac = attribute_factory(Controller())
         self.attr = self.fac.new('choice', init_value='B', options=['A','B','C'])
-        self.entry_data = attr_entry_data(self.attr)
-        entry = self.cr.new(self.entry_data, self.master)
+        entry = self.cr.new(self.attr, self.master)
         self.assertEqual(entry.value(), "B")
         entry.set("A")
         self.assertEqual(entry.value(), "A")
@@ -46,8 +44,7 @@ class Test_Date_Entry(unittest.TestCase):
     def test_entry(self):
         self.fac = attribute_factory(Controller())
         self.attr = self.fac.new('date', init_value=datetime.date(2024,10,25))
-        self.entry_data = attr_entry_data(self.attr)
-        entry = self.cr.new(self.entry_data, self.master)
+        entry = self.cr.new(self.attr, self.master)
         self.assertEqual(entry.value(), datetime.date(2024,10,25))
         entry.set(datetime.date(2025,10,25))
         self.assertEqual(entry.value(), datetime.date(2025,10,25))
@@ -60,8 +57,7 @@ class Test_Integer_Entry(unittest.TestCase):
         self.fac = attribute_factory(Controller())
         self.attr = self.fac.new('integer', 3)
         self.cr = Entry_Creator()
-        entry_data = attr_entry_data(self.attr)
-        self.entry = self.cr.new(entry_data, self.master)
+        self.entry = self.cr.new(self.attr, self.master)
 
     def test_initial_state_of_integer_entry(self):
         self.assertEqual(self.entry.value(), "3")
@@ -81,8 +77,7 @@ class Test_Real_Entry(unittest.TestCase):
     def test_initial_state_of_real_entry(self):
         self.fac = attribute_factory(Controller())
         self.attr = self.fac.new('real', 1.45)
-        self.entry_data = attr_entry_data(self.attr)
-        entry:tk.Entry = self.cr.new(self.entry_data, self.master)
+        entry:tk.Entry = self.cr.new(self.attr, self.master)
 
         self.assertEqual(entry.value(), "1.45")
         entry.set("abc")
@@ -93,8 +88,7 @@ class Test_Real_Entry(unittest.TestCase):
     def test_real_number_entry_with_comma_as_decimal_separator(self):
         self.fac = attribute_factory(Controller(), 'cs_cz')
         self.attr = self.fac.new('real', Decimal('1.45'))
-        entry_data = attr_entry_data(self.attr)
-        entry = self.cr.new(entry_data, self.master)
+        entry = self.cr.new(self.attr, self.master)
 
         self.assertEqual(entry.value(), "1,45")
         entry.set("abc")
@@ -111,8 +105,7 @@ class Test_Monetary_Entry(unittest.TestCase):
     def test_monetary_entry(self):
         self.fac = attribute_factory(Controller())
         self.attr = self.fac.new('money', 3)
-        self.entry_data = attr_entry_data(self.attr)
-        entry = self.cr.new(self.entry_data, self.master)
+        entry = self.cr.new(self.attr, self.master)
         entry.set("abc")
         self.assertEqual(entry.value(), "")
         entry.set("12.3")
@@ -130,8 +123,7 @@ class Test_Text_Entry(unittest.TestCase):
     def test_entry(self):
         self.fac = attribute_factory(Controller())
         self.attr = self.fac.new('text', "...")
-        self.entry_data = attr_entry_data(self.attr)
-        entry:Attribute_Entry = self.cr.new(self.entry_data, self.master)
+        entry:Attribute_Entry = self.cr.new(self.attr, self.master)
 
         entry.set("abc")
         self.assertEqual(entry.value(), "abc\n")
@@ -147,8 +139,7 @@ class Test_Quantity_Entry(unittest.TestCase):
         self.fac = attribute_factory(Controller())
         self.attr = self.fac.newqu(0.05, unit="m²", exponents={'c':-4,'m':-6})
         self.attr.set_prefix('c')
-        self.entry_data = attr_entry_data(self.attr)
-        q:Attribute_Entry = self.cr.new(self.entry_data, self.master)
+        q:Attribute_Entry = self.cr.new(self.attr, self.master)
 
         q.set("abc")
         self.assertEqual(q.value(), "")
@@ -171,8 +162,7 @@ class Test_Bool_Entry(unittest.TestCase):
     def test_entry(self):
         self.fac = attribute_factory(Controller())
         self.attr = self.fac.new('bool', True)
-        self.entry_data = attr_entry_data(self.attr)
-        entry:Attribute_Entry = self.cr.new(self.entry_data, self.master)
+        entry:Attribute_Entry = self.cr.new(self.attr, self.master)
 
         self.assertEqual(entry.value(), True)
         entry.set(False)

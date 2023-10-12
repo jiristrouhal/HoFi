@@ -27,7 +27,7 @@ class Template:
 
 
 FileType = Literal['xml']
-from src.core.attributes import Locale_Code
+from src.core.attributes import Locale_Code, AttributeType
 class ItemCreator:
 
     def __init__(self, locale_code:Locale_Code = "en_us")->None:
@@ -166,7 +166,7 @@ class ItemCreator:
                 item.bind(dep.dependent, dep.func, *dep.free)
         return item
 
-    def new(self,name:str,attr_info:Dict[str,str]={})->Item:
+    def new(self,name:str,attr_info:Dict[str,AttributeType]={})->Item:
         return ItemImpl(name, self.__get_attrs(attr_info), self)
 
     def undo(self):
@@ -191,7 +191,7 @@ class ItemCreator:
 
         return attributes
 
-    def __get_attrs(self,attribute_info:Dict[str,str])->Dict[str,Attribute]:
+    def __get_attrs(self,attribute_info:Dict[str,AttributeType])->Dict[str,Attribute]:
         attributes = {}
         for label, info in attribute_info.items():
             attributes[label] = self._attrfac.new(name=label, atype=info) 
@@ -406,7 +406,7 @@ class Item(abc.ABC): # pragma: no cover
     def on_renaming(self,owner:str,func:Callable[[Renaming_Data],Command],timing:Timing)->None: pass
 
     @abc.abstractmethod
-    def _create_child_attr_list(self, value_type:str, child_attr_label:str)->None: pass
+    def _create_child_attr_list(self, value_type:AttributeType, child_attr_label:str)->None: pass
 
     @abc.abstractmethod
     def duplicate(self)->Item: pass
@@ -484,7 +484,7 @@ class Item(abc.ABC): # pragma: no cover
 
 
 from src.core.attributes import Append_To_Attribute_List, Remove_From_Attribute_List, AbstractAttribute
-from typing import Tuple, List
+from typing import Tuple, List, get_args
 
 class ItemImpl(Item):
 
@@ -660,7 +660,7 @@ class ItemImpl(Item):
         if not alist.type==attribute.type: 
             raise self.ChildAttributeTypeConflict
 
-    def _create_child_attr_list(self, value_type:str, child_attr_label:str)->None:
+    def _create_child_attr_list(self, value_type:AttributeType, child_attr_label:str)->None:
         alist = self._manager._attrfac.newlist(atype=value_type, name=child_attr_label+' (children)')
         
         for child in self.__children: 
