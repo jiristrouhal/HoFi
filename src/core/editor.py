@@ -52,7 +52,8 @@ class Case_Template:
                  "(a-z, A-Z and 0-9) plus '_' are allowed.")
 
         for attr, info in attribute_info.items():
-            if attr not in self.__attributes: self.__attributes[attr] = info
+            if attr not in self.__attributes: 
+                self.__attributes[attr] = info
             elif info['atype'] != self.__attributes[attr]['atype']: 
                 raise Case_Template.ReaddingAttributeWithDifferentType(
                     f"Attribute '{attr}' has type {info}. Previously was added with type '{self.__attributes[attr]}'."
@@ -95,6 +96,8 @@ class Editor:
     def insertable(self)->str: return self.__insertable
     @property
     def locale_code(self)->Locale_Code: return self.__locale_code
+    @property
+    def root(self)->Item: return self.__root
 
     def can_save_as_item(self,item:Item)->bool:
         return item.itype == self.__insertable
@@ -200,84 +203,34 @@ def blank_case_template()->Case_Template:
     return Case_Template()
 
 
-from typing import Literal, Callable
 class EditorUI:
-    EditorLocation = Literal['tree']
 
-    def __init__(self, editor:Editor)->None:
+    def __init__(
+        self, 
+        editor:Editor,
+        item_menu:Item_Action_Menu
+        )->None:
+
         self.__editor = editor
-        self.__action_menu = Action_Menu()
-        self.__item_window = Item_Window()
-        self.__planner = Planner()
+        self.__item_menu = item_menu
+
+    def open_item_menu(self, item:Item)->None:
+        self.__item_menu.open({})
 
     @property
-    def action_menu(self)->Action_Menu: return self.__action_menu
-    @property
-    def command_running(self)->bool: return False
-    @property
-    def item_window(self)->Item_Window: return self.__item_window
-    @property
-    def planner(self)->Planner: return self.__planner
-    @property
-    def selected_items(self)->List[Item]: return list()
-
-    def open_action_menu(self, commands:Dict[str,Callable[[],None]])->None:
-        self.__action_menu.open(commands)
-
-    def open_item_window(self, item:Item)->None:
-        if self.__action_menu.is_open: raise EditorUI.ActionMenuOpened
-        self.__item_window.open(item)
-
-    def open_planner(self)->None:
-        if self.__action_menu.is_open: raise EditorUI.ActionMenuOpened
-
-
-    class ActionMenuOpened(Exception): pass
-
-
-
-from src.core.attributes import Attribute
-class Item_Window:
-
-    def __init__(self)->None:
-        self.__item:Optional[Item] = None
-        self.__attributes:Dict[str, Attribute] = {}
-
-    @property
-    def is_open(self)->bool: return self.__item is not None
-
-    @property
-    def attributes(self)->Dict[str, Attribute]: return self.__attributes.copy()
+    def item_menu(self)->Item_Action_Menu: 
+        return self.__item_menu
     
-    def open(self, item:Item)->None:
-        self.__item = item
-
-    def close(self)->None:
-        self.__item = None
 
 
-class Action_Menu:
-    def __init__(self)->None:
-        self.__commands:Dict[str,Callable[[],None]] = {}
+from typing import Protocol, Callable
+class Item_Action_Menu(Protocol): # pragma: no cover
 
     @property
-    def is_open(self)->bool: return bool(self.__commands)
-
-    def open(self, commands:Dict[str,Callable[[],None]])->None: 
-        if not commands: raise Action_Menu.NoCommands
-        self.__commands = commands.copy()
-
-    def run(self, command_label:str)->None: 
-        if command_label not in self.__commands: raise Action_Menu.UndefinedCommand(command_label)
-        self.__commands[command_label]()
-        self.__commands.clear()
-
-    class NoCommands(Exception): pass
-    class UndefinedCommand(Exception): pass
-
-
-class Planner:
+    def action_labels(self)->List[str]: ...
     @property
-    def is_open(self)->bool: return False
+    def is_open(self)->bool: ...
 
-    def open(self)->None: pass
+    def open(self, actions:Dict[str,Callable[[],None]])->None:
+        ...
+

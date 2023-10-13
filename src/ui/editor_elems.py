@@ -369,3 +369,19 @@ class Item_Window:
         tk.Button(bf, text="Cancel", command=lambda: self.__cancel()).grid(row=0,column=2)
         bf.grid(row=1)
         
+
+from src.core.item import Item
+from typing import Callable
+class Item_Menu:
+    def __init__(self, item:Item)->None:
+        self.__actions:Dict[str,Callable[[],None]] = {}
+        self.__open:bool = False
+
+    @property
+    def action_labels(self)->List[str]: return list(self.__actions.keys())
+    @property
+    def is_open(self)->bool: return self.__open
+
+    def open(self, actions:Dict[str,Callable[[],None]])->None:
+        self.__open = True
+   

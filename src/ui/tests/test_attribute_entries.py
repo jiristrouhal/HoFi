@@ -5,6 +5,8 @@ sys.path.insert(1,"src")
 
 import unittest
 import tkinter as tk
+from decimal import Decimal
+
 from src.ui.editor_elems import Entry_Creator
 from src.core.attributes import attribute_factory
 from src.cmd.commands import Controller
@@ -134,7 +136,6 @@ class Test_Integer_Entry(unittest.TestCase):
         self.assertEqual(entry.value, "3")
 
 
-from decimal import Decimal
 class Test_Real_Entry(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -255,7 +256,6 @@ class Test_Text_Entry(unittest.TestCase):
         self.assertEqual(entry.value, "...\n")
 
 
-
 class Test_Quantity_Entry(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -332,7 +332,6 @@ class Test_Bool_Entry(unittest.TestCase):
         self.assertEqual(entry.value, False)
         entry.revert()
         self.assertEqual(entry.value, True)
-
 
 
 if __name__=="__main__": 

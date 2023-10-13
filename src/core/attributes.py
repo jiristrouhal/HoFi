@@ -1233,7 +1233,11 @@ class Attribute_Data_Constructor:
         return {'atype':"choice", 'init_value':init_option, 'options':options}
 
     def integer(self, init_value:int=0, custom_condition:Callable[[int],Any]=lambda x: True)->Dict[str,Any]:
-        return {'atype':"integer", 'init_value':init_value, 'custom_condition':custom_condition}
+        return {
+            'atype':"integer", 
+            'init_value':init_value, 
+            'custom_condition':custom_condition
+        }
     
     def money(self, init_value:Decimal|float|int=0.0)->Dict[str,Any]:
         return {'atype':"money", 'init_value':init_value}
