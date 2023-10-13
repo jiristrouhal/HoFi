@@ -156,10 +156,17 @@ class Money_Entry(Number_Entry):
         def validation_func(value:str)->bool: 
             return value=="" or self.attr._is_text_valid(value)
         vcmd = (self.__frame.register(validation_func),'%P')
-        self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd, name="entry")
+        self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
         assert(isinstance(self.attr, Monetary_Attribute))
-        self._value.insert(0,str(self.attr.print(show_symbol=False)))
-        self._value.grid(column=0,row=0)
+        self._value.insert(0, str(self.attr.print(show_symbol=False)))
+        currency = Monetary_Attribute.Currencies[self.attr.factory.currency_code]
+        symbol = tk.Label(self.__frame,text=currency.symbol)
+        if currency.symbol_before_value and self.attr.prefer_symbol_before_value():
+            symbol.grid(column=0,row=0)
+            self._value.grid(column=1,row=0)
+        else:
+            self._value.grid(column=0,row=0)
+            symbol.grid(column=1,row=0)
 
     def revert(self)->None:
         self._value.delete(0,tk.END)

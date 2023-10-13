@@ -645,7 +645,7 @@ class Monetary_Attribute(Number_Attribute):
         'JPY':Currency('JPY','¥',decimals=0)
     }
 
-    def preferred_symbol_before_value(self)->bool:
+    def prefer_symbol_before_value(self)->bool:
         preferred_by:Set[Locale_Code] = {'en_us'}
         return self.factory.locale_code in preferred_by
     
@@ -724,7 +724,7 @@ class Monetary_Attribute(Number_Attribute):
         currency:Currency
         )->str:
         
-        if self.preferred_symbol_before_value() and currency.symbol_before_value: 
+        if self.prefer_symbol_before_value() and currency.symbol_before_value: 
             if value[0] in ('-','+'): value_str = value[0] + currency.symbol + value[1:]
             else: value_str = currency.symbol + value
         else: 
