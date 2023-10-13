@@ -105,6 +105,7 @@ class Date_Entry(Attribute_Entry):
         self.__date_entry.set_date(value)
 
 
+from src.core.attributes import Number_Attribute
 class Number_Entry(Attribute_Entry):
 
     @property
@@ -113,9 +114,7 @@ class Number_Entry(Attribute_Entry):
     def widget(self)->tk.Widget: return self._value
         
     def _create_entry(self) -> None:
-        def validation_func(value:str)->bool: 
-            return value=="" or self.attr._is_text_valid(value)
-        vcmd = (self.master.register(validation_func),'%P')
+        vcmd = (self.master.register((self._text_is_valid_number)),'%P')
         self._value = tk.Entry(self.master, validate='key', validatecommand=vcmd)
         self._value.insert(0, self.attr.print())
 
@@ -131,6 +130,18 @@ class Number_Entry(Attribute_Entry):
     def set(self, value:Any)->None:
         self._value.delete(0, tk.END)
         self._value.insert(0, value)
+
+    def _text_is_valid_number(self,text:str)->bool:
+        assert(isinstance(self.attr, Number_Attribute))
+        text.replace(",",".")
+        if text=="": 
+            return True
+        else:
+            text = text.replace(",",".")
+            if self.attr._is_text_a_number(text):
+                return self.attr.is_valid(Decimal(text))
+            else:
+                return False
     
 
 from src.core.attributes import Monetary_Attribute
@@ -140,9 +151,7 @@ class Money_Entry(Number_Entry):
 
     def _create_entry(self) -> None:
         self.__frame = tk.Frame(self.master)
-        def validation_func(value:str)->bool: 
-            return value=="" or self.attr._is_text_valid(value)
-        vcmd = (self.__frame.register(validation_func),'%P')
+        vcmd = (self.__frame.register(self._text_is_valid_number),'%P')
         self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
         assert(isinstance(self.attr, Monetary_Attribute))
         self._value.insert(0, str(self.attr.print(show_symbol=False)))
@@ -173,12 +182,18 @@ class Quantity_Entry(Number_Entry):
     @property
     def widget(self)->tk.Frame: return self.__frame
 
-    def _create_entry(self) -> None:
+    def _create_entry(self) -> None: 
         def validation_func(value:str)->bool: 
-            return (value=="" or self.attr._is_text_valid(value))
+            assert(isinstance(self.attr, Number_Attribute))
+            if value=="": 
+                return True
+            elif self.attr._is_text_a_number(value):
+                return self.attr.is_valid(Decimal(value))
+            else:
+                return False
 
         self.__frame = tk.Frame(self.master)
-        vcmd = (self.__frame.register(validation_func),'%P')
+        vcmd = (self.__frame.register(self._text_is_valid_number),'%P')
         self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
         self._value.grid(row=0, column=0)
         self.__update_value(self.attr.value)
@@ -216,7 +231,7 @@ class Quantity_Entry(Number_Entry):
         self.__prev_scaled_unit = new_unit
         curr_value = str(self.value).replace(",",".")
         assert(isinstance(self.attr,Quantity))
-        if self.attr._is_text_valid(curr_value):
+        if self._text_is_valid_number(curr_value):
             converted_value = self.attr.convert(Decimal(curr_value), prev_unit, new_unit)
             str_value = str(converted_value)
             if "." in str_value or "," in str_value: 
