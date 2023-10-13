@@ -1025,6 +1025,11 @@ class Test_Monetary_Attribute(unittest.TestCase):
         self.assertRaises(Attribute.InvalidValueType, mon.is_valid, "-45")
 
 
+    def test_printing_value_without_currency_symbol(self):
+        fac = attribute_factory(Controller())
+        money:Monetary_Attribute = fac.new('money',5.3)
+        self.assertEqual(money.print(show_symbol=False), "5.30")
+
     def test_print_with_space_as_thousands_separator(self):
         fac = attribute_factory(Controller(), "en_us", currency_code="USD")
         mon:Monetary_Attribute = fac.new("money", 4100300)
