@@ -22,6 +22,8 @@ class Attribute_Entry(abc.ABC):
     @property
     def master(self)->tk.Frame: return self.__master
     @abc.abstractproperty
+    def value(self)->Any: pass
+    @abc.abstractproperty
     def widget(self)->tk.Widget: pass
 
     @abc.abstractmethod
@@ -31,16 +33,16 @@ class Attribute_Entry(abc.ABC):
     @abc.abstractmethod
     def revert(self)->None: pass
     @abc.abstractmethod
-    def set(self,value:Any,value_label:str="")->None: pass
+    def set(self,value:Any)->None: pass
 
     def add_option(self,name:str,option:Any)->Any: self.__options[name] = option
     def option(self,name:str)->Any: return self.__options[name]
-    @abc.abstractmethod
-    def value(self, value_label:str="")->Any: pass
 
 
 class Bool_Entry(Attribute_Entry):
 
+    @property
+    def value(self) -> Any: return self.__var.get()
     @property
     def widget(self)->tk.Checkbutton: return self.__value
 
@@ -54,15 +56,14 @@ class Bool_Entry(Attribute_Entry):
     def revert(self)->None:
         self.set(self.attr.value)
 
-    def set(self,value:bool,value_label:str="")->None: self.__var.set(value)
-
-    def value(self, value_label: str = "") -> Any:
-        return self.__var.get()
+    def set(self,value:bool)->None: self.__var.set(value)
     
 
 from src.core.attributes import Choice_Attribute
 class Choice_Entry(Attribute_Entry):
 
+    @property
+    def value(self)->Any: return self.__choice.get()
     @property
     def widget(self) -> ttk.Combobox: return self.__choice
 
@@ -80,16 +81,15 @@ class Choice_Entry(Attribute_Entry):
     def revert(self)->None:
         self.__choice.set(self.attr.value)
 
-    def set(self, value:str, value_label:str="")->None:
+    def set(self, value:str)->None:
         self.__choice.set(value)
-
-    def value(self,value_label:str="")->Any:
-        return self.__choice.get()
 
 
 import datetime
 class Date_Entry(Attribute_Entry):
 
+    @property
+    def value(self)->datetime.date: return self.__date_entry.get_date()
     @property
     def widget(self)->tkc.DateEntry: return self.__date_entry
 
@@ -103,16 +103,14 @@ class Date_Entry(Attribute_Entry):
     def revert(self)->None:
         self.__date_entry.set_date(self.attr.value)
 
-    def set(self, value:datetime.date, value_label:str="")->None:
+    def set(self, value:datetime.date)->None:
         self.__date_entry.set_date(value)
-    
-    def value(self,value_label:str="")->datetime.date:
-        return self.__date_entry.get_date()
 
 
-from src.core.attributes import Number_Attribute
 class Number_Entry(Attribute_Entry):
 
+    @property
+    def value(self)->str:  return self._value.get()
     @property
     def widget(self)->tk.Widget: return self._value
         
@@ -121,8 +119,7 @@ class Number_Entry(Attribute_Entry):
             return value=="" or self.attr._is_text_valid(value)
         vcmd = (self.master.register(validation_func),'%P')
         self._value = tk.Entry(self.master, validate='key', validatecommand=vcmd)
-        entry_init_value = self.attr.print()
-        self._value.insert(0,entry_init_value)
+        self._value.insert(0, self.attr.print())
 
     def ok(self)->None:
         str_value = self._value.get()
@@ -131,16 +128,12 @@ class Number_Entry(Attribute_Entry):
   
     def revert(self)->None:
         self._value.delete(0,tk.END)
-        assert(isinstance(self.attr, Number_Attribute))
-        entry_init_value = self.attr.print()
-        self._value.insert(0,entry_init_value)
+        self._value.insert(0, self.attr.print())
 
-    def set(self, value:Any, value_label:str="")->None:
+    def set(self, value:Any)->None:
         self._value.delete(0, tk.END)
         self._value.insert(0, value)
 
-    def value(self, value_label: str = "")->str:
-        return self._value.get()
     
 
 from src.core.attributes import Monetary_Attribute
@@ -176,6 +169,10 @@ from src.core.attributes import Quantity
 from decimal import Decimal
 class Quantity_Entry(Attribute_Entry):
 
+    @property
+    def unit(self)->str: return self.__unit.get()
+    @property
+    def value(self) -> Any: return self.__value.get()
     @property
     def widget(self)->tk.Frame: return self.__frame
 
@@ -220,7 +217,7 @@ class Quantity_Entry(Attribute_Entry):
         prev_unit = self.__prev_scaled_unit
         new_unit = self.__unit.get()
         self.__prev_scaled_unit = new_unit
-        curr_value = str(self.value()).replace(",",".")
+        curr_value = str(self.value).replace(",",".")
         assert(isinstance(self.attr,Quantity))
         if self.attr._is_text_valid(curr_value):
             converted_value = self.attr.convert(Decimal(curr_value), prev_unit, new_unit)
@@ -243,25 +240,20 @@ class Quantity_Entry(Attribute_Entry):
         self.__unit.set(self.attr.prefix+self.attr.unit)
         self.__update_value(self.attr.print(include_unit=False))
 
-    def set(self,value:Any,value_label:str=""):
-        assert(isinstance(self.attr,Quantity))
-        if value_label=="":
-            self.__update_value(value)
-        elif value_label=="unit":
-            self.__unit.set(value)
-            self.__update_displayed_value_on_unit_update()
+    def set(self,value:Any)->None:
+        self.__update_value(value)
     
-    def value(self, value_label:str = "") -> Any:
-        if value_label=="": 
-            return self.__value.get()
-        elif value_label=="unit": 
-            return self.__unit.get()
-
+    def set_unit(self, value:str)->None:
+        self.__unit.set(value)
+        self.__update_displayed_value_on_unit_update()
+        
 
 class Text_Entry(Attribute_Entry):
 
     @property
     def widget(self)->tk.Text: return self.__text
+    @property
+    def value(self) -> Any: return self.__text.get(1.0, tk.END)
     
     def _create_entry(self)->None:
         self.__text = tk.Text(self.master)
@@ -274,13 +266,9 @@ class Text_Entry(Attribute_Entry):
         self.__text.delete(1.0, tk.END)
         self.__text.insert(1.0, self.attr.value)
     
-    def set(self,value:str,value_label:str="")->None: 
+    def set(self,value:str)->None: 
         self.__text.delete(1.0, tk.END)
         self.__text.insert(1.0, value)
-
-    def value(self, value_label: str = "") -> Any:
-        return self.__text.get(1.0, tk.END)
-
 
         
 from src.core.attributes import Attribute
