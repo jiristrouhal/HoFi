@@ -133,7 +133,6 @@ class Number_Entry(Attribute_Entry):
     def set(self, value:Any)->None:
         self._value.delete(0, tk.END)
         self._value.insert(0, value)
-
     
 
 from src.core.attributes import Monetary_Attribute
@@ -167,12 +166,12 @@ class Money_Entry(Number_Entry):
 
 from src.core.attributes import Quantity
 from decimal import Decimal
-class Quantity_Entry(Attribute_Entry):
+class Quantity_Entry(Number_Entry):
 
     @property
     def unit(self)->str: return self.__unit.get()
     @property
-    def value(self) -> Any: return self.__value.get()
+    def value(self) -> Any: return self._value.get()
     @property
     def widget(self)->tk.Frame: return self.__frame
 
@@ -182,8 +181,8 @@ class Quantity_Entry(Attribute_Entry):
 
         self.__frame = tk.Frame(self.master)
         vcmd = (self.__frame.register(validation_func),'%P')
-        self.__value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
-        self.__value.grid(row=0, column=0)
+        self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
+        self._value.grid(row=0, column=0)
         self.__update_value(self.attr.value)
 
         assert(isinstance(self.attr,Quantity))
@@ -210,8 +209,8 @@ class Quantity_Entry(Attribute_Entry):
         str_value = str(new_value)
         assert(isinstance(self.attr,Quantity))
         if self.attr.comma_as_dec_separator: str_value = str_value.replace(".",",")
-        self.__value.delete(0, tk.END)
-        self.__value.insert(0, str_value)
+        self._value.delete(0, tk.END)
+        self._value.insert(0, str_value)
 
     def __update_displayed_value_on_unit_update(self, *args)->None:
         prev_unit = self.__prev_scaled_unit
@@ -231,17 +230,14 @@ class Quantity_Entry(Attribute_Entry):
         prefix,unit = self.attr._separate_prefix_from_unit(self.__unit.get())
         self.attr.set_unit(unit)
         self.attr.set_prefix(prefix)
-        value = self.__value.get()
-        if value in ("",",",".","+","-"): value="0"
+        value = self._value.get()
+        if value in ("","+","-"): value="0"
         self.attr.read(value+' '+prefix+unit)
 
     def revert(self)->None:
         assert(isinstance(self.attr,Quantity))
         self.__unit.set(self.attr.prefix+self.attr.unit)
         self.__update_value(self.attr.print(include_unit=False))
-
-    def set(self,value:Any)->None:
-        self.__update_value(value)
     
     def set_unit(self, value:str)->None:
         self.__unit.set(value)

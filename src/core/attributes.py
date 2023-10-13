@@ -500,8 +500,7 @@ class Number_Attribute(Attribute):
             raise self._reading_exception
         
     def _is_text_valid(self,value:str)->bool:
-        if self.factory.locale_code in Number_Attribute.Comma_Separator: 
-            value = value.replace(',','.')
+        value = value.replace(',','.')
         if Number_Attribute._is_text_a_number(str(value)): 
             if value[-1] in ('+','-'): value += "0"
             number = Decimal(value)
