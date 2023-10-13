@@ -673,6 +673,13 @@ class Test_Creating_Planned_Events(unittest.TestCase):
         self.planner.dismiss(event)
         self.assertRaises(Planner.EventNotPlanned, self.planner.dismiss, event)
 
+    def test_confirming_avent_that_is_not_planned_raises_exception(self)->None:
+        self.time_now = 5
+        event = self.planner.new(time=7)
+        self.time_now = 10
+        self.planner.confirm(event)
+        self.assertRaises(Planner.EventNotPlanned, self.planner.confirm, event)
+
 
 class Test_Running_Methods_On_Event_Confirmation_And_Dismissal(unittest.TestCase):
 
