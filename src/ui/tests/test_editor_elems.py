@@ -275,7 +275,6 @@ class Test_Quantity_Entry(unittest.TestCase):
         self.assertEqual(entry.value(), "0.05")
 
 
-from src.ui.editor_elems import Attribute_Entry
 class Test_Bool_Entry(unittest.TestCase):
 
     def setUp(self) -> None:

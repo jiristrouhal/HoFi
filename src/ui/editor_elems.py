@@ -120,8 +120,47 @@ class Date_Entry(Attribute_Entry):
     def value(self,value_label:str="")->datetime.date:
         return self.__date_entry.get_date()
 
+
+from src.core.attributes import Number_Attribute
+class Number_Entry(Attribute_Entry):
+
+    @property
+    def widget(self)->tk.Widget: return self._value
+        
+    def _create_entry(self) -> None:
+        def validation_func(value:str)->bool: 
+            return value=="" or self.attr._is_text_valid(value)
+        vcmd = (self.master.register(validation_func),'%P')
+        self._value = tk.Entry(self.master, validate='key', validatecommand=vcmd)
+        self._value.insert(0,str(self.attr.print()))
+
+    def _create_options(self) -> None: pass
+
+    def ok(self)->None:
+        str_value = self._value.get()
+        if str_value in ("","+","-"): 
+            value = Decimal(0)
+        else:
+            value = Decimal(str_value)
+        self.attr.set(value)
+
+    def revert(self)->None:
+        self._value.delete(0,tk.END)
+        str_value = str(self.attr.value)
+        assert(isinstance(self.attr, Number_Attribute))
+        if self.attr.comma_as_dec_separator:
+            str_value = str_value.replace(".",",")
+        self._value.insert(0,str(self.attr.value))
+
+    def set(self, value:Any, value_label:str="")->None:
+        self._value.delete(0, tk.END)
+        self._value.insert(0, value)
+
+    def value(self, value_label: str = "")->str:
+        return self._value.get()
     
-class Money_Entry(Attribute_Entry):
+
+class Money_Entry(Number_Entry):
     @property
     def widget(self)->tk.Widget: return self.__frame
 
@@ -130,31 +169,10 @@ class Money_Entry(Attribute_Entry):
         def validation_func(value:str)->bool: 
             return value=="" or self.attr._is_text_valid(value)
         vcmd = (self.__frame.register(validation_func),'%P')
-        self.__entry = tk.Entry(self.__frame, validate='key', validatecommand=vcmd, name="entry")
-        self.__entry.insert(0,str(self.attr.value))
-        self.__entry.grid(column=0,row=0)
-    
-    def _create_options(self) -> None: pass
-
-    def ok(self)->None:
-        str_value = self.__entry.get()
-        if str_value in ("","+","-"): 
-            value = Decimal(0)
-        else:
-            value = Decimal(str_value)
-        self.attr.set(value)
-
-    def revert(self)->None:
-        self.__entry.delete(0,tk.END)
-        self.__entry.insert(0,str(self.attr.value))
-
-    def set(self, value: Any, value_label: str = "") -> None:
-        self.__entry.delete(0,tk.END)
-        self.__entry.insert(0,value)
-
-    def value(self, value_label: str = "") -> Any:
-        return self.__entry.get()
-
+        self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd, name="entry")
+        self._value.insert(0,str(self.attr.value))
+        self._value.grid(column=0,row=0)
+        
 
 from src.core.attributes import Quantity
 from decimal import Decimal
@@ -241,40 +259,6 @@ class Quantity_Entry(Attribute_Entry):
             return self.__unit.get()
 
 
-class Number_Entry(Attribute_Entry):
-
-    @property
-    def widget(self)->tk.Widget: return self.__value
-        
-    def _create_entry(self) -> None:
-        def validation_func(value:str)->bool: 
-            return value=="" or self.attr._is_text_valid(value)
-        vcmd = (self.master.register(validation_func),'%P')
-        self.__value = tk.Entry(self.master, validate='key', validatecommand=vcmd)
-        self.__value.insert(0,str(self.attr.print()))
-
-    def _create_options(self) -> None: pass
-
-    def ok(self)->None:
-        str_value = self.__value.get()
-        if str_value in ("","+","-"): 
-            value = Decimal(0)
-        else:
-            value = Decimal(str_value)
-        self.attr.set(value)
-
-    def revert(self)->None:
-        self.__value.delete(0,tk.END)
-        self.__value.insert(0,str(self.attr.value))
-
-    def set(self, value:Any, value_label:str="")->None:
-        self.__value.delete(0, tk.END)
-        self.__value.insert(0, value)
-
-    def value(self, value_label: str = "")->str:
-        return self.__value.get()
-
-
 class Text_Entry(Attribute_Entry):
 
     @property
@@ -343,6 +327,7 @@ class Entry_Creator:
     class UnknownEntryType(Exception): pass
 
 
+from typing import List
 class Item_Window:
     
     def __init__(self, root:Optional[tk.Tk], attrs:Dict[str,Attribute]={})->None:
@@ -354,10 +339,21 @@ class Item_Window:
     def ok(self)->None: 
         okbutton:tk.Button = self.__win.nametowidget('button_frame').nametowidget('revert')
         okbutton.invoke()
+
+    def __ok(self)->None:
+        for entry in self.__entries: entry.ok()
+        self.__win.destroy()
+
+    def __revert(self)->None:
+        for entry in self.__entries: entry.revert()
+
+    def __cancel(self)->None:
+        self.__win.destroy()
         
     def __create_entries(self,attrs:Dict[str,Attribute])->None:
         frame = tk.Frame(self.__win, name="entries")
         row = 0
+        self.__entries:List[Attribute_Entry] = list()
         for label,attr in attrs.items():
             self.__add_attr(label,attr,row,frame)
             row += 1
@@ -368,11 +364,12 @@ class Item_Window:
         entry = self.__ecr.new(attr, frame)
         attr_name.grid(column=0, row=row, sticky=tk.E)
         entry.widget.grid(column=1, row=row, sticky=tk.W)
+        self.__entries.append(entry)
 
     def __create_button_frame(self)->None:
         bf = tk.Frame(self.__win, name="button_frame")
-        tk.Button(bf, text="Revert", command=lambda: None, name="revert").grid(row=0,column=0)
-        tk.Button(bf, text="OK", command=lambda: None).grid(row=0,column=1)
-        tk.Button(bf, text="Cancel", command=lambda: None).grid(row=0,column=2)
+        tk.Button(bf, text="Revert", command=lambda: self.__revert(), name="revert").grid(row=0,column=0)
+        tk.Button(bf, text="OK", command=lambda: self.__ok()).grid(row=0,column=1)
+        tk.Button(bf, text="Cancel", command=lambda: self.__cancel()).grid(row=0,column=2)
         bf.grid(row=1)
         
