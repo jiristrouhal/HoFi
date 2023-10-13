@@ -478,6 +478,10 @@ class Number_Attribute(Attribute):
     class CannotExtractNumber(Exception): pass
     _reading_exception:Type[Exception] = CannotExtractNumber
 
+    @property
+    def comma_as_dec_separator(self)->bool: 
+        return self.factory.locale_code in Number_Attribute.Comma_Separator
+
     @abc.abstractmethod
     def _is_type_valid(self, value: Any) -> bool:  # pragma: no cover
         pass

@@ -44,6 +44,7 @@ class Binding:
     inputs:Tuple[str,...]
 
 
+from src.core.attributes import AttributeType
 class Timeline:
     
     def __init__(
@@ -51,7 +52,7 @@ class Timeline:
         root:Item, 
         attribute_factory:Attribute_Factory,
         timelike_var_label:str,
-        timelike_var_type:str,
+        timelike_var_type:AttributeType,
         tvars:Dict[str,Dict[str,Any]]={}
         )->None:
 
@@ -270,7 +271,7 @@ class Timepoint(abc.ABC):
     def var(self,label:str)->Attribute: 
         return self.__vars[label]
 
-    def _get_item_var_list(self, label:str, var_type:str)->Attribute_List:
+    def _get_item_var_list(self, label:str, var_type:AttributeType)->Attribute_List:
         if label not in self._item_var_lists:
             self._add_var_list(label, self.__timeline.attrfac.newlist(var_type,name=var_type))
             for item in self._items:

@@ -89,12 +89,7 @@ class Test_Item_Window(unittest.TestCase):
         self.assertTrue(self.ui.item_window.is_open)
         self.ui.item_window.close()
         self.assertFalse(self.ui.item_window.is_open)
-
-
-
-    
         
-
 
 if __name__=="__main__": unittest.main()
 
