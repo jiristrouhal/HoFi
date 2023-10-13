@@ -16,7 +16,6 @@ class Attribute_Entry(abc.ABC):
         self.__master = master
         self.__options:Dict[str,Any] = dict()
         self._create_entry()
-        self._create_options()
 
     @property
     def attr(self)->Attribute: return self.__attr
@@ -27,9 +26,6 @@ class Attribute_Entry(abc.ABC):
 
     @abc.abstractmethod
     def _create_entry(self)->None: pass
-    @abc.abstractmethod
-    def _create_options(self)->None: pass
-
     @abc.abstractmethod
     def ok(self)->None: pass
     @abc.abstractmethod
@@ -52,8 +48,6 @@ class Bool_Entry(Attribute_Entry):
         self.__var = tk.BooleanVar(self.master, value=self.attr.value)
         self.__value = tk.Checkbutton(self.master, variable=self.__var, onvalue=True, offvalue=False)
     
-    def _create_options(self) -> None: pass
-
     def ok(self)->None:
         self.attr.set(self.__var.get())
 
@@ -80,8 +74,6 @@ class Choice_Entry(Attribute_Entry):
         self.__choice.config(values=ops)
         self.__choice.set(self.attr.value)
 
-    def _create_options(self) -> None: pass
-    
     def ok(self)->None:
         self.attr.set(self.__choice.get())
 
@@ -105,9 +97,6 @@ class Date_Entry(Attribute_Entry):
         self.__date_entry = tkc.DateEntry(self.master, locale=self.attr.factory.locale_code)
         self.__date_entry.set_date(self.attr.value)
         
-    def _create_options(self) -> None:
-        pass
-
     def ok(self)->None:
         self.attr.set(self.__date_entry.get_date())
     
@@ -134,8 +123,6 @@ class Number_Entry(Attribute_Entry):
         self._value = tk.Entry(self.master, validate='key', validatecommand=vcmd)
         entry_init_value = self.attr.print()
         self._value.insert(0,entry_init_value)
-
-    def _create_options(self) -> None: pass
 
     def ok(self)->None:
         str_value = self._value.get()
@@ -197,8 +184,7 @@ class Quantity_Entry(Attribute_Entry):
         self.__value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
         self.__value.grid(row=0, column=0)
         self.__update_value(self.attr.value)
-    
-    def _create_options(self) -> None:
+
         assert(isinstance(self.attr,Quantity))
         scaled_units = self.attr.scaled_units_single_str
         def validate_unit(unit:str)->bool:  
@@ -276,8 +262,6 @@ class Text_Entry(Attribute_Entry):
     def _create_entry(self)->None:
         self.__text = tk.Text(self.master)
         self.__text.insert(1.0, self.attr.value)
-    
-    def _create_options(self) -> None: pass
 
     def ok(self)->None:
         self.attr.set(self.__text.get(1.0, tk.END)[:-1])
