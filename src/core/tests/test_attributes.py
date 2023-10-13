@@ -1989,4 +1989,10 @@ class Test_Recalculating_Quantity_Value_On_Chaning_Unit(unittest.TestCase):
         self.assertEqual(temperature.convert(293.15, "K", "°C"), 20)
 
 
+class Test_Defining_Currency_In_Attribute_Factory(unittest.TestCase):
+
+    def test_defining_undefined_currency_raises_exception(self):
+        self.assertRaises(Monetary_Attribute.CurrencyNotDefined, attribute_factory, Controller(), currency_code="XYZ")
+
+
 if __name__=="__main__": unittest.main()
