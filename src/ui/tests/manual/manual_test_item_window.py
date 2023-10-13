@@ -9,8 +9,9 @@ fac = attribute_factory(Controller(), "en_us")
 
 boolattr = fac.new('bool',True)
 intattr = fac.new('integer', 5, name="x")
+positive_intattr = fac.new('integer', 5, name="x+", custom_condition=lambda x: x>0)
 realattr = fac.new('real', 15.1, name="y")
-length = fac.newqu(4.5, 'length', 'm', exponents={'k':3})
+length = fac.newqu(4.5, 'length', 'm', exponents={'k':3}, custom_condition=lambda x: x>0)
 temperature = fac.newqu(20, 'length', '°C', exponents={})
 temperature.add_unit(
     symbol="K",
@@ -27,6 +28,7 @@ root = tk.Tk()
 attrs = {
     'flag':boolattr,
     'x':intattr,
+    'x+':positive_intattr,
     'y':realattr,
     'length':length,
     'temperature':temperature,

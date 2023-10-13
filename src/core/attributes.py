@@ -388,8 +388,16 @@ from typing import Set, List
 class Attribute(AbstractAttribute):
     default_value:Any = ""
     
-    def __init__(self,factory:Attribute_Factory, atype:AttributeType='text',init_value:Any=None, name:str="")->None:  
-        self.__custom_condition:Callable[[Any],bool] = lambda x: True
+    def __init__(
+        self,
+        factory:Attribute_Factory, 
+        atype:AttributeType='text',
+        init_value:Any=None, 
+        name:str="",
+        custom_condition:Callable[[Any],bool] = lambda x:True
+        )->None:  
+
+        self.__custom_condition = custom_condition
         super().__init__(factory,atype,name)
         if init_value is not None and self.is_valid(init_value):
             self._value = init_value
@@ -572,12 +580,13 @@ class Real_Attribute(Number_Attribute):
         atype:AttributeType,
         init_value:Any=None,
         name:str="", 
+        custom_condition:Callable[[Any],bool] = lambda x: True,
         )->None:
 
         if init_value is not None:
             try: init_value = Decimal(str(init_value))
             except: raise Attribute.InvalidValueType(init_value)
-        super().__init__(factory,atype,init_value,name)
+        super().__init__(factory,atype,init_value,name,custom_condition)
         if init_value is not None and self.is_valid(init_value):
             init_value = Decimal(str(init_value))
 
@@ -818,11 +827,12 @@ class Choice_Attribute(Attribute):
         factory:Attribute_Factory, 
         atype:AttributeType,
         name:str="",
+        custom_condition:Callable[[Any],bool] = lambda x: True,
         init_value:Any=None,
         options:List[Any] = list()
         )->None:
         
-        super().__init__(factory, atype='choice', name=name)
+        super().__init__(factory, atype='choice', name=name, custom_condition=custom_condition)
         self.__options:Dict[str,Any] = dict()
         if options:
             self.add_options(*options)
@@ -973,10 +983,17 @@ class Quantity(Real_Attribute):
         name:str="",
         unit:str="",
         exponents:Optional[Dict[str,int]] = None,
-        space_after_value:bool=True
+        space_after_value:bool=True,
+        custom_condition:Callable[[Decimal|float|int],bool] = lambda x: True
         )->None:
 
-        super().__init__(factory,atype='real',init_value=init_value,name=name)
+        super().__init__(
+            factory,
+            atype='quantity',
+            init_value=init_value,
+            name=name, 
+            custom_condition=custom_condition
+        )
         self.__prefix = ""
         self.__units:Dict[str,Unit] = dict()
         self.__scaled_units:List[Tuple[str,str]] = list()
@@ -1224,22 +1241,23 @@ class Attribute_Data_Constructor:
     
     def date(
         self, 
-        init_value:datetime.date = datetime.date.today()
+        init_value:datetime.date = datetime.date.today(),
+        custom_condition:Callable[[datetime.date],Any]=lambda x: True
         )->Dict[str,Any]:
 
-        return {'atype':"date", 'init_value':init_value}
+        return {'atype':"date", 'init_value':init_value, 'custom_condition':custom_condition}
     
     def choice(
         self,
         options:Optional[List[Any]] = None,
-        init_option:Any = None
+        init_option:Any = None,
         )->Dict[str,Any]:
 
         if options is None: options = []
         return {'atype':"choice", 'init_value':init_option, 'options':options}
 
-    def integer(self, init_value:int=0)->Dict[str,Any]:
-        return {'atype':"integer", 'init_value':init_value}
+    def integer(self, init_value:int=0, custom_condition:Callable[[int],Any]=lambda x: True)->Dict[str,Any]:
+        return {'atype':"integer", 'init_value':init_value, 'custom_condition':custom_condition}
     
     def money(self, init_value:Decimal|float|int=0.0)->Dict[str,Any]:
         return {'atype':"money", 'init_value':init_value}
@@ -1249,7 +1267,8 @@ class Attribute_Data_Constructor:
         unit:str, 
         exponents:Optional[Dict[str,int]] = None, 
         init_value:Decimal|float|int=0.0,
-        space_after_value:bool = True
+        space_after_value:bool = True,
+        custom_condition:Callable[[int],Any]=lambda x: True
         )->Dict[str,Any]:
 
         return {
@@ -1257,18 +1276,20 @@ class Attribute_Data_Constructor:
             'init_value':init_value, 
             'unit':unit, 
             'exponents':exponents, 
-            'space_after_value':space_after_value
+            'space_after_value':space_after_value,
+            'custom_condition':custom_condition
         }
     
     def real(
         self, 
-        init_value:Decimal|float|int=0.0
+        init_value:Decimal|float|int=0.0,
+        custom_condition:Callable[[float|Decimal],Any]=lambda x: True
         )->Dict[str,Any]:
 
-        return {'atype':"real", 'init_value':init_value}
+        return {'atype':"real", 'init_value':init_value, 'custom_condition':custom_condition}
     
-    def text(self, init_value:str="")->Dict[str,Any]:
-        return {'atype':"text", 'init_value':init_value}
+    def text(self, init_value:str="", custom_condition:Callable[[str],Any]=lambda x: True)->Dict[str,Any]:
+        return {'atype':"text", 'init_value':init_value, 'custom_condition':custom_condition}
     
     class MissingAttributeType(Exception): pass
     class UndefinedAttributeType(Exception): pass
@@ -1301,6 +1322,7 @@ class Attribute_Factory:
         unit:str="",
         exponents:Optional[Dict[str,int]] = None,
         space_after_value:bool=True,
+        custom_condition:Callable[[Decimal|float|int],bool] = lambda x:True
         )->Quantity:
 
         return Quantity(
@@ -1310,13 +1332,28 @@ class Attribute_Factory:
             name=name,
             unit=unit,
             exponents=exponents,
-            space_after_value=space_after_value
+            space_after_value=space_after_value,
+            custom_condition=custom_condition
         )
 
-    def new(self,atype:AttributeType='text',init_value:Any=None, name:str="", **kwargs)->Attribute:
+    def new(
+        self,
+        atype:AttributeType='text',
+        init_value:Any=None, 
+        name:str="", 
+        custom_condition:Callable[[Any],bool] = lambda x: True,
+        **kwargs
+        )->Attribute:
+
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)
         else:
-            return self.types[atype](factory=self,atype=atype,init_value=init_value,name=name,**kwargs)
+            return self.types[atype](
+                factory=self,
+                atype=atype,
+                init_value=init_value,
+                name=name,
+                custom_condition = custom_condition,
+                **kwargs)
         
     def new_from_dict(self,**dict)->Attribute:
         if dict['atype'] not in self.types: raise Attribute.InvalidAttributeType(dict['atype'])
