@@ -78,6 +78,20 @@ class Test_Running_A_Command(unittest.TestCase):
         self.assertTrue(self.controller.any_undo)
         self.controller.undo()
         self.assertFalse(self.controller.any_undo)
+    
+    def test_calling_undo_and_forget_does_not_add_to_redo_stack(self):
+        self.assertFalse(self.controller.any_undo)
+        self.controller.run(IncrementIntAttribute(IncrementIntData(self.obj)))
+        self.assertTrue(self.controller.any_undo)
+        self.controller.undo()
+        self.assertFalse(self.controller.any_undo)
+        self.assertTrue(self.controller.any_redo)
+        self.controller.redo()
+        self.assertTrue(self.controller.any_undo)
+        self.assertFalse(self.controller.any_redo)
+        self.controller.undo_and_forget()
+        self.assertFalse(self.controller.any_undo)
+        self.assertFalse(self.controller.any_redo)
 
     def test_examining_if_there_are_redos_available(self):
         self.assertFalse(self.controller.any_redo)
