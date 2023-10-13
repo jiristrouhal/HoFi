@@ -12,7 +12,7 @@ intattr = fac.new('integer', 5, name="x")
 positive_intattr = fac.new('integer', 5, name="x+", custom_condition=lambda x: x>0)
 realattr = fac.new('real', 15.1, name="y")
 length = fac.newqu(4.5, 'length', 'm', exponents={'k':3}, custom_condition=lambda x: x>0)
-temperature = fac.newqu(20, 'length', '°C', exponents={})
+temperature = fac.newqu(20, 'length', '°C', exponents={}, custom_condition=lambda x: x>=Decimal('-273.15'))
 temperature.add_unit(
     symbol="K",
     exponents={'m':-3},
@@ -24,10 +24,15 @@ date = fac.new('date')
 cost = fac.new('money', 58.12)
 
 
+intattr_dependent = fac.new('integer', 5, name="2*x")
+intattr_dependent.add_dependency(lambda x: Decimal(2)*x, intattr)
+
+
 root = tk.Tk()
 attrs = {
     'flag':boolattr,
     'x':intattr,
+    'f(x)':intattr_dependent,
     'x+':positive_intattr,
     'y':realattr,
     'length':length,
