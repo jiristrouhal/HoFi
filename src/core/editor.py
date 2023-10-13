@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Tuple, Dict, List, Any, Optional
 from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor, FileType
-from src.core.attributes import Locale_Code, AttributeType
+from src.core.attributes import Locale_Code
 
 
 import re
@@ -33,7 +33,7 @@ class Case_Template:
     @property
     def insertable(self)->str: return self.__insertable
     @property
-    def currency(self)->Currency_Code: return self.__currency
+    def currency_code(self)->Currency_Code: return self.__currency
 
     def add(
         self,
@@ -81,7 +81,7 @@ class Case_Template:
 from src.core.item import Attribute_Data_Constructor
 class Editor:
     def __init__(self, case_template:Case_Template, locale_code:Locale_Code)->None:
-        self.__creator = ItemCreator(locale_code)
+        self.__creator = ItemCreator(locale_code, case_template.currency_code)
         self.__creator.add_templates(*case_template.templates.values())
         self.__creator.add_template(CASE_TEMPLATE_LABEL, {}, case_template.case_child_labels)
         self.__root = self.__creator.new("_")

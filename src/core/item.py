@@ -27,12 +27,12 @@ class Template:
 
 
 FileType = Literal['xml']
-from src.core.attributes import Locale_Code, AttributeType
+from src.core.attributes import Locale_Code, AttributeType, Currency_Code
 class ItemCreator:
 
-    def __init__(self, locale_code:Locale_Code = "en_us")->None:
+    def __init__(self, locale_code:Locale_Code = "en_us", currency_code:Currency_Code="USD")->None:
         self._controller = Controller()
-        self._attrfac = attribute_factory(self._controller, locale_code)
+        self._attrfac = attribute_factory(self._controller, locale_code, currency_code)
         self.__templates:Dict[str,Template] = {}
         self.__file_path:str = "."
 

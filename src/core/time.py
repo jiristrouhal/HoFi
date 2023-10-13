@@ -206,7 +206,7 @@ class Timeline:
         for f in binding.inputs: 
             if f[0]=='[' and f[-1]==']': 
                 f_label, f_type = self.__extract_item_variable_label_and_type(f)
-                inputs.append(point.get_item_var_list(f_label, f_type))
+                inputs.append(point._get_item_var_list(f_label, f_type))
             elif f==binding.output:
                 inputs.append(prev_point.dep_var(f))
             else:
@@ -270,12 +270,11 @@ class Timepoint(abc.ABC):
     def var(self,label:str)->Attribute: 
         return self.__vars[label]
 
-    def get_item_var_list(self, label:str, var_type:str)->Attribute_List:
+    def _get_item_var_list(self, label:str, var_type:str)->Attribute_List:
         if label not in self._item_var_lists:
             self._add_var_list(label, self.__timeline.attrfac.newlist(var_type,name=var_type))
             for item in self._items:
-                if item.has_attribute(label):
-                    self._item_var_lists[label].append(item.attribute(label))
+                self._item_var_lists[label].append(item.attribute(label))
         return self._item_var_lists[label]
 
     def _add_var_list(self,label:str, varlist:Attribute_List)->None:
