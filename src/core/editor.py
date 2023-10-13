@@ -98,6 +98,8 @@ class Editor:
     def locale_code(self)->Locale_Code: return self.__locale_code
     @property
     def root(self)->Item: return self.__root
+    @property
+    def ncases(self)->int: return len(self.__root.children)
 
     def can_save_as_item(self,item:Item)->bool:
         return item.itype == self.__insertable
@@ -208,29 +210,56 @@ class EditorUI:
     def __init__(
         self, 
         editor:Editor,
-        item_menu:Item_Action_Menu
+        item_menu:Item_Menu
         )->None:
 
         self.__editor = editor
         self.__item_menu = item_menu
 
     def open_item_menu(self, item:Item)->None:
-        self.__item_menu.open({})
+        self.__item_menu.open(self.__root_item_actions())
+
+    def __root_item_actions(self)->Dict[str,Callable]:
+        return {'new_case':self.__new_case}
+    
+    DEFAULT_CASE_NAME = "Case"
+    def __new_case(self)->None:
+        self.__editor.new_case(EditorUI.DEFAULT_CASE_NAME)
 
     @property
-    def item_menu(self)->Item_Action_Menu: 
+    def item_menu(self)->Item_Menu: 
         return self.__item_menu
     
 
 
-from typing import Protocol, Callable
-class Item_Action_Menu(Protocol): # pragma: no cover
+from typing import Callable
+import abc
+class Item_Menu(abc.ABC):
+
+    def __init__(self)->None:
+        self.__actions:Dict[str,Callable[[],None]] = dict()
+        self.__open:bool = False
 
     @property
-    def action_labels(self)->List[str]: ...
+    def action_labels(self)->List[str]: return list(self.__actions.keys())
     @property
-    def is_open(self)->bool: ...
+    def is_open(self)->bool: return self.__open
 
-    def open(self, actions:Dict[str,Callable[[],None]])->None:
-        ...
+    def close(self)->None: 
+        self.__open = False
+        self._destroy_menu()
 
+    def open(self, actions:Dict[str,Callable[[],None]])->None: 
+        self.__actions = actions.copy()
+        self.__open = True
+        self._build_menu()
+
+    def run(self, action_label:str)->None:
+        self.close()
+        self.__actions[action_label]()
+
+    @abc.abstractmethod
+    def _build_menu(self)->None: pass
+    @abc.abstractmethod
+    def _destroy_menu(self)->None: pass
+    

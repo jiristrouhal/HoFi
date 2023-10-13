@@ -370,18 +370,10 @@ class Item_Window:
         bf.grid(row=1)
         
 
-from src.core.item import Item
-from typing import Callable
-class Item_Menu:
-    def __init__(self, item:Item)->None:
-        self.__actions:Dict[str,Callable[[],None]] = {}
-        self.__open:bool = False
+from src.core.editor import Item_Menu
+class Item_Menu_Tk(Item_Menu):
 
-    @property
-    def action_labels(self)->List[str]: return list(self.__actions.keys())
-    @property
-    def is_open(self)->bool: return self.__open
-
-    def open(self, actions:Dict[str,Callable[[],None]])->None:
-        self.__open = True
-   
+    def _build_menu(self) -> None:
+        pass
+    def _destroy_menu(self) -> None:
+        pass
