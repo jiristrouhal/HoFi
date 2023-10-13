@@ -322,13 +322,25 @@ class Entry_Creator:
 
 
 from typing import List
-class Item_Window:
+from src.core.editor import Item_Menu, Item_Window
+class Item_Window_Tk(Item_Window):
     
-    def __init__(self, root:Optional[tk.Tk], attrs:Dict[str,Attribute]={})->None:
+    def __init__(self, root:Optional[tk.Tk])->None:
+        super().__init__()
         self.__win = tk.Toplevel(root)
         self.__ecr = Entry_Creator()
-        self.__create_entries(attrs)
+
+    @property
+    def entries(self)->List[Attribute_Entry]: 
+        return self.__entries.copy()
+
+    def _build_window(self, attributes: Dict[str, Attribute]):
+        self.__create_entries(attributes)
         self.__create_button_frame()
+
+    def _destroy_window(self):
+        self.__win.destroy()
+        self.__entries.clear()
 
     def ok(self)->None: 
         okbutton:tk.Button = self.__win.nametowidget('button_frame').nametowidget('revert')
@@ -370,7 +382,7 @@ class Item_Window:
         bf.grid(row=1)
         
 
-from src.core.editor import Item_Menu
+
 class Item_Menu_Tk(Item_Menu):
 
     def _build_menu(self) -> None:

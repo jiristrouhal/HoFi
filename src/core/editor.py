@@ -5,11 +5,10 @@ from typing import Tuple, Dict, List, Any, Optional
 from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor, FileType
 from src.core.attributes import Locale_Code
 
-
 import re
 
 
-CASE_TEMPLATE_LABEL = "__Case__"
+CASE_TYPE_LABEL = "__Case__"
 
 
 from src.core.attributes import Currency_Code
@@ -84,7 +83,7 @@ class Editor:
     def __init__(self, case_template:Case_Template, locale_code:Locale_Code)->None:
         self.__creator = ItemCreator(locale_code, case_template.currency_code)
         self.__creator.add_templates(*case_template.templates.values())
-        self.__creator.add_template(CASE_TEMPLATE_LABEL, {}, case_template.case_child_labels)
+        self.__creator.add_template(CASE_TYPE_LABEL, {}, case_template.case_child_labels)
         self.__root = self.__creator.new("_")
         self.__attributes =  case_template.attributes
         self.__insertable = case_template.insertable
@@ -113,7 +112,7 @@ class Editor:
     
     from src.core.item import Parentage_Data
     def duplicate_as_case(self,item:Item)->Item:
-        case = self.__creator.from_template(CASE_TEMPLATE_LABEL, item.name)
+        case = self.__creator.from_template(CASE_TYPE_LABEL, item.name)
         item_dupl = item.copy()
         self.__root.controller.run(
             *self.__root.command['adopt'](self.Parentage_Data(self.__root, case)),
@@ -130,7 +129,7 @@ class Editor:
 
     @staticmethod
     def is_case(item:Item)->bool:
-        return item.itype==CASE_TEMPLATE_LABEL
+        return item.itype==CASE_TYPE_LABEL
 
     def item_types_to_create(self,parent:Item)->Tuple[str,...]:
         return self.__creator.get_template(parent.itype).child_itypes
@@ -154,7 +153,7 @@ class Editor:
         return item
     
     def new_case(self,name:str)->Item:
-        case = self.__creator.from_template(CASE_TEMPLATE_LABEL,name)
+        case = self.__creator.from_template(CASE_TYPE_LABEL,name)
         self.__root.adopt(case)
         return case
 
@@ -172,7 +171,7 @@ class Editor:
 
     def save_as_case(self,item:Item,filetype:FileType)->None:
         if not Editor.is_case(item):
-            case = self.__creator.from_template(CASE_TEMPLATE_LABEL, item.name)
+            case = self.__creator.from_template(CASE_TYPE_LABEL, item.name)
             case.adopt_formally(item)
             self.__creator.save(case,filetype)
         else:
@@ -210,17 +209,39 @@ class EditorUI:
     def __init__(
         self, 
         editor:Editor,
-        item_menu:Item_Menu
+        item_menu:Item_Menu,
+        item_window:Item_Window
         )->None:
 
         self.__editor = editor
         self.__item_menu = item_menu
+        self.__item_window = item_window
 
     def open_item_menu(self, item:Item)->None:
-        self.__item_menu.open(self.__root_item_actions())
+        if item.is_null(): 
+            raise EditorUI.Opening_Item_Menu_For_Nonexistent_Item
+        elif item==self.__editor.root:
+            self.__item_menu.open(self.__root_item_actions())
+        elif item.itype==CASE_TYPE_LABEL:
+            self.__item_menu.open(self.__case_actions(item))
+        else:
+            self.__item_menu.open(self.__item_actions(item))
 
     def __root_item_actions(self)->Dict[str,Callable]:
         return {'new_case':self.__new_case}
+    
+    def __case_actions(self, case:Item)->Dict[str,Callable]:
+        return {
+    
+        }
+
+    def __item_actions(self, item:Item)->Dict[str,Callable]:
+        return {
+            'edit':lambda: self.open_item_window(item)
+        }
+    
+    def open_item_window(self, item:Item)->None:
+        self.__item_window.open(item)
     
     DEFAULT_CASE_NAME = "Case"
     def __new_case(self)->None:
@@ -230,10 +251,35 @@ class EditorUI:
     def item_menu(self)->Item_Menu: 
         return self.__item_menu
     
+    class Opening_Item_Menu_For_Nonexistent_Item(Exception): pass
+
 
 
 from typing import Callable
+from src.core.attributes import Attribute
 import abc
+class Item_Window(abc.ABC):
+
+    def __init__(self)->None:
+        self.__open:bool = False
+
+    @property
+    def is_open(self)->bool: return self.__open
+
+    def open(self, item:Item)->None: 
+        self._build_window(item.attributes)
+        self.__open = True
+
+    def close(self)->None:
+        self._destroy_window()
+        self.__open = False
+        
+    @abc.abstractmethod
+    def _build_window(self, attributes:Dict[str,Attribute]): pass
+    @abc.abstractmethod
+    def _destroy_window(self): pass
+
+
 class Item_Menu(abc.ABC):
 
     def __init__(self)->None:
@@ -259,7 +305,7 @@ class Item_Menu(abc.ABC):
         self.__actions[action_label]()
 
     @abc.abstractmethod
-    def _build_menu(self)->None: pass
+    def _build_menu(self)->None: pass # pragma: no cover
     @abc.abstractmethod
-    def _destroy_menu(self)->None: pass
+    def _destroy_menu(self)->None: pass # pragma: no cover
     

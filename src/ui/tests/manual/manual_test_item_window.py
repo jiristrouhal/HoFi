@@ -1,5 +1,5 @@
 import tkinter as tk
-from src.ui.editor_elems import Item_Window
+from src.ui.editor_elems import Item_Window_Tk
 from src.core.attributes import attribute_factory
 from src.cmd.commands import Controller
 from decimal import Decimal
@@ -41,9 +41,12 @@ attrs = {
     'date':date,
     'cost':cost
 }
+from src.core.item import ItemImpl, ItemCreator
+
+item = ItemImpl("The Item", attrs, ItemCreator())
 
 
-item_win = Item_Window(root, attrs)
-item_win.ok()
+item_win = Item_Window_Tk(root)
+item_win.open(item)
 
 root.mainloop()
