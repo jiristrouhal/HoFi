@@ -445,9 +445,6 @@ class Attribute(AbstractAttribute):
     @abc.abstractmethod
     def _is_value_valid(self,value:Any)->bool: pass # pragma: no cover
 
-    @abc.abstractmethod
-    def _is_text_valid(self,value:str)->bool: pass # pragma: no cover
-
     def _run_set_command(self,value:Any)->None:
         self.factory.controller.run(*self._get_set_commands(value))
     
@@ -481,10 +478,6 @@ class Number_Attribute(Attribute):
     class CannotExtractNumber(Exception): pass
     _reading_exception:Type[Exception] = CannotExtractNumber
 
-    @property
-    def comma_as_dec_separator(self)->bool:
-        return self.factory.locale_code in Number_Attribute.Comma_Separator
-
     @abc.abstractmethod
     def _is_type_valid(self, value: Any) -> bool:  # pragma: no cover
         pass
@@ -506,16 +499,7 @@ class Number_Attribute(Attribute):
             if self.is_valid(value): self.set(value)
         except:
             raise self._reading_exception
-        
-    def _is_text_valid(self,value:str)->bool:
-        value = value.replace(',','.')
-        if Number_Attribute._is_text_a_number(str(value)): 
-            if value[-1] in ('+','-'): value += "0"
-            number = Decimal(value)
-            return self.is_valid(number, raise_value_type_exception=False)
-        else:
-            return False
-        
+
     @staticmethod
     def _is_a_number(value:Any)->bool:
         return isinstance(value,int) or isinstance(value,Decimal) or isinstance(value,float)
@@ -747,9 +731,6 @@ class Monetary_Attribute(Number_Attribute):
 
 class Text_Attribute(Attribute):
 
-    def _is_text_valid(self, value: str) -> bool:
-        return True
-
     def _is_type_valid(self, value: Any) -> bool:
         return isinstance(value,str)
 
@@ -788,9 +769,6 @@ class Date_Attribute(Attribute):
 
     def _is_value_valid(self, value: Any) -> bool:
         return True
-
-    def _is_text_valid(self, value: str) -> bool:
-        return self.__extract_date_from_string(value) is not None
 
     def print(self,*options)->str:
         date_format = self.__date_formats[self.factory.locale_code]
@@ -864,9 +842,6 @@ class Choice_Attribute(Attribute):
     def clear_options(self)->None:
         self.__options.clear()
 
-    def _is_text_valid(self, value: str) -> bool:
-        return self._is_value_valid(value)
-
     def _is_type_valid(self, value: Any) -> bool: 
         return True
 
@@ -933,9 +908,6 @@ class Choice_Attribute(Attribute):
 class Bool_Attribute(Attribute):
     default_value = False
 
-    def _is_text_valid(self, value: str) -> bool:
-        return value.strip() in ("True","False","true","false")
-
     def _is_type_valid(self, value: Any) -> bool:
         return bool(value)==value
 
@@ -946,8 +918,8 @@ class Bool_Attribute(Attribute):
         return str(bool(self._value))
     
     def read(self, text: str) -> None:
-        if self._is_text_valid(text):
-            self._value = bool(text)
+        if text.strip() in ('true','True'): self._value = True
+        elif text.strip() in ('false','False'): self._value = False
         else: raise Bool_Attribute.CannotReadBooleanFromText(text)
 
     class CannotReadBooleanFromText(Exception): pass

@@ -1562,10 +1562,10 @@ class Test_Bool_Attribute(unittest.TestCase):
         self.assertTrue(switch.value)
 
         switch.read("False")
-        self.assertTrue(switch.value)
+        self.assertFalse(switch.value)
     
         switch.read("false")
-        self.assertTrue(switch.value)
+        self.assertFalse(switch.value)
 
         self.assertRaises(switch.CannotReadBooleanFromText, switch.read, "  ")
         self.assertRaises(switch.CannotReadBooleanFromText, switch.read, "")
