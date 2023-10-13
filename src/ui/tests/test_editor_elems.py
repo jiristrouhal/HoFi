@@ -5,16 +5,9 @@ sys.path.insert(1,"src")
 
 import unittest
 import tkinter as tk
-from src.ui.editor_elems import Item_Window, Entry_Creator
+from src.ui.editor_elems import Entry_Creator
 from src.core.attributes import attribute_factory
 from src.cmd.commands import Controller
-
-
-class Test_Item_Window(unittest.TestCase):
-
-    def test_starting_item_window(self)->None:
-        iwi = Item_Window(None)
-
 
 
 class Test_Choice_Entry(unittest.TestCase):
@@ -48,6 +41,29 @@ class Test_Choice_Entry(unittest.TestCase):
         entry.revert()
         self.assertEqual(entry.value, "B")
 
+
+class Test_Choice_With_Numeric_Options(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.master = tk.Frame()
+        self.cr = Entry_Creator()
+        self.fac = attribute_factory(Controller())
+        self.attr = self.fac.new('choice', init_value=2, options=[1,2,3])
+
+    def test_entry(self):
+        entry = self.cr.new(self.attr, self.master)
+        self.assertEqual(entry.value, "2")
+        entry.set("1")
+        self.assertEqual(entry.value, "1")
+    
+    def test_setting_attribute(self)->None:
+        entry = self.cr.new(self.attr, self.master)
+
+        self.assertEqual(self.attr.value, 2)
+        entry.set("3")
+        self.assertEqual(self.attr.value, 2)
+        entry.ok()
+        self.assertEqual(self.attr.value, 3)
 
 
 import datetime

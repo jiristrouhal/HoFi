@@ -823,7 +823,7 @@ class Choice_Attribute(Attribute):
         )->None:
         
         super().__init__(factory, atype='choice', name=name)
-        self.options:List[Any] = list()
+        self.__options:Dict[str,Any] = dict()
         if options:
             self.add_options(*options)
             if init_value is None: 
@@ -835,7 +835,8 @@ class Choice_Attribute(Attribute):
         if not options and init_value is not None:
             raise Choice_Attribute.UndefinedOption(init_value)
 
-
+    @property
+    def options(self)->List[str]: return list(self.__options.keys())
     @property
     def value(self)->Any: 
         if self.options: return self._value
@@ -843,19 +844,15 @@ class Choice_Attribute(Attribute):
 
     def add_options(self, *options:Any)->None:
         for op in options:
-            if isinstance(op,str):
-                op = strip_and_join_spaces(op)
-            if op not in self.options: # prevent duplicities
-                self.options.append(op)
-        # finding duplicate after converting all options to strings 
-        # means the same option occured, only with different type 
-        stringified_ops = set(map(str,self.options))
-        if len(stringified_ops)<len(self.options): 
-            raise Choice_Attribute.DuplicateOfDifferentType(self.options)
-        if self._value=='': self._value = options[0]
+            str_op = strip_and_join_spaces(str(op))
+            if str_op not in self.__options: # prevent duplicities
+                self.__options[str_op] = op
+                if self._value=='': self._value = options[0]
+            else:
+                raise Choice_Attribute.DuplicateOption(str_op)
 
     def clear_options(self)->None:
-        self.options.clear()
+        self.__options.clear()
 
     def _is_text_valid(self, value: str) -> bool:
         return self._is_value_valid(value)
@@ -863,10 +860,10 @@ class Choice_Attribute(Attribute):
     def _is_type_valid(self, value: Any) -> bool: 
         return True
 
-    def _is_value_valid(self,value:Any)->bool: 
-        if value not in self.options: 
+    def _is_value_valid(self,value:str)->bool: 
+        if value not in self.__options: 
             raise Choice_Attribute.UndefinedOption(
-                f"Unknown option: {value}; available options are: {self.options}"
+                f"Unknown option: '{value}'; available options are: {self.options}"
             )
         return True
 
@@ -887,35 +884,38 @@ class Choice_Attribute(Attribute):
 
     def read(self, text:str)->None:
         text = text.strip()
-        for op in self.options:
-            if str(op)==text: 
+        for op in self.__options:
+            if op==text: 
                 self.set(op) 
                 return
         raise Choice_Attribute.UndefinedOption(
-            f"Unknown option: {text}; available options are: {self.options}"
+            f"Unknown option: '{text}'; available options are: {self.options}"
         )
 
     def remove_options(self,*options:Any)->None:
         if self._value in options: 
             raise Choice_Attribute.CannotRemoveChosenOption(self._value)
         for op in options:
-            if op in self.options: 
-                self.options.remove(op)
+            if op in self.__options: 
+                self.__options.pop(op)
             else: 
                 raise Choice_Attribute.UndefinedOption(
                     f"Unknown option: {op}; available options are: {self.options}"
                 )
 
-    def set(self,value:Any)->None:
-        if not self.options: raise Choice_Attribute.NoOptionsAvailable
-        super().set(value)
+    def set(self,option:str)->None:
+        if self._dependency is not DependencyImpl.NULL: return
+        if not self.__options: raise Choice_Attribute.NoOptionsAvailable
+        if self.is_valid(option): 
+            option_value = self.__options[option]
+            self._run_set_command(option_value)
     
     @classmethod
     def _str_value(cls, value, lower_case:bool=False) -> str:
         return str(value).lower() if lower_case else str(value)
 
     class CannotRemoveChosenOption(Exception): pass
-    class DuplicateOfDifferentType(Exception): pass
+    class DuplicateOption(Exception): pass
     class NoOptionsAvailable(Exception): pass
     class UndefinedOption(Exception): pass
 
