@@ -6,8 +6,6 @@ import tkcalendar as tkc
 import abc
 from typing import Dict, Optional, Any
 
-from src.core.editor import AttributeType
-
 
 class Attribute_Entry(abc.ABC):
 
