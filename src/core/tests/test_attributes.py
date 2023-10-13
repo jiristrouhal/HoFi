@@ -913,50 +913,52 @@ class Test_Monetary_Attribute(unittest.TestCase):
         self.assertRaises(Attribute.InvalidValueType, mon.set, "$45")
 
     def test_currency_needs_to_be_specified_before_printing_money_value_as_a_string(self):
-        fac_cz = attribute_factory(Controller(), 'cs_cz')
-        fac_us = attribute_factory(Controller(), 'en_us')
+        fac_cz = attribute_factory(Controller(), 'cs_cz', currency_code="USD")
+        fac_us = attribute_factory(Controller(), 'en_us', currency_code="USD")
+        fac_jp = attribute_factory(Controller(), 'cs_cz', currency_code="JPY")
         mon_cz:Monetary_Attribute = fac_cz.new("money", 12)
         mon_us:Monetary_Attribute = fac_us.new("money", 12)
-        self.assertEqual(mon_cz.print(currency_code="USD"), f"12,00{NBSP}$")
-        self.assertEqual(mon_us.print(currency_code="USD"), "$12.00")
-        self.assertEqual(mon_cz.print(currency_code="JPY"), f"12{NBSP}¥")
-        self.assertEqual(mon_cz.print(currency_code="USD", trailing_zeros=False), f"12{NBSP}$")
+        mon_jp:Monetary_Attribute = fac_jp.new("money", 12)
+        self.assertEqual(mon_cz.print(), f"12,00{NBSP}$")
+        self.assertEqual(mon_us.print(), "$12.00")
+        self.assertEqual(mon_jp.print(), f"12{NBSP}¥")
+        self.assertEqual(mon_cz.print(trailing_zeros=False), f"12{NBSP}$")
 
         mon_cz.set(11.5)
         mon_us.set(11.5)
-        self.assertEqual(mon_cz.print(currency_code="USD"), f"11,50{NBSP}$")
+        self.assertEqual(mon_cz.print(), f"11,50{NBSP}$")
         # the locale code is not case sensitive
-        self.assertEqual(mon_cz.print(currency_code="USD"), f"11,50{NBSP}$")
-        self.assertEqual(mon_us.print(currency_code="USD"), "$11.50")
-        self.assertEqual(mon_cz.print(currency_code="JPY"), f"12{NBSP}¥")
-        self.assertEqual(mon_cz.print(currency_code="USD", trailing_zeros=False), f"11,50{NBSP}$")
+        self.assertEqual(mon_cz.print(), f"11,50{NBSP}$")
+        self.assertEqual(mon_us.print(), "$11.50")
+        self.assertEqual(mon_jp.print(), f"12{NBSP}¥")
+        self.assertEqual(mon_cz.print(trailing_zeros=False), f"11,50{NBSP}$")
 
     def test_bankers_rounding_is_correctly_used(self):
-        fac_cz = attribute_factory(Controller(), "cs_cz")
-        fac_us = attribute_factory(Controller(), "en_us")
-        mon_cz:Monetary_Attribute = fac_cz.new("money", 12.5)
+        fac_us = attribute_factory(Controller(), "en_us", currency_code="USD")
+        fac_jp = attribute_factory(Controller(), "cs_cz", currency_code="JPY")
         mon_us:Monetary_Attribute = fac_us.new("money", 12.5)
-        self.assertEqual(mon_cz.print(currency_code="JPY"), f"12{NBSP}¥")
+        mon_jp:Monetary_Attribute = fac_jp.new("money", 12.5)
+        self.assertEqual(mon_jp.print(), f"12{NBSP}¥")
 
         mon_us.set(1.455)
-        self.assertEqual(mon_us.print(currency_code="USD"), "$1.46")
+        self.assertEqual(mon_us.print(), "$1.46")
         mon_us.set(1.445)
-        self.assertEqual(mon_us.print(currency_code="USD"), "$1.44")
+        self.assertEqual(mon_us.print(), "$1.44")
         mon_us.set(0.001)
-        self.assertEqual(mon_us.print(currency_code="USD"), "$0.00")
+        self.assertEqual(mon_us.print(), "$0.00")
 
     def test_sign_is_always_put_right_on_the_beginning_of_the_string(self):
-        fac_cz = attribute_factory(Controller(), 'cs_cz')
-        fac_us = attribute_factory(Controller(), 'en_us')
+        fac_cz = attribute_factory(Controller(), 'cs_cz', currency_code="USD")
+        fac_us = attribute_factory(Controller(), 'en_us', currency_code="USD")
         mon_cz:Monetary_Attribute = fac_cz.new("money", -5.01)
         mon_us:Monetary_Attribute = fac_us.new("money", -5.01)
-        self.assertEqual(mon_us.print(currency_code="USD"), "-$5.01")
-        self.assertEqual(mon_cz.print(currency_code="USD"), f"-5,01{NBSP}$")
+        self.assertEqual(mon_us.print(), "-$5.01")
+        self.assertEqual(mon_cz.print(), f"-5,01{NBSP}$")
 
     def test_plus_sign_can_be_enforced(self):
-        fac = attribute_factory(Controller(), "en_us")
+        fac = attribute_factory(Controller(), "en_us",currency_code="USD")
         mon:Monetary_Attribute = fac.new("money", 8.45)
-        self.assertEqual(mon.print(currency_code="USD", enforce_plus=True), "+$8.45")
+        self.assertEqual(mon.print(enforce_plus=True), "+$8.45")
 
     def test_reading_monetary_value_from_string(self):
         fac = attribute_factory(Controller())
@@ -1031,13 +1033,12 @@ class Test_Monetary_Attribute(unittest.TestCase):
 
 
     def test_print_with_space_as_thousands_separator(self):
-        fac = attribute_factory(Controller(), "en_us")
+        fac = attribute_factory(Controller(), "en_us", currency_code="USD")
         mon:Monetary_Attribute = fac.new("money", 4100300)
 
         self.assertEqual(
             mon.print(
                 use_thousands_separator=True,
-                currency_code="USD",
                 trailing_zeros=False
             ), 
             f"$4{NBSP}100{NBSP}300"
@@ -1047,7 +1048,6 @@ class Test_Monetary_Attribute(unittest.TestCase):
         self.assertEqual(
             mon.print(
                 use_thousands_separator=True,
-                currency_code="USD",
                 trailing_zeros=False
             ), 
             f"$0"
@@ -1057,7 +1057,6 @@ class Test_Monetary_Attribute(unittest.TestCase):
         self.assertEqual(
             mon.print(
                 use_thousands_separator=True,
-                currency_code="USD",
                 trailing_zeros=False
             ), 
             f"-$4{NBSP}100{NBSP}300"

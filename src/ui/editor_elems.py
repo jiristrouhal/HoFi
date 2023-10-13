@@ -132,25 +132,24 @@ class Number_Entry(Attribute_Entry):
             return value=="" or self.attr._is_text_valid(value)
         vcmd = (self.master.register(validation_func),'%P')
         self._value = tk.Entry(self.master, validate='key', validatecommand=vcmd)
-        self._value.insert(0,str(self.attr.print()))
+        entry_init_value = self.attr.print()
+        self._value.insert(0,entry_init_value)
 
     def _create_options(self) -> None: pass
 
     def ok(self)->None:
         str_value = self._value.get()
-        if str_value in ("","+","-"): 
-            value = Decimal(0)
+        if str_value in ("","+","-",".",","): 
+            self.attr.set(0)
         else:
-            value = Decimal(str_value)
-        self.attr.set(value)
+            value = Decimal(str_value.replace(",","."))
+            self.attr.set(value)
 
     def revert(self)->None:
         self._value.delete(0,tk.END)
-        str_value = str(self.attr.value)
         assert(isinstance(self.attr, Number_Attribute))
-        if self.attr.comma_as_dec_separator:
-            str_value = str_value.replace(".",",")
-        self._value.insert(0,str(self.attr.value))
+        entry_init_value = self.attr.print()
+        self._value.insert(0,entry_init_value)
 
     def set(self, value:Any, value_label:str="")->None:
         self._value.delete(0, tk.END)
@@ -160,6 +159,7 @@ class Number_Entry(Attribute_Entry):
         return self._value.get()
     
 
+from src.core.attributes import Monetary_Attribute
 class Money_Entry(Number_Entry):
     @property
     def widget(self)->tk.Widget: return self.__frame
@@ -170,9 +170,16 @@ class Money_Entry(Number_Entry):
             return value=="" or self.attr._is_text_valid(value)
         vcmd = (self.__frame.register(validation_func),'%P')
         self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd, name="entry")
-        self._value.insert(0,str(self.attr.value))
+        assert(isinstance(self.attr, Monetary_Attribute))
+        self._value.insert(0,str(self.attr.print(show_symbol=False)))
         self._value.grid(column=0,row=0)
-        
+
+    def revert(self)->None:
+        self._value.delete(0,tk.END)
+        assert(isinstance(self.attr, Monetary_Attribute))
+        entry_init_value = self.attr.print(show_symbol=False, trailing_zeros=False)
+        self._value.insert(0,entry_init_value)
+
 
 from src.core.attributes import Quantity
 from decimal import Decimal
@@ -237,7 +244,9 @@ class Quantity_Entry(Attribute_Entry):
         prefix,unit = self.attr._separate_prefix_from_unit(self.__unit.get())
         self.attr.set_unit(unit)
         self.attr.set_prefix(prefix)
-        self.attr.read(self.__value.get()+' '+prefix+unit)
+        value = self.__value.get()
+        if value in ("",",",".","+","-"): value="0"
+        self.attr.read(value+' '+prefix+unit)
 
     def revert(self)->None:
         assert(isinstance(self.attr,Quantity))

@@ -20,7 +20,7 @@ temperature.add_unit(
 )
 choice = fac.new('choice', 'A', 'The Choice', options=['A','B'])
 date = fac.new('date')
-cost = fac.new('money')
+cost = fac.new('money', 58.12)
 
 
 root = tk.Tk()

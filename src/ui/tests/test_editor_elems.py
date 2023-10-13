@@ -200,6 +200,13 @@ class Test_Monetary_Entry(unittest.TestCase):
         entry.revert()
         self.assertEqual(entry.value(), "3")
 
+    def test_initializing_entry_with_czech_locale_code(self):
+        fac_cz = attribute_factory(Controller(), "cs_cz")
+        attr = fac_cz.new('money',5.81)
+        entry = self.cr.new(attr, self.master)
+
+        self.assertEqual(entry.value(),"5,81")
+
 
 class Test_Text_Entry(unittest.TestCase):
 
@@ -311,4 +318,7 @@ class Test_Bool_Entry(unittest.TestCase):
         entry.revert()
         self.assertEqual(entry.value(), True)
 
-if __name__=="__main__": unittest.main()
+
+
+if __name__=="__main__": 
+    unittest.main()

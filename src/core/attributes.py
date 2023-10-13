@@ -475,7 +475,7 @@ class Number_Attribute(Attribute):
 
     @property
     def comma_as_dec_separator(self)->bool:
-        return self.factory.locale_code in Number_Attribute.__Comma_Separator
+        return self.factory.locale_code in Number_Attribute.Comma_Separator
 
     @abc.abstractmethod
     def _is_type_valid(self, value: Any) -> bool:  # pragma: no cover
@@ -500,7 +500,7 @@ class Number_Attribute(Attribute):
             raise self._reading_exception
         
     def _is_text_valid(self,value:str)->bool:
-        if self.factory.locale_code in Number_Attribute.__Comma_Separator: 
+        if self.factory.locale_code in Number_Attribute.Comma_Separator: 
             value = value.replace(',','.')
         if Number_Attribute._is_text_a_number(str(value)): 
             if value[-1] in ('+','-'): value += "0"
@@ -519,10 +519,9 @@ class Number_Attribute(Attribute):
         return re.fullmatch(f'{DECIMAL_PATT}', value)  is not None
     
 
-    __Comma_Separator:Set[str] = {"cs_cz",}
-    @staticmethod
-    def _adjust_decimal_separator(value:str,locale_code:str)->str:
-        if locale_code in Number_Attribute.__Comma_Separator:
+    Comma_Separator:Set[str] = {"cs_cz",}
+    def _adjust_decimal_separator(self,value:str)->str:
+        if self.factory.locale_code in Number_Attribute.Comma_Separator:
             value = value.replace('.',',')
         return value
 
@@ -612,7 +611,7 @@ class Real_Attribute(Number_Attribute):
         str_value = self._set_thousands_separator(str_value, use_thousands_separator)
         if "." in str_value and not trailing_zeros: 
             str_value = str_value.rstrip('0').rstrip('.')
-        str_value = self._adjust_decimal_separator(str_value, self.factory.locale_code)
+        str_value = self._adjust_decimal_separator(str_value)
         return str_value
         
     def set(self,value:Decimal|float|int)->None:
@@ -639,16 +638,16 @@ class Currency:
     symbol_before_value:bool = True
 
 class Monetary_Attribute(Number_Attribute):
-    __currencies:Dict[Currency_Code,Currency] = {
+    Currencies:Dict[Currency_Code,Currency] = {
         'USD':Currency('USD','$'),
         'EUR':Currency('EUR','€'),
         'CZK':Currency('CZK','Kč',symbol_before_value=False),
         'JPY':Currency('JPY','¥',decimals=0)
     }
-    @staticmethod
-    def preferred_symbol_before_value(locale_code:str)->bool:
+
+    def preferred_symbol_before_value(self)->bool:
         preferred_by:Set[Locale_Code] = {'en_us'}
-        return locale_code in preferred_by
+        return self.factory.locale_code in preferred_by
     
     def _is_type_valid(self, value:float|int|Decimal) -> bool:
         return Number_Attribute._is_a_number(value)
@@ -669,26 +668,24 @@ class Monetary_Attribute(Number_Attribute):
     def print(
         self,
         use_thousands_separator:bool = False,
-        currency_code:Currency_Code = "USD",
         trailing_zeros:bool = True,
         enforce_plus:bool = False,
         show_symbol:bool = True,
         *options
         )->str:
-    
-        locale = self.factory.locale_code
-        if not currency_code in self.__currencies: raise self.CurrencyNotDefined
-        currency = self.__currencies[currency_code]
 
+        currency = self.Currencies[self.factory.currency_code]
+        
         if not trailing_zeros and int(self._value)==self._value: n_places = 0
-        else: n_places = self.__currencies[currency_code].decimals
+        else: n_places = currency.decimals
         value_str = format(round(self._value,n_places), ',.'+str(n_places)+'f')
         value_str = self._set_thousands_separator(value_str, use_thousands_separator)
         # decimal separator is adjusted AFTER setting thousands separator to avoid collisions when comma 
         # is used for one or the other
-        value_str = self._adjust_decimal_separator(value_str,locale)
+        value_str = self._adjust_decimal_separator(value_str)
+
         if show_symbol:
-            value_str = self.__add_symbol_to_printed_value(value_str, locale, currency)
+            value_str = self.__add_symbol_to_printed_value(value_str, currency)
         if enforce_plus and self._value>0: value_str = '+'+value_str
         return value_str
 
@@ -721,15 +718,13 @@ class Monetary_Attribute(Number_Attribute):
         else: sign = "+"
         return sign, text
 
-    @classmethod
     def __add_symbol_to_printed_value(
-        cls,
+        self,
         value:str,
-        locale_code:str, 
         currency:Currency
         )->str:
         
-        if cls.preferred_symbol_before_value(locale_code) and currency.symbol_before_value: 
+        if self.preferred_symbol_before_value() and currency.symbol_before_value: 
             if value[0] in ('-','+'): value_str = value[0] + currency.symbol + value[1:]
             else: value_str = currency.symbol + value
         else: 
@@ -1285,9 +1280,12 @@ from typing import Type
 class Attribute_Factory:
     controller:Controller
     locale_code:Locale_Code = "en_us"
+    currency_code:Currency_Code = "USD"
     data_constructor:Attribute_Data_Constructor = Attribute_Data_Constructor()
     
     def __post_init__(self)->None:
+        if not self.currency_code in Monetary_Attribute.Currencies: 
+            raise Monetary_Attribute.CurrencyNotDefined(self.currency_code)
         self.__verify_and_format_locale_code()
 
     @property
@@ -1345,7 +1343,8 @@ class Attribute_Factory:
 
 def attribute_factory(
     controller:Controller,
-    locale_code:Locale_Code="en_us"
+    locale_code:Locale_Code="en_us",
+    currency_code:Currency_Code="USD"
     )->Attribute_Factory:
 
-    return Attribute_Factory(controller,locale_code)
+    return Attribute_Factory(controller,locale_code,currency_code)
