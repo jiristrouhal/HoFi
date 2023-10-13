@@ -126,12 +126,9 @@ class Number_Entry(Attribute_Entry):
 
     def ok(self)->None:
         str_value = self._value.get()
-        if str_value in ("","+","-",".",","): 
-            self.attr.set(0)
-        else:
-            value = Decimal(str_value.replace(",","."))
-            self.attr.set(value)
-
+        if str_value in ("","+","-"): self.attr.set(0)
+        else: self.attr.set(Decimal(str_value.replace(",",".")))
+  
     def revert(self)->None:
         self._value.delete(0,tk.END)
         assert(isinstance(self.attr, Number_Attribute))
