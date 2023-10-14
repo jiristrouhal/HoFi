@@ -983,10 +983,16 @@ class Quantity(Real_Attribute):
         )
         self.__unit:Unit = self.__units[base_unit]
         self.set_prefix(default_prefix)
+        self.__default_unit = self.__unit
         self.__unit.default_prefix = default_prefix
 
     @property
     def unit(self)->str: return self.__unit.symbol
+    @property
+    def default_unit(self)->Unit: return self.__default_unit
+    @property
+    def default_scaled_unit(self)->str: 
+        return self.default_unit.default_prefix+self.default_unit.symbol
     @property
     def type(self)->AttributeType: return 'quantity'
     @property

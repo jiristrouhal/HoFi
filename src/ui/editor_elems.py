@@ -26,8 +26,12 @@ class Attribute_Entry(abc.ABC):
 
     @abc.abstractmethod
     def _create_entry(self)->None: pass
+
+    def ok(self)->None:
+        self.attr.set(self._confirmed_value())
+
     @abc.abstractmethod
-    def ok(self)->None: pass
+    def _confirmed_value(self)->Any: pass
     @abc.abstractmethod
     def revert(self)->None: pass
     @abc.abstractmethod
@@ -48,8 +52,8 @@ class Bool_Entry(Attribute_Entry):
         self.__var = tk.BooleanVar(self.master, value=self.attr.value)
         self.__value = tk.Checkbutton(self.master, variable=self.__var, onvalue=True, offvalue=False)
     
-    def ok(self)->None:
-        self.attr.set(self.__var.get())
+    def _confirmed_value(self)->bool:
+        return self.__var.get()
 
     def revert(self)->None:
         self.set(self.attr.value)
@@ -73,8 +77,8 @@ class Choice_Entry(Attribute_Entry):
         self.__choice.config(values=ops)
         self.__choice.set(self.attr.value)
 
-    def ok(self)->None:
-        self.attr.set(self.__choice.get())
+    def _confirmed_value(self)->str:
+        return self.__choice.get()
 
     def revert(self)->None:
         self.__choice.set(self.attr.value)
@@ -95,8 +99,8 @@ class Date_Entry(Attribute_Entry):
         self.__date_entry = tkc.DateEntry(self.master, locale=self.attr.factory.locale_code)
         self.__date_entry.set_date(self.attr.value)
         
-    def ok(self)->None:
-        self.attr.set(self.__date_entry.get_date())
+    def _confirmed_value(self)->datetime.date:
+        return self.__date_entry.get_date()
     
     def revert(self)->None:
         self.__date_entry.set_date(self.attr.value)
@@ -118,10 +122,10 @@ class Number_Entry(Attribute_Entry):
         self._value = tk.Entry(self.master, validate='key', validatecommand=vcmd)
         self._value.insert(0, self.attr.print())
 
-    def ok(self)->None:
+    def _confirmed_value(self)->float|Decimal:
         str_value = self._value.get()
-        if str_value in ("","+","-"): self.attr.set(0)
-        else: self.attr.set(Decimal(str_value.replace(",",".")))
+        if str_value in ("","+","-"): return 0
+        else: return Decimal(str_value.replace(",","."))
   
     def revert(self)->None:
         self._value.delete(0,tk.END)
@@ -239,14 +243,18 @@ class Quantity_Entry(Number_Entry):
                 str_value = str_value.rstrip("0").rstrip(",").rstrip(".")
             self.__update_value(str_value)
 
-    def ok(self)->None:
+    def _confirmed_value(self)->Decimal:
         assert(isinstance(self.attr,Quantity))
         prefix,unit = self.attr._separate_prefix_from_unit(self.__unit.get())
         self.attr.set_unit(unit)
         self.attr.set_prefix(prefix)
         value = self._value.get()
         if value in ("","+","-"): value="0"
-        self.attr.read(value+' '+prefix+unit)
+        return self.attr.convert(
+            Decimal(value),
+            prefix+unit,
+            self.attr.default_scaled_unit
+        )
 
     def revert(self)->None:
         assert(isinstance(self.attr,Quantity))
@@ -269,8 +277,8 @@ class Text_Entry(Attribute_Entry):
         self.__text = tk.Text(self.master)
         self.__text.insert(1.0, self.attr.value)
 
-    def ok(self)->None:
-        self.attr.set(self.__text.get(1.0, tk.END)[:-1])
+    def _confirmed_value(self)->str:
+        return self.__text.get(1.0, tk.END)[:-1]
 
     def revert(self)->None:
         self.__text.delete(1.0, tk.END)
@@ -344,11 +352,15 @@ class Item_Window_Tk(Item_Window):
         self.__entries.clear()
 
     def ok(self)->None: 
-        okbutton:tk.Button = self.__win.nametowidget('button_frame').nametowidget('revert')
+        okbutton:tk.Button = self.__win.nametowidget('button_frame').nametowidget('ok')
         okbutton.invoke()
 
     def __ok(self)->None:
-        for entry in self.__entries: entry.ok()
+        confirmed_vals:Dict[Attribute,Any] = dict()
+        for entry in self.__entries: 
+            confirmed_vals[entry.attr] = entry._confirmed_value()
+
+        Attribute.set_multiple({entry.attr:confirmed_vals[entry.attr] for entry in self.__entries})
         self.__win.destroy()
 
     def __revert(self)->None:
@@ -378,7 +390,7 @@ class Item_Window_Tk(Item_Window):
     def __create_button_frame(self)->None:
         bf = tk.Frame(self.__win, name="button_frame")
         tk.Button(bf, text="Revert", command=lambda: self.__revert(), name="revert").grid(row=0,column=0)
-        tk.Button(bf, text="OK", command=lambda: self.__ok()).grid(row=0,column=1)
+        tk.Button(bf, text="OK", command=lambda: self.__ok(),  name="ok").grid(row=0,column=1)
         tk.Button(bf, text="Cancel", command=lambda: self.__cancel()).grid(row=0,column=2)
         bf.grid(row=1)
         
