@@ -135,6 +135,15 @@ class Test_Integer_Entry(unittest.TestCase):
         entry.revert()
         self.assertEqual(entry.value, "3")
 
+    def test_confirming_empty_entry_value_keeps_attributes_value_unchanged(self):
+        entry = self.cr.new(self.attr, self.master)
+
+        self.assertEqual(self.attr.value, 3)
+        entry.set("")
+        entry.ok()
+        self.assertEqual(self.attr.value, 3)
+
+
 
 class Test_Real_Entry(unittest.TestCase):
 
@@ -181,6 +190,23 @@ class Test_Real_Entry(unittest.TestCase):
         entry.revert()
         self.assertEqual(entry.value, "1.45")
 
+    def test_confirming_empty_entry_value_keeps_attributes_value_unchanged(self):
+        entry = self.cr.new(self.attr, self.master)
+
+        self.assertEqual(self.attr.value, Decimal('1.45'))
+        self.assertEqual(entry.value, '1.45')
+        entry.set(8.1)
+        entry.set("")
+        entry.ok()
+        self.assertEqual(self.attr.value, Decimal('1.45'))
+
+    def test_confirming_entry_value_containing_only_a_sign_sets_the_attribute_value_to_empty_string(self):
+        entry = self.cr.new(self.attr, self.master)
+        self.assertEqual(self.attr.value, Decimal('1.45'))
+        entry.set("-")
+        entry.ok()
+        self.assertEqual(self.attr.value, Decimal('1.45'))
+
 
 class Test_Monetary_Entry(unittest.TestCase):
 
@@ -223,6 +249,15 @@ class Test_Monetary_Entry(unittest.TestCase):
 
         self.assertEqual(entry.value,"5,81")
 
+    def test_confirming_empty_entry_value_keeps_attributes_value_unchanged(self):
+        entry = self.cr.new(self.attr, self.master)
+
+        self.assertEqual(self.attr.value, 3)
+        self.assertEqual(entry.value, '3.00')
+        entry.set("")
+        entry.ok()
+        self.assertEqual(self.attr.value, 3)
+
 
 class Test_Text_Entry(unittest.TestCase):
 
@@ -254,6 +289,14 @@ class Test_Text_Entry(unittest.TestCase):
         self.assertEqual(entry.value, "SomeText\n")
         entry.revert()
         self.assertEqual(entry.value, "...\n")
+
+    def test_confirming_empty_entry_value_sets_the_attribute_value_to_empty_string(self):
+        entry = self.cr.new(self.attr, self.master)
+        self.assertEqual(self.attr.value, '...')
+        entry.set("")
+        entry.ok()
+        self.assertEqual(self.attr.value, "")
+    
 
 
 class Test_Quantity_Entry(unittest.TestCase):

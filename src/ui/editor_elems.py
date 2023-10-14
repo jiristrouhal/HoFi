@@ -124,7 +124,7 @@ class Number_Entry(Attribute_Entry):
 
     def _confirmed_value(self)->float|Decimal:
         str_value = self._value.get()
-        if str_value in ("","+","-"): return 0
+        if str_value in ("","+","-"): return self.attr.value
         else: return Decimal(str_value.replace(",","."))
   
     def revert(self)->None:
