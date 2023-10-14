@@ -114,7 +114,7 @@ class Test_Integer_Entry(unittest.TestCase):
     def test_initial_state_of_integer_entry(self):
         self.assertEqual(self.entry.value, "3")
         self.entry.set("abc")
-        self.assertEqual(self.entry.value, "")
+        self.assertEqual(self.entry.value, "3")
         self.entry.set("123")
         self.assertEqual(self.entry.value, "123")
 
@@ -158,7 +158,7 @@ class Test_Real_Entry(unittest.TestCase):
 
         self.assertEqual(entry.value, "1.45")
         entry.set("abc")
-        self.assertEqual(entry.value, "")
+        self.assertEqual(entry.value, "1.45")
         entry.set("12.3")
         self.assertEqual(entry.value, "12.3")
 
@@ -169,7 +169,7 @@ class Test_Real_Entry(unittest.TestCase):
 
         self.assertEqual(entry.value, "1,45")
         entry.set("abc")
-        self.assertEqual(entry.value, "")
+        self.assertEqual(entry.value, "1,45")
         entry.set("12,3")
         self.assertEqual(entry.value, "12,3")
 
@@ -219,7 +219,7 @@ class Test_Monetary_Entry(unittest.TestCase):
     def test_monetary_entry(self):
         entry = self.cr.new(self.attr, self.master)
         entry.set("abc")
-        self.assertEqual(entry.value, "")
+        self.assertEqual(entry.value, "3.00")
         entry.set("12.3")
         self.assertEqual(entry.value, "12.3")
         entry.set("-0.5")
@@ -306,13 +306,20 @@ class Test_Quantity_Entry(unittest.TestCase):
         self.cr = Entry_Creator()
         self.fac = attribute_factory(Controller())
         self.attr = self.fac.newqu(0.05, unit="m²", exponents={'c':-4,'m':-6})
+        self.temperature = self.fac.newqu(20, unit="°C", exponents={}, custom_condition=lambda x: x>Decimal('-273.15'))
+        self.temperature.add_unit(
+            "K",
+            {},
+            from_basic=lambda x: Decimal(x)+Decimal('273.15'), 
+            to_basic=lambda x: Decimal(x)-Decimal('273.15'),
+        )
 
     def test_entry(self):
         self.attr.set_prefix('c')
         q = self.cr.new(self.attr, self.master)
 
         q.set("abc")
-        self.assertEqual(q.value, "")
+        self.assertEqual(q.value, "0.05")
 
         q.set("25.4")
         self.assertEqual(q.value, "25.4")
@@ -333,11 +340,70 @@ class Test_Quantity_Entry(unittest.TestCase):
 
     def test_revert_changes(self)->None:
         entry = self.cr.new(self.attr, self.master)
-
         entry.set(8.1)
         self.assertEqual(entry.value, "8.1")
         entry.revert()
         self.assertEqual(entry.value, "0.05")
+
+
+
+from src.ui.editor_elems import Quantity_Entry
+class Test_Quantity_Entry_For_Temperature(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.master = tk.Frame()
+        self.cr = Entry_Creator()
+        self.fac = attribute_factory(Controller())
+        self.temperature = self.fac.newqu(20, unit="°C", exponents={}, custom_condition=lambda x: x>Decimal('-273.15'))
+        self.temperature.add_unit(
+            "K",
+            {},
+            from_basic=lambda x: Decimal(x)+Decimal('273.15'), 
+            to_basic=lambda x: Decimal(x)-Decimal('273.15'),
+        )
+        self.entry = self.cr.new(self.temperature, self.master)
+
+    def test_setting_temperature_both_in_celsius_and_kelvins_above_absolute_zero_is_accepted(self):
+        assert(isinstance(self.entry,Quantity_Entry))
+        self.entry.set("35")
+        self.assertEqual(self.entry.value, "35")
+        self.entry.ok()
+        self.assertEqual(self.temperature.value, 35)
+
+        self.assertTrue(self.entry.unit, "°C")
+        self.entry.set_unit("K")
+        self.assertTrue(self.entry.unit, "K")
+        
+        self.entry.set("298.15") # 25 °C
+        self.assertEqual(self.entry.value, "298.15")
+        self.entry.ok()
+        self.assertEqual(self.temperature.value,25)
+
+    def test_attempting_to_set_unit_below_absolute_zero_in_kelvins_and_celsius_is_not_accepted_as_valid_and_does_not_affect_the_entry_or_attribute_value(self):
+        assert(isinstance(self.entry,Quantity_Entry))
+
+
+        self.assertEqual(self.entry.value, "20")
+        self.entry.set("-274")
+        self.assertEqual(self.entry.value, "20")
+
+        self.assertTrue(self.entry.unit, "°C")
+        self.entry.set_unit("K")
+        self.assertTrue(self.entry.unit, "K")
+        
+        self.entry.set("-5") 
+        self.assertEqual(self.entry.value, "293.15")
+
+
+    def test_setting_to_value_valid_with_one_units_and_invalid_in_others(self):
+        assert(isinstance(self.entry,Quantity_Entry))
+        self.assertTrue(self.entry.unit, "°C")
+        self.entry.set(-1)
+        self.assertEqual(self.entry.value, "-1")
+
+        self.entry.set_unit("K")
+        self.assertEqual(self.entry.value, "272.15")
+
 
 
 class Test_Bool_Entry(unittest.TestCase):

@@ -118,7 +118,7 @@ class Number_Entry(Attribute_Entry):
     def widget(self)->tk.Widget: return self._value
         
     def _create_entry(self) -> None:
-        vcmd = (self.master.register((self._text_is_valid_number)),'%P')
+        vcmd = (self.master.register((self._text_is_valid_value)),'%P')
         self._value = tk.Entry(self.master, validate='key', validatecommand=vcmd)
         self._value.insert(0, self.attr.print())
 
@@ -132,20 +132,22 @@ class Number_Entry(Attribute_Entry):
         self._value.insert(0, self.attr.print())
 
     def set(self, value:Any)->None:
+        old_value = self.value
         self._value.delete(0, tk.END)
         self._value.insert(0, value)
-
-    def _text_is_valid_number(self,text:str)->bool:
+        if value != "" and self.value=="":
+            self._value.insert(0, str(old_value))
+ 
+    def _text_is_valid_value(self,text:str)->bool:
         assert(isinstance(self.attr, Number_Attribute))
-        if text=="": 
-            return True
+        text = text.replace(",",".")
+
+        if text in ("","-","+"): return True
+
+        elif self.attr._is_text_a_number(text):
+            return self.attr.is_valid(Decimal(text))
         else:
-            text = text.replace(",",".")
-            if self.attr._is_text_a_number(text):
-                if text in ("","-","+"): text = "0"
-                return self.attr.is_valid(Decimal(text))
-            else:
-                return False
+            return False
 
     
 
@@ -156,7 +158,7 @@ class Money_Entry(Number_Entry):
 
     def _create_entry(self) -> None:
         self.__frame = tk.Frame(self.master)
-        vcmd = (self.__frame.register(self._text_is_valid_number),'%P')
+        vcmd = (self.__frame.register(self._text_is_valid_value),'%P')
         self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
         assert(isinstance(self.attr, Monetary_Attribute))
         self._value.insert(0, str(self.attr.print(show_symbol=False)))
@@ -189,10 +191,6 @@ class Quantity_Entry(Number_Entry):
 
     def _create_entry(self) -> None: 
         self.__frame = tk.Frame(self.master)
-        vcmd = (self.__frame.register(self._text_is_valid_number),'%P')
-        self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
-        self._value.grid(row=0, column=0)
-        self.__update_value(self.attr.value)
 
         assert(isinstance(self.attr,Quantity))
         scaled_units = self.attr.scaled_units_single_str
@@ -214,6 +212,12 @@ class Quantity_Entry(Number_Entry):
         self.__unit.grid(row=0,column=1)
         self.__unit_var.trace_add("write", self.__update_displayed_value_on_unit_update)
 
+        vcmd = (self.__frame.register(self._text_is_valid_quantity_value),'%P')
+        self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
+        self._value.grid(row=0, column=0)
+        self.__update_value(self.attr.value)
+
+
     def __update_value(self,new_value:Any)->None:
         str_value = str(new_value)
         assert(isinstance(self.attr,Quantity))
@@ -222,30 +226,59 @@ class Quantity_Entry(Number_Entry):
         self._value.insert(0, str_value)
 
     def __update_displayed_value_on_unit_update(self, *args)->None:
-        prev_unit = self.__prev_scaled_unit
-        new_unit = self.__unit.get()
-        self.__prev_scaled_unit = new_unit
-        curr_value = self.value.replace(",",".")
         assert(isinstance(self.attr,Quantity))
-        if self._text_is_valid_number(curr_value):
-            converted_value = self.attr.convert(Decimal(curr_value), prev_unit, new_unit)
-            str_value = str(converted_value)
-            if "." in str_value or "," in str_value: 
-                str_value = str_value.rstrip("0").rstrip(",").rstrip(".")
-            self.__update_value(str_value)
+
+        value_in_prev_units = self.value.replace(",",".")
+
+        if value_in_prev_units in ("","+","-"): 
+            value_in_prev_units = str(self.attr.value)
+
+        value_in_new_units = str(self.attr.convert(
+            Decimal(value_in_prev_units), 
+            self.__prev_scaled_unit,
+            self.__unit.get()
+        ))
+
+        if "." in value_in_new_units or "," in value_in_new_units: 
+            value_in_new_units = value_in_new_units.rstrip("0").rstrip(",").rstrip(".")
+        self.__update_value(value_in_new_units)
+
+        self.__prev_scaled_unit = self.__unit.get()
+
+    def _text_is_valid_quantity_value(self,text:str)->bool:
+        assert(isinstance(self.attr, Quantity))
+        if text in ("","-","+"): return True
+
+        text = text.replace(",",".")
+        if self.attr._is_text_a_number(text):
+            source_unit, target_unit = self.__unit.get(), self.attr.default_scaled_unit
+            adjusted_value = self.attr.convert(
+                Decimal(text),
+                source_unit,
+                target_unit
+            )
+            return self.attr.is_valid(adjusted_value)
+        else:
+            return False
 
     def _confirmed_value(self)->Decimal:
         assert(isinstance(self.attr,Quantity))
         scaled_unit = self.__unit.get()
         self.attr.set_scaled_unit(scaled_unit)
-
         value = self._value.get().replace(",",".")
-        if value in ("","+","-"): value="0"
-        return self.attr.convert(
-            Decimal(value),
-            scaled_unit,
-            self.attr.default_scaled_unit
-        )
+
+        if value in ("","+","-"): 
+            return self.attr.value
+        else:
+            return self.attr.convert(
+                Decimal(value),
+                scaled_unit,
+                self.attr.default_scaled_unit
+            )
+        
+    def set(self,value:Any)->None:
+        if self._text_is_valid_quantity_value(str(value)):
+            super().set(value)
 
     def revert(self)->None:
         assert(isinstance(self.attr,Quantity))
