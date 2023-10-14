@@ -188,15 +188,6 @@ class Quantity_Entry(Number_Entry):
     def widget(self)->tk.Frame: return self.__frame
 
     def _create_entry(self) -> None: 
-        def validation_func(value:str)->bool: 
-            assert(isinstance(self.attr, Number_Attribute))
-            if value=="": 
-                return True
-            elif self.attr._is_text_a_number(value):
-                return self.attr.is_valid(Decimal(value))
-            else:
-                return False
-
         self.__frame = tk.Frame(self.master)
         vcmd = (self.__frame.register(self._text_is_valid_number),'%P')
         self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
@@ -394,7 +385,6 @@ class Item_Window_Tk(Item_Window):
         tk.Button(bf, text="Cancel", command=lambda: self.__cancel()).grid(row=0,column=2)
         bf.grid(row=1)
         
-
 
 class Item_Menu_Tk(Item_Menu):
 
