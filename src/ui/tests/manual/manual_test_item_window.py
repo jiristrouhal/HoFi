@@ -30,7 +30,7 @@ intattr_dependent.add_dependency(lambda x: Decimal(2)*x, intattr)
 
 root = tk.Tk()
 attrs = {
-    'flag':boolattr,
+    'enable':boolattr,
     'x':intattr,
     'f(x)':intattr_dependent,
     'x+':positive_intattr,

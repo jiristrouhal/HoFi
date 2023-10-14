@@ -397,13 +397,21 @@ class Test_Quantity_Entry_For_Temperature(unittest.TestCase):
 
     def test_setting_to_value_valid_with_one_units_and_invalid_in_others(self):
         assert(isinstance(self.entry,Quantity_Entry))
-        self.assertTrue(self.entry.unit, "°C")
+        self.assertEqual(self.entry.unit, "°C")
         self.entry.set(-1)
         self.assertEqual(self.entry.value, "-1")
 
         self.entry.set_unit("K")
         self.assertEqual(self.entry.value, "272.15")
 
+    def test_setting_empty_value_and_then_changing_units(self):
+        assert(isinstance(self.entry,Quantity_Entry))
+        self.assertEqual(self.entry.unit, "°C")
+        self.assertEqual(self.entry.value, "20")
+
+        self.entry.set('')
+        self.entry.set_unit("K")
+        self.assertEqual(self.entry.value, "293.15")
 
 
 class Test_Bool_Entry(unittest.TestCase):

@@ -94,5 +94,4 @@ class Test_Item_Window(unittest.TestCase):
         self.assertFalse(self.item_win.is_open)
 
 
-if __name__=="__main__": 
-    unittest.main()
+if __name__=="__main__": unittest.main()

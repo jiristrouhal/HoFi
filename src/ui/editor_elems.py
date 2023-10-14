@@ -227,22 +227,16 @@ class Quantity_Entry(Number_Entry):
 
     def __update_displayed_value_on_unit_update(self, *args)->None:
         assert(isinstance(self.attr,Quantity))
-
-        value_in_prev_units = self.value.replace(",",".")
-
-        if value_in_prev_units in ("","+","-"): 
-            value_in_prev_units = str(self.attr.value)
-
-        value_in_new_units = str(self.attr.convert(
-            Decimal(value_in_prev_units), 
-            self.__prev_scaled_unit,
-            self.__unit.get()
-        ))
-
-        if "." in value_in_new_units or "," in value_in_new_units: 
-            value_in_new_units = value_in_new_units.rstrip("0").rstrip(",").rstrip(".")
-        self.__update_value(value_in_new_units)
-
+        if self.value in ("","+","-"): 
+            source_value = self.attr.value
+            source_unit = self.attr.default_scaled_unit
+        else:
+            source_value = Decimal(self.value.replace(",","."))
+            source_unit = self.__prev_scaled_unit
+        target_unit = self.__unit.get()
+        target_value = str(self.attr.convert(source_value, source_unit, target_unit))
+        if "." in target_value: target_value = target_value.rstrip("0").rstrip(".")
+        self.__update_value(target_value)
         self.__prev_scaled_unit = self.__unit.get()
 
     def _text_is_valid_quantity_value(self,text:str)->bool:
@@ -250,7 +244,7 @@ class Quantity_Entry(Number_Entry):
         if text in ("","-","+"): return True
 
         text = text.replace(",",".")
-        if self.attr._is_text_a_number(text):
+        if self.attr._is_text_a_number(text):   
             source_unit, target_unit = self.__unit.get(), self.attr.default_scaled_unit
             adjusted_value = self.attr.convert(
                 Decimal(text),
