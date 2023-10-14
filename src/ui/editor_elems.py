@@ -20,22 +20,22 @@ class Attribute_Entry(abc.ABC):
     @property
     def master(self)->tk.Frame: return self.__master
     @abc.abstractproperty
-    def value(self)->Any: pass
+    def value(self)->Any: pass # pragma: no cover
     @abc.abstractproperty
-    def widget(self)->tk.Widget: pass
+    def widget(self)->tk.Widget: pass # pragma: no cover
 
     @abc.abstractmethod
-    def _create_entry(self)->None: pass
+    def _create_entry(self)->None: pass # pragma: no cover
 
     def ok(self)->None:
         self.attr.set(self._confirmed_value())
 
     @abc.abstractmethod
-    def _confirmed_value(self)->Any: pass
+    def _confirmed_value(self)->Any: pass # pragma: no cover
     @abc.abstractmethod
-    def revert(self)->None: pass
+    def revert(self)->None: pass # pragma: no cover
     @abc.abstractmethod
-    def set(self,value:Any)->None: pass
+    def set(self,value:Any)->None: pass # pragma: no cover
 
     def add_option(self,name:str,option:Any)->Any: self.__options[name] = option
     def option(self,name:str)->Any: return self.__options[name]
@@ -141,15 +141,10 @@ class Number_Entry(Attribute_Entry):
     def _text_is_valid_value(self,text:str)->bool:
         assert(isinstance(self.attr, Number_Attribute))
         text = text.replace(",",".")
-
         if text in ("","-","+"): return True
+        elif self.attr._is_text_a_number(text): return self.attr.is_valid(Decimal(text))
+        else: return False
 
-        elif self.attr._is_text_a_number(text):
-            return self.attr.is_valid(Decimal(text))
-        else:
-            return False
-
-    
 
 from src.core.attributes import Monetary_Attribute
 class Money_Entry(Number_Entry):
