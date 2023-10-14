@@ -334,5 +334,4 @@ class Test_Bool_Entry(unittest.TestCase):
         self.assertEqual(entry.value, True)
 
 
-if __name__=="__main__": 
-    unittest.main()
+if __name__=="__main__": unittest.main()

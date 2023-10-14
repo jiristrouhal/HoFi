@@ -183,7 +183,7 @@ class Quantity_Entry(Number_Entry):
     @property
     def unit(self)->str: return self.__unit.get()
     @property
-    def value(self) -> Any: return self._value.get()
+    def value(self) -> str: return self._value.get()
     @property
     def widget(self)->tk.Frame: return self.__frame
 
@@ -225,7 +225,7 @@ class Quantity_Entry(Number_Entry):
         prev_unit = self.__prev_scaled_unit
         new_unit = self.__unit.get()
         self.__prev_scaled_unit = new_unit
-        curr_value = str(self.value).replace(",",".")
+        curr_value = self.value.replace(",",".")
         assert(isinstance(self.attr,Quantity))
         if self._text_is_valid_number(curr_value):
             converted_value = self.attr.convert(Decimal(curr_value), prev_unit, new_unit)
@@ -236,14 +236,14 @@ class Quantity_Entry(Number_Entry):
 
     def _confirmed_value(self)->Decimal:
         assert(isinstance(self.attr,Quantity))
-        prefix,unit = self.attr._separate_prefix_from_unit(self.__unit.get())
-        self.attr.set_unit(unit)
-        self.attr.set_prefix(prefix)
-        value = self._value.get()
+        scaled_unit = self.__unit.get()
+        self.attr.set_scaled_unit(scaled_unit)
+
+        value = self._value.get().replace(",",".")
         if value in ("","+","-"): value="0"
         return self.attr.convert(
             Decimal(value),
-            prefix+unit,
+            scaled_unit,
             self.attr.default_scaled_unit
         )
 

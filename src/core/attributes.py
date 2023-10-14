@@ -1096,6 +1096,11 @@ class Quantity(Real_Attribute):
             raise Quantity.UndefinedUnitPrefix(prefix)
         self.__prefix = prefix
 
+    def set_scaled_unit(self,scaled_unit:str)->None:
+        prefix, unit = self._separate_prefix_from_unit(scaled_unit)
+        self.set_unit(unit)
+        self.set_prefix(prefix)
+
     def set_unit(self,unit:str)->None:
         self.__check_unit_is_defined(unit)
         self.__prefix = ''

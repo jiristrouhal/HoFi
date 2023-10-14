@@ -5,7 +5,7 @@ from src.cmd.commands import Controller
 from decimal import Decimal
 
 
-fac = attribute_factory(Controller(), "en_us")
+fac = attribute_factory(Controller(), "cs_cz")
 
 boolattr = fac.new('bool',True)
 intattr = fac.new('integer', 5, name="x")

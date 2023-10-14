@@ -43,5 +43,4 @@ class Test_Item_Window(unittest.TestCase):
         self.assertEqual(self.item('y'),-1)
 
 
-if __name__=="__main__": 
-    unittest.main()
+if __name__=="__main__": unittest.main()
