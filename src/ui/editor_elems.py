@@ -139,6 +139,7 @@ class Number_Entry(Attribute_Entry):
         else:
             text = text.replace(",",".")
             if self.attr._is_text_a_number(text):
+                if text in ("","-","+"): text = "0"
                 return self.attr.is_valid(Decimal(text))
             else:
                 return False
