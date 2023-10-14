@@ -137,7 +137,6 @@ class Number_Entry(Attribute_Entry):
 
     def _text_is_valid_number(self,text:str)->bool:
         assert(isinstance(self.attr, Number_Attribute))
-        text.replace(",",".")
         if text=="": 
             return True
         else:
@@ -147,6 +146,7 @@ class Number_Entry(Attribute_Entry):
                 return self.attr.is_valid(Decimal(text))
             else:
                 return False
+
     
 
 from src.core.attributes import Monetary_Attribute
