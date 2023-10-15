@@ -256,12 +256,17 @@ class EditorUI:
         self, 
         editor:Editor,
         item_menu:Item_Menu,
-        item_window:Item_Window
+        item_window:Item_Window,
+        caseview:Case_View
         )->None:
 
         self.__editor = editor
         self.__item_menu = item_menu
         self.__item_window = item_window
+        self.__caseview = caseview
+
+    @property
+    def caseview(self)->Case_View: return self.__caseview
 
     def open_item_menu(self, item:Item)->None:
         if item.is_null(): 
@@ -364,3 +369,6 @@ class Item_Menu(abc.ABC):
     @abc.abstractmethod
     def _destroy_menu(self)->None: pass # pragma: no cover
     
+
+class Case_View(abc.ABC):
+    pass

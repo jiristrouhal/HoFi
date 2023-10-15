@@ -7,7 +7,7 @@ import unittest
 
 
 from src.core.editor import new_editor, blank_case_template
-from src.core.editor import EditorUI, Item_Menu, Item_Window
+from src.core.editor import EditorUI, Item_Menu, Item_Window, Case_View
 
 
 class Item_Menu_Test(Item_Menu):
@@ -24,6 +24,10 @@ class Item_Window_Test(Item_Window):
         pass
 
 
+class Case_View_Test(Case_View):
+    pass
+
+
 class Test_Item_Menu(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -36,7 +40,7 @@ class Test_Item_Menu(unittest.TestCase):
         case_template.add('Child', {'x':case_template.attr.integer(0)},())
         self.editor = new_editor(case_template)
         self.menu = Item_Menu_Test()
-        self.editor_ui = EditorUI(self.editor, self.menu, Item_Window_Test())
+        self.editor_ui = EditorUI(self.editor, self.menu, Item_Window_Test(), Case_View_Test())
 
     def test_opening_and_closing_action_menu(self):
         self.assertFalse(self.menu.is_open)
@@ -139,7 +143,6 @@ class Test_Defining_Cascade_Menu(unittest.TestCase):
         self.assertListEqual(self.cmd_tree.labels('nonexistent group'), list())
 
 
-
 class Test_Item_Window(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -154,7 +157,7 @@ class Test_Item_Window(unittest.TestCase):
         self.editor = new_editor(case_template)
         self.menu = Item_Menu_Test()
         self.item_win = Item_Window_Test()
-        self.editor_ui = EditorUI(self.editor, self.menu, self.item_win)
+        self.editor_ui = EditorUI(self.editor, self.menu, self.item_win, Case_View_Test())
         self.new_case = self.editor.new_case("Case X")
         self.item = self.editor.new(self.new_case, "Parent")
 
