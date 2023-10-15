@@ -403,9 +403,13 @@ class Attribute(AbstractAttribute):
             self._value = init_value
         else: 
             self._value = self.default_value
+        self.__actions:List[Callable[[Attribute],None]] = list()
 
     @property 
     def value(self)->Any: return self._value
+
+    def after_set(self,action:Callable[[Attribute],None])->None:
+        if action not in self.__actions: self.__actions.append(action)
 
     def copy(self)->Attribute:
         the_copy = self.factory.new(self.type, init_value=self._value, name=self.name)
@@ -450,6 +454,10 @@ class Attribute(AbstractAttribute):
     
     def _value_update(self,value:Any)->None:
         self._value = value
+        self.__run_actions_after_setting_the_value()
+        
+    def __run_actions_after_setting_the_value(self)->None:
+        for action in self.__actions: action(self)
     
     @staticmethod
     def set_multiple(new_values:Dict[Attribute,Any])->None:

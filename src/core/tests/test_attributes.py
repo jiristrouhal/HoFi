@@ -2000,4 +2000,22 @@ class Test_Defining_Currency_In_Attribute_Factory(unittest.TestCase):
         self.assertRaises(Monetary_Attribute.CurrencyNotDefined, attribute_factory, Controller(), currency_code="XYZ")
 
 
+class Test_Simple_Actions_After_Attribute_Set_Command(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller())
+        self.attr = self.fac.new('text','...')
+
+    def test_action_after_renaming(self):
+        self.new_description = self.attr.value
+        def record_new_description(attr:Attribute)->None: self.new_description=attr.value
+        self.attr.after_set(record_new_description)
+        self.attr.set("Some description")
+        self.assertEqual(self.new_description, "Some description")
+        self.fac.undo()
+        self.assertEqual(self.new_description, "...")
+        self.fac.redo()
+        self.assertEqual(self.new_description, "Some description")
+
+
 if __name__=="__main__": unittest.main()
