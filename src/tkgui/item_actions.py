@@ -85,13 +85,11 @@ class Item_Menu_Tk(Item_Menu):
         self.__widget = tk.Menu()
 
     @property
-    def root(self)->tk.Tk: return self.__root
-    @property
     def widget(self)->tk.Menu: return self.__widget
 
     def _build_menu(self) -> None:
-        if self.actions is not None:
-            self.__widget = self.__menu_cascade(self.__root, self.actions)
+        assert(self.actions is not None)
+        self.__widget = self.__menu_cascade(self.__root, self.actions)
 
     def __menu_cascade(self, parent:tk.Tk|tk.Menu, actions:Item_Menu_Cmds)->tk.Menu:
         menu = tk.Menu(parent, tearoff=0)
