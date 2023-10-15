@@ -112,6 +112,25 @@ class Test_Defining_Cascade_Menu(unittest.TestCase):
         self.cmd_tree.insert({},"empty cmd group")
         self.assertListEqual(self.cmd_tree.labels(), ["nonempty cmd group"])
 
+    def test_three_level_hierarchy(self):
+        cmds_1st_level = {"command 1":lambda: None, "command 2":lambda: None}  # pragma: no cover
+        cmds_2nd_level = {"command 2.1":lambda: None, "command 2.2":lambda: None}  # pragma: no cover
+        cmds_3rd_level = {"command 3.1":lambda: None, "command 3.2":lambda: None}  # pragma: no cover
+
+        self.cmd_tree.insert(cmds_3rd_level,"cmd group", "cmd subgroup")
+        self.cmd_tree.insert(cmds_2nd_level,"cmd group")
+        self.cmd_tree.insert(cmds_1st_level)
+
+        self.assertListEqual(self.cmd_tree.labels(), ["cmd group","command 1","command 2"])
+        self.assertListEqual(self.cmd_tree.labels("cmd group"), ["cmd subgroup","command 2.1", "command 2.2"])
+        self.assertListEqual(
+            self.cmd_tree.labels("cmd group","cmd subgroup"), ["command 3.1", "command 3.2"]
+        )
+
+    def test_accessing_commands_under_nonexistent_menu_label_returns_empty_list(self):
+        self.assertListEqual(self.cmd_tree.labels('nonexistent group'), list())
+
+
 
 class Test_Item_Window(unittest.TestCase):
 

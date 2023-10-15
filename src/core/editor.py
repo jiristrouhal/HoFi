@@ -289,7 +289,8 @@ class Item_Menu_Cmds:
     def insert(self, commands:Dict[str, Callable[[],None]], *cmd_path:str)->None:
         if not commands: return
         if cmd_path:
-            self.__children[cmd_path[0]] = Item_Menu_Cmds()
+            if cmd_path[0] not in self.__children: 
+                self.__children[cmd_path[0]] = Item_Menu_Cmds()
             self.__children[cmd_path[0]].insert(commands, *cmd_path[1:])
             self.__items[cmd_path[0]] = self.__children[cmd_path[0]]
         else:
