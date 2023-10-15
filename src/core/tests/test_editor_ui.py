@@ -43,7 +43,11 @@ class Test_Item_Menu(unittest.TestCase):
         self.editor_ui.open_item_menu(self.editor.root)
         self.assertTrue(self.menu.is_open)   
         self.menu.close()
-        self.assertFalse(self.menu.is_open)   
+        self.assertFalse(self.menu.is_open)  
+
+    def test_menu_does_not_open_if_no_actions_are_provided(self):
+        self.menu.open({})
+        self.assertFalse(self.menu.is_open) 
 
     def test_creating_new_case_via_item_menu_opened_for_editor_root_item(self)->None:
         self.editor_ui.open_item_menu(self.editor.root)

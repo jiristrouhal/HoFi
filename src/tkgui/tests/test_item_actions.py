@@ -7,6 +7,7 @@ import unittest
 import tkinter as tk
 
 from src.tkgui.item_actions import Item_Window_Tk
+from src.core.editor import EditorUI
 from src.core.item import ItemCreator
 
 
@@ -66,6 +67,31 @@ class Test_Item_Window(unittest.TestCase):
         self.win.cancel()
         self.assertFalse(self.win.is_open)
         self.assertListEqual(self.win.entries, [])
+
+
+from src.tkgui.item_actions import Item_Menu_Tk
+class Test_Item_Menu(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.cr = ItemCreator()
+        self.root = tk.Tk()
+        self.menu = Item_Menu_Tk(self.root)
+        self.item = self.cr.new("Item", {'x':'integer', 'y':'real'})
+        self.x = 0
+        self.y = 0
+        def add_1_to_x(): self.x += 1
+        def add_1_to_y(): self.y += 1
+        self.actions = {"Add 1 to x":add_1_to_x, "Add 1 to y":add_1_to_y}
+        self.menu.open(self.actions)
+    
+    def test_opening_menu_with_custom_actions(self)->None:
+        self.menu.open(self.actions)
+        last_menu_item_index = self.menu.widget.index("end")
+        self.assertEqual(last_menu_item_index,1)
+        self.menu.widget.invoke(1)
+        self.assertEqual(self.x,0)
+        self.assertEqual(self.y,1)
+
 
 
 if __name__=="__main__": unittest.main()

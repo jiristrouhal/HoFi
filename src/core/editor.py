@@ -298,6 +298,7 @@ class Item_Menu(abc.ABC):
         self._destroy_menu()
 
     def open(self, actions:Dict[str,Callable[[],None]])->None: 
+        if not actions: return 
         self.__actions = actions.copy()
         self.__open = True
         self._build_menu()

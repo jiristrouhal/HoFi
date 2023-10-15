@@ -27,16 +27,13 @@ class Item_Window_Tk(Item_Window):
         self.__entries.clear()
 
     def ok(self)->None: 
-        okbutton:tk.Button = self.__win.nametowidget('button_frame').nametowidget('ok')
-        okbutton.invoke()
+        self.__win.nametowidget('button_frame').nametowidget('ok').invoke()
 
     def revert(self)->None:
-        revert_button:tk.Button = self.__win.nametowidget('button_frame').nametowidget('revert')
-        revert_button.invoke()
+        self.__win.nametowidget('button_frame').nametowidget('revert').invoke()
 
     def cancel(self)->None:
-        cancel_button:tk.Button = self.__win.nametowidget('button_frame').nametowidget('cancel')
-        cancel_button.invoke()
+        self.__win.nametowidget('button_frame').nametowidget('cancel').invoke()
 
     def __ok(self)->None:
         confirmed_vals:Dict[Attribute,Any] = dict()
@@ -54,10 +51,10 @@ class Item_Window_Tk(Item_Window):
         
     def __create_entries(self,attrs:Dict[str,Attribute])->None:
         """Create entries for attributes without assigned dependencies."""
-        frame = tk.Frame(self.__win, name="entries")
+        frame = tk.Frame(self.__win)
         row = 0
         self.__entries:List[Attribute_Entry] = list()
-        for label,attr in attrs.items():
+        for label, attr in attrs.items():
             if not attr.dependent:
                 self.__add_attr(label,attr,row,frame)
                 row += 1
@@ -83,9 +80,12 @@ class Item_Menu_Tk(Item_Menu):
     def __init__(self, root:tk.Tk)->None:
         self.__root = root
         super().__init__()
+        self.__widget = tk.Menu()
 
     @property
     def root(self)->tk.Tk: return self.__root
+    @property
+    def widget(self)->tk.Menu: return self.__widget
 
     def _build_menu(self) -> None:
         self.__widget = tk.Menu(self.__root, tearoff=0)
