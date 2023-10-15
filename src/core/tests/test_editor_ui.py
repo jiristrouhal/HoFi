@@ -46,12 +46,12 @@ class Test_Item_Menu(unittest.TestCase):
         self.assertFalse(self.menu.is_open)  
 
     def test_menu_does_not_open_if_no_actions_are_provided(self):
-        self.menu.open({})
+        self.menu.open(Item_Menu_Cmds())
         self.assertFalse(self.menu.is_open) 
 
     def test_creating_new_case_via_item_menu_opened_for_editor_root_item(self)->None:
         self.editor_ui.open_item_menu(self.editor.root)
-        self.assertTrue('new_case' in self.menu.action_labels)
+        self.assertTrue('new_case' in self.menu.action_labels())
         self.menu.run('new_case')
         self.assertEqual(self.editor.ncases, 1)
 
@@ -67,13 +67,13 @@ class Test_Item_Menu(unittest.TestCase):
         )
 
     def test_running_the_command_destroy_the_menu_and_empties_the_actions(self):
-        self.menu.open({"command 1":lambda: None})
+        self.menu.open(Item_Menu_Cmds({"command 1":lambda: None}))
         self.assertTrue(self.menu.is_open)
-        self.assertListEqual(self.menu.action_labels, ["command 1"]) 
+        self.assertListEqual(self.menu.action_labels(), ["command 1"]) 
 
         self.menu.run("command 1")
         self.assertFalse(self.menu.is_open)
-        self.assertDictEqual(self.menu.actions, {})
+        self.assertTrue(self.menu.actions is None)
 
 
 from src.core.editor import Item_Menu_Cmds
@@ -161,6 +161,11 @@ class Test_Item_Window(unittest.TestCase):
         self.assertTrue(self.item_win.is_open)
         self.item_win.close()
         self.assertFalse(self.item_win.is_open)
+
+    def test_command_labels_are_empty_list_if_no_commands_provided_via_Item_Menu_Cmds(self):
+        self.menu = Item_Menu_Test()
+        self.menu.open(Item_Menu_Cmds())
+        self.assertListEqual(self.menu.action_labels(), [])
 
 
 if __name__=="__main__": unittest.main()

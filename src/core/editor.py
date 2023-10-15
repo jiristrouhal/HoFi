@@ -204,6 +204,52 @@ def blank_case_template()->Case_Template:
     return Case_Template()
 
 
+from typing import Set
+class Item_Menu_Cmds:
+    
+    def __init__(self, init_cmds:Dict[str,Callable[[],None]]={})->None:
+        self.__items:Dict[str,Item_Menu_Cmds|Callable[[],None]] = dict()
+        self.__children:Dict[str,Item_Menu_Cmds] = dict()
+        self.__custom_cmds_after_menu_cmd:Set[Callable[[],None]] = set()
+
+        self.insert(init_cmds)
+
+    @property
+    def items(self)->Dict[str,Item_Menu_Cmds|Callable[[],None]]: return self.__items
+
+    def add_post_cmd(self, cmd:Callable[[],None])->None:
+        self.__custom_cmds_after_menu_cmd.add(cmd)
+
+    def cmd(self, label:str, *cmd_path:str)->Callable[[],None]:
+        if cmd_path: 
+            return self.__children[cmd_path[0]].cmd(label,*cmd_path[1:])
+        else:
+            cmd = self.__items[label]
+            assert(callable(cmd))
+            return cmd
+
+    def insert(self, commands:Dict[str, Callable[[],None]], *cmd_path:str)->None:
+        if not commands: return
+        if cmd_path:
+            if cmd_path[0] not in self.__children: 
+                self.__children[cmd_path[0]] = Item_Menu_Cmds()
+            self.__children[cmd_path[0]].insert(commands, *cmd_path[1:])
+            self.__items[cmd_path[0]] = self.__children[cmd_path[0]]
+        else:
+            self.__items.update(commands.copy())
+
+    def labels(self, *cmd_path:str)->List[str]: 
+        if cmd_path: 
+            if cmd_path[0] not in self.__children: return []
+            return self.__children[cmd_path[0]].labels(*cmd_path[1:])
+        else:
+            return list(self.__items.keys())
+
+    def run(self, label, *cmd_path)->None:
+        self.cmd(label,*cmd_path)()
+        for cmd in self.__custom_cmds_after_menu_cmd: cmd()
+
+
 class EditorUI:
 
     def __init__(
@@ -227,18 +273,19 @@ class EditorUI:
         else:
             self.__item_menu.open(self.__item_actions(item))
 
-    def __root_item_actions(self)->Dict[str,Callable]:
-        return {'new_case':self.__new_case}
+    def __root_item_actions(self)->Item_Menu_Cmds:
+        item_actions = Item_Menu_Cmds()
+        item_actions.insert({'new_case':self.__new_case})
+        return item_actions
     
-    def __case_actions(self, case:Item)->Dict[str,Callable]:
-        return {
-    
-        }
+    def __case_actions(self, case:Item)->Item_Menu_Cmds:
+        item_actions = Item_Menu_Cmds()
+        return item_actions
 
-    def __item_actions(self, item:Item)->Dict[str,Callable]:
-        return {
-            'edit':lambda: self.open_item_window(item)
-        }
+    def __item_actions(self, item:Item)->Item_Menu_Cmds:
+        item_actions = Item_Menu_Cmds()
+        item_actions.insert({'edit':lambda: self.open_item_window(item)})
+        return item_actions
     
     def open_item_window(self, item:Item)->None:
         self.__item_window.open(item)
@@ -280,63 +327,40 @@ class Item_Window(abc.ABC):
     def _destroy_window(self): pass
 
 
-class Item_Menu_Cmds:
-    
-    def __init__(self)->None:
-        self.__items:Dict[str,Item_Menu_Cmds|Callable[[],None]] = dict()
-        self.__children:Dict[str,Item_Menu_Cmds] = dict()
-
-    def insert(self, commands:Dict[str, Callable[[],None]], *cmd_path:str)->None:
-        if not commands: return
-        if cmd_path:
-            if cmd_path[0] not in self.__children: 
-                self.__children[cmd_path[0]] = Item_Menu_Cmds()
-            self.__children[cmd_path[0]].insert(commands, *cmd_path[1:])
-            self.__items[cmd_path[0]] = self.__children[cmd_path[0]]
-        else:
-            self.__items.update(commands.copy())
-
-    def labels(self, *cmd_path:str)->List[str]: 
-        if cmd_path: 
-            if cmd_path[0] not in self.__children: return []
-            return self.__children[cmd_path[0]].labels(*cmd_path[1:])
-        else:
-            return list(self.__items.keys())
-
-
 class Item_Menu(abc.ABC):
 
     def __init__(self)->None:
-        self.__actions:Dict[str,Callable[[],None]] = dict()
+        self.__actions:Optional[Item_Menu_Cmds] = None
         self.__open:bool = False
 
     @property
-    def action_labels(self)->List[str]: return list(self.__actions.keys())
-    @property
     def is_open(self)->bool: return self.__open
     @property
-    def actions(self)->Dict[str,Callable[[],None]]: return self.__actions.copy()
+    def actions(self)->Optional[Item_Menu_Cmds]: return self.__actions
+
+    def action_labels(self, *cmd_path)->List[str]: 
+        if self.__actions is not None:
+            return self.__actions.labels(*cmd_path)
+        else: 
+            return []
 
     def close(self)->None: 
         self.__open = False
         self._destroy_menu()
-        self.__actions.clear()
+        self.__actions = None
 
-    def open(self, actions:Dict[str,Callable[[],None]])->None: 
-        if not actions: return 
-        for label in actions: 
-            self.__actions[label] = self.__menu_action(actions[label])
-        self.__open = True
-        self._build_menu()
+    def open(self, actions:Item_Menu_Cmds)->None: 
+        if not actions.labels(): 
+            return 
+        else:
+            self.__actions = actions
+            self.__open = True
+            self._build_menu()
+            self.__actions.add_post_cmd(self.close)
 
-    def __menu_action(self, action:Callable[[],None]): 
-        def wrapper():
-            self.close()
-            action()
-        return wrapper
-
-    def run(self, action_label:str)->None:
-        self.__actions[action_label]()
+    def run(self, action_label:str, *cmd_path:str)->None:
+        if self.__actions is not None:
+            self.__actions.run(action_label,*cmd_path)
 
     @abc.abstractmethod
     def _build_menu(self)->None: pass # pragma: no cover

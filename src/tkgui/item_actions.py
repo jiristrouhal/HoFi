@@ -75,6 +75,8 @@ class Item_Window_Tk(Item_Window):
         bf.grid(row=1)
         
 
+
+from src.core.editor import Item_Menu_Cmds
 class Item_Menu_Tk(Item_Menu):
 
     def __init__(self, root:tk.Tk)->None:
@@ -88,9 +90,21 @@ class Item_Menu_Tk(Item_Menu):
     def widget(self)->tk.Menu: return self.__widget
 
     def _build_menu(self) -> None:
-        self.__widget = tk.Menu(self.__root, tearoff=0)
-        for label,action in self.actions.items():
-            self.__widget.add_command(label=label, command=action)
+        if self.actions is not None:
+            self.__widget = self.__menu_cascade(self.__root, self.actions)
+
+    def __menu_cascade(self, parent:tk.Tk|tk.Menu, actions:Item_Menu_Cmds)->tk.Menu:
+        menu = tk.Menu(parent, tearoff=0)
+        for label, item in actions.items.items():
+            def action(): actions.run(label)
+            if callable(item): 
+                menu.add_command(label=label, command=action)
+            else: 
+                assert(type(item)==type(actions))
+                if item.items:
+                    submenu = self.__menu_cascade(menu, item)
+                    menu.add_cascade(label = label, menu=submenu)
+        return menu
 
     def _destroy_menu(self) -> None:
         self.__widget.destroy()

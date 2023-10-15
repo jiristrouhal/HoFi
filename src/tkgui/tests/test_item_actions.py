@@ -70,6 +70,7 @@ class Test_Item_Window(unittest.TestCase):
 
 
 from src.tkgui.item_actions import Item_Menu_Tk
+from src.core.editor import Item_Menu_Cmds
 class Test_Item_Menu(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -81,7 +82,7 @@ class Test_Item_Menu(unittest.TestCase):
         self.y = 0
         def add_1_to_x(): self.x += 1 # pragma: no cover
         def add_1_to_y(): self.y += 1 # pragma: no cover
-        self.actions = {"Add 1 to x":add_1_to_x, "Add 1 to y":add_1_to_y}
+        self.actions = Item_Menu_Cmds({"Add 1 to x":add_1_to_x, "Add 1 to y":add_1_to_y})
     
     def test_opening_menu_with_custom_actions(self)->None:
         self.menu.open(self.actions)
@@ -96,6 +97,16 @@ class Test_Item_Menu(unittest.TestCase):
         self.menu.widget.invoke(1)
         self.assertFalse(self.menu.is_open)
         self.assertFalse(self.menu.widget.winfo_exists())
+
+    def test_cascade_actions(self):
+        actions = Item_Menu_Cmds()
+        actions.insert({"Cmd 1":lambda: None})
+        actions.insert({"Cmd 2.1":lambda: None, "Cmd 2.2":lambda: None}, "group")
+        actions.insert({"Cmd 2":lambda: None})
+        self.menu.open(actions)
+        
+        self.assertEqual(self.menu.widget.index("end"),2)
+        self.assertEqual(self.menu.widget.winfo_children()[0].index("end"),1)
         
 
 
