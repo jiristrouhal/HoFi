@@ -1,5 +1,5 @@
 import tkinter as tk
-from src.tkgui.editor_elems import Item_Menu_Tk
+from src.tkgui.item_win import Item_Menu_Tk
 from src.core.attributes import attribute_factory
 from src.cmd.commands import Controller
 from decimal import Decimal
@@ -44,7 +44,6 @@ attrs = {
 from src.core.item import ItemImpl, ItemCreator
 
 item = ItemImpl("The Item", attrs, ItemCreator())
-
 
 
 
