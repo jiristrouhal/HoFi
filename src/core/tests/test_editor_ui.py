@@ -78,9 +78,9 @@ class Test_Item_Menu(unittest.TestCase):
     def test_accessing_second_level_menu_command(self):
         self.x = 1
         def command_on_2nd_level(): self.x = 89
-        self.menu.open(Item_Menu_Cmds({"Some Command":lambda: None}))
+        self.menu.open(Item_Menu_Cmds({"Some Command":lambda: None})) # pragma: no cover
         self.menu.actions.insert({"Command on 2nd level":command_on_2nd_level},"group")
-        self.menu.run("Command on 2nd level","group")
+        self.menu.run("Command on 2nd level", "group")
         self.assertEqual(self.x, 89)
 
 
