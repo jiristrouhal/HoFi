@@ -99,9 +99,8 @@ class Item_Menu_Tk(Item_Menu):
                 menu.add_command(label=label, command=action)
             else: 
                 assert(type(item)==type(actions))
-                if item.items:
-                    submenu = self.__menu_cascade(menu, item)
-                    menu.add_cascade(label = label, menu=submenu)
+                submenu = self.__menu_cascade(menu, item)
+                menu.add_cascade(label = label, menu=submenu)
         return menu
 
     def _destroy_menu(self) -> None:
