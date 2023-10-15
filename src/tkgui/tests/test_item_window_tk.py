@@ -6,7 +6,7 @@ sys.path.insert(1,"src")
 import unittest
 import tkinter as tk
 
-from src.ui.editor_elems import Item_Window_Tk
+from src.tkgui.editor_elems import Item_Window_Tk
 from src.core.item import ItemCreator
 
 

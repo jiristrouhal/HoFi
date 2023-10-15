@@ -1,5 +1,5 @@
 import tkinter as tk
-from src.ui.editor_elems import Item_Window_Tk
+from src.tkgui.editor_elems import Item_Window_Tk
 from src.core.attributes import attribute_factory
 from src.cmd.commands import Controller
 from decimal import Decimal

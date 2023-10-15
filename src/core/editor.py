@@ -290,6 +290,8 @@ class Item_Menu(abc.ABC):
     def action_labels(self)->List[str]: return list(self.__actions.keys())
     @property
     def is_open(self)->bool: return self.__open
+    @property
+    def actions(self)->Dict[str,Callable[[],None]]: return self.__actions.copy()
 
     def close(self)->None: 
         self.__open = False

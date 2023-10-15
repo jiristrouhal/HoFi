@@ -410,7 +410,17 @@ class Item_Window_Tk(Item_Window):
 
 class Item_Menu_Tk(Item_Menu):
 
+    def __init__(self, root:tk.Tk)->None:
+        self.__root = root
+        super().__init__()
+
+    @property
+    def root(self)->tk.Tk: return self.__root
+
     def _build_menu(self) -> None:
-        pass
+        self.__widget = tk.Menu(self.__root, tearoff=0)
+        for label,action in self.actions.items():
+            self.__widget.add_command(label=label, command=action)
+
     def _destroy_menu(self) -> None:
-        pass
+        self.__widget.destroy()
