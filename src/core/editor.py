@@ -294,9 +294,6 @@ class EditorUI:
     def __new_case(self)->None:
         self.__editor.new_case(EditorUI.DEFAULT_CASE_NAME)
 
-    @property
-    def item_menu(self)->Item_Menu: 
-        return self.__item_menu
     
     class Opening_Item_Menu_For_Nonexistent_Item(Exception): pass
 
@@ -322,9 +319,9 @@ class Item_Window(abc.ABC):
         self.__open = False
         
     @abc.abstractmethod
-    def _build_window(self, attributes:Dict[str,Attribute]): pass
+    def _build_window(self, attributes:Dict[str,Attribute]): pass  # pragma: no cover
     @abc.abstractmethod
-    def _destroy_window(self): pass
+    def _destroy_window(self): pass  # pragma: no cover
 
 
 class Item_Menu(abc.ABC):

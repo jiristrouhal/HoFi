@@ -100,14 +100,14 @@ class Test_Item_Menu(unittest.TestCase):
 
     def test_cascade_actions(self):
         actions = Item_Menu_Cmds()
-        actions.insert({"Cmd 1":lambda: None})
-        actions.insert({"Cmd 2.1":lambda: None, "Cmd 2.2":lambda: None}, "group")
-        actions.insert({"Cmd 2":lambda: None})
+        actions.insert({"Cmd 1":lambda: None}) # pragma: no cover
+        actions.insert({"Cmd 2.1":lambda: None, "Cmd 2.2":lambda: None}, "group") # pragma: no cover
+        actions.insert({"Cmd 2":lambda: None}) # pragma: no cover
         self.menu.open(actions)
         
         self.assertEqual(self.menu.widget.index("end"),2)
         self.assertEqual(self.menu.widget.winfo_children()[0].index("end"),1)
-        
+
 
 
 if __name__=="__main__": unittest.main()
