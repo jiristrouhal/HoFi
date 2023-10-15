@@ -37,8 +37,6 @@ class Attribute_Entry(abc.ABC):
     @abc.abstractmethod
     def set(self,value:Any)->None: pass # pragma: no cover
 
-    def add_option(self,name:str,option:Any)->Any: self.__options[name] = option
-    def option(self,name:str)->Any: return self.__options[name]
 
 
 class Bool_Entry(Attribute_Entry):
