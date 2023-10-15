@@ -107,6 +107,7 @@ class Test_Item_Menu(unittest.TestCase):
         actions = Item_Menu_Cmds()
         actions.insert({"Cmd 1":lambda: None}) # pragma: no cover
         actions.insert({"Cmd 2.1":lambda: None, "Cmd 2.2":lambda: None}, "group") # pragma: no cover
+        actions.insert({}, "empty group") # pragma: no cover
         actions.insert({"Cmd 2":lambda: None}) # pragma: no cover
         self.menu.open(actions)
         
