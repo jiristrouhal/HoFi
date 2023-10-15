@@ -30,19 +30,27 @@ class Item_Window_Tk(Item_Window):
         okbutton:tk.Button = self.__win.nametowidget('button_frame').nametowidget('ok')
         okbutton.invoke()
 
+    def revert(self)->None:
+        revert_button:tk.Button = self.__win.nametowidget('button_frame').nametowidget('revert')
+        revert_button.invoke()
+
+    def cancel(self)->None:
+        cancel_button:tk.Button = self.__win.nametowidget('button_frame').nametowidget('cancel')
+        cancel_button.invoke()
+
     def __ok(self)->None:
         confirmed_vals:Dict[Attribute,Any] = dict()
         for entry in self.__entries: 
             confirmed_vals[entry.attr] = entry._confirmed_value()
 
         Attribute.set_multiple({entry.attr:confirmed_vals[entry.attr] for entry in self.__entries})
-        self.__win.destroy()
+        self.close()
 
     def __revert(self)->None:
         for entry in self.__entries: entry.revert()
 
     def __cancel(self)->None:
-        self.__win.destroy()
+        self.close()
         
     def __create_entries(self,attrs:Dict[str,Attribute])->None:
         """Create entries for attributes without assigned dependencies."""
@@ -66,7 +74,7 @@ class Item_Window_Tk(Item_Window):
         bf = tk.Frame(self.__win, name="button_frame")
         tk.Button(bf, text="Revert", command=lambda: self.__revert(), name="revert").grid(row=0,column=0)
         tk.Button(bf, text="OK", command=lambda: self.__ok(),  name="ok").grid(row=0,column=1)
-        tk.Button(bf, text="Cancel", command=lambda: self.__cancel()).grid(row=0,column=2)
+        tk.Button(bf, text="Cancel", command=lambda: self.__cancel(), name="cancel").grid(row=0,column=2)
         bf.grid(row=1)
         
 

@@ -27,20 +27,45 @@ class Test_Item_Window(unittest.TestCase):
         self.assertFalse(self.win.is_open)
         self.assertTrue(len(self.win.entries)==0)
 
-    def test_setting_attributes_and_confirming_changes(self)->None:
+    def test_setting_attributes_and_confirming_changes_closes_the_window_and_sets_the_attributes_to_new_values(self)->None:
         self.item.multiset({'x':1, 'y':2})
         self.win.open(self.item)
         self.win.entries[0].set(2)
         self.win.entries[1].set(-1)
         self.win.ok()
+
+        self.assertFalse(self.win.is_open)
+        self.assertListEqual(self.win.entries, [])
+
         self.assertEqual(self.item('x'),2)
         self.assertEqual(self.item('y'),-1)
         self.cr.undo()
         self.assertEqual(self.item('x'),1)
         self.assertEqual(self.item('y'),2)
-        self.cr.redo()
-        self.assertEqual(self.item('x'),2)
-        self.assertEqual(self.item('y'),-1)
+
+
+    def test_reverting_changes_done_in_the_item_window(self):
+        self.item.multiset({'x':1, 'y':2})
+        self.win.open(self.item)
+        self.win.entries[0].set(2)
+        self.win.entries[1].set(-1)
+        self.assertEqual(self.win.entries[0].value, '2')
+        self.assertEqual(self.win.entries[1].value, '-1')
+        self.win.revert()
+        self.assertTrue(self.win.is_open)
+        self.assertEqual(self.win.entries[0].value, '1')
+        self.assertEqual(self.win.entries[1].value, '2')
+
+    def test_cancelling_changes_done_in_the_item_window_closes_the_window_and_keeps_the_attributes_and_their_original_values(self):
+        self.item.multiset({'x':1, 'y':2})
+        self.win.open(self.item)
+        self.win.entries[0].set(2)
+        self.win.entries[1].set(-1)
+        self.assertEqual(self.win.entries[0].value, '2')
+        self.assertEqual(self.win.entries[1].value, '-1')
+        self.win.cancel()
+        self.assertFalse(self.win.is_open)
+        self.assertListEqual(self.win.entries, [])
 
 
 if __name__=="__main__": unittest.main()
