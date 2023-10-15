@@ -79,8 +79,8 @@ class Test_Item_Menu(unittest.TestCase):
         self.item = self.cr.new("Item", {'x':'integer', 'y':'real'})
         self.x = 0
         self.y = 0
-        def add_1_to_x(): self.x += 1
-        def add_1_to_y(): self.y += 1
+        def add_1_to_x(): self.x += 1 # pragma: no cover
+        def add_1_to_y(): self.y += 1 # pragma: no cover
         self.actions = {"Add 1 to x":add_1_to_x, "Add 1 to y":add_1_to_y}
     
     def test_opening_menu_with_custom_actions(self)->None:
@@ -91,6 +91,12 @@ class Test_Item_Menu(unittest.TestCase):
         self.assertEqual(self.x,0)
         self.assertEqual(self.y,1)
 
+    def test_tk_menu_is_destroyed_after_running_the_command(self):
+        self.menu.open(self.actions)
+        self.menu.widget.invoke(1)
+        self.assertFalse(self.menu.is_open)
+        self.assertFalse(self.menu.widget.winfo_exists())
+        
 
 
 if __name__=="__main__": unittest.main()
