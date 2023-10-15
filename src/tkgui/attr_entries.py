@@ -315,8 +315,6 @@ class Entry_Creator:
             case 'real': return self.__number(attr,master)
             case 'quantity': return self.__quantity(attr,master)
             case 'text': return self.__text(attr,master)
-            case _: 
-                raise Entry_Creator.UnknownEntryType(attr.type)
 
     def __boolean(self, attr:Attribute, master:tk.Frame)->Attribute_Entry:
         return Bool_Entry(attr, master)
