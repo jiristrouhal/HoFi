@@ -296,15 +296,22 @@ class Item_Menu(abc.ABC):
     def close(self)->None: 
         self.__open = False
         self._destroy_menu()
+        self.__actions.clear()
 
     def open(self, actions:Dict[str,Callable[[],None]])->None: 
         if not actions: return 
-        self.__actions = actions.copy()
+        for label in actions: 
+            self.__actions[label] = self.__menu_action(actions[label])
         self.__open = True
         self._build_menu()
 
+    def __menu_action(self, action:Callable[[],None]): 
+        def wrapper():
+            self.close()
+            action()
+        return wrapper
+
     def run(self, action_label:str)->None:
-        self.close()
         self.__actions[action_label]()
 
     @abc.abstractmethod

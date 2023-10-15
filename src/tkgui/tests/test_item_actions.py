@@ -82,7 +82,6 @@ class Test_Item_Menu(unittest.TestCase):
         def add_1_to_x(): self.x += 1
         def add_1_to_y(): self.y += 1
         self.actions = {"Add 1 to x":add_1_to_x, "Add 1 to y":add_1_to_y}
-        self.menu.open(self.actions)
     
     def test_opening_menu_with_custom_actions(self)->None:
         self.menu.open(self.actions)

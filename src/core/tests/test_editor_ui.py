@@ -66,6 +66,15 @@ class Test_Item_Menu(unittest.TestCase):
             self.editor_ui.open_item_menu, self.editor.root.pick_child("Nonexistent case")
         )
 
+    def test_running_the_command_destroy_the_menu_and_empties_the_actions(self):
+        self.menu.open({"command 1":lambda: None})
+        self.assertTrue(self.menu.is_open)
+        self.assertListEqual(self.menu.action_labels, ["command 1"]) 
+
+        self.menu.run("command 1")
+        self.assertFalse(self.menu.is_open)
+        self.assertDictEqual(self.menu.actions, {})
+
 
 class Test_Item_Window(unittest.TestCase):
 
