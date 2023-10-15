@@ -105,3 +105,5 @@ class Item_Menu_Tk(Item_Menu):
 
     def _destroy_menu(self) -> None:
         self.__widget.destroy()
+
+
