@@ -384,6 +384,9 @@ class Item(abc.ABC): # pragma: no cover
         pass
 
     @abc.abstractmethod
+    def add_action(self, after_command:Command_Type, action:Callable[[Item],None])->None: pass
+
+    @abc.abstractmethod
     def adopt(self,child:Item)->None: pass
     
     @abc.abstractmethod
@@ -512,6 +515,7 @@ class ItemImpl(Item):
         def formal_children(self)->Set[Item]: return set()
 
         def adopt_formally(self,child:Item)->None: raise self.NullCannotAdoptFormally # pragma: no cover
+        def add_action(self,after_command:Command_Type,action:Callable[[Item],None])->None: pass
         def leave_formal_child(self,child:Item)->None: raise Item.FormalChildNotFound(child) # pragma: no cover
 
         def bind(self,*args)->None: raise self.SettingDependencyOnNull
@@ -560,7 +564,6 @@ class ItemImpl(Item):
     def __init__(self,name:str,attributes:Dict[str,Attribute], manager:ItemCreator, itype:str="", child_itypes:Optional[Tuple[str,...]]=None)->None:
         super().__init__(name,attributes,manager)
         self.__attributes = attributes
-        self._rename(name)
         self.__children:Set[Item] = set()
         self.__formal_children:Set[Item] = set()
         self.__parent:Item = self.NULL
@@ -572,6 +575,12 @@ class ItemImpl(Item):
         }
         self.__itype = itype
         self.__child_itypes = child_itypes
+        self.__actions:Dict[Command_Type,List[Callable[[Item],None]]] = {
+            'rename':list(),
+            'adopt':list(),
+            'leave':list()
+        }
+        self._rename(name)
 
     @property
     def attributes(self)->Dict[str,Attribute]: 
@@ -596,6 +605,9 @@ class ItemImpl(Item):
     def command(self)->Dict[Command_Type,Composed_Command]: return self.__command
     @property
     def formal_children(self)->Set[Item]: return self.__formal_children.copy()
+
+    def add_action(self, after_command:Command_Type, action:Callable[[Item],None])->None:
+        if action not in self.__actions[after_command]: self.__actions[after_command].append(action)
 
     def adopt_formally(self,child:Item)->None:
         if child in self.__children: raise ItemImpl.AlreadyAChild(child)
@@ -766,6 +778,7 @@ class ItemImpl(Item):
         child._accept_parent(self)
         self.__make_child_to_rename_if_its_name_already_taken(child)
         if self is child.parent: self.__children.add(child)
+        self.__run_actions_after_command('adopt')
 
     def _can_be_parent_of(self,item:Item)->bool:
         if self.__child_itypes is not None:
@@ -804,6 +817,7 @@ class ItemImpl(Item):
         if child in self.__children:
             self.__children.remove(child)
             child._leave_parent(self)
+        self.__run_actions_after_command('leave')
 
     def _leave_parent(self,parent:Item)->None:
         if parent is self.parent:
@@ -815,7 +829,10 @@ class ItemImpl(Item):
         name = strip_and_join_spaces(name)
         self.__raise_if_name_is_blank(name)
         self.__name = name
+        self.__run_actions_after_command('rename')
 
+    def __run_actions_after_command(self, after_command:Command_Type)->None:
+        for action in self.__actions[after_command]: action(self)
     
     def __attributes_copy(self)->Dict[str,Attribute]:
         attr_copy:Dict[str,Attribute] = {}

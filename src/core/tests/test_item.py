@@ -1226,6 +1226,24 @@ class Test_Setting_Mutliple_Attributes_At_Once(unittest.TestCase):
         self.assertRaises(Item.NonexistentAttribute, item.multiset, {'nonexistent_attributes':6})
 
 
+class Test_Simple_Actions_After_Item_Commands(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.cr = ItemCreator()
+        self.parent = self.cr.new("Parent", {'weight':'integer'})
+        self.item = self.cr.new("Item", {'description':'text'})
+
+    def test_action_after_renaming(self):
+        self.new_name = self.parent.name
+        def record_new_name(item:Item)->None: self.new_name=item.name
+        self.parent.add_action('rename', record_new_name)
+        self.parent.rename("The Parent")
+        self.assertEqual(self.new_name, "The Parent")
+        self.cr.undo()
+        self.assertEqual(self.new_name, "Parent")
+
+
+
 if __name__=="__main__": unittest.main()
 
 
