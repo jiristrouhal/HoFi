@@ -280,6 +280,29 @@ class Item_Window(abc.ABC):
     def _destroy_window(self): pass
 
 
+class Item_Menu_Cmds:
+    
+    def __init__(self)->None:
+        self.__items:Dict[str,Item_Menu_Cmds|Callable[[],None]] = dict()
+        self.__children:Dict[str,Item_Menu_Cmds] = dict()
+
+    def insert(self, commands:Dict[str, Callable[[],None]], *cmd_path:str)->None:
+        if not commands: return
+        if cmd_path:
+            self.__children[cmd_path[0]] = Item_Menu_Cmds()
+            self.__children[cmd_path[0]].insert(commands, *cmd_path[1:])
+            self.__items[cmd_path[0]] = self.__children[cmd_path[0]]
+        else:
+            self.__items.update(commands.copy())
+
+    def labels(self, *cmd_path:str)->List[str]: 
+        if cmd_path: 
+            if cmd_path[0] not in self.__children: return []
+            return self.__children[cmd_path[0]].labels(*cmd_path[1:])
+        else:
+            return list(self.__items.keys())
+
+
 class Item_Menu(abc.ABC):
 
     def __init__(self)->None:

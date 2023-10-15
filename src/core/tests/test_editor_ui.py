@@ -76,6 +76,43 @@ class Test_Item_Menu(unittest.TestCase):
         self.assertDictEqual(self.menu.actions, {})
 
 
+from src.core.editor import Item_Menu_Cmds
+class Test_Defining_Cascade_Menu(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.menu = Item_Menu_Test()
+        self.cmd_tree = Item_Menu_Cmds()
+    
+    def test_cascade_menu_for_single_level_of_commands(self):
+        cmds = {"command 1":lambda: None, "command 2":lambda: None}
+        self.cmd_tree.insert(cmds)
+        
+        self.assertListEqual(self.cmd_tree.labels(), ["command 1", "command 2"])
+        self.assertListEqual(self.cmd_tree.labels("command 1"), [])
+
+    def test_cascade_menu_with_commands_on_second_level_of_menu_hierarchy(self):  
+        cmds = {"command 1":lambda: None, "command 2":lambda: None}
+        self.cmd_tree.insert(cmds,"cmd group 1")
+
+        self.assertListEqual(self.cmd_tree.labels(), ["cmd group 1"])
+        self.assertListEqual(self.cmd_tree.labels("cmd group 1"), ["command 1", "command 2"])
+    
+    def test_cascade_menu_with_commands_on_second_level_of_menu_hierarchy_and_two_on_first(self):
+        cmds_1st_level = {"command 1":lambda: None, "command 2":lambda: None}  
+        cmds_2nd_level = {"command 2.1":lambda: None, "command 2.2":lambda: None}
+
+        self.cmd_tree.insert(cmds_2nd_level,"cmd group")
+        self.cmd_tree.insert(cmds_1st_level)
+
+        self.assertListEqual(self.cmd_tree.labels(), ["cmd group","command 1","command 2"])
+        self.assertListEqual(self.cmd_tree.labels("cmd group"), ["command 2.1", "command 2.2"])
+
+    def test_groups_without_commands_are_skipped(self):
+        self.cmd_tree.insert({'cmd 1':lambda: None},"nonempty cmd group")
+        self.cmd_tree.insert({},"empty cmd group")
+        self.assertListEqual(self.cmd_tree.labels(), ["nonempty cmd group"])
+
+
 class Test_Item_Window(unittest.TestCase):
 
     def setUp(self) -> None:
