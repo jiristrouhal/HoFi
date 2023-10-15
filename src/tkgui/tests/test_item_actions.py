@@ -68,6 +68,11 @@ class Test_Item_Window(unittest.TestCase):
         self.assertFalse(self.win.is_open)
         self.assertListEqual(self.win.entries, [])
 
+    def test_bound_attributes_are_excluded_from_item_window(self):
+        self.item.bind('y', lambda x: 2*x, 'x')
+        self.win.open(self.item)
+        self.assertEqual(len(self.win.entries), 1)
+
 
 from src.tkgui.item_actions import Item_Menu_Tk
 from src.core.editor import Item_Menu_Cmds
