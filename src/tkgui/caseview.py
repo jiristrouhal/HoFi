@@ -2,7 +2,7 @@ import tkinter.ttk as ttk
 import tkinter as tk
 
 from src.core.editor import Case_View, Item
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 
 class Case_View_Tk(Case_View):
     
@@ -22,6 +22,9 @@ class Case_View_Tk(Case_View):
     def id(self)->str: return self.__id
     @property
     def widget(self)->ttk.Treeview: return self.__tree
+
+    def bind(self, sequence:str, action:Callable[[tk.Event], None])->None:
+        self.__tree.bind(sequence, action)
 
     def __new_item(self, item:Item)->None:
         values = self.__collect_and_set_values(item)
