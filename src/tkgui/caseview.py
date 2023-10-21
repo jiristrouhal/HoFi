@@ -1,13 +1,12 @@
 import tkinter.ttk as ttk
 import tkinter as tk
 
-from src.core.editor import Case_View, Item, Attribute
+from src.core.editor import Case_View, Item
 from typing import List, Tuple
 
 class Case_View_Tk(Case_View):
     
     def __init__(self, window:tk.Tk|tk.Frame, root_item:Item, *attrs_for_display:str)->None:
-        self.__window = window
         self.__tree:ttk.Treeview = ttk.Treeview(window)
         self.__id = str(id(self))
 
