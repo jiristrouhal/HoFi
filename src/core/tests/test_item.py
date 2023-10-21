@@ -1236,7 +1236,7 @@ class Test_Simple_Actions_After_Item_Commands(unittest.TestCase):
     def test_action_after_renaming(self):
         self.new_name = self.parent.name
         def record_new_name(item:Item)->None: self.new_name=item.name
-        self.parent.add_action('rename', record_new_name)
+        self.parent.add_action('test','rename', record_new_name)
         self.parent.rename("The Parent")
         self.assertEqual(self.new_name, "The Parent")
         self.cr.undo()

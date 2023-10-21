@@ -404,9 +404,17 @@ class Attribute(AbstractAttribute):
         else: 
             self._value = self.default_value
         self.__actions:List[Callable[[Attribute],None]] = list()
+        
+        self.__actions_on_set:Dict[str,Callable[[], None]] = dict()
 
     @property 
     def value(self)->Any: return self._value
+
+    def add_action_on_set(self, owner_id:str, action:Callable[[], None])->None:
+        self.__actions_on_set[owner_id] = action
+
+    def remove_action_on_set(self,owner_id:str)->None:
+        self.__actions_on_set.pop(owner_id)
 
     def after_set(self,action:Callable[[Attribute],None])->None:
         if action not in self.__actions: self.__actions.append(action)
@@ -458,6 +466,7 @@ class Attribute(AbstractAttribute):
         
     def __run_actions_after_setting_the_value(self)->None:
         for action in self.__actions: action(self)
+        for action_on_set in self.__actions_on_set.values(): action_on_set()
     
     @staticmethod
     def set_multiple(new_values:Dict[Attribute,Any])->None:
