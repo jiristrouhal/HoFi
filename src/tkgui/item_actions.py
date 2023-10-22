@@ -11,6 +11,7 @@ class Item_Window_Tk(Item_Window):
     
     def __init__(self, root:Optional[tk.Tk|tk.Frame])->None:
         super().__init__()
+        self.__root = root
         self.__win = tk.Toplevel(root)
         self.__ecr = Entry_Creator()
         self.__win.withdraw()
@@ -20,6 +21,7 @@ class Item_Window_Tk(Item_Window):
         return self.__entries.copy()
 
     def _build_window(self, attributes: Dict[str, Attribute]):
+        self.__win = tk.Toplevel(self.__root)
         self.__create_entries(attributes)
         self.__create_button_frame()
 
@@ -78,6 +80,7 @@ class Item_Window_Tk(Item_Window):
 
 
 from src.core.editor import Item_Menu_Cmds
+from functools import partial
 class Item_Menu_Tk(Item_Menu):
 
     def __init__(self, root:tk.Tk|tk.Frame)->None:
@@ -95,13 +98,12 @@ class Item_Menu_Tk(Item_Menu):
 
     def __menu_cascade(self, parent:tk.Tk|tk.Menu|tk.Frame, actions:Item_Menu_Cmds)->tk.Menu:
         menu = tk.Menu(parent, tearoff=0)
-        for label, item in actions.items.items():
-            def action(): actions.run(label)
-            if callable(item): 
-                menu.add_command(label=label, command=action)
+        for label, func in actions.items.items():
+            if callable(func): 
+                menu.add_command(label=label, command=partial(actions.run, label))
             else: 
-                assert(type(item)==type(actions))
-                submenu = self.__menu_cascade(menu, item)
+                assert(type(func)==type(actions))
+                submenu = self.__menu_cascade(menu, func)
                 menu.add_cascade(label = label, menu=submenu)
         return menu
 

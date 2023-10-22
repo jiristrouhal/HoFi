@@ -21,3 +21,11 @@ class Editor_Tk(EditorUI):
             "<Button-3>",
             self.__caseview.do_on_tree_item(self.open_item_menu)
         )
+        self.__caseview.widget.bind(
+            "<Control-z>",
+            lambda e: self.editor.undo()
+        )
+        self.__caseview.widget.bind(
+            "<Control-y>",
+            lambda e: self.editor.redo()
+        )

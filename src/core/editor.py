@@ -215,7 +215,7 @@ class Item_Menu_Cmds:
         self.insert(init_cmds)
 
     @property
-    def items(self)->Dict[str,Item_Menu_Cmds|Callable[[],None]]: return self.__items
+    def items(self)->Dict[str,Item_Menu_Cmds|Callable[[],None]]: return self.__items.copy()
 
     def add_post_cmd(self, cmd:Callable[[],None])->None:
         self.__custom_cmds_after_menu_cmd.add(cmd)
@@ -251,6 +251,7 @@ class Item_Menu_Cmds:
 
 
 import abc
+from functools import partial
 class EditorUI(abc.ABC):
 
     def __init__(
@@ -269,6 +270,8 @@ class EditorUI(abc.ABC):
 
     @property
     def caseview(self)->Case_View: return self.__caseview
+    @property
+    def editor(self)->Editor: return self.__editor
 
     @abc.abstractmethod
     def _compose(self)->None: pass
@@ -289,14 +292,20 @@ class EditorUI(abc.ABC):
         return item_actions
     
     def __case_actions(self, case:Item)->Item_Menu_Cmds:
-        case_actions = Item_Menu_Cmds()
-        case_actions.insert({'delete':lambda: self.__editor.remove_case(case)})
-        return case_actions
+        actions = Item_Menu_Cmds()
+        for itype in self.__editor.item_types_to_create(case):
+            actions.insert({itype: partial(self.__editor.new, case,itype)}, "add")
+        actions.insert({'edit':lambda: self.open_item_window(case)})
+        actions.insert({'delete':lambda: self.__editor.remove_case(case)})
+        return actions
 
     def __item_actions(self, item:Item)->Item_Menu_Cmds:
-        item_actions = Item_Menu_Cmds()
-        item_actions.insert({'edit':lambda: self.open_item_window(item)})
-        return item_actions
+        actions = Item_Menu_Cmds()
+        for itype in self.__editor.item_types_to_create(item):
+            actions.insert({itype: partial(self.__editor.new, item ,itype)}, "add")
+        actions.insert({'edit':lambda: self.open_item_window(item)})
+        actions.insert({'delete':lambda: self.__editor.remove(item, item.parent)})
+        return actions
     
     def open_item_window(self, item:Item, *args)->None:
         self.__item_window.open(item)
