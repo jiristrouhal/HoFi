@@ -416,6 +416,9 @@ class Attribute(AbstractAttribute):
     def remove_action_on_set(self,owner_id:str)->None:
         self.__actions_on_set.pop(owner_id)
 
+    def _hard_set(self,value:Any):
+        if self.is_valid(value): self._value = value
+
     def after_set(self,action:Callable[[Attribute],None])->None:
         if action not in self.__actions: self.__actions.append(action)
 

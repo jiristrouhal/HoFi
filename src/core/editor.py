@@ -331,6 +331,7 @@ class Item_Window(abc.ABC):
     def is_open(self)->bool: return self.__open
 
     def open(self, item:Item)->None: 
+        
         self._build_window(item.attributes)
         self.__open = True
 

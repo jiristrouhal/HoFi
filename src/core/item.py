@@ -583,7 +583,11 @@ class ItemImpl(Item):
     
     def __init__(self,name:str,attributes:Dict[str,Attribute], manager:ItemCreator, itype:str="", child_itypes:Optional[Tuple[str,...]]=None)->None:
         super().__init__(name,attributes,manager)
-        self.__attributes = attributes
+        self.__attributes:Dict[str,Attribute] = {
+            "name":manager._attrfac.new_from_dict(**manager.attr.text(init_value=itype))
+        }
+        if "name" in attributes: attributes.pop("name")
+        self.__attributes.update(attributes)
         self.__children:Set[Item] = set()
         self.__formal_children:Set[Item] = set()
         self.__parent:Item = self.NULL
@@ -605,11 +609,13 @@ class ItemImpl(Item):
 
 
     @property
-    def attributes(self)->Dict[str,Attribute]: 
-        return self.__attributes.copy()
+    def attributes(self)->Dict[str,Attribute]:
+        attributes =  self.__attributes.copy()
+        attributes.pop("name")
+        return attributes
     @property
     def name(self)->str: 
-        return self.__name
+        return self.__attributes["name"].value
     @property
     def parent(self)->Item: 
         return self.__parent
@@ -757,12 +763,14 @@ class ItemImpl(Item):
         self.controller.run(*self.command['rename'](Renaming_Data(self,name)))
 
     def set(self,attrib_label:str, value:Any)->None:
+        if attrib_label=="name": self.rename(value)
         self.attribute(attrib_label).set(value)
 
     def multiset(self, attr_to_value_dict:Dict[str,Any])->None:
         attrs:Dict[Attribute, Any] = dict()
         for label in  attr_to_value_dict: 
             if label in self.__attributes: 
+                if label=="name": continue
                 attrs[self.__attributes[label]] = attr_to_value_dict[label]
             else:
                 raise Item.NonexistentAttribute(label)
@@ -866,7 +874,7 @@ class ItemImpl(Item):
     def _rename(self,name:str)->None:
         name = strip_and_join_spaces(name)
         self.__raise_if_name_is_blank(name)
-        self.__name = name
+        self.attribute("name")._hard_set(name)
         self.__run_actions_after_command('rename', self)
 
     def __run_actions_after_command(self, after_command:Command_Type, item:Item)->None:

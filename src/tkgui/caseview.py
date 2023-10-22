@@ -55,7 +55,7 @@ class Case_View_Tk(Case_View):
         item.add_action(self.__id, 'rename', self.__rename_item)
         item.add_action_on_set(self.__id, self.__set_displayed_values_of_item_attributes)
         self.__item_dict[item.id] = item
-        
+
         for child in item.children: self.__new_item(child)
 
     def __remove_item(self, item:Item)->None:
