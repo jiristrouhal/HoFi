@@ -66,6 +66,9 @@ class Case_Template:
             if label not in self.__templates: raise Case_Template.UndefinedTemplate(label)
             self.__case_child_labels.append(label)
 
+    def dependency(self, dependent:str, func:Callable[[Any],Any], *free:str)->Case_Template.Dependency:
+        return Case_Template.Dependency(dependent, func, free)
+
     def set_insertable(self,template_label:str)->None:
         if template_label not in self.__templates: raise Case_Template.UndefinedTemplate(template_label)
         self.__insertable = template_label
