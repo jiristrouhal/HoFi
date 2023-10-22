@@ -250,7 +250,8 @@ class Item_Menu_Cmds:
         for cmd in self.__custom_cmds_after_menu_cmd: cmd()
 
 
-class EditorUI:
+import abc
+class EditorUI(abc.ABC):
 
     def __init__(
         self, 
@@ -264,19 +265,23 @@ class EditorUI:
         self.__item_menu = item_menu
         self.__item_window = item_window
         self.__caseview = caseview
+        self._compose()
 
     @property
     def caseview(self)->Case_View: return self.__caseview
 
-    def open_item_menu(self, item:Item)->None:
+    @abc.abstractmethod
+    def _compose(self)->None: pass
+
+    def open_item_menu(self, item:Item, *args)->None:
         if item.is_null(): 
             raise EditorUI.Opening_Item_Menu_For_Nonexistent_Item
         elif item==self.__editor.root:
-            self.__item_menu.open(self.__root_item_actions())
+            self.__item_menu.open(self.__root_item_actions(),*args)
         elif item.itype==CASE_TYPE_LABEL:
-            self.__item_menu.open(self.__case_actions(item))
+            self.__item_menu.open(self.__case_actions(item),*args)
         else:
-            self.__item_menu.open(self.__item_actions(item))
+            self.__item_menu.open(self.__item_actions(item),*args)
 
     def __root_item_actions(self)->Item_Menu_Cmds:
         item_actions = Item_Menu_Cmds()
@@ -284,15 +289,16 @@ class EditorUI:
         return item_actions
     
     def __case_actions(self, case:Item)->Item_Menu_Cmds:
-        item_actions = Item_Menu_Cmds()
-        return item_actions
+        case_actions = Item_Menu_Cmds()
+        case_actions.insert({'delete':lambda: self.__editor.remove_case(case)})
+        return case_actions
 
     def __item_actions(self, item:Item)->Item_Menu_Cmds:
         item_actions = Item_Menu_Cmds()
         item_actions.insert({'edit':lambda: self.open_item_window(item)})
         return item_actions
     
-    def open_item_window(self, item:Item)->None:
+    def open_item_window(self, item:Item, *args)->None:
         self.__item_window.open(item)
     
     DEFAULT_CASE_NAME = "Case"
@@ -351,13 +357,13 @@ class Item_Menu(abc.ABC):
         self._destroy_menu()
         self.__actions = None
 
-    def open(self, actions:Item_Menu_Cmds)->None: 
+    def open(self, actions:Item_Menu_Cmds, *args)->None: 
         if not actions.labels(): 
             return 
         else:
             self.__actions = actions
             self.__open = True
-            self._build_menu()
+            self._build_menu(*args)
             self.__actions.add_post_cmd(self.close)
 
     def run(self, action_label:str, *cmd_path:str)->None:
@@ -365,7 +371,7 @@ class Item_Menu(abc.ABC):
             self.__actions.run(action_label,*cmd_path)
 
     @abc.abstractmethod
-    def _build_menu(self)->None: pass # pragma: no cover
+    def _build_menu(self,*args)->None: pass # pragma: no cover
     @abc.abstractmethod
     def _destroy_menu(self)->None: pass # pragma: no cover
     

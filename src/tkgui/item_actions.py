@@ -9,10 +9,11 @@ from typing import List
 from src.core.editor import Item_Menu, Item_Window
 class Item_Window_Tk(Item_Window):
     
-    def __init__(self, root:Optional[tk.Tk])->None:
+    def __init__(self, root:Optional[tk.Tk|tk.Frame])->None:
         super().__init__()
         self.__win = tk.Toplevel(root)
         self.__ecr = Entry_Creator()
+        self.__win.withdraw()
 
     @property
     def entries(self)->List[Attribute_Entry]: 
@@ -79,7 +80,7 @@ class Item_Window_Tk(Item_Window):
 from src.core.editor import Item_Menu_Cmds
 class Item_Menu_Tk(Item_Menu):
 
-    def __init__(self, root:tk.Tk)->None:
+    def __init__(self, root:tk.Tk|tk.Frame)->None:
         self.__root = root
         super().__init__()
         self.__widget = tk.Menu()
@@ -87,11 +88,12 @@ class Item_Menu_Tk(Item_Menu):
     @property
     def widget(self)->tk.Menu: return self.__widget
 
-    def _build_menu(self) -> None:
+    def _build_menu(self, event:Optional[tk.Event]=None, *args) -> None:
         assert(self.actions is not None)
         self.__widget = self.__menu_cascade(self.__root, self.actions)
+        if event is not None: self.__widget.tk_popup(event.x_root, event.y_root)
 
-    def __menu_cascade(self, parent:tk.Tk|tk.Menu, actions:Item_Menu_Cmds)->tk.Menu:
+    def __menu_cascade(self, parent:tk.Tk|tk.Menu|tk.Frame, actions:Item_Menu_Cmds)->tk.Menu:
         menu = tk.Menu(parent, tearoff=0)
         for label, item in actions.items.items():
             def action(): actions.run(label)

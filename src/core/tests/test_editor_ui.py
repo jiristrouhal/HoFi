@@ -11,7 +11,7 @@ from src.core.editor import EditorUI, Item_Menu, Item_Window, Case_View
 
 
 class Item_Menu_Test(Item_Menu):
-    def _build_menu(self) -> None:
+    def _build_menu(self, *args) -> None:
         pass
     def _destroy_menu(self) -> None:
         pass
@@ -28,6 +28,12 @@ class Case_View_Test(Case_View):
     pass
 
 
+class Editor_UI_Test(EditorUI):
+
+    def _compose(self) -> None:
+        pass
+
+
 class Test_Item_Menu(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -40,7 +46,7 @@ class Test_Item_Menu(unittest.TestCase):
         case_template.add('Child', {'x':case_template.attr.integer(0)},())
         self.editor = new_editor(case_template)
         self.menu = Item_Menu_Test()
-        self.editor_ui = EditorUI(self.editor, self.menu, Item_Window_Test(), Case_View_Test())
+        self.editor_ui = Editor_UI_Test(self.editor, self.menu, Item_Window_Test(), Case_View_Test())
 
     def test_opening_and_closing_action_menu(self):
         self.assertFalse(self.menu.is_open)
@@ -157,7 +163,7 @@ class Test_Item_Window(unittest.TestCase):
         self.editor = new_editor(case_template)
         self.menu = Item_Menu_Test()
         self.item_win = Item_Window_Test()
-        self.editor_ui = EditorUI(self.editor, self.menu, self.item_win, Case_View_Test())
+        self.editor_ui = Editor_UI_Test(self.editor, self.menu, self.item_win, Case_View_Test())
         self.new_case = self.editor.new_case("Case X")
         self.item = self.editor.new(self.new_case, "Parent")
 
