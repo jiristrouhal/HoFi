@@ -5,7 +5,8 @@ from src.tkgui.item_actions import Item_Menu_Tk, Item_Window_Tk
 from src.tkgui.caseview import Case_View_Tk
 
 from typing import Tuple
-
+from tkinter.filedialog import askopenfilename, askdirectory
+import os
 
 class Editor_Tk(EditorUI):
 
@@ -40,3 +41,13 @@ class Editor_Tk(EditorUI):
             "<Control-y>",
             lambda e: self.editor.redo()
         )
+
+    def _get_xml_path(self) -> Tuple[str, str]:
+        case_full_path = askopenfilename(defaultextension="xml", filetypes=[("xml","xml")])
+        if case_full_path is None: 
+            return "",""
+        else:
+            return os.path.dirname(case_full_path), os.path.basename(case_full_path).split(".")[0]
+        
+    def _get_export_dir(self) -> str:
+        return askdirectory(initialdir=self.editor.export_dir_path)

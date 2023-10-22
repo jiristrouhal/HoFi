@@ -102,6 +102,8 @@ class Editor:
     def root(self)->Item: return self.__root
     @property
     def ncases(self)->int: return len(self.__root.children)
+    @property
+    def export_dir_path(self)->str: return self.__creator.file_path
 
     def can_save_as_item(self,item:Item)->bool:
         return item.itype == self.__insertable
@@ -255,6 +257,7 @@ class Item_Menu_Cmds:
 
 import abc
 from functools import partial
+import os
 class EditorUI(abc.ABC):
 
     def __init__(
@@ -289,8 +292,27 @@ class EditorUI(abc.ABC):
         else:
             self.__item_menu.open(self.__item_actions(item),*args)
 
+    def import_case_from_xml(self)->None:
+        case_dir_path, case_name = self._get_xml_path()
+        print(case_dir_path, case_name)
+        self.__editor.load_case(case_dir_path, case_name, "xml")
+
+    def export_case_to_xml(self, case:Item)->None:
+        dir_path = self._get_export_dir()
+        if not os.path.isdir(dir_path): return 
+        self.__editor.set_dir_path(dir_path)
+        self.__editor.save(case, "xml")
+
+    @abc.abstractmethod
+    def _get_xml_path(self)->Tuple[str,str]:
+        pass
+
+    @abc.abstractmethod
+    def _get_export_dir(self)->str: pass
+
     def __root_item_actions(self)->Item_Menu_Cmds:
         item_actions = Item_Menu_Cmds()
+        item_actions.insert({'import_from_xml':self.import_case_from_xml})
         item_actions.insert({'new_case':self.__new_case})
         return item_actions
     
@@ -299,6 +321,7 @@ class EditorUI(abc.ABC):
         for itype in self.__editor.item_types_to_create(case):
             actions.insert({itype: partial(self.__editor.new, case,itype)}, "add")
         actions.insert({'edit':lambda: self.open_item_window(case)})
+        actions.insert({'export_to_xml': lambda: self.export_case_to_xml(case)})
         actions.insert({'delete':lambda: self.__editor.remove_case(case)})
         return actions
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
-import sys 
+import sys
+from typing import Tuple 
 sys.path.insert(1,"src")
 
 
@@ -32,6 +33,12 @@ class Editor_UI_Test(EditorUI):
 
     def _compose(self) -> None:
         pass
+
+    def _get_export_dir(self) -> str:
+        return ""
+
+    def _get_xml_path(self) -> Tuple[str, str]:
+        return ("","")
 
 
 class Test_Item_Menu(unittest.TestCase):
