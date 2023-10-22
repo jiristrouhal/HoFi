@@ -61,6 +61,19 @@ class Test_View_For_Item_Manipulations(unittest.TestCase):
         self.cr.undo()
         self.assertEqual(self.caseview.widget.item(child.id)['text'], "Child")
 
+    def test_removing_parent_with_child(self):
+        parent = self.cr.new("Parent")
+        self.root_item.adopt(parent)
+        child = self.cr.new("Child")
+        parent.adopt(child)
+
+        self.root_item.leave(parent)
+        self.cr.undo()
+
+        self.assertEqual(self.caseview.widget.item(parent.id)['text'], "Parent")
+        self.assertTrue(parent.is_parent_of(child))
+        self.assertEqual(self.caseview.widget.item(child.id)['text'], "Child")
+
 
 class Test_View_For_Item_Attribute_Manipulations(unittest.TestCase):
 
