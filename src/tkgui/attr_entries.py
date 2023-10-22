@@ -4,7 +4,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import tkcalendar as tkc
 import abc
-from typing import Dict, Any
+from typing import Any
 
 
 class Attribute_Entry(abc.ABC):
@@ -277,6 +277,35 @@ class Quantity_Entry(Number_Entry):
     def set_unit(self, value:str)->None:
         self.__unit.set(value)
         self.__update_displayed_value_on_unit_update()
+
+
+class Name_Entry(Attribute_Entry):
+
+    @property
+    def widget(self)->tk.Entry: return self.__entry
+    @property
+    def value(self) -> Any: return self.__entry.get()
+    
+    def _create_entry(self)->None:
+        vcmd = (self.master.register(self._text_is_valid_name),'%P')
+        self.__entry = tk.Entry(self.master, validate='key', validatecommand=vcmd)
+        self.__entry.insert(0, self.attr.value)
+
+    def _confirmed_value(self)->str:
+        entry_value = self.__entry.get()
+        if entry_value=="": return self.attr.value
+        else: return entry_value
+
+    def revert(self)->None:
+        self.__entry.delete(0, tk.END)
+        self.__entry.insert(0, self.attr.value)
+    
+    def set(self,value:str)->None: 
+        self.__entry.delete(0, tk.END)
+        self.__entry.insert(0, value)
+
+    def _text_is_valid_name(self,text:str)->bool:
+        return text=="" or self.attr.is_valid(text)
         
 
 class Text_Entry(Attribute_Entry):
@@ -312,6 +341,7 @@ class Entry_Creator:
             case 'date': return self.__date(attr,master)
             case 'integer': return self.__number(attr,master)
             case 'money': return self.__money(attr,master)
+            case 'name': return self.__name(attr,master)
             case 'real': return self.__number(attr,master)
             case 'quantity': return self.__quantity(attr,master)
             case 'text': return self.__text(attr,master)
@@ -327,6 +357,9 @@ class Entry_Creator:
     
     def __money(self, attr:Attribute, master:tk.Frame)->Money_Entry:
         return Money_Entry(attr, master)
+    
+    def __name(self, attr:Attribute, master:tk.Frame)->Name_Entry:
+        return Name_Entry(attr, master)
     
     def __number(self, attr:Attribute, master:tk.Frame)->Number_Entry:
         return Number_Entry(attr, master)

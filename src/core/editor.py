@@ -331,8 +331,13 @@ class Item_Window(abc.ABC):
     def is_open(self)->bool: return self.__open
 
     def open(self, item:Item)->None: 
-        
-        self._build_window(item.attributes)
+        name_attr = item._manager._attrfac.new("name",item.name)
+        rename_action = lambda: item._rename(name_attr.value)
+
+        name_attr.add_action_on_set("item_window", rename_action)
+        attributes:Dict[str,Attribute] = {"name":name_attr}
+        attributes.update(item.attributes)
+        self._build_window(attributes)
         self.__open = True
 
     def close(self)->None:

@@ -768,6 +768,21 @@ class Text_Attribute(Attribute):
         self.set(text)
 
 
+class Name_Attribute(Attribute):
+
+    def _is_type_valid(self, value: Any) -> bool:
+        return isinstance(value,str)
+
+    def _is_value_valid(self,value:Any)->bool:
+        return re.fullmatch("[_a-zA-Z][\w\s]*",value) is not None
+    
+    def print(self, *options)->str:
+        return str(self._value)
+    
+    def read(self, text:str)->None:
+        self.set(text)
+
+
 import datetime
 import re
 
@@ -1221,7 +1236,7 @@ class Quantity(Real_Attribute):
 
 
 
-AttributeType = Literal['bool','choice','date','integer','money','quantity','real','text']
+AttributeType = Literal['bool','choice','date','integer','money','name','quantity','real','text']
 class Attribute_Data_Constructor:
 
     def __init__(self)->None:
@@ -1233,6 +1248,7 @@ class Attribute_Data_Constructor:
             'choice':Choice_Attribute,
             'date':Date_Attribute,
             'money':Monetary_Attribute,
+            'name':Name_Attribute,
             'quantity':Quantity,
         }
 
@@ -1272,6 +1288,9 @@ class Attribute_Data_Constructor:
     
     def money(self, init_value:Decimal|float|int=0.0)->Dict[str,Any]:
         return {'atype':"money", 'init_value':init_value}
+    
+    def name(self, init_value:str="name")->Dict[str,Any]:
+        return {'atype':'name', 'init_value':init_value}
     
     def quantity(
         self, 
