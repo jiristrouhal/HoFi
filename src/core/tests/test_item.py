@@ -1243,7 +1243,26 @@ class Test_Simple_Actions_After_Item_Commands(unittest.TestCase):
         self.assertEqual(self.new_name, "Parent")
 
 
+class Test_Binding_Attribute_To_Items_Parent(unittest.TestCase):
 
+    def setUp(self) -> None:
+        self.cr = ItemCreator()
+        self.parent = self.cr.new("Parent", {'x':'integer'})
+        self.parent.set('x',1)
+        self.child = self.cr.new("Child", {'x':'integer'})
+
+    def test_binding_to_parents_attribute(self):
+        self.parent.adopt(self.child)
+        self.child.bind('x', lambda x: 2*x, '<x:integer>')
+        self.assertEqual(self.child('x'), 2)
+        self.parent.set('x',4)
+        self.assertEqual(self.child('x'), 8)
+
+    def test_binding_to_parents_attribute_if_parent_is_null_sets_the_attribute_to_default_value(self):
+        self.child.bind('x', lambda x: 2*x, '<x:integer>')
+        self.assertEqual(self.child('x'), 0)
+
+    
 if __name__=="__main__": unittest.main()
 
 

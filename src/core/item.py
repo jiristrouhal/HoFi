@@ -7,7 +7,6 @@ from src.core.attributes import attribute_factory, Attribute, Attribute_List, Se
 from src.core.attributes import Edit_AttrList_Data
 import abc
 
-
 @dataclasses.dataclass(frozen=True)
 class Template:
     label:str
@@ -607,6 +606,9 @@ class ItemImpl(Item):
         self._rename(name)
 
 
+        self._parent_attr_stubs:Dict[str, Attribute] = dict()
+
+
     @property
     def attributes(self)->Dict[str,Attribute]:
         attributes =  self.__attributes.copy()
@@ -680,13 +682,27 @@ class ItemImpl(Item):
         inputs:List[AbstractAttribute] = list()
         for input_label in input_labels:
             if self.__is_child_attributes_label(input_label):
-                label, value_type = input_label[1:-1].split(":")
-                if label not in self._child_attr_lists:
-                    self._create_child_attr_list(value_type, label)
-                inputs.append(self._child_attr_lists[label])
+                inputs.append(self.__get_child_attr_list(input_label))
+            elif self.__is_parents_attribute_label(input_label):
+                inputs.append(self.__get_parent_attribute(input_label))
             else:
                 inputs.append(self.attribute(input_label))
         return inputs
+
+    def __get_child_attr_list(self,input_label:str)->Attribute_List:
+        label, value_type = input_label[1:-1].split(":")
+        if label not in self._child_attr_lists:
+            self._create_child_attr_list(value_type, label)
+        return self._child_attr_lists[label]
+
+    def __get_parent_attribute(self, input_label:str)->Attribute:
+        label, value_type = input_label[1:-1].split(":")
+        if label not in self._parent_attr_stubs:
+            self._parent_attr_stubs[label] = self._manager._attrfac.new(value_type)
+        if not self.parent.is_null():
+            return self.parent.attribute(label)
+        else:
+            return self._parent_attr_stubs[label]
     
     @staticmethod
     def __is_child_attributes_label(label)->bool: 
@@ -694,6 +710,13 @@ class ItemImpl(Item):
             return False
         else:
             return label[0]=='[' and label[-1]==']'
+        
+    @staticmethod
+    def __is_parents_attribute_label(label)->bool: 
+        if len(label)<3: 
+            return False
+        else:
+            return label[0]=='<' and label[-1]=='>'
 
     def free(self, output_name:str)->None:
         self.attribute(output_name).break_dependency()

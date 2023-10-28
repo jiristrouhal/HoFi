@@ -352,7 +352,7 @@ class Test_Copying_Attribute(unittest.TestCase):
 
         y.add_dependency(double,x)
 
-        self.assertListEqual(y.dependency.inputs,[x])
+        self.assertListEqual(y.dependency._inputs,[x])
         y_copy = y.copy()
 
         x.set(2)
@@ -2027,6 +2027,39 @@ class Test_Name_Attribute(unittest.TestCase):
         self.assertTrue(attr.is_valid("Name"))
         self.assertTrue(attr.is_valid("Some Name"))
         self.assertTrue(attr.is_valid("Some Name (1)"))
+
+
+class Test_Replacing_Dependency_Input(unittest.TestCase):
+
+
+    def setUp(self) -> None:
+        self.fac = attribute_factory(Controller()) 
+        self.y = self.fac.new("integer", 0, name="y")
+        self.x = self.fac.new("integer", 1, name="x")
+        self.y.add_dependency(lambda x: 2*x, self.x)
+        self.x2 = self.fac.new("integer", 3, name="x2")
+    
+    def test_replacing_single_input(self):
+        self.y.dependency.replace_input(self.x, self.x2)
+        self.assertEqual(self.y.value, 6)
+
+    def test_replacing_input_with_other_with_wrong_itype_raises_exception(self):
+        x_str = self.fac.new("text", "...")
+        self.assertRaises(
+            Dependency.WrongAttributeTypeForDependencyInput, 
+            self.y.dependency.replace_input, 
+            self.x, 
+            x_str
+        )
+    
+    def test_replacing_attribute_that_is_not_dependency_input_raises_exception(self):
+        someattr = self.fac.new("integer")
+        self.assertRaises(Dependency.AttributeIsNotInput, self.y.dependency.replace_input, someattr, self.x2)
+
+    def test_replacing_one_input_with_another_raises_exception(self):
+        self.y.break_dependency()
+        self.y.add_dependency(lambda x,x2: x+x2, self.x, self.x2)
+        self.assertRaises(Dependency.SingleAttributeForMultipleInputs, self.y.dependency.replace_input, self.x, self.x2)
 
 
 if __name__=="__main__": unittest.main()

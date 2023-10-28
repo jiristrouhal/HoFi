@@ -21,11 +21,11 @@ class Dependency(abc.ABC):
         self._output = output
         self.func = func
         if not inputs: raise Dependency.NoInputs
-        self.inputs = list(inputs)
+        self._inputs = list(inputs)
         if self._output.dependent: raise Attribute.DependencyAlreadyAssigned 
         self.__check_input_types()
         self._check_for_dependency_cycle(self._output, path=self._output.name)
-        self.__set_up_command(*self.inputs)
+        self.__set_up_command(*self._inputs)
 
     @abc.abstractmethod
     def release(self)->None: pass  # pragma: no cover
@@ -41,12 +41,25 @@ class Dependency(abc.ABC):
             raise Dependency.WrongAttributeTypeForDependencyInput([type(v) for v in values])
         
     def collect_input_values(self)->List[Any]:
-        return [item.value for item in self.inputs]
+        return [item.value for item in self._inputs]
+
+    def replace_input(self, input:AbstractAttribute, new_input:AbstractAttribute)->None:
+        if input not in self._inputs:
+            raise Dependency.AttributeIsNotInput(input.name)
+        if new_input in self._inputs and new_input is not input: 
+            raise Dependency.SingleAttributeForMultipleInputs
+        if new_input.type != input.type: 
+            raise Dependency.WrongAttributeTypeForDependencyInput(
+                f"Expected type '{new_input.type}', received '{input.type}'."
+            )
+        id = self._inputs.index(input)
+        self._inputs[id] = new_input
+        self.__set_up_command(new_input)
 
     def _check_for_dependency_cycle(self, output:AbstractAttribute, path:str)->None:
-        if output in self.inputs: 
+        if output in self._inputs: 
             raise Dependency.CyclicDependency(path + ' -> ' + output.name)  
-        for input in self.inputs:
+        for input in self._inputs:
             if not input.dependent: continue
             input.dependency._check_for_dependency_cycle(output, path + ' -> ' + input.name)
         
@@ -80,16 +93,18 @@ class Dependency(abc.ABC):
             return float('nan')
         except TypeError:
             raise self.InvalidArgumentType(
-                f"Func {self.func.__annotations__} received values: {values}, expected types :{[i.type for i in self.inputs]}"
+                f"Func {self.func.__annotations__} received values: {values}, expected types :{[i.type for i in self._inputs]}"
             )
         except: # pragma: no cover
             return None # pragma: no cover
         
+    class AttributeIsNotInput(Exception): pass
     class CyclicDependency(Exception): pass
     class InputAlreadyUsed(Exception): pass
     class InvalidArgumentType(Exception): pass
     class NoInputs(Exception): pass
     class NonexistentInput(Exception): pass
+    class SingleAttributeForMultipleInputs(Exception): pass
     class WrongAttributeTypeForDependencyInput(Exception): pass
 
 
@@ -106,9 +121,9 @@ class DependencyImpl(Dependency):
     NULL = NullDependency()
 
     def release(self)->None:
-        for input in self.inputs: 
+        for input in self._inputs: 
             input.command['set'].composed_post.pop(self.output.id)
-            self.inputs.remove(input)
+            self._inputs.remove(input)
         self.output._forget_dependency()
 
 
