@@ -32,39 +32,50 @@ class Empty_Command(Command):
     def redo(self)->None: pass
     
 
+from typing import Optional
 class Controller:
 
     def __init__(self)->None:
         self.__undo_stack:List[List[Command]] = list()
         self.__redo_stack:List[List[Command]] = list()
+        self.__run_stack:List[Command] = list()
         self.__history:List[str] = list()
         self.__last_symbol:str = "- "
+        self.__waiting:bool = False
 
     @property
     def any_undo(self)->bool: return bool(self.__undo_stack)
     @property
     def any_redo(self)->bool: return bool(self.__redo_stack)
     @property
+    def any_cmd_to_run(self)->bool: return bool(self.__run_stack)
+    @property
     def history(self)->str: 
         return 2*"\n"+"\n".join(self.__history)+"\n"
-    
+
+
     def __switch_last_symbol(self)->None: 
         if self.__last_symbol=="x ": self.__last_symbol="- "
         else: self.__last_symbol="x "
 
     def clear_history(self)->None: self.__history.clear()
 
-    
     def run(self,*cmds:Command)->None:
+        self.__run_stack.extend(list(cmds))
+        if not self.__waiting: 
+            self.__actually_run()
+
+    def __actually_run(self)->None:
         cmd_list:List[Command] = []
-        for item in cmds: cmd_list.append(item)
+        for item in self.__run_stack: cmd_list.append(item)
+        self.__run_stack.clear()
+
         for cmd in cmd_list: cmd.run()
         self.__undo_stack.append(cmd_list)
         self.__redo_stack.clear()
 
         self.__history.extend([f"{self.__last_symbol} {cmd.message}" for cmd in cmd_list if cmd.message.strip() != ""])
         self.__switch_last_symbol()
-
     def undo(self)->None:
         if not self.__undo_stack: return 
         batch = self.__undo_stack.pop()   
@@ -74,6 +85,7 @@ class Controller:
                 self.__history.append(f"{self.__last_symbol}Undo: {cmd.message}")
         self.__redo_stack.append(batch)
         self.__switch_last_symbol()
+
 
     def redo(self)->None:
         if not self.__redo_stack: return 
@@ -85,6 +97,7 @@ class Controller:
         self.__undo_stack.append(batch)
         self.__switch_last_symbol()
 
+
     def undo_and_forget(self)->None:
         if not self.__undo_stack: return 
         batch = self.__undo_stack.pop()   
@@ -92,6 +105,23 @@ class Controller:
             cmd.undo()
             if cmd.message.strip() != "":
                 self.__history.append(f"{self.__last_symbol}Undo: {cmd.message}")
+
+    def _go(self)->None: 
+        self.__waiting=False
+        self.__actually_run()
+    def _wait(self)->None: 
+        self.__waiting=True
+
+    def single_cmd(self)->Callable[[Callable],Callable]:
+        def outer_wrapper(foo:Callable)->Callable:
+            def inner_wrapper(*args, **kwargs):
+                self._wait()
+                value = foo(*args, **kwargs)
+                self._go()
+                return value
+            return inner_wrapper
+        return outer_wrapper
+
 
 Timing = Literal['pre','post']
 from typing import Tuple
@@ -145,3 +175,5 @@ class Composed_Command(abc.ABC):
         if timing=='pre': self.composed_pre[owner_id] = (data_converter,cmd)
         elif timing=='post': self.composed_post[owner_id] = (data_converter,cmd)
         else: raise KeyError(f"Invalid timing key: {timing}.")
+
+

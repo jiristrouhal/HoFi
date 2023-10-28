@@ -59,6 +59,7 @@ class Case_View_Tk(Case_View):
         for child in item.children: self.__new_item(child)
 
     def __remove_item(self, item:Item)->None:
+        for child in item.children: self.__remove_item(child)
         self.__tree.delete(item.id)
         item.remove_action(self.__id, 'adopt')
         item.remove_action(self.__id, 'leave')

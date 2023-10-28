@@ -188,7 +188,6 @@ class ItemCreator:
         attributes = {}
         for label, info in attribute_info.items():
             attributes[label] = self._attrfac.new_from_dict(name=label, **info)
-
         return attributes
 
     def __get_attrs(self,attribute_info:Dict[str,AttributeType])->Dict[str,Attribute]:
@@ -633,6 +632,10 @@ class ItemImpl(Item):
     def command(self)->Dict[Command_Type,Composed_Command]: return self.__command
     @property
     def formal_children(self)->Set[Item]: return self.__formal_children.copy()
+    @property
+    def id(self)->str: return self.itype + " " + super().id
+    @property
+    def child_names(self)->List[str]: return [c.name for c in self.__children]
 
     @property
     def last_action(self)->Tuple[str,str,str]: return self.__last_action
@@ -874,6 +877,9 @@ class ItemImpl(Item):
     def _rename(self,name:str)->None:
         name = strip_and_join_spaces(name)
         self.__raise_if_name_is_blank(name)
+        if not self.parent.is_null():
+            assert isinstance(self.parent, ItemImpl)
+            name = self.parent.__adjust_name_if_taken(self,name)
         self.attribute("name")._hard_set(name)
         self.__run_actions_after_command('rename', self)
 
@@ -888,13 +894,15 @@ class ItemImpl(Item):
             attr_copy[label] = attr.copy()
         return attr_copy
     
-    def __make_child_to_rename_if_its_name_already_taken(self, child:Item):
-        names = [c.name for c in self.__children]
-        cname = child.name
+    def __adjust_name_if_taken(self, item:Item, cname:str)->str:
+        names = [c.name for c in self.__children if not c==item]
         while cname in names: 
             names.remove(cname)
             cname = adjust_taken_name(cname)
-            child._rename(cname)
+        return cname
+    
+    def __make_child_to_rename_if_its_name_already_taken(self, child:Item):
+        child._rename(self.__adjust_name_if_taken(child, child.name))
     
     def __raise_if_name_is_blank(self,name:str)->None:
         if name=="": raise self.BlankName

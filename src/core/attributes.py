@@ -774,7 +774,7 @@ class Name_Attribute(Attribute):
         return isinstance(value,str)
 
     def _is_value_valid(self,value:Any)->bool:
-        return re.fullmatch("[_a-zA-Z][\w\s]*",value) is not None
+        return re.fullmatch("[_a-zA-Z][\w\s\(\)]*",value) is not None
     
     def print(self, *options)->str:
         return str(self._value)

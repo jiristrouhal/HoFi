@@ -128,9 +128,13 @@ class Editor:
     def insert_from_file(self, parent:Item, dirpath:str, name:str, filetype:FileType)->Item:
         if not self.can_insert_under(parent):
             raise Editor.CannotInsertItemUnderSelectedParent(parent.name, parent.itype)
-        item = self.__creator.load(dirpath, name, filetype)
-        parent.adopt(item)
-        return item
+        
+        @self.__creator._controller.single_cmd()
+        def load_and_adopt()->Item:
+            item = self.__creator.load(dirpath, name, filetype)
+            parent.adopt(item)
+            return item
+        return load_and_adopt()
 
     @staticmethod
     def is_case(item:Item)->bool:
@@ -140,9 +144,12 @@ class Editor:
         return self.__creator.get_template(parent.itype).child_itypes
 
     def load_case(self,dirpath:str,case_name:str,filetype:FileType)->Item:
-        case = self.__creator.load(dirpath, case_name, filetype)
-        self.__root.adopt(case)
-        return case
+        @self.__creator._controller.single_cmd()
+        def load_case_and_add_to_editor()->Item:
+            case = self.__creator.load(dirpath, case_name, filetype)
+            self.__root.adopt(case)
+            return case
+        return load_case_and_add_to_editor()
 
     def new(self,parent:Item,itype:str)->Item:
         if itype not in self.__creator.templates:
@@ -153,14 +160,21 @@ class Editor:
             raise Editor.InvalidChildTypeUnderGivenParent(
                 f"Parent type: {parent.itype}, child type: {itype}."
             )
-        item = self.__creator.from_template(itype)
-        parent.adopt(item)
-        return item
+        
+        @self.__creator._controller.single_cmd()
+        def create_and_adopt()->Item:
+            item = self.__creator.from_template(itype)
+            parent.adopt(item)
+            return item
+        return create_and_adopt()
     
     def new_case(self,name:str)->Item:
-        case = self.__creator.from_template(CASE_TYPE_LABEL,name)
-        self.__root.adopt(case)
-        return case
+        @self.__creator._controller.single_cmd()
+        def create_and_adopt()->Item:
+            case = self.__creator.from_template(CASE_TYPE_LABEL, name=name)
+            self.__root.adopt(case)
+            return case
+        return create_and_adopt()
 
     def remove(self,item:Item,parent:Item)->None:
         if parent==item.parent: parent.leave(item)
@@ -294,7 +308,7 @@ class EditorUI(abc.ABC):
 
     def import_case_from_xml(self)->None:
         case_dir_path, case_name = self._get_xml_path()
-        print(case_dir_path, case_name)
+        if case_name.strip()=="": return
         self.__editor.load_case(case_dir_path, case_name, "xml")
 
     def export_case_to_xml(self, case:Item)->None:

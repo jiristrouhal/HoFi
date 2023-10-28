@@ -2018,4 +2018,15 @@ class Test_Simple_Actions_After_Attribute_Set_Command(unittest.TestCase):
         self.assertEqual(self.new_description, "Some description")
 
 
+
+class Test_Name_Attribute(unittest.TestCase):
+
+    def test_name_attribute(self):
+        fac = attribute_factory(Controller())
+        attr = fac.new("name")
+        self.assertTrue(attr.is_valid("Name"))
+        self.assertTrue(attr.is_valid("Some Name"))
+        self.assertTrue(attr.is_valid("Some Name (1)"))
+
+
 if __name__=="__main__": unittest.main()

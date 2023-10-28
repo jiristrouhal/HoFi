@@ -321,5 +321,27 @@ class Test_Empty_Command(unittest.TestCase):
         self.assertEqual(controller.history.strip(), "")
 
 
+class Test_Denoting_Multiple_Commands_As_A_Single_One(unittest.TestCase):
 
-if __name__=="__main__": unittest.main()
+    def test_two_commands(self)->None:
+        controller = Controller()
+        obj = Integer_Owner(i=0)
+
+        @controller.single_cmd()
+        def increment_two_times()->None:
+            controller.run(IncrementIntAttribute(IncrementIntData(obj,step=5)))
+            controller.run(IncrementIntAttribute(IncrementIntData(obj,step=5)))
+
+        increment_two_times()
+        self.assertFalse(controller.any_cmd_to_run)
+        self.assertEqual(obj.i,10)
+        increment_two_times()
+        self.assertFalse(controller.any_cmd_to_run)
+        self.assertEqual(obj.i,20)
+
+        controller.undo()
+        self.assertEqual(obj.i,10)
+
+
+if __name__=="__main__": 
+    unittest.main()

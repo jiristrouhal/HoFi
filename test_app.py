@@ -8,12 +8,9 @@ attr = case_template.attr
 case_template.add("Item_A", {'x':attr.integer(4)}, ('Item_B',))
 case_template.add(
     "Item_B", 
-    {'x':attr.integer(5), 'y':attr.integer(4)}, 
-    ('Item_B',), 
-    dependencies=[
-        case_template.dependency('x', lambda x: sum(x), '[x:integer]'),
-        case_template.dependency('y', lambda x: 1000*x, 'x')
-    ]
+    {'y':attr.integer(0)}, 
+    ('Item_B',"Item_A"), 
+    dependencies=[case_template.dependency('y',lambda x,y: sum(x)+sum(y), '[x:integer]', '[y:integer]')]
 )
 case_template.add_case_child_label("Item_A", "Item_B")
 editor = new_editor(case_template, "en_us")
