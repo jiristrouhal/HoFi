@@ -55,7 +55,7 @@ class Case_Template:
                 self.__attributes[attr] = info
             elif info['atype'] != self.__attributes[attr]['atype']: 
                 raise Case_Template.ReaddingAttributeWithDifferentType(
-                    f"Attribute '{attr}' has type {info}. Previously was added with type '{self.__attributes[attr]}'."
+                    f"Attribute '{attr}' has type {info['atype']}. Previously was added with type '{self.__attributes[attr]}'."
                 )
 
         self.__templates[label] = Template(label, attribute_info, child_template_labels, dependencies)

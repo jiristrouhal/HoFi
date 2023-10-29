@@ -32,7 +32,7 @@ class Empty_Command(Command):
     def redo(self)->None: pass
     
 
-from typing import Optional
+
 class Controller:
 
     def __init__(self)->None:
@@ -41,7 +41,7 @@ class Controller:
         self.__run_stack:List[Command] = list()
         self.__history:List[str] = list()
         self.__last_symbol:str = "- "
-        self.__waiting:bool = False
+        self.__waiting:int = 0
 
     @property
     def any_undo(self)->bool: return bool(self.__undo_stack)
@@ -62,7 +62,7 @@ class Controller:
 
     def run(self,*cmds:Command)->None:
         self.__run_stack.extend(list(cmds))
-        if not self.__waiting: 
+        if self.__waiting==0: 
             self.__actually_run()
 
     def __actually_run(self)->None:
@@ -76,6 +76,7 @@ class Controller:
 
         self.__history.extend([f"{self.__last_symbol} {cmd.message}" for cmd in cmd_list if cmd.message.strip() != ""])
         self.__switch_last_symbol()
+
     def undo(self)->None:
         if not self.__undo_stack: return 
         batch = self.__undo_stack.pop()   
@@ -107,10 +108,13 @@ class Controller:
                 self.__history.append(f"{self.__last_symbol}Undo: {cmd.message}")
 
     def _go(self)->None: 
-        self.__waiting=False
-        self.__actually_run()
+        if self.__waiting>0: 
+            self.__waiting -= 1
+        if self.__waiting==0: 
+            self.__actually_run()
+
     def _wait(self)->None: 
-        self.__waiting=True
+        self.__waiting += 1
 
     def single_cmd(self)->Callable[[Callable],Callable]:
         def outer_wrapper(foo:Callable)->Callable:

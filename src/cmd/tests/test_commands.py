@@ -342,6 +342,26 @@ class Test_Denoting_Multiple_Commands_As_A_Single_One(unittest.TestCase):
         controller.undo()
         self.assertEqual(obj.i,10)
 
+    def test_nested_command_groupings(self):
+        controller = Controller()
+        obj = Integer_Owner(i=0)
+
+        @controller.single_cmd()
+        def increment_two_times()->None:
+            controller.run(IncrementIntAttribute(IncrementIntData(obj,step=5)))
+            controller.run(IncrementIntAttribute(IncrementIntData(obj,step=5)))
+
+        @controller.single_cmd()
+        def increment_two_times_two_times()->None:
+            increment_two_times()
+            increment_two_times()
+
+        increment_two_times_two_times()
+        self.assertEqual(obj.i,20)
+
+        controller.undo()
+        self.assertEqual(obj.i, 0)
+
 
 if __name__=="__main__": 
     unittest.main()

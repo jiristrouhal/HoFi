@@ -325,6 +325,31 @@ class Leave_Composed(Composed_Command):
         ) -> None: # pragma: no cover
 
         return super().add_composed(owner_id, data_converter, cmd, timing)
+    
+
+from src.core.attributes import Dependency
+class Parent_Attribute:
+
+    def __init__(self, attribute:AbstractAttribute, stub_value:Optional[Any]=None)->None:
+        self.__dependencies:List[Dependency] = list()
+        self.__attribute = attribute
+        self.__stub = attribute.factory.new(attribute.type)
+        if stub_value is not None: 
+            self.__stub.set(stub_value)
+
+    @property
+    def attr(self)->AbstractAttribute: return self.__attribute
+    @property
+    def stub(self)->AbstractAttribute: return self.__stub
+
+    def watch_dependency(self, dependency:Dependency)->None:
+        if dependency not in self.__dependencies:
+            self.__dependencies.append(dependency)
+
+    def set(self, attribute:AbstractAttribute)->None:
+        for dep in self.__dependencies:
+            dep.replace_input(self.__attribute, attribute)
+        self.__attribute = attribute
 
 
 from typing import Literal
@@ -341,6 +366,7 @@ class Item(abc.ABC): # pragma: no cover
         self.__id = str(id(self))
         self._bindings:Dict[str, Item.BindingInfo] = dict()
         self._child_attr_lists:Dict[str,Attribute_List] = dict()
+        self._parent_attributes:Dict[str, Parent_Attribute] = dict()
 
     @abc.abstractproperty
     def attributes(self)->Dict[str,Attribute]: pass
@@ -456,6 +482,9 @@ class Item(abc.ABC): # pragma: no cover
     def multiset(self, vals_to_labels:Dict[str, Any])->None: pass
 
     @abc.abstractmethod
+    def _set_parent_attributes(self, parent:Item)->None: pass
+
+    @abc.abstractmethod
     def __call__(self, attr_name:str)->Any: pass
 
     @abc.abstractmethod
@@ -569,6 +598,7 @@ class ItemImpl(Item):
         def _leave_parent(self,parent:Item)->None: return
         def _rename(self,name:str)->None: return
         def _duplicate_items(self)->Item: return self # pragma: no cover
+        def _set_parent_attributes(self, parent:Item)->None: pass  # pragma: no cover
 
         class AddingAttributeToNullItem(Exception): pass
         class CannotAccessChildrenOfNull(Exception): pass
@@ -604,9 +634,6 @@ class ItemImpl(Item):
         }
         self.__last_action:Tuple[str,str,str] = ("","","")
         self._rename(name)
-
-
-        self._parent_attr_stubs:Dict[str, Attribute] = dict()
 
 
     @property
@@ -675,7 +702,12 @@ class ItemImpl(Item):
     def bind(self, output_name:str, func:Callable[[Any], Any], *input_names:str)->None:
         output = self.attribute(output_name)
         inputs = self.__collect_input_attributes(input_names)
-        output.add_dependency(func, *inputs)
+        dependency = output.add_dependency(func, *inputs)
+        for label in input_names:
+            if self.__is_parents_attribute_label(label):
+                label = label[1:-1].split(":")[0]
+                if label in self._parent_attributes:
+                    self._parent_attributes[label].watch_dependency(dependency)
         self._bindings[output_name] = ItemImpl.BindingInfo(func, input_names)
 
     def __collect_input_attributes(self, input_labels:Tuple[str,...])->List[AbstractAttribute]:
@@ -695,14 +727,14 @@ class ItemImpl(Item):
             self._create_child_attr_list(value_type, label)
         return self._child_attr_lists[label]
 
-    def __get_parent_attribute(self, input_label:str)->Attribute:
+    def __get_parent_attribute(self, input_label:str)->AbstractAttribute:
         label, value_type = input_label[1:-1].split(":")
-        if label not in self._parent_attr_stubs:
-            self._parent_attr_stubs[label] = self._manager._attrfac.new(value_type)
-        if not self.parent.is_null():
-            return self.parent.attribute(label)
-        else:
-            return self._parent_attr_stubs[label]
+        if not label in self._parent_attributes:
+            if not self.parent.is_null():
+                self._parent_attributes[label] = Parent_Attribute(self.parent.attribute(label))
+            else:
+                self._parent_attributes[label] = Parent_Attribute(self._manager._attrfac.new(value_type))
+        return self._parent_attributes[label].attr
     
     @staticmethod
     def __is_child_attributes_label(label)->bool: 
@@ -726,12 +758,29 @@ class ItemImpl(Item):
         return label in self.__attributes
     
     def adopt(self,item:Item)->None:
-        if self is item.parent: return
+        if self is item.parent: 
+            return
         if self._can_be_parent_of(item):
-            self.controller.run(*self.command['adopt'](Parentage_Data(self,item)))
+            @self.controller.single_cmd()
+            def perform_adoption():
+                self.controller.run(*self.command['adopt'](Parentage_Data(self,item)))
+                item._set_parent_attributes(parent=self)
+            perform_adoption()              
 
     def leave(self, child:Item)->None:
-        self.controller.run(*self.command['leave'](Parentage_Data(self,child)))
+        @self.controller.single_cmd()
+        def perform_leaving():
+            self.controller.run(*self.command['leave'](Parentage_Data(self,child)))
+            child._set_parent_attributes(parent=self.NULL)
+        perform_leaving()
+
+    def _set_parent_attributes(self, parent:Item)->None:
+        for label, attr in self._parent_attributes.items():
+            if parent.has_attribute(label):
+                attr.set(parent.attribute(label))
+            else:
+                attr.set(attr.stub)
+            
     
     def __check_attr_type_matches_list_type(
         self,

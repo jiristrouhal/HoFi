@@ -55,6 +55,7 @@ class Dependency(abc.ABC):
         id = self._inputs.index(input)
         self._inputs[id] = new_input
         self.__set_up_command(new_input)
+        input.command['set'].composed_post.pop(self.output.id)
 
     def _check_for_dependency_cycle(self, output:AbstractAttribute, path:str)->None:
         if output in self._inputs: 
@@ -252,8 +253,9 @@ class AbstractAttribute(abc.ABC):
     def dependent(self)->bool:
         return self._dependency is not Attribute.NullDependency
     
-    def add_dependency(self,func:Callable[[Any],Any], *attributes:AbstractAttribute)->None:
+    def add_dependency(self,func:Callable[[Any],Any], *attributes:AbstractAttribute)->Dependency:
         self._dependency = DependencyImpl(self, func, *attributes)
+        return self._dependency
 
     def break_dependency(self)->None:
         if not self.dependent: 
@@ -319,12 +321,13 @@ class Attribute_List(AbstractAttribute):
     @property
     def attributes(self)->List[AbstractAttribute]: return self.__attributes.copy()
 
-    def add_dependency(self, func: Callable[[Any], Any], *attributes: AbstractAttribute) -> None:
+    def add_dependency(self, func: Callable[[Any], Any], *attributes: AbstractAttribute) -> Dependency:
         if any([item.dependent for item in self.__attributes]): 
             raise Attribute_List.ItemIsAlreadyDependent
         super().add_dependency(func, *attributes)
         for item in self.__attributes: 
             item._dependency = self._dependency
+        return self._dependency
 
     def break_dependency(self)->None:
         super().break_dependency()
@@ -1229,6 +1232,8 @@ class Quantity(Real_Attribute):
         unit_match, prefix_match = None, None
         k = 0
         n = len(possible_scaled_unit)
+        prefix = ""
+        unit=""
         while (unit_match is None or prefix_match is None) and (-k)<n:
             k -= 1
             prefix, unit = possible_scaled_unit[:k], possible_scaled_unit[k:]

@@ -1262,8 +1262,21 @@ class Test_Binding_Attribute_To_Items_Parent(unittest.TestCase):
         self.child.bind('x', lambda x: 2*x, '<x:integer>')
         self.assertEqual(self.child('x'), 0)
 
+        self.parent.set("x", 4)
+        self.parent.adopt(self.child)
+        self.assertEqual(self.child("x"), 8)
+
+        self.parent.leave(self.child)
+        self.assertEqual(self.child("x"), 0)
+
+        self.cr.undo()
+        self.assertEqual(self.child("x"), 8)
+
     
-if __name__=="__main__": unittest.main()
+if __name__=="__main__": 
+    unittest.main()
+    # runner = unittest.TextTestRunner()
+    # runner.run(Test_Binding_Attribute_To_Items_Parent("test_binding_to_parents_attribute_if_parent_is_null_sets_the_attribute_to_default_value"))
 
 
 

@@ -2043,6 +2043,9 @@ class Test_Replacing_Dependency_Input(unittest.TestCase):
         self.y.dependency.replace_input(self.x, self.x2)
         self.assertEqual(self.y.value, 6)
 
+        self.x.set(7)
+        self.assertEqual(self.y.value, 6)
+
     def test_replacing_input_with_other_with_wrong_itype_raises_exception(self):
         x_str = self.fac.new("text", "...")
         self.assertRaises(
