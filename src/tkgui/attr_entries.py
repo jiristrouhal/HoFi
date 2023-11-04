@@ -211,6 +211,7 @@ class Quantity_Entry(Number_Entry):
         self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
         self._value.grid(row=0, column=0)
         self.__update_value(self.attr.print(include_unit=False))
+        if self.attr.dependent: self._value.configure(state="readonly", relief="flat")
 
 
     def __update_value(self,new_value:Any)->None:
@@ -231,7 +232,11 @@ class Quantity_Entry(Number_Entry):
         target_unit = self.__unit.get()
         target_value = str(self.attr.convert(source_value, source_unit, target_unit))
         if "." in target_value: target_value = target_value.rstrip("0").rstrip(".")
+
+        if self.attr.dependent: self._value.configure(state="normal", relief="flat")
         self.__update_value(target_value)
+        if self.attr.dependent: self._value.configure(state="readonly", relief="flat")
+
         self.__prev_scaled_unit = self.__unit.get()
 
     def _text_is_valid_quantity_value(self,text:str)->bool:
@@ -254,6 +259,7 @@ class Quantity_Entry(Number_Entry):
         assert(isinstance(self.attr,Quantity))
         scaled_unit = self.__unit.get()
         self.attr.set_scaled_unit(scaled_unit)
+        self.attr.set(self.attr.value)
         value = self._value.get().replace(",",".")
 
         if value in ("","+","-"): 

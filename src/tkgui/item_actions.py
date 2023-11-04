@@ -58,9 +58,8 @@ class Item_Window_Tk(Item_Window):
         row = 0
         self.__entries:List[Attribute_Entry] = list()
         for label, attr in attrs.items():
-            if not attr.dependent:
-                self.__add_attr(label,attr,row,frame)
-                row += 1
+            self.__add_attr(label,attr,row,frame)
+            row += 1
         frame.grid(row=0)
             
     def __add_attr(self,label:str,attr:Attribute,row:int,frame:tk.Frame)->None:
