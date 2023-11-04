@@ -164,47 +164,93 @@ from decimal import Decimal
 import math
 
 from src.core.item import freeatt_child
+from src.core.attributes import NBSP
 class Test_Loading_Item_With_Attribute_Depending_On_Items_Children(unittest.TestCase):
     
     DIRPATH = "./__test_dir_5"
 
     def setUp(self) -> None: # pragma: no cover
         build_dir(self.DIRPATH)
+        self.cr = ItemCreator()
+        self.cr.set_dir_path(self.DIRPATH)
 
     def test_saving_and_loading_parent_calculating_average_of_its_childrens_attribute(self):
-        cr = ItemCreator()
-        real = cr.attr.real()
-        cr.set_dir_path(self.DIRPATH)
+        real = self.cr.attr.real()
         def average(x:List[float|Decimal])->float|Decimal:
             if len(x)==0: return math.nan
             return sum(x)/len(x)
         
-        cr.add_template(
+        self.cr.add_template(
             'ChildType', 
-            {'x':cr.attr.real(1)}, 
+            {'x':self.cr.attr.real(1)}, 
         )
 
-        cr.add_template(
+        self.cr.add_template(
             'ParentType', 
-            {'avg':cr.attr.real(0)}, 
+            {'avg':self.cr.attr.real(0)}, 
             ('ChildType',), 
-            dependencies=[cr.dependency('avg',average, freeatt_child('x',real))]
+            dependencies=[self.cr.dependency('avg',average, freeatt_child('x',real))]
         )
 
-        parent = cr.from_template('ParentType', 'Parent')
-        child_1 = cr.from_template('ChildType', 'Child 1')
-        child_2 = cr.from_template('ChildType', 'Child 2')
+        parent = self.cr.from_template('ParentType', 'Parent')
+        child_1 = self.cr.from_template('ChildType', 'Child 1')
+        child_2 = self.cr.from_template('ChildType', 'Child 2')
         child_1.set('x',3)
         child_2.set('x',2)
         parent.adopt(child_1)
         parent.adopt(child_2)
-        cr.save(parent,'xml')
+        self.cr.save(parent,'xml')
 
-        loaded_parent = cr.load(self.DIRPATH,"Parent",'xml')
+        loaded_parent = self.cr.load(self.DIRPATH,"Parent",'xml')
         self.assertEqual(loaded_parent('avg'),2.5)
         loaded_parent.pick_child('Child 1').set('x', 0)
         self.assertEqual(loaded_parent('avg'),1)
 
+    def test_saving_and_loading_item_with_quantity_attribute(self):
+        mass = self.cr.attr.quantity('g', exponents={'k':3, 'm':-3})
+        self.cr.add_template('Item_Type', {"mass":mass})
+
+        item = self.cr.from_template("Item_Type", "Item")
+        item.set("mass", 2000)
+        item.attribute("mass").set_prefix("k")
+        self.assertEqual(item.attribute("mass").print(), f"2{NBSP}kg")
+        self.cr.save(item, "xml")
+
+        loaded_item = self.cr.load(self.DIRPATH, name="Item",ftype="xml")
+        self.assertEqual(loaded_item.attribute("mass").print(), f"2{NBSP}kg")
+
+    def test_saving_and_loading_item_with_quantity_attribute_with_nonempty_default_prefix(self):
+        mass = self.cr.attr.quantity('kg', exponents={'k':3, 'm':-3})
+        self.cr.add_template('Item_Type', {"mass":mass})
+
+        item = self.cr.from_template("Item_Type", "Item")
+        item.set("mass", 2)
+        item.attribute("mass").set_prefix("")
+        self.assertEqual(item.attribute("mass").print(), f"2000{NBSP}g")
+        self.assertEqual(item("mass"), 2)
+        self.cr.save(item, "xml")
+
+        loaded_item = self.cr.load(self.DIRPATH, name="Item",ftype="xml")
+        self.assertEqual(loaded_item.attribute("mass").print(), f"2000{NBSP}g")
+        self.assertEqual(loaded_item("mass"), 2)
+
+    def test_saving_and_loading_item_with_child_with_quantity_attribute(self):
+        mass = self.cr.attr.quantity('kg', exponents={'k':3, 'm':-3})
+        self.cr.add_template('Item_Type', {"mass":mass}, ('Item_Type',))
+
+        parent = self.cr.from_template("Item_Type", "Parent")
+        child = self.cr.from_template("Item_Type", "Child")
+        parent.adopt(child)
+
+        child.set("mass", 2)
+        child.attribute("mass").set_prefix("")
+        self.cr.save(parent, "xml")
+
+        loaded_parent = self.cr.load(self.DIRPATH, name="Parent",ftype="xml")
+        loaded_child = list(loaded_parent.children)[-1]
+        self.assertEqual(loaded_child.attribute("mass").print(), f"2000{NBSP}g")
+        self.assertEqual(loaded_child("mass"), 2)
+        
 
     def tearDown(self) -> None: # pragma: no cover
         remove_dir(self.DIRPATH)

@@ -121,6 +121,7 @@ class ItemCreator:
             child, child_adopt_cmds = self.__build_item_from_xml(sub_elem)
             cmds.extend(child_adopt_cmds)
             cmds.extend(item.command['adopt'](Parentage_Data(item,child)))
+        
         return item, cmds
     
     def __build_hierarchy(self, *adoption_commands:Command)->None:
@@ -187,7 +188,7 @@ class ItemCreator:
                 item.bind(dep.dependent, dep.func, *dep.free)
         return item
 
-    def new(self,name:str,attr_info:Dict[str,AttributeType]={})->Item:
+    def new(self,name:str,attr_info:Dict[str,AttributeType|Dict[str,Any]]={})->Item:
         return ItemImpl(name, self.__get_attrs(attr_info), self)
 
     def undo(self):
@@ -205,7 +206,7 @@ class ItemCreator:
             if not (child_itype in self.__templates or child_itype in templates_being_defined):  
                 raise ItemCreator.UndefinedTemplate(child_itype)
 
-    def __get_attrs(self,attribute_info:Dict[str,AttributeType])->Dict[str,Attribute]:
+    def __get_attrs(self,attribute_info:Dict[str,AttributeType|Dict[str,Any]])->Dict[str,Attribute]:
         attributes = {}
         for label, info in attribute_info.items():
             if isinstance(info, str): 

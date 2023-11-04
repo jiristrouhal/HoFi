@@ -105,6 +105,9 @@ class Editor:
     def ncases(self)->int: return len(self.__root.children)
     @property
     def export_dir_path(self)->str: return self.__creator.file_path
+        
+    def _cases(self)->Set[Item]: 
+        return self.__root.children.copy()
 
     def can_save_as_item(self,item:Item)->bool:
         return item.itype == self.__insertable
@@ -144,10 +147,10 @@ class Editor:
     def item_types_to_create(self,parent:Item)->Tuple[str,...]:
         return self.__creator.get_template(parent.itype).child_itypes
 
-    def load_case(self,dirpath:str,case_name:str,filetype:FileType)->Item:
+    def load_case(self,dirpath:str,name:str, ftype:FileType)->Item:
         @self.__creator._controller.single_cmd()
         def load_case_and_add_to_editor()->Item:
-            case = self.__creator.load(dirpath, case_name, filetype)
+            case = self.__creator.load(dirpath, name, ftype)
             self.__root.adopt(case)
             return case
         return load_case_and_add_to_editor()
@@ -311,7 +314,7 @@ class EditorUI(abc.ABC):
         case_dir_path, case_name = self._get_xml_path()
         if case_name.strip()=="": return
         self.__editor.load_case(case_dir_path, case_name, "xml")
-
+     
     def export_case_to_xml(self, case:Item)->None:
         dir_path = self._get_export_dir()
         if not os.path.isdir(dir_path): return 

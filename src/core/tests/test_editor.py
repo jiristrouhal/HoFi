@@ -444,6 +444,39 @@ class Test_Creating_New_Items_Of_Specified_Types(unittest.TestCase):
         )
 
 
+class Test_Import_And_Export_Of_Case_With_Single_Level_Of_Descendants_With_Quantity_Attribute(unittest.TestCase):
+
+    DIRPATH = "./__test_dir_5"
+
+    def setUp(self) -> None: # pragma: no cover
+        build_dir(self.DIRPATH)
+
+    def test_saving_and_loading_case_with_child_with_quantity_attribute_with_nonempty_default_prefix(self):
+        case_template = blank_case_template()
+        mass = case_template.attr.quantity('kg', exponents={'k':3, 'm':-3})
+        case_template.add('Item_Type', {"mass":mass}, ('Item_Type',))
+        case_template.add_case_child_label("Item_Type")
+        editor = new_editor(case_template)
+        editor.set_dir_path(self.DIRPATH)
+
+        case = editor.new_case("Assembly")
+        item = editor.new(case, "Item_Type")
+
+        item.rename("TheItem")
+        item.set("mass", 2)
+        item.attribute("mass").set_prefix("")
+        self.assertEqual(item.attribute("mass").print(), f"2000{NBSP}g")
+        self.assertEqual(item("mass"), 2)
+        editor.save_as_case(case, "xml")
+
+        loaded_case = editor.load_case(self.DIRPATH, name="Assembly",ftype="xml")
+        loaded_item = list(loaded_case.children)[-1]
+        self.assertEqual(loaded_item.attribute("mass").print(), f"2000{NBSP}g")
+        self.assertEqual(loaded_item("mass"), 2)
+
+    def tearDown(self) -> None: # pragma: no cover
+        remove_dir(self.DIRPATH)
+
 import os
 def build_dir(dirpath:str)->None: # pragma: no cover
     if not os.path.isdir(dirpath): 
@@ -457,5 +490,5 @@ def remove_dir(dirpath:str)->None: # pragma: no cover
         os.rmdir(dirpath)
 
 
-if __name__=="__main__": unittest.main()
-
+if __name__=="__main__": 
+    unittest.main()

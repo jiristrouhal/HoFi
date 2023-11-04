@@ -1134,13 +1134,19 @@ class Quantity(Real_Attribute):
         prefix, unit = Quantity._separate_prefix_from_unit(possible_scaled_unit)
         if unit not in self.__units:  raise Quantity.UnknownUnitInText(text)
 
-
-        super().read(read_data['value'])
-        self.set_unit(unit)
-        self.set_prefix(prefix)
-        self._value *= Decimal(10)**Decimal(self.__units[unit].exponents[prefix])
-        self._value = self.__units[unit].to_basic(self._value)
-        self._value *= Decimal(10)**Decimal(-self.__unit.exponents[self.__unit.default_prefix])
+        read_data['value'] = read_data['value'].strip().replace(",",".")
+        read_data['value'] = self.remove_thousands_separators(read_data['value'])
+        try:
+            value = Decimal(read_data['value'])
+            if self.is_valid(value): 
+                self.set_unit(unit)
+                self.set_prefix(prefix)
+                value *= Decimal(10)**Decimal(self.__units[unit].exponents[prefix])
+                value = self.__units[unit].to_basic(value)
+                value *= Decimal(10)**Decimal(-self.__unit.exponents[self.__unit.default_prefix]) 
+                self.set(value)
+        except:
+            raise self._reading_exception
 
     def read_only_value(self, text:str)->None:
         super().read(text)
