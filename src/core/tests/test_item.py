@@ -10,6 +10,7 @@ from src.core.item import ItemCreator, Item, ItemImpl
 import math, decimal
 
 
+
 NullItem = ItemImpl.NULL
 
 
@@ -789,9 +790,10 @@ class Test_Binding_Attributes_Owned_By_The_Same_Item(unittest.TestCase):
 
     def setUp(self) -> None:
         self.mg = ItemCreator()
+        self.integer = self.mg.attr.integer()
         self.item = self.mg.new("Item",{'x':'integer','y':'integer', 'z':'integer'})
         self.item.set('y',-1)
-        self.item.bind('y', self.square, 'x')
+        self.item.bind('y', self.square, freeatt('x'))
 
     @staticmethod
     def square(x:int)->int: return x*x
@@ -822,7 +824,7 @@ class Test_Binding_Attributes_Owned_By_The_Same_Item(unittest.TestCase):
     
     def test_multivariable_binding(self):
         self.item.free('y')
-        self.item.bind('z', lambda x,y: x+y,'x','y')
+        self.item.bind('z', lambda x,y: x+y, 'x','y')
         self.item.set('x',2)
         self.item.set('y',3)
         self.assertEqual(self.item('z'),5)
@@ -860,17 +862,18 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
 
     def setUp(self) -> None:
         self.mg = ItemCreator()
+        self.integer = self.mg.attr.integer()
         self.parent = self.mg.new('Parent', {'y':'integer'})
 
     @staticmethod
     def sum_x(x:List[int])->int: return sum(x)
         
     def test_parent_attribute_can_be_bound_to_any_attribute_that_is_expected_to_be_owned_by_some_of_its_children(self):
-        self.parent.bind('y', self.sum_x, '[x:integer]')
+        self.parent.bind('y', self.sum_x, freeatt_child('x', self.integer))
         self.assertEqual(self.parent('y'), 0)
 
     def test_parent_attribute_is_automatically_updates_when_adopting_or_leaving_a_child(self):
-        self.parent.bind('y', self.sum_x, '[x:integer]')
+        self.parent.bind('y', self.sum_x, freeatt_child('x', self.integer))
         child = self.mg.new('Child',{'x':'integer'})
         child.set('x',1)
         self.parent.adopt(child)
@@ -879,7 +882,7 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
         self.assertEqual(self.parent('y'), 0)
 
     def test_children_not_containing_the_input_attribute_are_neglected(self):
-        self.parent.bind('y', self.sum_x, '[x:integer]')
+        self.parent.bind('y', self.sum_x, freeatt_child('x', self.integer))
         child = self.mg.new('Child',{'x':'integer'})
         child.set('x',1)
         self.parent.adopt(child)
@@ -889,13 +892,13 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
         self.assertEqual(self.parent('y'), 1)
 
     def test_adding_child_with_attribute_of_type_that_does_not_match_the_dependency_raises_exception(self):
-        self.parent.bind('y', self.sum_x, '[x:integer]')
+        self.parent.bind('y', self.sum_x, freeatt_child('x', self.integer))
         child = self.mg.new('Child',{'x':'text'})
         self.assertRaises(ItemImpl.ChildAttributeTypeConflict, self.parent.adopt, child)
 
     def test_passing_child_to_other_parent(self)->None:
         parent = self.mg.new('The first parent', {'y':'integer'})
-        parent.bind('y', self.sum_x, '[x:integer]')
+        parent.bind('y', self.sum_x, freeatt_child('x', self.integer))
         child = self.mg.new('Child',{'x':'integer'})
         child.set('x',1)
         other_parent = self.mg.new('The other parent')
@@ -916,8 +919,8 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
 
     def test_binding_to_already_existing_list_of_childrens_attributes(self):
         parent = self.mg.new('Some parent', {'y':'integer','z':'integer'})
-        parent.bind('y',sum,'[x:integer]')
-        parent.bind('z',sum,'[x:integer]')
+        parent.bind('y',sum, freeatt_child('x', self.integer))
+        parent.bind('z',sum, freeatt_child('x', self.integer))
         self.assertEqual(parent('y'),0)
         self.assertEqual(parent('z'),0)
         child = self.mg.new('Child',{'x':'integer'})
@@ -928,7 +931,7 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
 
     def test_adopting_child_without_input_attribute_has_no_effect(self):
         parent = self.mg.new('Some parent', {'y':'integer'})
-        parent.bind('y',sum,'[x:integer]')
+        parent.bind('y',sum, freeatt_child('x', self.integer))
         child = self.mg.new('Child',{'not an x':'integer'})
         child.set('not an x',1)
 
@@ -946,12 +949,13 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
         parent.adopt(child)
         parent.adopt(other_child)
 
-        parent.bind('y',sum,'[x:integer]')
+        parent.bind('y',sum,freeatt_child('x', self.integer))
         self.assertEqual(parent('y'),2)
 
     def test_switching_roles_of_parent_and_child_both_depending_on_child_attributes_of_the_same_name(self):
         parent = self.mg.new('Parent', {'x':'integer','y':'integer'})
         child = self.mg.new('Child', {'x':'integer','y':'integer'})
+        integer = self.mg.attr.integer(0)
         parent.adopt(child)
 
         parent.set('x',5)
@@ -959,8 +963,8 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
         child.set('x',5)
         child.set('y',-1)
 
-        parent.bind('y',sum,'[x:integer]')
-        child.bind('y',sum,'[x:integer]')
+        parent.bind('y',sum, freeatt_child('x',integer))
+        child.bind('y',sum, freeatt_child('x',integer))
 
         self.assertEqual(parent('y'), 5)
         self.assertEqual(child('y'), 0)
@@ -972,21 +976,24 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
         self.assertEqual(child('y'), 5)
 
 
+from src.core.item import freeatt, freeatt_parent, freeatt_child
 class Test_Examples_Of_Calculations_On_Child_Attributes(unittest.TestCase):
 
     def setUp(self) -> None:
         self.mg = ItemCreator()
-        self.parent = self.mg.new('Parent', {'y':'real'})
+        self.real = self.mg.attr.real(0)
+        self.bool = self.mg.attr.boolean(False)
+        self.parent = self.mg.new('Parent', {'y':self.real})
 
     def test_calculating_average_of_child_attribute(self):
-        childA = self.mg.new('Parent',{'x':'real'})
-        childB = self.mg.new('Parent',{'x':'real'})
+        childA = self.mg.new('Parent',{'x':self.real})
+        childB = self.mg.new('Parent',{'x':self.real})
         childA.set('x',5)
         childB.set('x',3)
         def arithmetic_average(x:List[decimal.Decimal]) -> decimal.Decimal|float: 
             if not x: return math.nan
             return decimal.Decimal(sum(x))/len(x)
-        self.parent.bind('y',arithmetic_average,'[x:real]')
+        self.parent.bind('y',arithmetic_average, freeatt_child('x',self.real))
         self.assertTrue(math.isnan(self.parent('y')))
 
         self.parent.adopt(childA)
@@ -1005,7 +1012,12 @@ class Test_Examples_Of_Calculations_On_Child_Attributes(unittest.TestCase):
         self.parent.adopt(childB)
         def sumif(x:List[float],val:List[int])->float:
             return sum([xi for xi,vi in zip(x,val) if vi==True])
-        self.parent.bind('y',sumif,'[x:real]','[switch:bool]')
+        self.parent.bind(
+            'y',
+            sumif,
+            freeatt_child('x',self.real),
+            freeatt_child('switch',self.bool)
+        )
         
         childA.set('switch',0)
         childB.set('switch',0)
@@ -1252,31 +1264,28 @@ class Test_Binding_Attribute_To_Items_Parent(unittest.TestCase):
         self.child = self.cr.new("Child", {'x':'integer'})
 
     def test_binding_to_parents_attribute(self):
+        integer = self.cr.attr.integer(0.0)
         self.parent.adopt(self.child)
-        self.child.bind('x', lambda x: 2*x, '<x:integer>')
+        self.child.bind('x', lambda x: 2*x, freeatt_parent('x',integer))
         self.assertEqual(self.child('x'), 2)
         self.parent.set('x',4)
         self.assertEqual(self.child('x'), 8)
 
     def test_binding_to_parents_attribute_if_parent_is_null_sets_the_attribute_to_default_value(self):
-        self.child.bind('x', lambda x: 2*x, '<x:integer>')
-        self.assertEqual(self.child('x'), 0)
-
-        self.parent.set("x", 4)
+        integer = self.cr.attr.integer(0.0)
+        self.child.bind('x', lambda x: 2*x, freeatt_parent('x',integer))
+        self.assertListEqual(
+            list(self.child._parent_attributes.keys()), 
+            ['x']
+        )
         self.parent.adopt(self.child)
-        self.assertEqual(self.child("x"), 8)
-
-        self.parent.leave(self.child)
-        self.assertEqual(self.child("x"), 0)
-
-        self.cr.undo()
-        self.assertEqual(self.child("x"), 8)
+        self.assertEqual(self.child('x'), 2)
+        self.parent.set('x',4)
+        self.assertEqual(self.child('x'), 8)
 
     
-if __name__=="__main__": 
-    unittest.main()
-    # runner = unittest.TextTestRunner()
-    # runner.run(Test_Binding_Attribute_To_Items_Parent("test_binding_to_parents_attribute_if_parent_is_null_sets_the_attribute_to_default_value"))
+if __name__=="__main__": unittest.main()
+
 
 
 

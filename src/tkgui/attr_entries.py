@@ -210,7 +210,7 @@ class Quantity_Entry(Number_Entry):
         vcmd = (self.__frame.register(self._text_is_valid_quantity_value),'%P')
         self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
         self._value.grid(row=0, column=0)
-        self.__update_value(self.attr.value)
+        self.__update_value(self.attr.print(include_unit=False))
 
 
     def __update_value(self,new_value:Any)->None:

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 
 from typing import Tuple, Dict, List, Any, Optional
-from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor, FileType
+from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor 
+from src.core.item import FileType, freeatt_child, freeatt, freeatt_parent
 from src.core.attributes import Locale_Code
 
 import re
@@ -66,7 +67,7 @@ class Case_Template:
             if label not in self.__templates: raise Case_Template.UndefinedTemplate(label)
             self.__case_child_labels.append(label)
 
-    def dependency(self, dependent:str, func:Callable[[Any],Any], *free:str)->Case_Template.Dependency:
+    def dependency(self, dependent:str, func:Callable[[Any],Any], *free:Template.Free_Attribute)->Case_Template.Dependency:
         return Case_Template.Dependency(dependent, func, free)
 
     def set_insertable(self,template_label:str)->None:

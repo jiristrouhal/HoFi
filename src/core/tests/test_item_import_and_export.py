@@ -163,6 +163,7 @@ from typing import List
 from decimal import Decimal
 import math
 
+from src.core.item import freeatt_child
 class Test_Loading_Item_With_Attribute_Depending_On_Items_Children(unittest.TestCase):
     
     DIRPATH = "./__test_dir_5"
@@ -172,6 +173,7 @@ class Test_Loading_Item_With_Attribute_Depending_On_Items_Children(unittest.Test
 
     def test_saving_and_loading_parent_calculating_average_of_its_childrens_attribute(self):
         cr = ItemCreator()
+        real = cr.attr.real()
         cr.set_dir_path(self.DIRPATH)
         def average(x:List[float|Decimal])->float|Decimal:
             if len(x)==0: return math.nan
@@ -186,7 +188,7 @@ class Test_Loading_Item_With_Attribute_Depending_On_Items_Children(unittest.Test
             'ParentType', 
             {'avg':cr.attr.real(0)}, 
             ('ChildType',), 
-            dependencies=[cr.dependency('avg',average,'[x:real]')]
+            dependencies=[cr.dependency('avg',average, freeatt_child('x',real))]
         )
 
         parent = cr.from_template('ParentType', 'Parent')

@@ -630,7 +630,6 @@ class Real_Attribute(Number_Attribute):
         adjust:Optional[Callable[[float|Decimal],float|Decimal]] = None,
         *args
         )->str:
-        
         if adjust is None: value = self._value
         else:
             try: 
@@ -638,7 +637,7 @@ class Real_Attribute(Number_Attribute):
                 if not self.is_valid(value): 
                     raise Real_Attribute.InvalidAdjustedValue(value)
             except Exception: 
-                raise Real_Attribute.InvalidAdjustedValue
+                raise Real_Attribute.InvalidAdjustedValue(f"Original value: {self._value}.")
 
 
         str_value = format(value, f',.{precision}f')
@@ -729,6 +728,7 @@ class Monetary_Attribute(Number_Attribute):
         if text=="":  raise self.ReadingBlankText
         sign, symbol, value = self.__extract_sign_symbol_and_value(text)
         self.set(Decimal(sign+value))
+        
 
     SYMBOL_PATTERN = "(?P<symbol>[^\s\d\.\,]+)"
     VALUE_PATTERN = "(?P<value>[0-9]+([\.\,][0-9]*)?)"
@@ -1132,10 +1132,12 @@ class Quantity(Real_Attribute):
         read_data = matchobj.groupdict()
         possible_scaled_unit = read_data['possible_scaled_unit']
         prefix, unit = Quantity._separate_prefix_from_unit(possible_scaled_unit)
-        if unit not in self.__units: 
-            raise Quantity.UnknownUnitInText(text)
+        if unit not in self.__units:  raise Quantity.UnknownUnitInText(text)
+
 
         super().read(read_data['value'])
+        self.set_unit(unit)
+        self.set_prefix(prefix)
         self._value *= Decimal(10)**Decimal(self.__units[unit].exponents[prefix])
         self._value = self.__units[unit].to_basic(self._value)
         self._value *= Decimal(10)**Decimal(-self.__unit.exponents[self.__unit.default_prefix])

@@ -1739,7 +1739,7 @@ class Test_Reading_Quantity_Value(unittest.TestCase):
         )
         self.volume.set_unit('m³')
         self.volume.read("120 L")
-        self.assertEqual(self.volume.print(), f"0.12{NBSP}m³")
+        self.assertEqual(self.volume.print(), f"120{NBSP}L")
         self.assertEqual(self.volume.value, Decimal('0.12'))
     
     def test_reading_quantity_with_unknown_unit_raises_exception(self)->None:
@@ -1879,7 +1879,7 @@ class Test_Specifying_Unit_With_Prefix(unittest.TestCase):
 
     def test_reading_value_into_quantity_with_default_prefix(self):
         self.mass.read("2000 g")
-        self.assertEqual(self.mass.print(trailing_zeros=False), f"2{NBSP}kg")
+        self.assertEqual(self.mass.print(trailing_zeros=False), f"2000{NBSP}g")
 
 
 class Test_Undo_And_Redo_Setting_Quantity_Value(unittest.TestCase):
@@ -2063,6 +2063,8 @@ class Test_Replacing_Dependency_Input(unittest.TestCase):
         self.y.break_dependency()
         self.y.add_dependency(lambda x,x2: x+x2, self.x, self.x2)
         self.assertRaises(Dependency.SingleAttributeForMultipleInputs, self.y.dependency.replace_input, self.x, self.x2)
+
+
 
 
 if __name__=="__main__": unittest.main()

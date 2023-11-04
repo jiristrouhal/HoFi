@@ -7,6 +7,16 @@ from src.core.attributes import attribute_factory, Attribute, Attribute_List, Se
 from src.core.attributes import Edit_AttrList_Data
 import abc
 
+
+def freeatt(label:str)->Template.Free_Attribute:
+    return Template.Free_Attribute(label, {}, owner="self")
+
+def freeatt_parent(label:str, info:Dict[str,Any])->Template.Free_Attribute:
+    return Template.Free_Attribute(label, info, owner="parent")
+
+def freeatt_child(label:str, info:Dict[str,Any])->Template.Free_Attribute:
+    return Template.Free_Attribute(label, info, owner="child")
+
 @dataclasses.dataclass(frozen=True)
 class Template:
     label:str
@@ -15,14 +25,21 @@ class Template:
     dependencies:Optional[List[Template.Dependency]] = None
 
     @staticmethod
-    def dependency(dependent:str, func:Callable[[Any],Any], *free:str)->Dependency:
+    def dependency(dependent:str, func:Callable[[Any],Any], *free:Free_Attribute)->Dependency:
         return Template.Dependency(dependent, func, free)
 
     @dataclasses.dataclass(frozen=True)
     class Dependency:
         dependent:str
         func:Callable[[Any],Any]
-        free:Tuple[str,...]
+        free:Tuple[Template.Free_Attribute,...]
+
+    AttributeOwner = Literal['parent', 'child', 'self']
+    @dataclasses.dataclass(frozen=True)
+    class Free_Attribute:   
+        label:str
+        info:Dict[str,Any]
+        owner:Template.AttributeOwner
 
 
 FileType = Literal['xml']
@@ -50,7 +67,13 @@ class ItemCreator:
 
         return Template(label,attributes,child_itypes,dependencies)
 
-    def dependency(self, dependent:str, func:Callable[[Any],Any], *free:str)->Template.Dependency:
+    def dependency(
+        self, 
+        dependent:str,
+        func:Callable[[Any],Any], 
+        *free:Template.Free_Attribute
+        )->Template.Dependency:
+
         return Template.dependency(dependent,func,*free)
 
     @property
@@ -146,12 +169,11 @@ class ItemCreator:
         for label,attr in item.attributes.items(): printed_attribs[label] = attr.print()
         return printed_attribs
 
-
     def from_template(self,label:str,name:str="")->Item:
         if label not in self.__templates:
             raise ItemCreator.UndefinedTemplate(label)
         template = self.__templates[label]
-        attributes = self.__get_attrs_from_template(template.attribute_info)
+        attributes = self.__get_attrs(template.attribute_info)
         if name.strip()=="": name = template.label
         item = ItemImpl(
             name, 
@@ -183,16 +205,15 @@ class ItemCreator:
             if not (child_itype in self.__templates or child_itype in templates_being_defined):  
                 raise ItemCreator.UndefinedTemplate(child_itype)
 
-    def __get_attrs_from_template(self,attribute_info:Dict[str,Dict[str,Any]])->Dict[str,Attribute]:
-        attributes = {}
-        for label, info in attribute_info.items():
-            attributes[label] = self._attrfac.new_from_dict(name=label, **info)
-        return attributes
-
     def __get_attrs(self,attribute_info:Dict[str,AttributeType])->Dict[str,Attribute]:
         attributes = {}
         for label, info in attribute_info.items():
-            attributes[label] = self._attrfac.new(name=label, atype=info) 
+            if isinstance(info, str): 
+                attributes[label] = self._attrfac.new(name=label, atype=info) 
+            elif isinstance(info, dict):
+                attributes[label] = self._attrfac.new_from_dict(name=label, **info)
+            else:
+                raise TypeError(f"Invalid type {type(info)} of attribute info for attribute construction. Expected 'str' or 'dict'.")
         return attributes
     
     class NonexistentDirectory(Exception): pass
@@ -330,12 +351,10 @@ class Leave_Composed(Composed_Command):
 from src.core.attributes import Dependency
 class Parent_Attribute:
 
-    def __init__(self, attribute:AbstractAttribute, stub_value:Optional[Any]=None)->None:
+    def __init__(self, attribute:AbstractAttribute, stub:AbstractAttribute)->None:
         self.__dependencies:List[Dependency] = list()
         self.__attribute = attribute
-        self.__stub = attribute.factory.new(attribute.type)
-        if stub_value is not None: 
-            self.__stub.set(stub_value)
+        self.__stub = stub
 
     @property
     def attr(self)->AbstractAttribute: return self.__attribute
@@ -359,7 +378,7 @@ class Item(abc.ABC): # pragma: no cover
     @dataclasses.dataclass(frozen=True)
     class BindingInfo:
         func:Callable[[Any],Any]
-        input_labels:Tuple[str,...]
+        input_labels:Tuple[Template.Free_Attribute,...]
     
     def __init__(self,name:str,attributes:Dict[str,Attribute],manager:ItemCreator)->None:
         self._manager = manager
@@ -400,13 +419,7 @@ class Item(abc.ABC): # pragma: no cover
     def leave_formal_child(self,child:Item)->None: pass
 
     @abc.abstractmethod
-    def bind(self, output_name:str, func:Callable[[Any],Any], *input_names:str)->None:
-        """
-        A following convention is used for specifiying the dependency inputs:
-            'x' ... attribute named 'x', owned by this item\n
-            '[x:integer]' ... list of all attributes named 'x' owned by this item's children. The expected type of the attributes must be put after the label; both must be separated with a colon
-        Naming is whitespace- and case- sensitive (e.g. 'x' is different from ' x' and from 'X').
-        """
+    def bind(self, output_name:str, func:Callable[[Any],Any], *input_names:Template.Free_Attribute)->None:
         pass
 
     @abc.abstractmethod
@@ -699,50 +712,54 @@ class ItemImpl(Item):
         else:
             return self.__attributes[label]
         
-    def bind(self, output_name:str, func:Callable[[Any], Any], *input_names:str)->None:
+    def bind(
+        self,
+        output_name:str, 
+        func:Callable[[Any], Any], 
+        *input_info:str|Template.Free_Attribute
+        )->None:
+        
         output = self.attribute(output_name)
-        inputs = self.__collect_input_attributes(input_names)
+        input_info = list(input_info)
+        self.__create_attr_info_from_attr_type(input_info)
+        inputs = self.__collect_input_attributes(input_info)
         dependency = output.add_dependency(func, *inputs)
-        for label in input_names:
-            if self.__is_parents_attribute_label(label):
-                label = label[1:-1].split(":")[0]
-                if label in self._parent_attributes:
-                    self._parent_attributes[label].watch_dependency(dependency)
-        self._bindings[output_name] = ItemImpl.BindingInfo(func, input_names)
+        for info in input_info:
+            label = info.label
+            if info.owner=="parent" and label in self._parent_attributes:
+                self._parent_attributes[label].watch_dependency(dependency)
+        self._bindings[output_name] = ItemImpl.BindingInfo(func, input_info)
 
-    def __collect_input_attributes(self, input_labels:Tuple[str,...])->List[AbstractAttribute]:
+    def __create_attr_info_from_attr_type(self, input_info:List[str|Template.Free_Attribute])->None:
+        for k in range(len(input_info)): 
+            if isinstance(input_info[k],str):
+                input_info[k] = freeatt(input_info[k])
+
+    def __collect_input_attributes(self, input_info:Tuple[Template.Free_Attribute,...])->List[AbstractAttribute]:
         inputs:List[AbstractAttribute] = list()
-        for input_label in input_labels:
-            if self.__is_child_attributes_label(input_label):
-                inputs.append(self.__get_child_attr_list(input_label))
-            elif self.__is_parents_attribute_label(input_label):
-                inputs.append(self.__get_parent_attribute(input_label))
+        for info in input_info:
+            if info.owner=="child":
+                inputs.append(self.__get_child_attr_list(info))
+            elif info.owner=="parent":
+                inputs.append(self.__get_parent_attribute(info))
             else:
-                inputs.append(self.attribute(input_label))
+                inputs.append(self.attribute(info.label))
         return inputs
 
-    def __get_child_attr_list(self,input_label:str)->Attribute_List:
-        label, value_type = input_label[1:-1].split(":")
-        if label not in self._child_attr_lists:
-            self._create_child_attr_list(value_type, label)
-        return self._child_attr_lists[label]
+    def __get_child_attr_list(self, info:Template.Free_Attribute)->Attribute_List:
+        if info.label not in self._child_attr_lists:
+            self._create_child_attr_list(info.info['atype'], info.label)
+        return self._child_attr_lists[info.label]
 
-    def __get_parent_attribute(self, input_label:str)->AbstractAttribute:
-        label, value_type = input_label[1:-1].split(":")
-        if not label in self._parent_attributes:
+    def __get_parent_attribute(self, info:Template.Free_Attribute)->AbstractAttribute:
+        if not info.label in self._parent_attributes:
+            stub = self._manager._attrfac.new_from_dict(**info.info)
             if not self.parent.is_null():
-                self._parent_attributes[label] = Parent_Attribute(self.parent.attribute(label))
+                self._parent_attributes[info.label] = Parent_Attribute(self.parent.attribute(info.label),stub)
             else:
-                self._parent_attributes[label] = Parent_Attribute(self._manager._attrfac.new(value_type))
-        return self._parent_attributes[label].attr
-    
-    @staticmethod
-    def __is_child_attributes_label(label)->bool: 
-        if len(label)<3: 
-            return False
-        else:
-            return label[0]=='[' and label[-1]==']'
-        
+                self._parent_attributes[info.label] = Parent_Attribute(stub, stub)
+        return self._parent_attributes[info.label].attr
+
     @staticmethod
     def __is_parents_attribute_label(label)->bool: 
         if len(label)<3: 

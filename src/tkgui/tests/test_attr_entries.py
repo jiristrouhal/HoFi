@@ -319,7 +319,7 @@ class Test_Quantity_Entry(unittest.TestCase):
         q = self.cr.new(self.attr, self.master)
 
         q.set("abc")
-        self.assertEqual(q.value, "0.05")
+        self.assertEqual(q.value, "500")
 
         q.set("25.4")
         self.assertEqual(q.value, "25.4")
