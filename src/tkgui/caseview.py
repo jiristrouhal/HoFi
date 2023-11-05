@@ -1,8 +1,9 @@
 import tkinter.ttk as ttk
 import tkinter as tk
+from functools import partial
 
 from src.core.editor import Case_View, Item
-from typing import List, Tuple, Callable, Dict
+from typing import List, Tuple, Callable, Dict, Any
 
 class Case_View_Tk(Case_View):
     
@@ -16,6 +17,8 @@ class Case_View_Tk(Case_View):
 
         self.__tree['columns'] = list(attrs_for_display.keys())
         self.__attrs_for_display = attrs_for_display
+        self.__precision:int = 28
+        self.__trailing_zeros:bool = False
 
         root_item.add_action(self.__id, 'adopt', self.__new_item_under_root)
         root_item.add_action(self.__id, 'leave', self.__remove_item)
@@ -24,6 +27,9 @@ class Case_View_Tk(Case_View):
 
         self.__item_dict:Dict[str,Item] = {"":root_item}
 
+        self.__set_up_headings()
+        self.__reversed_sort:bool = False
+
     @property
     def id(self)->str: return self.__id
     @property
@@ -31,6 +37,13 @@ class Case_View_Tk(Case_View):
 
     def bind(self, sequence:str, action:Callable[[tk.Event], None])->None:
         self.__tree.bind(sequence, action)
+
+    def configure(self, **kwargs) -> None:
+        for label, arg in kwargs.items():
+            match label:
+                case "precision": self.__precision = arg
+                case "trailing_zeros": self.__trailing_zeros = arg
+                case _: continue
 
     def do_on_tree_item(self, action:Callable[[Item, tk.Event],None])->Callable[[tk.Event], None]:
         def item_action(event:tk.Event)->None:
@@ -90,6 +103,39 @@ class Case_View_Tk(Case_View):
             values.append("")
             for label in self.__attrs_for_display[label_group]:
                 if item.has_attribute(label): 
-                    values[-1] = str(item.attribute(label).print())
+                    attr = item.attribute(label)
+                    print_args:Dict[str, Any] = dict()
+                    if attr.type=="real" or attr.type=="quantity":
+                        print_args["precision"] = self.__precision
+                        print_args["trailing_zeros"] = self.__trailing_zeros
+                    values[-1] = str(item.attribute(label).print(**print_args))
                     break
         return values
+    
+    def __set_up_headings(self)->None:
+        heading_labels = ["#0"]+list(self.__tree['columns'])
+        for heading_label in heading_labels:
+            self.__tree.heading(
+                heading_label, 
+                command = partial(
+                    self.__sort_all_by, heading_label
+                )
+            )
+
+    def __sort_all_by(self,column_label:str)->None:
+        self.__sort_by(column_label, parent_iid="")
+        self.__reversed_sort = not self.__reversed_sort
+
+    def __sort_by(self, column_label:str, parent_iid:str)->None:
+        if column_label=="#0":
+            child_data = [(c, self.__tree.item(c)['text']) for c in self.__tree.get_children(parent_iid)]
+        else:
+            child_data = [(c, self.__tree.set(c, column_label)) for c in self.__tree.get_children(parent_iid)]
+        child_data.sort(key=lambda x: x[1], reverse=self.__reversed_sort)
+        for index, (c, _) in enumerate(child_data):
+            self.__tree.move(c, parent_iid, index)
+
+        for c in self.__tree.get_children(parent_iid):
+            self.__sort_by(column_label=column_label, parent_iid=c)
+        
+

@@ -30,7 +30,7 @@ class Editor_Tk(EditorUI):
             self.__caseview.do_on_tree_item(self.open_item_menu)
         )
         self.__caseview.widget.bind(
-            "<Double-Button-1>",
+            "<Return>",
             self.__caseview.do_on_tree_item(self.open_item_window)
         )
         self.__caseview.widget.bind(
@@ -40,6 +40,10 @@ class Editor_Tk(EditorUI):
         self.__caseview.widget.bind(
             "<Control-y>",
             lambda e: self.editor.redo()
+        )
+        self.__caseview.widget.bind(
+            "<Delete>",
+            self.__caseview.do_on_tree_item(self.delete_item)
         )
 
     def _get_xml_path(self) -> Tuple[str, str]:

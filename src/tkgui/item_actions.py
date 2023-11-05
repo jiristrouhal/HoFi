@@ -29,6 +29,11 @@ class Item_Window_Tk(Item_Window):
         self.__win.destroy()
         self.__entries.clear()
 
+    def configure(self, **kwargs) -> None:
+        for label, arg in kwargs.items():
+            match label:
+                case _: continue
+
     def ok(self)->None: 
         self.__win.nametowidget('button_frame').nametowidget('ok').invoke()
 

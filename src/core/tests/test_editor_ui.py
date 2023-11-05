@@ -23,10 +23,13 @@ class Item_Window_Test(Item_Window):
         pass
     def _destroy_window(self) -> None:
         pass
+    def configure(self, **kwargs) -> None:
+        pass
 
 
 class Case_View_Test(Case_View):
-    pass
+    def configure(self, **kwargs) -> None:
+        pass
 
 
 class Editor_UI_Test(EditorUI):

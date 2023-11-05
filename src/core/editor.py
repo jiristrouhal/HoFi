@@ -67,6 +67,12 @@ class Case_Template:
             if label not in self.__templates: raise Case_Template.UndefinedTemplate(label)
             self.__case_child_labels.append(label)
 
+    def configure(self, **kwargs)->None:
+        for label, value in kwargs.items():
+            match label:
+                case "currency_code": self.__currency = value
+                case _: continue            
+
     def dependency(self, dependent:str, func:Callable[[Any],Any], *free:Template.Free_Attribute)->Case_Template.Dependency:
         return Case_Template.Dependency(dependent, func, free)
 
@@ -300,6 +306,13 @@ class EditorUI(abc.ABC):
     @abc.abstractmethod
     def _compose(self)->None: pass
 
+    def configure(self, **kwargs)->None:
+        self.__caseview.configure(**kwargs)
+        self.__item_window.configure(**kwargs)
+
+    def delete_item(self, item:Item, *args)->None:
+        if item!=self.__editor.root: item.parent.leave(item)
+
     def open_item_menu(self, item:Item, *args)->None:
         if item.is_null(): 
             raise EditorUI.Opening_Item_Menu_For_Nonexistent_Item
@@ -388,6 +401,10 @@ class Item_Window(abc.ABC):
     def close(self)->None:
         self._destroy_window()
         self.__open = False
+
+    @abc.abstractmethod
+    def configure(self, **kwargs)->None:
+        pass
         
     @abc.abstractmethod
     def _build_window(self, attributes:Dict[str,Attribute]): pass  # pragma: no cover
@@ -437,4 +454,7 @@ class Item_Menu(abc.ABC):
     
 
 class Case_View(abc.ABC):
-    pass
+    
+    @abc.abstractmethod
+    def configure(self, **kwargs)->None:
+        pass

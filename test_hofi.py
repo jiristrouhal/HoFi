@@ -4,11 +4,12 @@ from src.core.editor import blank_case_template, new_editor, freeatt_child, free
 from decimal import Decimal
 
 case_template = blank_case_template()
+case_template.configure(currency_code="CZK")
+
 amount = case_template.attr.money(1, custom_condition=lambda x: x>=0)
 signed_amount = case_template.attr.money(enforce_sign=True)
 rel_amount_attr = case_template.attr.quantity(unit="%", exponents={})
 transaction_date = case_template.attr.date()
-
 
 def total_amount_func(individual, totals)->Decimal:
     return sum(individual) + sum(totals)
@@ -19,7 +20,7 @@ def rel_amount(amount, total_amount)->Decimal:
 
 total_amount = case_template.dependency(
     "total_amount", 
-    lambda x,y: x-y,
+    lambda x,y: x+y,
     "total_income",
     "total_expense"
 )
@@ -31,7 +32,7 @@ total_income = case_template.dependency(
 )
 total_expense = case_template.dependency(
     "total_expense",
-    total_amount_func,
+    lambda x,y: -total_amount_func(x,y),
     freeatt_child("expense_amount",amount),
     freeatt_child("total_expense",signed_amount)
 )
@@ -70,8 +71,8 @@ case_template.add(
     "Item", 
     {
         "total_amount":signed_amount, 
-        "total_income":amount,
-        "total_expense":amount,
+        "total_income":signed_amount,
+        "total_expense":signed_amount,
         "relative_amount":rel_amount_attr
     }, 
     ("Income","Expense","Item"), 
@@ -80,19 +81,19 @@ case_template.add(
 case_template.add_case_child_label("Item")
 
 
-editor = new_editor(case_template)
+editor = new_editor(case_template, "cs_cz")
 
 win = tk.Tk()
 editor_ui = Editor_Tk(
     editor, 
     win, 
-    (
-        {
-            "amount":("income_amount","expense_amount","total_amount"),
-            "relative_amount":("relative_amount",),
-            "date":("date",)
-        }
-    )
+    ({
+        "amount":("income_amount","expense_amount","total_amount"),
+        "relative_amount":("relative_amount",),
+        "date":("date",)
+    })
 )
+
+editor_ui.configure(precision=2, trailing_zeros=True)
 
 win.mainloop()
