@@ -1331,8 +1331,19 @@ class Attribute_Data_Constructor:
             'custom_condition':custom_condition
         }
     
-    def money(self, init_value:Decimal|float|int=0.0, enforce_sign:bool=False)->Dict[str,Any]:
-        return {'atype':"money", 'init_value':init_value, "enforce_sign":enforce_sign}
+    def money(
+        self, 
+        init_value:Decimal|float|int=0.0, 
+        enforce_sign:bool=False,
+        custom_condition:Callable[[Any],bool] = lambda x: True
+        )->Dict[str,Any]:
+
+        return {
+            'atype':"money", 
+            'init_value':init_value, 
+            "enforce_sign":enforce_sign,
+            "custom_condition":custom_condition
+        }
     
     def name(self, init_value:str="name")->Dict[str,Any]:
         return {'atype':'name', 'init_value':init_value}

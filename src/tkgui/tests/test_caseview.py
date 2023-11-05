@@ -81,7 +81,11 @@ class Test_View_For_Item_Attribute_Manipulations(unittest.TestCase):
         root = tk.Tk()
         self.cr = ItemCreator()
         self.root_item = self.cr.new("Root item")
-        self.caseview = Case_View_Tk(root, self.root_item, 'y', 'description')
+        self.caseview = Case_View_Tk(
+            root, 
+            self.root_item, 
+            attrs_for_display={'y':('y',), 'description':('description',)}
+        )
 
     def test_displayed_attributes_in_the_tree_correspond_to_values_of_newly_added_item(self):
         child = self.cr.new("Child", {'y':'integer', 'description':'text'})

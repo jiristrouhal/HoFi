@@ -6,11 +6,15 @@ from typing import List, Tuple, Callable, Dict
 
 class Case_View_Tk(Case_View):
     
-    def __init__(self, window:tk.Tk|tk.Frame, root_item:Item, *attrs_for_display:str)->None:
+    def __init__(
+            self, window:tk.Tk|tk.Frame, 
+            root_item:Item, 
+            attrs_for_display:Dict[str,Tuple[str,...]] = {}
+            )->None:
         self.__tree:ttk.Treeview = ttk.Treeview(window)
         self.__id = str(id(self))
 
-        self.__tree['columns'] = attrs_for_display
+        self.__tree['columns'] = list(attrs_for_display.keys())
         self.__attrs_for_display = attrs_for_display
 
         root_item.add_action(self.__id, 'adopt', self.__new_item_under_root)
@@ -37,7 +41,13 @@ class Case_View_Tk(Case_View):
 
     def __new_item(self, item:Item)->None:
         values = self.__collect_and_set_values(item)
-        self.__tree.insert(item.parent.id, index=tk.END, iid=item.id, text=item.name, values=values)
+        self.__tree.insert(
+            item.parent.id, 
+            index=tk.END, 
+            iid=item.id, 
+            text=item.name, 
+            values=values
+        )
         self.__tree.see(item.id)
         item.add_action(self.__id, 'adopt', self.__new_item)
         item.add_action(self.__id, 'leave', self.__remove_item)
@@ -74,11 +84,12 @@ class Case_View_Tk(Case_View):
         values = self.__collect_and_set_values(item)
         self.__tree.item(item.id, values=values)
 
-    def __collect_and_set_values(self, item:Item)->Tuple[str,...]:
+    def __collect_and_set_values(self, item:Item)->List[str]:
         values:List[str] = list()
-        for label in self.__attrs_for_display:
-            if item.has_attribute(label): 
-                values.append(str(item.attribute(label).print()))
-            else:
-                values.append("")
-        return tuple(values)
+        for label_group in self.__attrs_for_display:
+            values.append("")
+            for label in self.__attrs_for_display[label_group]:
+                if item.has_attribute(label): 
+                    values[-1] = str(item.attribute(label).print())
+                    break
+        return values

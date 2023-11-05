@@ -4,7 +4,7 @@ from src.core.editor import EditorUI, Editor
 from src.tkgui.item_actions import Item_Menu_Tk, Item_Window_Tk
 from src.tkgui.caseview import Case_View_Tk
 
-from typing import Tuple
+from typing import Tuple, Dict
 from tkinter.filedialog import askopenfilename, askdirectory
 import os
 
@@ -14,13 +14,13 @@ class Editor_Tk(EditorUI):
         self, 
         editor:Editor, 
         master_window:tk.Tk|tk.Frame, 
-        displayable_attributes:Tuple[str,...]
+        displayable_attributes:Dict[str,Tuple[str,...]]
         )->None:
 
         self.__win = master_window
         self.__item_window = Item_Window_Tk(self.__win)
         self.__item_menu = Item_Menu_Tk(self.__win)
-        self.__caseview:Case_View_Tk = Case_View_Tk(self.__win, editor.root, *displayable_attributes)
+        self.__caseview:Case_View_Tk = Case_View_Tk(self.__win, editor.root, displayable_attributes)
         super().__init__(editor, self.__item_menu, self.__item_window, self.__caseview)
 
     def _compose(self) -> None:
