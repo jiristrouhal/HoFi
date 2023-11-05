@@ -25,14 +25,15 @@ class Template:
     dependencies:Optional[List[Template.Dependency]] = None
 
     @staticmethod
-    def dependency(dependent:str, func:Callable[[Any],Any], *free:Free_Attribute)->Dependency:
-        return Template.Dependency(dependent, func, free)
+    def dependency(dependent:str, func:Callable[[Any],Any], *free:Free_Attribute, label:str="")->Dependency:
+        return Template.Dependency(dependent, func, free, label=label)
 
     @dataclasses.dataclass(frozen=True)
     class Dependency:
         dependent:str
         func:Callable[[Any],Any]
         free:Tuple[Template.Free_Attribute,...]
+        label:str = ""
 
     AttributeOwner = Literal['parent', 'child', 'self']
     @dataclasses.dataclass(frozen=True)
@@ -71,10 +72,11 @@ class ItemCreator:
         self, 
         dependent:str,
         func:Callable[[Any],Any], 
-        *free:Template.Free_Attribute
+        *free:Template.Free_Attribute,
+        label:str=""
         )->Template.Dependency:
 
-        return Template.dependency(dependent,func,*free)
+        return Template.dependency(dependent,func,*free, label=label)
 
     @property
     def attr(self)->Attribute_Data_Constructor:
@@ -106,8 +108,7 @@ class ItemCreator:
     def load(self, dirpath:str, name:str, ftype:FileType)->Item:
         filepath = self.__create_and_check_filepath(dirpath,name,ftype)
         root_elem = self.et.parse(filepath).getroot()
-        loaded_item, adoption_cmds = self.__build_item_from_xml(root_elem)
-        self.__build_hierarchy(*adoption_cmds)
+        loaded_item = self.__build_item_from_xml(root_elem)
         return loaded_item
     
     def __build_item_from_xml(self, xml_elem:et.Element)->Tuple[Item, List[Command]]:
@@ -116,16 +117,13 @@ class ItemCreator:
         item.rename(xml_elem.attrib['name'])
         self.__read_attribute_values_from_xml_elem(item, xml_elem)
 
-        cmds:List[Command] = list()
-        for sub_elem in xml_elem:
-            child, child_adopt_cmds = self.__build_item_from_xml(sub_elem)
-            cmds.extend(child_adopt_cmds)
-            cmds.extend(item.command['adopt'](Parentage_Data(item,child)))
-        
-        return item, cmds
-    
-    def __build_hierarchy(self, *adoption_commands:Command)->None:
-        self._controller.run(*adoption_commands)
+        @self._controller.single_cmd()
+        def build_and_adopt():
+            child = self.__build_item_from_xml(sub_elem)
+            item.adopt(child)
+
+        for sub_elem in xml_elem: build_and_adopt()
+        return item
     
     def __create_and_check_filepath(self,dirpath:str,name:str,ftype:FileType)->str:
         filepath = dirpath+"/"+name+"."+ftype
@@ -138,8 +136,7 @@ class ItemCreator:
 
     def __read_attribute_values_from_xml_elem(self,loaded_item:Item,xml_elem:et.Element)->None:
         for attr_name in loaded_item.attributes:
-            if not loaded_item.attributes[attr_name].dependent:
-                loaded_item.attributes[attr_name].read(xml_elem.attrib[attr_name])
+            loaded_item.attributes[attr_name].read(xml_elem.attrib[attr_name], overwrite_dependent=True)
     
     def save(self, item:Item, filetype:FileType)->None:
         xml_tree = self.et.ElementTree(self.__create_xml_items_hierarchy(item))
@@ -185,7 +182,7 @@ class ItemCreator:
         )
         if template.dependencies is not None:
             for dep in template.dependencies:
-                item.bind(dep.dependent, dep.func, *dep.free)
+                item.bind(dep.dependent, dep.func, *dep.free, binding_label=dep.label)
         return item
 
     def new(self,name:str,attr_info:Dict[str,AttributeType|Dict[str,Any]]={})->Item:
@@ -380,6 +377,7 @@ class Item(abc.ABC): # pragma: no cover
     class BindingInfo:
         func:Callable[[Any],Any]
         input_labels:Tuple[Template.Free_Attribute,...]
+        label:str=""
     
     def __init__(self,name:str,attributes:Dict[str,Attribute],manager:ItemCreator)->None:
         self._manager = manager
@@ -717,19 +715,20 @@ class ItemImpl(Item):
         self,
         output_name:str, 
         func:Callable[[Any], Any], 
-        *input_info:str|Template.Free_Attribute
+        *input_info:str|Template.Free_Attribute,
+        binding_label:str=""
         )->None:
         
         output = self.attribute(output_name)
         input_info = list(input_info)
         self.__create_attr_info_from_attr_type(input_info)
         inputs = self.__collect_input_attributes(input_info)
-        dependency = output.add_dependency(func, *inputs)
+        dependency = output.add_dependency(func, *inputs, label=binding_label)
         for info in input_info:
             label = info.label
             if info.owner=="parent" and label in self._parent_attributes:
                 self._parent_attributes[label].watch_dependency(dependency)
-        self._bindings[output_name] = ItemImpl.BindingInfo(func, input_info)
+        self._bindings[output_name] = ItemImpl.BindingInfo(func, input_info, label=binding_label)
 
     def __create_attr_info_from_attr_type(self, input_info:List[str|Template.Free_Attribute])->None:
         for k in range(len(input_info)): 
@@ -760,13 +759,6 @@ class ItemImpl(Item):
             else:
                 self._parent_attributes[info.label] = Parent_Attribute(stub, stub)
         return self._parent_attributes[info.label].attr
-
-    @staticmethod
-    def __is_parents_attribute_label(label)->bool: 
-        if len(label)<3: 
-            return False
-        else:
-            return label[0]=='<' and label[-1]=='>'
 
     def free(self, output_name:str)->None:
         self.attribute(output_name).break_dependency()
@@ -944,7 +936,7 @@ class ItemImpl(Item):
     
     def _apply_binding_info(self)->None:
         for output_name, info in self._bindings.items():
-            self.bind(output_name, info.func, *info.input_labels)
+            self.bind(output_name, info.func, *info.input_labels, binding_label=info.label)
     
     def _copy_bindings(self, dupl:Item)->None:
         dupl._bindings = self._bindings.copy()

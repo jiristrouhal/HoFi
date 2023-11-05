@@ -1284,7 +1284,7 @@ class Test_Binding_Attribute_To_Items_Parent(unittest.TestCase):
         self.assertEqual(self.child('x'), 8)
 
     
-if __name__=="__main__": unittest.main()
+if __name__=="__main__":  unittest.main()
 
 
 

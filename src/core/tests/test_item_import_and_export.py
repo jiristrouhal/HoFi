@@ -248,6 +248,8 @@ class Test_Loading_Item_With_Attribute_Depending_On_Items_Children(unittest.Test
 
         loaded_parent = self.cr.load(self.DIRPATH, name="Parent",ftype="xml")
         loaded_child = list(loaded_parent.children)[-1]
+
+
         self.assertEqual(loaded_child.attribute("mass").print(), f"2000{NBSP}g")
         self.assertEqual(loaded_child("mass"), 2)
         
@@ -256,5 +258,80 @@ class Test_Loading_Item_With_Attribute_Depending_On_Items_Children(unittest.Test
         remove_dir(self.DIRPATH)
 
 
-if __name__=="__main__": unittest.main()
+from decimal import Decimal
+from src.core.item import freeatt_child, freeatt_parent
+class Test_Saving_And_Loading_Item_With_Bound_Attribute(unittest.TestCase):
 
+
+    DIRPATH = "./__test_dir_6"
+    def setUp(self) -> None: # pragma: no cover
+        build_dir(self.DIRPATH)
+
+    def test_saving_and_loading_parent_with_single_child(self):
+        cr = ItemCreator()
+        cr.set_dir_path(self.DIRPATH)
+        amount = cr.attr.real(1)
+        rel_amount = cr.attr.real(-1)
+        
+        total_amount_dep = cr.dependency(
+            "total_amount", 
+            lambda x, own_x: sum(x) + own_x, 
+            freeatt_child("amount",amount),
+            "amount",
+            label="total amount dependency"
+        )
+        def rel_amount_func(own_amount, parent_total_amount)->Decimal:
+            if parent_total_amount==0:
+                return Decimal(-1)
+            else: 
+                return Decimal(own_amount)/Decimal(parent_total_amount)
+            
+        rel_amount_dep = cr.dependency(
+            "relative_amount",
+            rel_amount_func,
+            "amount",
+            freeatt_parent("total_amount",amount),
+            label="relative amount dependency"
+        )
+
+        cr.add_template(
+            "Child", 
+            {"amount":amount, "relative_amount":rel_amount},
+            (),
+            dependencies = [rel_amount_dep]
+        )
+        cr.add_template(
+            "Parent", 
+            {"amount":amount, "total_amount":amount},
+            ("Child",),
+            dependencies = [total_amount_dep]
+        )
+
+        parent = cr.from_template("Parent", "Parent")
+        child = cr.from_template("Child", "Child")
+        parent.adopt(child)
+
+        parent.set("amount",4)
+        child.set("amount",1)
+        self.assertEqual(parent("total_amount"), 5)
+        self.assertEqual(child("relative_amount"), Decimal('0.2'))
+        child.set("amount",4)
+        self.assertEqual(child("relative_amount"), 0.5)
+        child.set("amount",1)
+
+        cr.save(parent, "xml")
+        loaded_parent = cr.load(self.DIRPATH, "Parent", "xml")
+        loaded_child = loaded_parent.pick_child("Child")
+        self.assertEqual(loaded_parent("total_amount"), 5)
+        self.assertEqual(loaded_child("amount"), 1)
+        self.assertEqual(loaded_child("relative_amount"), Decimal('0.2'))
+        loaded_child.set("amount", 4)
+
+        self.assertEqual(loaded_child("relative_amount"), Decimal('0.5'))
+
+    def tearDown(self) -> None: # pragma: no cover
+        remove_dir(self.DIRPATH)
+
+
+if __name__=="__main__":
+    unittest.main()

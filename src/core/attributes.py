@@ -17,9 +17,10 @@ Locale_Code = Literal['cs_cz','en_us']
 
 class Dependency(abc.ABC):
 
-    def __init__(self, output:AbstractAttribute, func:Callable[[Any],Any], *inputs:AbstractAttribute):
+    def __init__(self, output:AbstractAttribute, func:Callable[[Any],Any], *inputs:AbstractAttribute, label:str=""):
         self._output = output
         self.func = func
+        self.__label = label
         if not inputs: raise Dependency.NoInputs
         self._inputs = list(inputs)
         if self._output.dependent: raise Attribute.DependencyAlreadyAssigned 
@@ -78,7 +79,7 @@ class Dependency(abc.ABC):
         return Set_Attr_Data(self._output, value_getter)
         
     def _set_output_value(self,*args)->Command: 
-        return Set_Attr(self._data_converter(*args))
+        return Set_Attr(self._data_converter(*args), custom_message=self.__label)
         
     def __set_up_command(self,*inputs:AbstractAttribute):
         self._output.factory.run(self._set_output_value())
@@ -138,11 +139,15 @@ class Set_Attr_Data:
 @dataclasses.dataclass
 class Set_Attr(Command):
     data:Set_Attr_Data
+    custom_message:str = ""
     old_value:Any = dataclasses.field(init=False)
     new_value:Any = dataclasses.field(init=False)
     @property
     def message(self)->str: 
-        return f"Set Attribute | {self.data.attr.name}: Set to {self.new_value}"
+        msg = f"Set Attribute | {self.data.attr.name}: Set to {self.new_value}"
+        if self.custom_message.strip() != "": 
+            msg += f" ({self.custom_message})"
+        return msg
 
     def run(self)->None:
         self.old_value = self.data.attr.value
@@ -254,8 +259,8 @@ class AbstractAttribute(abc.ABC):
     def dependent(self)->bool:
         return self._dependency is not Attribute.NullDependency
     
-    def add_dependency(self,func:Callable[[Any],Any], *attributes:AbstractAttribute)->Dependency:
-        self._dependency = DependencyImpl(self, func, *attributes)
+    def add_dependency(self,func:Callable[[Any],Any], *attributes:AbstractAttribute, label:str="")->Dependency:
+        self._dependency = DependencyImpl(self, func, *attributes, label=label)
         return self._dependency
 
     def break_dependency(self)->None:
@@ -452,11 +457,12 @@ class Attribute(AbstractAttribute):
     def print(self, *options)->str: pass # pragma: no cover
     
     @abc.abstractmethod
-    def read(self,text:str)->None: pass # pragma: no cover
+    def read(self,text:str,overwrite_dependent:bool=False)->None: pass # pragma: no cover
         
-    def set(self,value:Any)->None: 
-        if self._dependency is not DependencyImpl.NULL: return
-        if self.is_valid(value): self._run_set_command(value)
+    def set(self,value:Any,overwrite_dependent:bool=False)->None: 
+        if not overwrite_dependent and self._dependency is not DependencyImpl.NULL: return
+        if self.is_valid(value): 
+            self._run_set_command(value)
         
     def set_validity_condition(self,func:Callable[[Any],bool])->None:
         self.__custom_condition = func
@@ -534,12 +540,12 @@ class Number_Attribute(Attribute):
 
         pass
 
-    def read(self, text:str)->None:
+    def read(self, text:str, overwrite_dependent:bool=False)->None:
         text = text.strip().replace(",",".")
         text = self.remove_thousands_separators(text)
         try:
             value = Decimal(text)
-            if self.is_valid(value): self.set(value)
+            if self.is_valid(value): self.set(value, overwrite_dependent)
         except:
             raise self._reading_exception
 
@@ -571,7 +577,6 @@ class Number_Attribute(Attribute):
     def remove_thousands_separators(value_str:str)->str:
         for sep in (' ',NBSP,'\t'):  value_str = value_str.replace(sep,'')
         return value_str
-
 
 class Integer_Attribute(Number_Attribute):
     class CannotExtractInteger(Exception): pass
@@ -648,7 +653,8 @@ class Real_Attribute(Number_Attribute):
         str_value = self._adjust_decimal_separator(str_value)
         return str_value
         
-    def set(self,value:Decimal|float|int)->None:
+    def set(self,value:Decimal|float|int, overwrite_dependent:bool=False)->None:
+        if not overwrite_dependent and self.dependent: return
         if self.is_valid(value):
             value = Decimal(str(value))
             self._run_set_command(value)
@@ -703,7 +709,7 @@ class Monetary_Attribute(Number_Attribute):
     def _is_value_valid(self, value:float|int|Decimal)->bool:
         return True
 
-    def set(self,value:float|Decimal)->None:
+    def set(self,value:float|Decimal, overwrite_dependent:bool=False)->None:
         # For the sake of clarity, the input to the set method has to be kept in the same type as the 
         # '_value' attribute.
 
@@ -711,7 +717,7 @@ class Monetary_Attribute(Number_Attribute):
         # accepted by the Decimal.
         if isinstance(value, str): 
             raise Attribute.InvalidValueType(value)
-        super().set(Decimal(str(value)))
+        super().set(Decimal(str(value)),overwrite_dependent)
 
     def print(
         self,
@@ -738,12 +744,12 @@ class Monetary_Attribute(Number_Attribute):
             value_str = '+'+value_str
         return value_str
 
-    def read(self,text:str)->None:
+    def read(self,text:str, overwrite_dependent:bool=False)->None:
         text = text.strip()
         text = self.remove_thousands_separators(text)
         if text=="":  raise self.ReadingBlankText
         sign, symbol, value = self.__extract_sign_symbol_and_value(text)
-        self.set(Decimal(sign+value))
+        self.set(Decimal(sign+value),overwrite_dependent)
         
 
     SYMBOL_PATTERN = "(?P<symbol>[^\s\d\.\,]+)"
@@ -798,8 +804,8 @@ class Text_Attribute(Attribute):
     def print(self, *options)->str:
         return str(self._value)
     
-    def read(self, text:str)->None:
-        self.set(text)
+    def read(self, text:str, overwrite_dependent:bool=False)->None:
+        self.set(text, overwrite_dependent)
 
 
 class Name_Attribute(Attribute):
@@ -813,8 +819,8 @@ class Name_Attribute(Attribute):
     def print(self, *options)->str:
         return str(self._value)
     
-    def read(self, text:str)->None:
-        self.set(text)
+    def read(self, text:str, overwrite_dependent:bool=False)->None:
+        self.set(text, overwrite_dependent)
 
 
 import datetime
@@ -854,13 +860,13 @@ class Date_Attribute(Attribute):
         if date_match is None: return None
         return date_match.groupdict()
     
-    def read(self,text:str)->None:
+    def read(self,text:str, overwrite_dependent:bool=False)->None:
         date = self.__extract_date_from_string(text)
         if date is None: 
             raise Date_Attribute.CannotExtractDate(text)
         else:
             year, month, day = map(int,(date['year'], date['month'], date['day']))
-            self.set(datetime.date(year, month, day))
+            self.set(datetime.date(year, month, day), overwrite_dependent)
 
     def __remove_spaces(self,text:str)->str: 
         for sp in (" ",NBSP,"\t"): text = text.replace(sp, "")
@@ -940,11 +946,11 @@ class Choice_Attribute(Attribute):
         result = tuple([self._str_value(op, lower_case) for op in self.options])
         return result
 
-    def read(self, text:str)->None:
+    def read(self, text:str, overwrite_dependent:bool=False)->None:
         text = text.strip()
         for op in self.__options:
             if op==text: 
-                self.set(op) 
+                self.set(op, overwrite_dependent) 
                 return
         raise Choice_Attribute.UndefinedOption(
             f"Unknown option: '{text}'; available options are: {self.options}"
@@ -961,8 +967,8 @@ class Choice_Attribute(Attribute):
                     f"Unknown option: {op}; available options are: {self.options}"
                 )
 
-    def set(self,option:str)->None:
-        if self._dependency is not DependencyImpl.NULL: return
+    def set(self,option:str, overwrite_dependent:bool=False)->None:
+        if not overwrite_dependent and self._dependency is not DependencyImpl.NULL: return
         if not self.__options: raise Choice_Attribute.NoOptionsAvailable
         if self.is_valid(option): 
             option_value = self.__options[option]
@@ -990,7 +996,8 @@ class Bool_Attribute(Attribute):
     def print(self, *options) -> str:
         return str(bool(self._value))
     
-    def read(self, text: str) -> None:
+    def read(self, text: str, overwrite_dependent:bool=False) -> None:
+        if not overwrite_dependent and self.dependent: return
         if text.strip() in ('true','True'): self._value = True
         elif text.strip() in ('false','False'): self._value = False
         else: raise Bool_Attribute.CannotReadBooleanFromText(text)
@@ -1139,7 +1146,7 @@ class Quantity(Real_Attribute):
         else: 
             return str_val
     
-    def read(self, text:str)->None:
+    def read(self, text:str, overwrite_dependent:bool=False)->None:
         text = text.strip()
         if text=="": raise Quantity.BlankText(text)
         matchobj = re.fullmatch(f'(?P<value>[\S]+)[ \t({NBSP})]?'+f'(?P<possible_scaled_unit>{Quantity.COMPLETE_UNIT_PATTERN})', text)
@@ -1161,12 +1168,12 @@ class Quantity(Real_Attribute):
                 value *= Decimal(10)**Decimal(self.__units[unit].exponents[prefix])
                 value = self.__units[unit].to_basic(value)
                 value *= Decimal(10)**Decimal(-self.__unit.exponents[self.__unit.default_prefix]) 
-                self.set(value)
+                self.set(value, overwrite_dependent)
         except:
             raise self._reading_exception
 
-    def read_only_value(self, text:str)->None:
-        super().read(text)
+    def read_only_value(self, text:str, overwrite_dependent:bool=False)->None:
+        super().read(text, overwrite_dependent)
         self._value = self.__readjust_func(self.__unit.to_basic(self._value))
 
     def set_prefix(self,prefix:str)->None:

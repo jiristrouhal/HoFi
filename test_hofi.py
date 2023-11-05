@@ -7,13 +7,13 @@ case_template = blank_case_template()
 amount = case_template.attr.money(1, custom_condition=lambda x: x>=0)
 signed_amount = case_template.attr.money(enforce_sign=True)
 rel_amount_attr = case_template.attr.quantity(unit="%", exponents={})
+transaction_date = case_template.attr.date()
 
 
 def total_amount_func(individual, totals)->Decimal:
     return sum(individual) + sum(totals)
 
 def rel_amount(amount, total_amount)->Decimal:
-    print("Calculating relative amount", total_amount)
     if total_amount==0: return -1
     else: return Decimal(100*amount)/Decimal(abs(total_amount))
 
@@ -58,12 +58,12 @@ relative_total_amount = case_template.dependency(
 
 case_template.add(
     "Income", 
-    {"income_amount":amount, "relative_amount":rel_amount_attr},
+    {"income_amount":amount, "relative_amount":rel_amount_attr, "date":transaction_date},
     dependencies=[relative_income_amount]
 )
 case_template.add(
     "Expense", 
-    {"expense_amount":amount, "relative_amount":rel_amount_attr},
+    {"expense_amount":amount, "relative_amount":rel_amount_attr, "date":transaction_date},
     dependencies=[relative_expense_amount]
 )
 case_template.add(
@@ -89,7 +89,8 @@ editor_ui = Editor_Tk(
     (
         {
             "amount":("income_amount","expense_amount","total_amount"),
-            "relative_amount":("relative_amount",)
+            "relative_amount":("relative_amount",),
+            "date":("date",)
         }
     )
 )
