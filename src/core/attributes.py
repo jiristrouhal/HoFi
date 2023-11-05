@@ -94,7 +94,8 @@ class Dependency(abc.ABC):
             return float('nan')
         except TypeError:
             raise self.InvalidArgumentType(
-                f"Func {self.func.__annotations__} received values: {values}, expected types :{[i.type for i in self._inputs]}"
+                f"Func {self.func.__annotations__} received values: {list(values)}, "
+                f"expected types :{[i.type for i in self._inputs]}"
             )
         except: # pragma: no cover
             return None # pragma: no cover
@@ -606,7 +607,7 @@ class Real_Attribute(Number_Attribute):
         atype:AttributeType,
         init_value:Any=None,
         name:str="", 
-        custom_condition:Callable[[Any],bool] = lambda x: True,
+        custom_condition:Callable[[Any],bool] = lambda x: True
         )->None:
 
         if init_value is not None:
@@ -625,9 +626,9 @@ class Real_Attribute(Number_Attribute):
     def print(
         self,
         use_thousands_separator:bool=False,
-        precision:int=28,
         trailing_zeros:bool=False,
         adjust:Optional[Callable[[float|Decimal],float|Decimal]] = None,
+        precision:int = 28,
         *args
         )->str:
         if adjust is None: value = self._value
@@ -671,6 +672,20 @@ class Currency:
     symbol_before_value:bool = True
 
 class Monetary_Attribute(Number_Attribute):
+
+    def __init__(
+        self, 
+        factory:Attribute_Factory, 
+        atype:AttributeType, 
+        init_value:Any=None, 
+        name:str="",
+        custom_condition:Callable[[Any],bool] = lambda x:True,
+        enforce_sign:bool=False
+        )->None:
+
+        super().__init__(factory, atype, init_value, name, custom_condition)
+        self.__enforce_sign = enforce_sign
+
     Currencies:Dict[Currency_Code,Currency] = {
         'USD':Currency('USD','$'),
         'EUR':Currency('EUR','€'),
@@ -719,7 +734,8 @@ class Monetary_Attribute(Number_Attribute):
 
         if show_symbol:
             value_str = self.__add_symbol_to_printed_value(value_str, currency)
-        if enforce_plus and self._value>0: value_str = '+'+value_str
+        if (self.__enforce_sign or enforce_plus) and self._value>0: 
+            value_str = '+'+value_str
         return value_str
 
     def read(self,text:str)->None:
@@ -1112,8 +1128,9 @@ class Quantity(Real_Attribute):
         )->str:
 
         str_val = super().print(
-            use_thousands_separator,
-            precision,trailing_zeros,
+            use_thousands_separator=use_thousands_separator,
+            precision=precision,
+            trailing_zeros=trailing_zeros,
             adjust=self.__adjust_func,
         )
         if include_unit: 
@@ -1314,8 +1331,8 @@ class Attribute_Data_Constructor:
             'custom_condition':custom_condition
         }
     
-    def money(self, init_value:Decimal|float|int=0.0)->Dict[str,Any]:
-        return {'atype':"money", 'init_value':init_value}
+    def money(self, init_value:Decimal|float|int=0.0, enforce_sign:bool=False)->Dict[str,Any]:
+        return {'atype':"money", 'init_value':init_value, "enforce_sign":enforce_sign}
     
     def name(self, init_value:str="name")->Dict[str,Any]:
         return {'atype':'name', 'init_value':init_value}
@@ -1341,10 +1358,14 @@ class Attribute_Data_Constructor:
     def real(
         self, 
         init_value:Decimal|float|int=0.0,
-        custom_condition:Callable[[float|Decimal],Any]=lambda x: True
+        custom_condition:Callable[[float|Decimal],Any]=lambda x: True,
         )->Dict[str,Any]:
 
-        return {'atype':"real", 'init_value':init_value, 'custom_condition':custom_condition}
+        return {
+            'atype':"real",
+            'init_value':init_value, 
+            'custom_condition':custom_condition
+        }
     
     def text(self, init_value:str="", custom_condition:Callable[[str],Any]=lambda x: True)->Dict[str,Any]:
         return {'atype':"text", 'init_value':init_value, 'custom_condition':custom_condition}
@@ -1414,7 +1435,8 @@ class Attribute_Factory:
                 **kwargs)
         
     def new_from_dict(self,**dict)->Attribute:
-        if dict['atype'] not in self.types: raise Attribute.InvalidAttributeType(dict['atype'])
+        if dict['atype'] not in self.types: 
+            raise Attribute.InvalidAttributeType(dict['atype'])
         else:
             return self.types[dict['atype']](self,**dict)
         

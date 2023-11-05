@@ -352,7 +352,8 @@ class EditorUI(abc.ABC):
         return actions
     
     def open_item_window(self, item:Item, *args)->None:
-        self.__item_window.open(item)
+        if item is not self.__editor.root:
+            self.__item_window.open(item)
     
     DEFAULT_CASE_NAME = "Case"
     def __new_case(self)->None:

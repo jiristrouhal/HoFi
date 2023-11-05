@@ -95,6 +95,7 @@ class Date_Entry(Attribute_Entry):
     def _create_entry(self) -> None:
         self.__date_entry = tkc.DateEntry(self.master, locale=self.attr.factory.locale_code)
         self.__date_entry.set_date(self.attr.value)
+        if self.attr.dependent: self.__date_entry.configure(state="readonly")
         
     def _confirmed_value(self)->datetime.date:
         return self.__date_entry.get_date()
@@ -118,6 +119,7 @@ class Number_Entry(Attribute_Entry):
         vcmd = (self.master.register((self._text_is_valid_value)),'%P')
         self._value = tk.Entry(self.master, validate='key', validatecommand=vcmd)
         self._value.insert(0, self.attr.print())
+        if self.attr.dependent: self._value.configure(state="readonly", relief="flat")
 
     def _confirmed_value(self)->float|Decimal:
         str_value = self._value.get()
@@ -157,6 +159,7 @@ class Money_Entry(Number_Entry):
         self._value = tk.Entry(self.__frame, validate='key', validatecommand=vcmd)
         assert(isinstance(self.attr, Monetary_Attribute))
         self._value.insert(0, str(self.attr.print(show_symbol=False)))
+
         currency = Monetary_Attribute.Currencies[self.attr.factory.currency_code]
         symbol = tk.Label(self.__frame,text=currency.symbol)
         if currency.symbol_before_value and self.attr.prefer_symbol_before_value():
@@ -165,6 +168,7 @@ class Money_Entry(Number_Entry):
         else:
             self._value.grid(column=0,row=0)
             symbol.grid(column=1,row=0)
+        if self.attr.dependent: self._value.configure(state="readonly")
 
     def revert(self)->None:
         self._value.delete(0,tk.END)
@@ -204,6 +208,7 @@ class Quantity_Entry(Number_Entry):
             textvariable=self.__unit_var
         )
         self.__unit.set(self.attr.prefix+self.attr.unit)
+        if len(scaled_units)==1: self.__unit.configure(state="disabled")
         self.__unit.grid(row=0,column=1)
         self.__unit_var.trace_add("write", self.__update_displayed_value_on_unit_update)
 
