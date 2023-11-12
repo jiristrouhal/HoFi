@@ -110,10 +110,11 @@ class Editor:
         self, 
         case_template:Case_Template, 
         locale_code:Locale_Code, 
-        lang:Optional[Lang_Object] = None
+        lang:Optional[Lang_Object] = None,
+        ignore_duplicit_names:bool = False
         )->None:
 
-        self.__creator = ItemCreator(locale_code, case_template.currency_code)
+        self.__creator = ItemCreator(locale_code, case_template.currency_code,ignore_duplicit_names)
         self.__creator.add_templates(*case_template._list_templates())
         self.__root = self.__creator.new("_")
         self.__attributes =  case_template.attributes
@@ -251,10 +252,11 @@ class Editor:
 def new_editor(
     case_template:Case_Template, 
     locale_code:Locale_Code="en_us", 
-    lang:Optional[Lang_Object] = None
+    lang:Optional[Lang_Object] = None,
+    ignore_duplicit_names:bool = False
     )->Editor:
 
-    return Editor(case_template, locale_code, lang)
+    return Editor(case_template, locale_code, lang, ignore_duplicit_names)
 
 
 def blank_case_template()->Case_Template:

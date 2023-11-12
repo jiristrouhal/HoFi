@@ -48,11 +48,12 @@ FileType = Literal['xml']
 from src.core.attributes import Locale_Code, AttributeType, Currency_Code
 class ItemCreator:
 
-    def __init__(self, locale_code:Locale_Code = "en_us", currency_code:Currency_Code="USD")->None:
+    def __init__(self, locale_code:Locale_Code = "en_us", currency_code:Currency_Code="USD", ignore_duplicit_names:bool=False)->None:
         self._controller = Controller()
         self._attrfac = attribute_factory(self._controller, locale_code, currency_code)
         self.__templates:Dict[str,Template] = {}
-        self.__file_path:str = "."
+        self.__file_path:str = ".",
+        self.__ignore_duplicit_names = ignore_duplicit_names
 
     @property
     def templates(self)->Tuple[str,...]: return tuple(self.__templates.keys())
@@ -180,7 +181,8 @@ class ItemCreator:
             attributes, 
             self, 
             itype = template.label, 
-            child_itypes = template.child_itypes
+            child_itypes = template.child_itypes,
+            ignore_duplicit_names=self.__ignore_duplicit_names
         )
         if template.dependencies is not None:
             for dep in template.dependencies:
@@ -188,7 +190,7 @@ class ItemCreator:
         return item
 
     def new(self,name:str,attr_info:Dict[str,AttributeType|Dict[str,Any]]={})->Item:
-        return ItemImpl(name, self.__get_attrs(attr_info), self)
+        return ItemImpl(name, self.__get_attrs(attr_info), self, ignore_duplicit_names=self.__ignore_duplicit_names)
 
     def undo(self):
         self._controller.undo()
@@ -381,13 +383,12 @@ class Item(abc.ABC): # pragma: no cover
         input_labels:Tuple[Template.Free_Attribute,...]
         label:str=""
     
-    def __init__(self,name:str,attributes:Dict[str,Attribute],manager:ItemCreator)->None:
+    def __init__(self,name:str,attributes:Dict[str,Attribute],manager:ItemCreator,ignore_duplicit_names:bool=False)->None:
         self._manager = manager
         self.__id = str(id(self))
         self._bindings:Dict[str, Item.BindingInfo] = dict()
         self._child_attr_lists:Dict[str,Attribute_List] = dict()
         self._parent_attributes:Dict[str, Parent_Attribute] = dict()
-
     @abc.abstractproperty
     def attributes(self)->Dict[str,Attribute]: pass
     @abc.abstractproperty
@@ -623,7 +624,17 @@ class ItemImpl(Item):
     NULL = __ItemNull()
 
     
-    def __init__(self,name:str,attributes:Dict[str,Attribute], manager:ItemCreator, itype:str="", child_itypes:Optional[Tuple[str,...]]=None)->None:
+    def __init__(
+        self,
+        name:str,
+        attributes:Dict[str,Attribute], 
+        manager:ItemCreator, 
+        itype:str="", 
+        child_itypes:Optional[Tuple[str,...]]=None,
+        ignore_duplicit_names:bool = False
+        )->None:
+
+        self.__ignore_duplicit_names:bool = ignore_duplicit_names
         super().__init__(name,attributes,manager)
         self.__attributes:Dict[str,Attribute] = {
             "name":manager._attrfac.new_from_dict(**manager.attr.text(init_value=itype))
@@ -648,7 +659,6 @@ class ItemImpl(Item):
         }
         self.__last_action:Tuple[str,str,str] = ("","","")
         self._rename(name)
-
 
     @property
     def attributes(self)->Dict[str,Attribute]:
@@ -979,6 +989,7 @@ class ItemImpl(Item):
         return attr_copy
     
     def __adjust_name_if_taken(self, item:Item, cname:str)->str:
+        if self.__ignore_duplicit_names: return cname
         names = [c.name for c in self.__children if not c==item]
         while cname in names: 
             names.remove(cname)

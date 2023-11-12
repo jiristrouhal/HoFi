@@ -7,7 +7,7 @@ case_template = blank_case_template()
 case_template.configure(currency_code="CZK")
 lang = Lang_Object.get_lang_object("./test_hofi_localization/cs_cz.xml")
 
-amount = case_template.attr.money(1, custom_condition=lambda x: x>=0)
+amount = case_template.attr.money(0, custom_condition=lambda x: x>=0)
 signed_amount = case_template.attr.money(enforce_sign=True)
 rel_amount_attr = case_template.attr.quantity(unit="%", exponents={})
 transaction_date = case_template.attr.date()
@@ -17,11 +17,11 @@ def total_amount_func(individual, totals)->Decimal:
 
 def rel_amount(amount, total_amount)->Decimal:
     if total_amount==0: return 0
-    else: return Decimal(100*amount)/Decimal(abs(total_amount))
+    else: return Decimal(100*abs(amount))/Decimal(abs(total_amount))
 
 total_amount = case_template.dependency(
     "total_amount", 
-    lambda x,y: x+y,
+    lambda x,y: x-y,
     "total_income",
     "total_expense"
 )
@@ -33,10 +33,12 @@ total_income = case_template.dependency(
 )
 total_expense = case_template.dependency(
     "total_expense",
-    lambda x,y: -total_amount_func(x,y),
+    lambda x,y: total_amount_func(x,y),
     freeatt_child("expense_amount",amount),
     freeatt_child("total_expense",signed_amount)
 )
+
+
 
 
 relative_income_amount = case_template.dependency(
@@ -57,6 +59,8 @@ relative_total_amount = case_template.dependency(
     "total_amount",
     freeatt_parent("total_amount", signed_amount)
 )
+
+
 
 case_template.add(
     "Income", 
@@ -92,7 +96,7 @@ case_template.set_case_template(
 )
 
 
-editor = new_editor(case_template, "cs_cz", lang=lang)
+editor = new_editor(case_template, "cs_cz", lang=lang, ignore_duplicit_names=True)
 
 win = tk.Tk()
 editor_ui = Editor_Tk(
@@ -110,6 +114,6 @@ editor_ui = Editor_Tk(
     }
 )
 
-editor_ui.configure(precision=2, trailing_zeros=True)
+editor_ui.configure(precision=2, trailing_zeros=True, use_thousands_separator=True)
 
 win.mainloop()

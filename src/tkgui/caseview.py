@@ -11,7 +11,8 @@ import os
 class Case_View_Tk(Case_View):
     
     def __init__(
-        self, window:tk.Tk|tk.Frame, 
+        self, 
+        window:tk.Tk|tk.Frame, 
         root_item:Item, 
         attrs_for_display:Dict[str,Tuple[str,...]] = {},
         lang:Lang_Object = Lang_Object.get_lang_object(),
@@ -24,7 +25,7 @@ class Case_View_Tk(Case_View):
             if icon is None: self.__icons.pop(label)
         yscrollbar = ttk.Scrollbar(window, orient ="vertical", command = self.__tree.yview)
         yscrollbar.pack(anchor=tk.W, fill=tk.Y, side=tk.LEFT)
-        self.__tree.configure(yscrollcommand=yscrollbar)
+        self.__tree.configure(yscrollcommand=yscrollbar, height=25)
 
         self.__id = str(id(self))
         self.__lang = lang
@@ -33,6 +34,7 @@ class Case_View_Tk(Case_View):
         self.__attrs_for_display = attrs_for_display
         self.__precision:int = 28
         self.__trailing_zeros:bool = False
+        self.__use_thousands_separator:bool = False
 
         root_item.add_action(self.__id, 'adopt', self.__new_item_under_root)
         root_item.add_action(self.__id, 'leave', self.__remove_item)
@@ -57,6 +59,7 @@ class Case_View_Tk(Case_View):
             match label:
                 case "precision": self.__precision = arg
                 case "trailing_zeros": self.__trailing_zeros = arg
+                case "use_thousands_separator": self.__use_thousands_separator = arg
                 case _: continue
 
     def do_on_tree_item(self, action:Callable[[Item, tk.Event],None])->Callable[[tk.Event], None]:
@@ -130,6 +133,8 @@ class Case_View_Tk(Case_View):
                     if attr.type=="real" or attr.type=="quantity":
                         print_args["precision"] = self.__precision
                         print_args["trailing_zeros"] = self.__trailing_zeros
+                    elif attr.type=="money":
+                        print_args["use_thousands_separator"] = self.__use_thousands_separator
                     values[-1] = str(item.attribute(label).print(**print_args))
                     break
         return values
