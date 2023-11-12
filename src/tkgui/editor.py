@@ -31,8 +31,8 @@ class Editor_Tk(EditorUI):
             self.__caseview.do_on_tree_item(self.open_item_menu)
         )
         self.__caseview.widget.bind(
-            "<Return>",
-            self.__caseview.do_on_tree_item(self.open_item_window)
+            "<Double-Button-1>",
+            self.__double_left_click_action
         )
         self.__caseview.widget.bind(
             "<Control-z>",
@@ -46,6 +46,10 @@ class Editor_Tk(EditorUI):
             "<Delete>",
             self.__caseview.do_on_tree_item(self.delete_item)
         )
+
+    def __double_left_click_action(self, event:tk.Event)->str:
+        self.__caseview.do_on_tree_item(self.open_item_window)(event)
+        return "break"
 
     def _get_xml_path(self) -> Tuple[str, str]:
         case_full_path = askopenfilename(defaultextension="xml", filetypes=[("xml","xml")])
