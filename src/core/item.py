@@ -5,6 +5,7 @@ from src.cmd.commands import Command, Controller, Composed_Command, Timing, Empt
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
 from src.core.attributes import attribute_factory, Attribute, Attribute_List, Set_Attr_Data, Attribute_Data_Constructor
 from src.core.attributes import Edit_AttrList_Data
+from src.core.attributes import NBSP
 import abc
 
 
@@ -165,7 +166,7 @@ class ItemCreator:
     
     def __get_printed_attributes(self,item:Item)->Dict[str,str]:
         printed_attribs:Dict[str,str] = {'name':item.name}
-        for label,attr in item.attributes.items(): printed_attribs[label] = attr.print()
+        for label,attr in item.attributes.items(): printed_attribs[label] = attr.print().replace(NBSP," ")
         return printed_attribs
 
     def from_template(self,label:str,name:str="")->Item:

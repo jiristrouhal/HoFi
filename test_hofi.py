@@ -16,7 +16,7 @@ def total_amount_func(individual, totals)->Decimal:
     return sum(individual) + sum(totals)
 
 def rel_amount(amount, total_amount)->Decimal:
-    if total_amount==0: return -1
+    if total_amount==0: return 0
     else: return Decimal(100*amount)/Decimal(abs(total_amount))
 
 total_amount = case_template.dependency(

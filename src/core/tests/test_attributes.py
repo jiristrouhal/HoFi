@@ -2027,6 +2027,9 @@ class Test_Name_Attribute(unittest.TestCase):
         self.assertTrue(attr.is_valid("Name"))
         self.assertTrue(attr.is_valid("Some Name"))
         self.assertTrue(attr.is_valid("Some Name (1)"))
+        self.assertTrue(attr.is_valid("Účetnictví"))
+
+        self.assertFalse(attr.is_valid("$Name"))
 
 
 class Test_Replacing_Dependency_Input(unittest.TestCase):

@@ -128,7 +128,7 @@ class Case_View_Tk(Case_View):
                 command = partial(self.__sort_all_by, heading_label),
                 anchor=tk.CENTER,
             )
-            self.__tree.column(heading_label, anchor=tk.E, minwidth=30, width=75)
+            self.__tree.column(heading_label, anchor=tk.E, minwidth=50, width=100)
         self.__tree.heading(
             '#0', 
             text=self.__lang("Item_Attributes", "name"), 

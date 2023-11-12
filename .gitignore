@@ -12,4 +12,5 @@ dummy*.py
 
 .coverage
 coverage_reports
-
+*.xml
+!test_hofi_localization/**.xml

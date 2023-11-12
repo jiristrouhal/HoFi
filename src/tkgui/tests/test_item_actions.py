@@ -17,6 +17,7 @@ class Test_Item_Window(unittest.TestCase):
         self.cr = ItemCreator()
         self.root = tk.Tk()
         self.win = Item_Window_Tk(self.root)
+        self.root.grab_release()
         self.item = self.cr.new("Item", {'x':'integer', 'y':'real'})
 
     def test_opening_and_closing_window(self)->None:
