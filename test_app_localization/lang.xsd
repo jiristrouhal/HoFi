@@ -1,0 +1,19 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+
+<xs:include schemaLocation="../src/localization/lang.xsd"></xs:include>
+
+<xs:redefine schemaLocation="../src/localization/ui_elem_schemas/menu.xsd">
+    <xs:complexType name="Item_Menu">
+    <xs:complexContent>
+        <xs:extension base="Item_Menu">
+        <xs:sequence>
+            <xs:element name="assembly" type="item"/>
+            <xs:element name="part" type="item"/>
+        </xs:sequence>
+        </xs:extension>
+    </xs:complexContent>
+    </xs:complexType>
+</xs:redefine>
+
+</xs:schema>

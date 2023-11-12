@@ -1,0 +1,18 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+
+<xs:include schemaLocation="./ui_elem_schemas/menu.xsd"></xs:include>
+
+
+<xs:element name="Language">
+<xs:complexType>
+    <xs:sequence>
+        <xs:element name="Item_Menu" type="Item_Menu"/>
+    </xs:sequence>
+    <xs:attribute name="Id" type="xs:string"/>
+    <xs:attribute name="Name" type="xs:string"/>
+</xs:complexType>
+</xs:element>
+
+
+</xs:schema>

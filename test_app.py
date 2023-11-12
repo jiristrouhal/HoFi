@@ -24,7 +24,7 @@ case_template.add(
 
 case_template.add_case_child_label('part', 'assembly')
 editor = new_editor(case_template, "cs_cz")
-lang = Lang_Object.get_lang_object("localization/cs_cz.xml")
+lang = Lang_Object.get_lang_object("test_app_localization/cs_cz.xml")
 
 win = tk.Tk()
 ui = Editor_Tk(editor, win, {'hmotnost':('hmotnost',)}, lang=lang)
