@@ -6,11 +6,11 @@ from src.core.attributes import Attribute
 
 
 from typing import List
-from src.core.editor import Item_Menu, Item_Window
+from src.core.editor import Item_Menu, Item_Window, Lang_Object
 class Item_Window_Tk(Item_Window):
     
-    def __init__(self, root:Optional[tk.Tk|tk.Frame])->None:
-        super().__init__()
+    def __init__(self, root:Optional[tk.Tk|tk.Frame], lang:Optional[Lang_Object]=None)->None:
+        super().__init__(lang)
         self.__root = root
         self.__win = tk.Toplevel(root)
         self.__ecr = Entry_Creator()
@@ -68,7 +68,7 @@ class Item_Window_Tk(Item_Window):
         frame.grid(row=0)
             
     def __add_attr(self,label:str,attr:Attribute,row:int,frame:tk.Frame)->None:
-        attr_name = tk.Label(frame, text=label)
+        attr_name = tk.Label(frame, text=self.lang.label("Item_Attributes",label))
         entry = self.__ecr.new(attr, frame)
         attr_name.grid(column=0, row=row, sticky=tk.E)
         entry.widget.grid(column=1, row=row, sticky=tk.W)

@@ -2,7 +2,7 @@ import tkinter.ttk as ttk
 import tkinter as tk
 from functools import partial
 
-from src.core.editor import Case_View, Item
+from src.core.editor import Case_View, Item, Lang_Object
 from typing import List, Tuple, Callable, Dict, Any
 
 class Case_View_Tk(Case_View):
@@ -10,7 +10,8 @@ class Case_View_Tk(Case_View):
     def __init__(
             self, window:tk.Tk|tk.Frame, 
             root_item:Item, 
-            attrs_for_display:Dict[str,Tuple[str,...]] = {}
+            attrs_for_display:Dict[str,Tuple[str,...]] = {},
+            lang:Lang_Object = Lang_Object.get_lang_object()
             )->None:
         self.__tree:ttk.Treeview = ttk.Treeview(window)
         self.__id = str(id(self))
@@ -29,6 +30,8 @@ class Case_View_Tk(Case_View):
 
         self.__set_up_headings()
         self.__reversed_sort:bool = False
+
+        self.__lang = lang
 
     @property
     def id(self)->str: return self.__id

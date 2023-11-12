@@ -90,7 +90,13 @@ class Case_Template:
 
 from src.core.item import Attribute_Data_Constructor
 class Editor:
-    def __init__(self, case_template:Case_Template, locale_code:Locale_Code)->None:
+    def __init__(
+        self, 
+        case_template:Case_Template, 
+        locale_code:Locale_Code, 
+        lang:Optional[Lang_Object] = None
+        )->None:
+
         self.__creator = ItemCreator(locale_code, case_template.currency_code)
         self.__creator.add_templates(*case_template.templates.values())
         self.__creator.add_template(CASE_TYPE_LABEL, {}, case_template.case_child_labels)
@@ -98,6 +104,8 @@ class Editor:
         self.__attributes =  case_template.attributes
         self.__insertable = case_template.insertable
         self.__locale_code = locale_code
+        if lang is None: self.__lang = Lang_Object.get_lang_object()
+        else: self.__lang = lang
 
     @property
     def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes
@@ -173,7 +181,8 @@ class Editor:
         
         @self.__creator._controller.single_cmd()
         def create_and_adopt()->Item:
-            item = self.__creator.from_template(itype)
+            print(self.__lang.label("Item_Types",itype))
+            item = self.__creator.from_template(itype, name=self.__lang.label("Item_Types",itype))
             parent.adopt(item)
             return item
         return create_and_adopt()
@@ -225,8 +234,13 @@ class Editor:
     class UndefinedTemplate(ItemCreator.UndefinedTemplate): pass
 
 
-def new_editor(case_template:Case_Template, locale_code:Locale_Code="en_us")->Editor:
-    return Editor(case_template, locale_code)
+def new_editor(
+    case_template:Case_Template, 
+    locale_code:Locale_Code="en_us", 
+    lang:Optional[Lang_Object] = None
+    )->Editor:
+
+    return Editor(case_template, locale_code, lang)
 
 
 def blank_case_template()->Case_Template:
@@ -383,11 +397,16 @@ from src.core.attributes import Attribute
 import abc
 class Item_Window(abc.ABC):
 
-    def __init__(self)->None:
+    def __init__(self, lang:Optional[Lang_Object] = None)->None:
+        if lang is None: lang = Lang_Object_NULL()
+        self.__lang = lang
         self.__open:bool = False
+
 
     @property
     def is_open(self)->bool: return self.__open
+    @property
+    def lang(self)->Lang_Object: return self.__lang
 
     def open(self, item:Item)->None: 
         name_attr = item._manager._attrfac.new("name",item.name)

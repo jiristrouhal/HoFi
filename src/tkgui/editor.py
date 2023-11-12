@@ -19,9 +19,9 @@ class Editor_Tk(EditorUI):
         )->None:
 
         self.__win = master_window
-        self.__item_window = Item_Window_Tk(self.__win)
+        self.__item_window = Item_Window_Tk(self.__win, lang=lang)
         self.__item_menu = Item_Menu_Tk(self.__win, lang=lang)
-        self.__caseview:Case_View_Tk = Case_View_Tk(self.__win, editor.root, displayable_attributes)
+        self.__caseview:Case_View_Tk = Case_View_Tk(self.__win, editor.root, displayable_attributes, lang=lang)
         super().__init__(editor, self.__item_menu, self.__item_window, self.__caseview, lang=lang)
 
     def _compose(self) -> None:
