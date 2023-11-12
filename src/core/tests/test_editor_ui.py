@@ -55,8 +55,8 @@ class Test_Item_Menu(unittest.TestCase):
         )
         case_template.add('Child', {'x':case_template.attr.integer(0)},())
         self.editor = new_editor(case_template)
-        self.menu = Item_Menu_Test()
-        self.editor_ui = Editor_UI_Test(self.editor, self.menu, Item_Window_Test(), Case_View_Test())
+        self.menu = Item_Menu_Test(lang={})
+        self.editor_ui = Editor_UI_Test(self.editor, self.menu, Item_Window_Test(), Case_View_Test(), lang={})
 
     def test_opening_and_closing_action_menu(self):
         self.assertFalse(self.menu.is_open)
@@ -108,7 +108,7 @@ from src.core.editor import Item_Menu_Cmds
 class Test_Defining_Cascade_Menu(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.menu = Item_Menu_Test()
+        self.menu = Item_Menu_Test(lang={})
         self.cmd_tree = Item_Menu_Cmds()
     
     def test_cascade_menu_for_single_level_of_commands(self):
@@ -171,9 +171,9 @@ class Test_Item_Window(unittest.TestCase):
         case_template.add_case_child_label("Parent")
         case_template.add('Child', {'x':case_template.attr.integer(0)},())
         self.editor = new_editor(case_template)
-        self.menu = Item_Menu_Test()
+        self.menu = Item_Menu_Test(lang={})
         self.item_win = Item_Window_Test()
-        self.editor_ui = Editor_UI_Test(self.editor, self.menu, self.item_win, Case_View_Test())
+        self.editor_ui = Editor_UI_Test(self.editor, self.menu, self.item_win, Case_View_Test(), lang={})
         self.new_case = self.editor.new_case("Case X")
         self.item = self.editor.new(self.new_case, "Parent")
 
@@ -190,7 +190,7 @@ class Test_Item_Window(unittest.TestCase):
         self.assertFalse(self.item_win.is_open)
 
     def test_command_labels_are_empty_list_if_no_commands_provided_via_Item_Menu_Cmds(self):
-        self.menu = Item_Menu_Test()
+        self.menu = Item_Menu_Test(lang={})
         self.menu.open(Item_Menu_Cmds())
         self.assertListEqual(self.menu.action_labels(), [])
 

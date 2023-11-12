@@ -289,7 +289,8 @@ class EditorUI(abc.ABC):
         editor:Editor,
         item_menu:Item_Menu,
         item_window:Item_Window,
-        caseview:Case_View
+        caseview:Case_View,
+        lang:Lang_Object
         )->None:
 
         self.__editor = editor
@@ -414,14 +415,17 @@ class Item_Window(abc.ABC):
 
 class Item_Menu(abc.ABC):
 
-    def __init__(self)->None:
+    def __init__(self, lang:Lang_Object)->None:
         self.__actions:Optional[Item_Menu_Cmds] = None
         self.__open:bool = False
+        self.__lang = lang
 
     @property
     def is_open(self)->bool: return self.__open
     @property
     def actions(self)->Optional[Item_Menu_Cmds]: return self.__actions
+    @property
+    def lang(self)->Lang_Object: return self.__lang
 
     def action_labels(self, *cmd_path)->List[str]: 
         if self.__actions is not None:
@@ -458,3 +462,45 @@ class Case_View(abc.ABC):
     @abc.abstractmethod
     def configure(self, **kwargs)->None:
         pass
+
+
+import xml.etree.ElementTree as et
+class Lang_Object(abc.ABC):
+    def __init__(self, *args)->None:
+        pass
+    
+    @abc.abstractmethod
+    def label(self, *path:str)->str: 
+        pass
+
+    @staticmethod
+    def get_lang_object(xml_lang_file_path:Optional[str]=None)->Lang_Object:
+        if xml_lang_file_path is None: return Lang_Object_NULL()
+        else:  return Lang_Object_Impl(xml_lang_file_path)
+
+    class Xml_Language_File_Does_Not_Exist(Exception): pass
+
+
+class Lang_Object_NULL(Lang_Object):
+
+    def __init__(self,*args)->None: pass
+    def label(self, *path)->str: return path[-1]
+
+
+class Lang_Object_Impl(Lang_Object):
+
+    def __init__(self, xml_lang_file_path:str)->None:
+        if not os.path.isfile(xml_lang_file_path): 
+            raise Lang_Object.Xml_Language_File_Does_Not_Exist(xml_lang_file_path)
+        self.__root:et.Element = et.parse(xml_lang_file_path).getroot()
+
+    def label(self, *path:str)->str: 
+        item = self.__root
+        for p in path: 
+            item = item.find(p)
+            if item is None: return path[-1]
+        try:
+            return item.attrib["Text"]
+        except: 
+            return path[-1]
+

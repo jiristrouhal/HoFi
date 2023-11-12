@@ -83,13 +83,13 @@ class Item_Window_Tk(Item_Window):
         
 
 
-from src.core.editor import Item_Menu_Cmds
+from src.core.editor import Item_Menu_Cmds, Lang_Object
 from functools import partial
 class Item_Menu_Tk(Item_Menu):
 
-    def __init__(self, root:tk.Tk|tk.Frame)->None:
-        self.__root = root
-        super().__init__()
+    def __init__(self, root:tk.Tk|tk.Frame, lang:Lang_Object = Lang_Object.get_lang_object())->None:
+        self.__parent_widget = root
+        super().__init__(lang=lang)
         self.__widget = tk.Menu()
 
     @property
@@ -97,18 +97,18 @@ class Item_Menu_Tk(Item_Menu):
 
     def _build_menu(self, event:Optional[tk.Event]=None, *args) -> None:
         assert(self.actions is not None)
-        self.__widget = self.__menu_cascade(self.__root, self.actions)
+        self.__widget = self.__menu_cascade(self.__parent_widget, self.actions)
         if event is not None: self.__widget.tk_popup(event.x_root, event.y_root)
 
     def __menu_cascade(self, parent:tk.Tk|tk.Menu|tk.Frame, actions:Item_Menu_Cmds)->tk.Menu:
         menu = tk.Menu(parent, tearoff=0)
         for label, func in actions.items.items():
             if callable(func): 
-                menu.add_command(label=label, command=partial(actions.run, label))
+                menu.add_command(label=self.lang.label("Item_Menu",label), command=partial(actions.run, label))
             else: 
                 assert(type(func)==type(actions))
                 submenu = self.__menu_cascade(menu, func)
-                menu.add_cascade(label = label, menu=submenu)
+                menu.add_cascade(label = self.lang.label("Item_Menu",label), menu=submenu)
         return menu
 
     def _destroy_menu(self) -> None:
