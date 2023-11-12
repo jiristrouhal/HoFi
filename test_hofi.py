@@ -103,7 +103,11 @@ editor_ui = Editor_Tk(
         "relative_amount":("relative_amount",),
         "date":("date",)
     }),
-    lang = lang
+    lang = lang,
+    icons = {
+        "Income":"src/tkgui/icons/income.png", 
+        "Expense":"src/tkgui/icons/expense.png"
+    }
 )
 
 editor_ui.configure(precision=2, trailing_zeros=True)

@@ -4,17 +4,24 @@ from functools import partial
 
 from src.core.editor import Case_View, Item, Lang_Object
 from typing import List, Tuple, Callable, Dict, Any
+from typing import Optional
+from PIL import Image, ImageTk
+import os
 
 class Case_View_Tk(Case_View):
     
     def __init__(
-            self, window:tk.Tk|tk.Frame, 
-            root_item:Item, 
-            attrs_for_display:Dict[str,Tuple[str,...]] = {},
-            lang:Lang_Object = Lang_Object.get_lang_object()
-            )->None:
+        self, window:tk.Tk|tk.Frame, 
+        root_item:Item, 
+        attrs_for_display:Dict[str,Tuple[str,...]] = {},
+        lang:Lang_Object = Lang_Object.get_lang_object(),
+        icons:Dict[str,str] = {}
+        )->None:
         
         self.__tree:ttk.Treeview = ttk.Treeview(window)
+        self.__icons = {label:self.__get_icon(path) for label,path in icons.items()}
+        for label, icon in self.__icons.items(): 
+            if icon is None: self.__icons.pop(label)
         yscrollbar = ttk.Scrollbar(window, orient ="vertical", command = self.__tree.yview)
         yscrollbar.pack(anchor=tk.W, fill=tk.Y, side=tk.LEFT)
         self.__tree.configure(yscrollcommand=yscrollbar)
@@ -61,13 +68,15 @@ class Case_View_Tk(Case_View):
 
     def __new_item(self, item:Item)->None:
         values = self.__collect_and_set_values(item)
-        self.__tree.insert(
+        item_iid = self.__tree.insert(
             item.parent.id, 
             index=tk.END, 
             iid=item.id, 
             text=item.name, 
-            values=values
+            values=values,
         )
+        if item.itype in self.__icons: self.__tree.item(item_iid, image=self.__icons[item.itype])
+        
         self.__tree.see(item.id)
         item.add_action(self.__id, 'adopt', self.__new_item)
         item.add_action(self.__id, 'leave', self.__remove_item)
@@ -87,6 +96,12 @@ class Case_View_Tk(Case_View):
         self.__item_dict[item.id] = item
 
         for child in item.children: self.__new_item(child)
+
+    def __get_icon(self, path:str)->Optional[ImageTk.PhotoImage]:
+        if os.path.isfile(path):
+            return ImageTk.PhotoImage(Image.open(path))
+        else: 
+            return None
 
     def __remove_item(self, item:Item)->None:
         for child in item.children: self.__remove_item(child)
@@ -135,6 +150,7 @@ class Case_View_Tk(Case_View):
             command = partial(self.__sort_all_by, '#0'),
             anchor=tk.CENTER
         )
+        self.__tree.column('#0', minwidth=100, width=300)
 
     def __sort_all_by(self,column_label:str)->None:
         self.__sort_by(column_label, parent_iid="")
