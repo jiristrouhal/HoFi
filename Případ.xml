@@ -1,0 +1,9 @@
+<__Case__ name="Případ">
+	<Item name="Předmět" total_amount="+3,00 Kč" total_income="+3,00 Kč" total_expense="0,00 Kč" relative_amount="-1 %">
+		<Income name="Příjem" income_amount="1,00 Kč" relative_amount="33,33333333333333333333333333 %" date="12.11.2023" />
+		<Item name="Předmět" total_amount="+2,00 Kč" total_income="+2,00 Kč" total_expense="0,00 Kč" relative_amount="66,66666666666666666666666667 %">
+			<Income name="Příjem" income_amount="1,00 Kč" relative_amount="50 %" date="12.11.2023" />
+			<Income name="Příjem (1)" income_amount="1,00 Kč" relative_amount="50 %" date="12.11.2023" />
+		</Item>
+	</Item>
+</__Case__>

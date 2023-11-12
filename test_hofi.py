@@ -1,10 +1,11 @@
 import tkinter as tk
-from src.tkgui.editor import Editor_Tk
+from src.tkgui.editor import Editor_Tk, Lang_Object
 from src.core.editor import blank_case_template, new_editor, freeatt_child, freeatt_parent
 from decimal import Decimal
 
 case_template = blank_case_template()
 case_template.configure(currency_code="CZK")
+lang = Lang_Object.get_lang_object("./test_hofi_localization/cs_cz.xml")
 
 amount = case_template.attr.money(1, custom_condition=lambda x: x>=0)
 signed_amount = case_template.attr.money(enforce_sign=True)
@@ -81,7 +82,7 @@ case_template.add(
 case_template.add_case_child_label("Item")
 
 
-editor = new_editor(case_template, "cs_cz")
+editor = new_editor(case_template, "cs_cz", lang=lang)
 
 win = tk.Tk()
 editor_ui = Editor_Tk(
@@ -91,7 +92,8 @@ editor_ui = Editor_Tk(
         "amount":("income_amount","expense_amount","total_amount"),
         "relative_amount":("relative_amount",),
         "date":("date",)
-    })
+    }),
+    lang = lang
 )
 
 editor_ui.configure(precision=2, trailing_zeros=True)

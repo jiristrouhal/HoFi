@@ -8,10 +8,8 @@ data
 dummy*.py
 
 *.pyc
-*.xml
 !data_template.xml
 
 .coverage
 coverage_reports
 
-!**/loc/*.xml

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<?xml-model 
+    href="./lang.xsd"
+    type="application/xml" 
+    schematypens="http://www.w3.org/2001/XMLSchema"
+?>
+
+
+<Language Id="cs_cz" Name="Čeština">
+    <Item_Menu>
+        <add Text="Add"/>
+        <edit Text="Edit..."/>
+        <delete Text="Remove"/>
+
+        <new_case Text="New case"/>
+        <import_from_xml Text="Import..."/>
+        <export_to_xml Text="Export to xml..."/>
+
+        <Income Text="Income"/>
+        <Expense Text="Expense"/>
+        <Item Text="Item"/>
+    </Item_Menu>
+
+    <Item_Window>
+        <Revert Text="Revert"/>
+        <OK Text="OK"/>
+        <Cancel Text="Cancel"/>
+    </Item_Window>
+
+    <Item_Types>
+        <Case Text="Case"/>
+        <Income Text="Income"/>
+        <Expense Text="Expense"/>
+        <Item Text="Item"/>
+    </Item_Types>
+
+    <Item_Attributes>
+        <name Text="Name"/>
+        <total_amount Text="Total amount"/>
+        <total_income Text="Total income"/>
+        <total_expense Text="Total expense"/>
+        <income_amount Text="Amount"/>
+        <expense_amount Text="Amount"/>
+        <amount Text="Amount"/>
+        <relative_amount Text="Relative amount"/>
+        <date Text="Date"/>
+    </Item_Attributes>
+
+</Language>

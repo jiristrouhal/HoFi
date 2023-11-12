@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<?xml-model 
+    href="./lang.xsd" 
+    type="application/xml" 
+    schematypens="http://www.w3.org/2001/XMLSchema"
+?>
+
+
+<Language Id="cs_cz" Name="Čeština">
+
+    <Item_Menu>
+        <add Text="Přidat"/>
+        <edit Text="Upravit..."/>
+        <delete Text="Odstranit"/>
+
+        <new_case Text="Nový"/>
+        <import_from_xml Text="Importovat..."/>
+        <export_to_xml Text="Exportovat..."/>
+
+        <Income Text="Příjem"/>
+        <Expense Text="Výdaj"/>
+        <Item Text="Předmět"/>
+    </Item_Menu>
+
+    <Item_Window>
+        <Revert Text="Výchozí"/>
+        <OK Text="OK"/>
+        <Cancel Text="Zrušit"/>
+    </Item_Window>
+
+    <Item_Types>
+        <Case Text="Případ"/>
+        <Income Text="Příjem"/>
+        <Expense Text="Výdaj"/>
+        <Item Text="Předmět"/>
+    </Item_Types>
+
+    <Item_Attributes>
+        <name Text="Název"/>
+        <total_amount Text="Celkem"/>
+        <total_income Text="Příjem celkem"/>
+        <total_expense Text="Výdaj celkem"/>
+        <income_amount Text="Výše"/>
+        <expense_amount Text="Výše"/>
+        <amount Text="Výše"/>
+        <relative_amount Text="Podíl"/>
+        <date Text="Datum"/>
+    </Item_Attributes>
+
+</Language>

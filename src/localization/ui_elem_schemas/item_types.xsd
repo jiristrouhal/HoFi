@@ -14,7 +14,6 @@
 <xs:complexType name="Item_Attributes">
     <xs:sequence>
         <xs:element name="name" type="item"/>
-        <xs:element name="mass" type="item"/>
     </xs:sequence>
 </xs:complexType>
 

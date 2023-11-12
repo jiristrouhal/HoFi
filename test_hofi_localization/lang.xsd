@@ -27,21 +27,30 @@
     </xs:complexType>
 
     <xs:complexType name="Item_Attributes">
-    <xs:complexContent>
-        <xs:extension base="Item_Attributes">
-        <xs:sequence>
-            <xs:element name="mass" type="item"/>
-        </xs:sequence>
-        </xs:extension>
-    </xs:complexContent>
-    </xs:complexType>
+        <xs:complexContent>
+            <xs:extension base="Item_Attributes">
+                <xs:sequence>
+                    <xs:element name="total_amount" type="item"/>
+                    <xs:element name="total_income" type="item"/>
+                    <xs:element name="total_expense" type="item"/>
+                    <xs:element name="income_amount" type="item"/>
+                    <xs:element name="expense_amount" type="item"/>
+
+                    <xs:element name="amount" type="item"/>
+                    <xs:element name="relative_amount" type="item"/>
+                    <xs:element name="date" type="item"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+        </xs:complexType>
 </xs:redefine>
 
 
 <xs:group name="Item_Types">
     <xs:sequence>
-        <xs:element name="assembly" type="item"/>
-        <xs:element name="part" type="item"/>
+        <xs:element name="Income" type="item"/>
+        <xs:element name="Expense" type="item"/>
+        <xs:element name="Item" type="item" />
     </xs:sequence>
 </xs:group>
 
