@@ -13,7 +13,12 @@ class Case_View_Tk(Case_View):
             attrs_for_display:Dict[str,Tuple[str,...]] = {},
             lang:Lang_Object = Lang_Object.get_lang_object()
             )->None:
+        
         self.__tree:ttk.Treeview = ttk.Treeview(window)
+        yscrollbar = ttk.Scrollbar(window, orient ="vertical", command = self.__tree.yview)
+        yscrollbar.pack(anchor=tk.W, fill=tk.Y, side=tk.LEFT)
+        self.__tree.configure(yscrollcommand=yscrollbar)
+
         self.__id = str(id(self))
         self.__lang = lang
 

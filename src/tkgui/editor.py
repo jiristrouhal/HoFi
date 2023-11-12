@@ -25,7 +25,7 @@ class Editor_Tk(EditorUI):
         super().__init__(editor, self.__item_menu, self.__item_window, self.__caseview, lang=lang)
 
     def _compose(self) -> None:
-        self.__caseview.widget.pack()
+        self.__caseview.widget.pack(expand=1, fill=tk.BOTH)
         self.__caseview.widget.bind(
             "<Button-3>",
             self.__caseview.do_on_tree_item(self.open_item_menu)
