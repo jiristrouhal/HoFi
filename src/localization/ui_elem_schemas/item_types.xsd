@@ -5,7 +5,9 @@
 
 
 <xs:complexType name="Item_Types">
-    <xs:sequence/>
+    <xs:sequence>
+        <xs:element name="Case" type="item"/>
+    </xs:sequence>
 </xs:complexType>
 
 

@@ -76,9 +76,9 @@ class Item_Window_Tk(Item_Window):
 
     def __create_button_frame(self)->None:
         bf = tk.Frame(self.__win, name="button_frame")
-        tk.Button(bf, text="Revert", command=lambda: self.__revert(), name="revert").grid(row=0,column=0)
-        tk.Button(bf, text="OK", command=lambda: self.__ok(),  name="ok").grid(row=0,column=1)
-        tk.Button(bf, text="Cancel", command=lambda: self.__cancel(), name="cancel").grid(row=0,column=2)
+        tk.Button(bf, text=self.lang("Item_Window", "Revert"), command=lambda: self.__revert(), name="revert").grid(row=0,column=0)
+        tk.Button(bf, text=self.lang("Item_Window", "OK"), command=lambda: self.__ok(),  name="ok").grid(row=0,column=1)
+        tk.Button(bf, text=self.lang("Item_Window", "Cancel"), command=lambda: self.__cancel(), name="cancel").grid(row=0,column=2)
         bf.grid(row=1)
         
 

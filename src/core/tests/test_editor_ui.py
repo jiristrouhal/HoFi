@@ -56,7 +56,7 @@ class Test_Item_Menu(unittest.TestCase):
         case_template.add('Child', {'x':case_template.attr.integer(0)},())
         self.editor = new_editor(case_template)
         self.menu = Item_Menu_Test(lang={})
-        self.editor_ui = Editor_UI_Test(self.editor, self.menu, Item_Window_Test(), Case_View_Test(), lang={})
+        self.editor_ui = Editor_UI_Test(self.editor, self.menu, Item_Window_Test(), Case_View_Test())
 
     def test_opening_and_closing_action_menu(self):
         self.assertFalse(self.menu.is_open)

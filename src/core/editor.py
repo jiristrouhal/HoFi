@@ -181,7 +181,6 @@ class Editor:
         
         @self.__creator._controller.single_cmd()
         def create_and_adopt()->Item:
-            print(self.__lang.label("Item_Types",itype))
             item = self.__creator.from_template(itype, name=self.__lang.label("Item_Types",itype))
             parent.adopt(item)
             return item
@@ -304,7 +303,7 @@ class EditorUI(abc.ABC):
         item_menu:Item_Menu,
         item_window:Item_Window,
         caseview:Case_View,
-        lang:Lang_Object
+        lang:Optional[Lang_Object] = None
         )->None:
 
         self.__editor = editor
@@ -312,6 +311,8 @@ class EditorUI(abc.ABC):
         self.__item_window = item_window
         self.__caseview = caseview
         self._compose()
+        if lang is None: lang = Lang_Object.get_lang_object()
+        self.__lang = lang
 
     @property
     def caseview(self)->Case_View: return self.__caseview
@@ -383,9 +384,8 @@ class EditorUI(abc.ABC):
         if item is not self.__editor.root:
             self.__item_window.open(item)
     
-    DEFAULT_CASE_NAME = "Case"
     def __new_case(self)->None:
-        self.__editor.new_case(EditorUI.DEFAULT_CASE_NAME)
+        self.__editor.new_case(self.__lang.label("Item_Types","Case"))
 
     
     class Opening_Item_Menu_For_Nonexistent_Item(Exception): pass
@@ -491,6 +491,8 @@ class Lang_Object(abc.ABC):
     @abc.abstractmethod
     def label(self, *path:str)->str: 
         pass
+
+    def __call__(self, *path:str)->str: return self.label(*path)
 
     @staticmethod
     def get_lang_object(xml_lang_file_path:Optional[str]=None)->Lang_Object:
