@@ -15,6 +15,7 @@ class Case_View_Tk(Case_View):
             )->None:
         self.__tree:ttk.Treeview = ttk.Treeview(window)
         self.__id = str(id(self))
+        self.__lang = lang
 
         self.__tree['columns'] = list(attrs_for_display.keys())
         self.__attrs_for_display = attrs_for_display
@@ -30,8 +31,6 @@ class Case_View_Tk(Case_View):
 
         self.__set_up_headings()
         self.__reversed_sort:bool = False
-
-        self.__lang = lang
 
     @property
     def id(self)->str: return self.__id
@@ -116,14 +115,21 @@ class Case_View_Tk(Case_View):
         return values
     
     def __set_up_headings(self)->None:
-        heading_labels = ["#0"]+list(self.__tree['columns'])
+        heading_labels = list(self.__tree['columns'])
         for heading_label in heading_labels:
             self.__tree.heading(
                 heading_label, 
-                command = partial(
-                    self.__sort_all_by, heading_label
-                )
+                text = self.__lang("Item_Attributes", heading_label),
+                command = partial(self.__sort_all_by, heading_label),
+                anchor=tk.CENTER,
             )
+            self.__tree.column(heading_label, anchor=tk.E, minwidth=30, width=75)
+        self.__tree.heading(
+            '#0', 
+            text=self.__lang("Item_Attributes", "name"), 
+            command = partial(self.__sort_all_by, '#0'),
+            anchor=tk.CENTER
+        )
 
     def __sort_all_by(self,column_label:str)->None:
         self.__sort_by(column_label, parent_iid="")
