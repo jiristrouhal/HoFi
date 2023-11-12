@@ -136,7 +136,8 @@ class ItemCreator:
 
     def __read_attribute_values_from_xml_elem(self,loaded_item:Item,xml_elem:et.Element)->None:
         for attr_name in loaded_item.attributes:
-            loaded_item.attributes[attr_name].read(xml_elem.attrib[attr_name], overwrite_dependent=True)
+            if attr_name in xml_elem.attrib:
+                loaded_item.attributes[attr_name].read(xml_elem.attrib[attr_name], overwrite_dependent=True)
     
     def save(self, item:Item, filetype:FileType)->None:
         xml_tree = self.et.ElementTree(self.__create_xml_items_hierarchy(item))
