@@ -21,6 +21,7 @@ class Case_Template:
         self.__constructor = Attribute_Data_Constructor()
         self.__insertable:str = ""
         self.__currency:Currency_Code = "USD"
+        self.__case_template:Optional[Template] = None
 
     @property
     def attr(self)->Attribute_Data_Constructor: return self.__constructor
@@ -56,11 +57,20 @@ class Case_Template:
                 self.__attributes[attr] = info
             elif info['atype'] != self.__attributes[attr]['atype']: 
                 raise Case_Template.ReaddingAttributeWithDifferentType(
-                    f"Attribute '{attr}' has type {info['atype']}. Previously was added with type '{self.__attributes[attr]}'."
+                    f"Attribute '{attr}' has type {info['atype']}. "
+                    f"Previously was added with type '{self.__attributes[attr]}'."
                 )
 
         self.__templates[label] = Template(label, attribute_info, child_template_labels, dependencies)
 
+    def set_case_template(
+        self, 
+        attribute_info:Dict[str, Dict[str, Any]], 
+        child_template_labels:Tuple[str,...], 
+        dependencies:Optional[List[Template.Dependency]] = None
+        )->None:
+
+        self.add(CASE_TYPE_LABEL, attribute_info, child_template_labels, dependencies)
 
     def add_case_child_label(self,*labels:str)->None:
         for label in labels:
@@ -80,6 +90,12 @@ class Case_Template:
         if template_label not in self.__templates: raise Case_Template.UndefinedTemplate(template_label)
         self.__insertable = template_label
 
+    def _list_templates(self)->Tuple[Template,...]:
+        returned_templates = list(self.__templates.values())
+        if not CASE_TYPE_LABEL in self.__templates:
+            returned_templates.insert(0,Template(CASE_TYPE_LABEL, {}, tuple(self.__case_child_labels)))
+        return returned_templates
+
 
     class Dependency(Template.Dependency): pass
     class BlankTemplateLabel(Exception): pass
@@ -98,8 +114,7 @@ class Editor:
         )->None:
 
         self.__creator = ItemCreator(locale_code, case_template.currency_code)
-        self.__creator.add_templates(*case_template.templates.values())
-        self.__creator.add_template(CASE_TYPE_LABEL, {}, case_template.case_child_labels)
+        self.__creator.add_templates(*case_template._list_templates())
         self.__root = self.__creator.new("_")
         self.__attributes =  case_template.attributes
         self.__insertable = case_template.insertable

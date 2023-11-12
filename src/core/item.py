@@ -27,7 +27,7 @@ class Template:
     @staticmethod
     def dependency(dependent:str, func:Callable[[Any],Any], *free:Free_Attribute, label:str="")->Dependency:
         return Template.Dependency(dependent, func, free, label=label)
-
+    
     @dataclasses.dataclass(frozen=True)
     class Dependency:
         dependent:str

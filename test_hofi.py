@@ -81,6 +81,16 @@ case_template.add(
 )
 case_template.add_case_child_label("Item")
 
+case_template.set_case_template(
+    {
+        "total_amount":signed_amount, 
+        "total_income":signed_amount,
+        "total_expense":signed_amount
+    }, 
+    ("Income","Expense","Item"), 
+    dependencies=[total_income, total_expense, total_amount]
+)
+
 
 editor = new_editor(case_template, "cs_cz", lang=lang)
 
