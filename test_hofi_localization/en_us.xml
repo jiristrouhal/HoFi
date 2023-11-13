@@ -45,7 +45,10 @@
         <expense_amount Text="Amount"/>
         <amount Text="Amount"/>
         <relative_amount Text="Relative amount"/>
+        <relative_income_amount Text="Relative income"/>
+        <relative_expense_amount Text="Relative expense"/>
         <date Text="Date"/>
+        <comment Text="Comment"/>
     </Item_Attributes>
 
 </Language>

@@ -719,7 +719,7 @@ class ItemImpl(Item):
  
     def attribute(self,label:str)->Attribute:
         if not label in self.__attributes: 
-            raise Item.NonexistentAttribute(label)
+            raise Item.NonexistentAttribute(f"Item {self.name} of type {self.itype} has not attribute named {label}.")
         else:
             return self.__attributes[label]
         

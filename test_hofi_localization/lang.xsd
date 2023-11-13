@@ -38,7 +38,10 @@
 
                     <xs:element name="amount" type="item"/>
                     <xs:element name="relative_amount" type="item"/>
+                    <xs:element name="relative_income_amount" type="item"/>
+                    <xs:element name="relative_expense_amount" type="item"/>
                     <xs:element name="date" type="item"/>
+                    <xs:element name="comment" type="item"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>

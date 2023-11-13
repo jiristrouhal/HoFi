@@ -327,7 +327,7 @@ class Text_Entry(Attribute_Entry):
     def value(self) -> Any: return self.__text.get(1.0, tk.END)
     
     def _create_entry(self)->None:
-        self.__text = tk.Text(self.master)
+        self.__text = tk.Text(self.master, height=10, width=50)
         self.__text.insert(1.0, self.attr.value)
 
     def _confirmed_value(self)->str:

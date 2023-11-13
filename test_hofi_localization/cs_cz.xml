@@ -42,11 +42,14 @@
         <total_amount Text="Celkem"/>
         <total_income Text="Příjem celkem"/>
         <total_expense Text="Výdaj celkem"/>
-        <income_amount Text="Výše"/>
-        <expense_amount Text="Výše"/>
+        <income_amount Text="Příjem"/>
+        <expense_amount Text="Výdaj"/>
         <amount Text="Výše"/>
         <relative_amount Text="Podíl"/>
+        <relative_income_amount Text="Poměrný příjem"/>
+        <relative_expense_amount Text="Poměrný výdaj"/>
         <date Text="Datum"/>
+        <comment Text="Poznámky"/>
     </Item_Attributes>
 
 </Language>

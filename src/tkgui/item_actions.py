@@ -68,7 +68,7 @@ class Item_Window_Tk(Item_Window):
         for label, attr in attrs.items():
             self.__add_attr(label,attr,row,frame)
             row += 1
-        frame.grid(row=0)
+        frame.pack(side=tk.TOP, expand=2, fill=tk.BOTH)
             
     def __add_attr(self,label:str,attr:Attribute,row:int,frame:tk.Frame)->None:
         attr_name = tk.Label(frame, text=self.lang.label("Item_Attributes",label))
@@ -82,7 +82,7 @@ class Item_Window_Tk(Item_Window):
         tk.Button(bf, text=self.lang("Item_Window", "Revert"), command=lambda: self.__revert(), name="revert").grid(row=0,column=0)
         tk.Button(bf, text=self.lang("Item_Window", "OK"), command=lambda: self.__ok(),  name="ok").grid(row=0,column=1)
         tk.Button(bf, text=self.lang("Item_Window", "Cancel"), command=lambda: self.__cancel(), name="cancel").grid(row=0,column=2)
-        bf.grid(row=1)
+        bf.pack(side=tk.BOTTOM)
         
 
 
