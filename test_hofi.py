@@ -40,13 +40,13 @@ total_expense = case_template.dependency(
 
 
 relative_income_amount = case_template.dependency(
-    "relative_amount", 
+    "relative_income_amount", 
     rel_amount,
     "income_amount",
     freeatt_parent("total_income", amount)
 )
 relative_expense_amount = case_template.dependency(
-    "relative_amount", 
+    "relative_expense_amount", 
     rel_amount,
     "expense_amount",
     freeatt_parent("total_expense", amount)
@@ -69,7 +69,7 @@ case_template.add(
     "Income", 
     {
         "income_amount":amount, 
-        "relative_amount":rel_amount_attr, 
+        "relative_income_amount":rel_amount_attr, 
         "date":transaction_date,
         "comment":comment
     },
@@ -79,7 +79,7 @@ case_template.add(
     "Expense", 
     {
         "expense_amount":amount, 
-        "relative_amount":rel_amount_attr, 
+        "relative_expense_amount":rel_amount_attr, 
         "date":transaction_date,
         "comment":comment
     },
@@ -120,8 +120,8 @@ editor_ui = Editor_Tk(
     ({
         "income_amount":("income_amount","total_income"),
         "expense_amount":("expense_amount", "total_expense"),
-        "relative_income_amount":("relative_amount", "relative_income_amount",),
-        "relative_expense_amount":("relative_amount", "relative_income_amount",),
+        "relative_income_amount":("relative_income_amount","relative_amount"),
+        "relative_expense_amount":("relative_expense_amount","relative_amount"),
         "date":("date",)
     }),
     lang = lang,
