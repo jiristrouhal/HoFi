@@ -135,6 +135,8 @@ class Editor:
     def ncases(self)->int: return len(self.__root.children)
     @property
     def export_dir_path(self)->str: return self.__creator.file_path
+    @property
+    def creator(self)->ItemCreator: return self.__creator
         
     def _cases(self)->Set[Item]: 
         return self.__root.children.copy()
@@ -184,7 +186,7 @@ class Editor:
             self.__root.adopt(case)
             return case
         return load_case_and_add_to_editor()
-
+    
     def new(self,parent:Item,itype:str)->Item:
         if itype not in self.__creator.templates:
             raise Editor.UndefinedTemplate(itype)
@@ -392,10 +394,17 @@ class EditorUI(abc.ABC):
     def __item_actions(self, item:Item)->Item_Menu_Cmds:
         actions = Item_Menu_Cmds()
         for itype in self.__editor.item_types_to_create(item):
-            actions.insert({itype: partial(self.__editor.new, item ,itype)}, "add")
+            actions.insert({itype: partial(self.__create_new_and_open_edit_window, item ,itype)}, "add")
         actions.insert({'edit':lambda: self.open_item_window(item)})
         actions.insert({'delete':lambda: self.__editor.remove(item, item.parent)})
         return actions
+
+    def __create_new_and_open_edit_window(self, parent:Item, itype:str, *args)->None:
+        @self.editor.creator._controller.single_cmd()
+        def add_new():
+            new_item = self.__editor.new(itype)
+            self.open_item_window(new_item, *args)
+            
     
     def open_item_window(self, item:Item, *args)->None:
         if item is not self.__editor.root:
@@ -412,6 +421,7 @@ class EditorUI(abc.ABC):
 from typing import Callable
 from src.core.attributes import Attribute
 import abc
+
 class Item_Window(abc.ABC):
 
     def __init__(self, lang:Optional[Lang_Object] = None)->None:
