@@ -400,12 +400,9 @@ class EditorUI(abc.ABC):
         return actions
 
     def __create_new_and_open_edit_window(self, parent:Item, itype:str, *args)->None:
-        @self.editor.creator._controller.single_cmd()
-        def add_new():
-            new_item = self.__editor.new(itype)
-            self.open_item_window(new_item, *args)
+        new_item = self.__editor.new(itype)
+        self.open_item_window(new_item, *args)
             
-    
     def open_item_window(self, item:Item, *args)->None:
         if item is not self.__editor.root:
             self.__item_window.open(item)
