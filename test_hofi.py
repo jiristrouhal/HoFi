@@ -75,7 +75,6 @@ case_template.add(
     "Debts", 
     {
         "total_debt_amount":amount, 
-        "date":transaction_date,
         "comment":comment
     },
     child_template_labels=("Debt","NonMonetary_Debt"),
