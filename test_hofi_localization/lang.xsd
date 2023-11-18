@@ -54,6 +54,9 @@
         <xs:element name="Income" type="item"/>
         <xs:element name="Expense" type="item"/>
         <xs:element name="Item" type="item" />
+        <xs:element name="Debts" type="item"/>
+        <xs:element name="Debt" type="item"/>
+        <xs:element name="NonMonetary_Debt" type="item"/>
     </xs:sequence>
 </xs:group>
 

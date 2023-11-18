@@ -158,19 +158,19 @@ class Case_View_Tk(Case_View):
         self.__tree.column('#0', minwidth=100, width=300)
 
     def __sort_all_by(self,column_label:str)->None:
-        self.__sort_by(column_label, parent_iid="")
+        selection = self.__tree.selection()
+        if not selection: parent_iid=""
+        else: parent_iid=self.__tree.parent(selection[-1])
+        self.__sort_by(column_label, parent_iid=parent_iid)
         self.__reversed_sort = not self.__reversed_sort
 
     def __sort_by(self, column_label:str, parent_iid:str)->None:
         if column_label=="#0":
             child_data = [(c, self.__tree.item(c)['text']) for c in self.__tree.get_children(parent_iid)]
+            child_data.sort(key=lambda x: x[1], reverse=self.__reversed_sort)
         else:
             child_data = [(c, self.__tree.set(c, column_label)) for c in self.__tree.get_children(parent_iid)]
-        child_data.sort(key=lambda x: x[1], reverse=self.__reversed_sort)
+            child_data.sort(key=lambda x: (len(x[1]), x[1]), reverse=self.__reversed_sort)
         for index, (c, _) in enumerate(child_data):
             self.__tree.move(c, parent_iid, index)
-
-        for c in self.__tree.get_children(parent_iid):
-            self.__sort_by(column_label=column_label, parent_iid=c)
-        
 

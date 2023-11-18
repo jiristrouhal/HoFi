@@ -65,6 +65,44 @@ relative_item_expense_amount = case_template.dependency(
 )
 
 
+debt_sum = case_template.dependency(
+    "total_debt_amount",
+    lambda x: sum(x),
+    freeatt_child("debt_amount", amount)
+)
+
+case_template.add(
+    "Debts", 
+    {
+        "total_debt_amount":amount, 
+        "date":transaction_date,
+        "comment":comment
+    },
+    child_template_labels=("Debt","NonMonetary_Debt"),
+    dependencies=[debt_sum]
+)
+
+
+case_template.add(
+    "Debt", 
+    {
+        "debt_amount":amount, 
+        "date":transaction_date,
+        "comment":comment
+    },
+    child_template_labels=()
+)
+
+case_template.add(
+    "NonMonetary_Debt", 
+    {
+        "date":transaction_date,
+        "comment":comment
+    },
+    child_template_labels=()
+)
+
+
 case_template.add(
     "Income", 
     {
@@ -98,7 +136,7 @@ case_template.add(
     ("Income","Expense","Item"), 
     dependencies=[total_income, total_expense, total_amount, relative_item_income_amount, relative_item_expense_amount]
 )
-case_template.add_case_child_label("Item")
+
 
 case_template.set_case_template(
     {
@@ -106,7 +144,7 @@ case_template.set_case_template(
         "total_income":amount,
         "total_expense":amount
     }, 
-    ("Income","Expense","Item"), 
+    child_template_labels=("Debts","Income","Expense","Item"), 
     dependencies=[total_income, total_expense, total_amount]
 )
 
@@ -119,7 +157,7 @@ editor_ui = Editor_Tk(
     win, 
     ({
         "income_amount":("income_amount","total_income"),
-        "expense_amount":("expense_amount", "total_expense"),
+        "expense_amount":("expense_amount", "total_expense", "debt_amount","total_debt_amount"),
         "relative_income_amount":("relative_income_amount","relative_amount"),
         "relative_expense_amount":("relative_expense_amount","relative_amount"),
         "date":("date",)
@@ -127,7 +165,9 @@ editor_ui = Editor_Tk(
     lang = lang,
     icons = {
         "Income":"src/tkgui/icons/income.png", 
-        "Expense":"src/tkgui/icons/expense.png"
+        "Expense":"src/tkgui/icons/expense.png",
+        "Debts":"src/tkgui/icons/debt.png",
+        "NonMonetary_Debt":"src/tkgui/icons/nonmonetary_debt.png",
     }
 )
 

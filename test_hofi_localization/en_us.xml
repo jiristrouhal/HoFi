@@ -21,6 +21,9 @@
         <Income Text="Income"/>
         <Expense Text="Expense"/>
         <Item Text="Item"/>
+        <Debts Text="Debts"/>
+        <Debt Text="Debt"/>
+        <NonMonetary_Debt Text="Non-monetary debt"/>
     </Item_Menu>
 
     <Item_Window>
@@ -34,6 +37,9 @@
         <Income Text="Income"/>
         <Expense Text="Expense"/>
         <Item Text="Item"/>
+        <Debts Text="Debts"/>
+        <Debt Text="Debt"/>
+        <NonMonetary_Debt Text="Non-monetary debt"/>
     </Item_Types>
 
     <Item_Attributes>

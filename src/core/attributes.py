@@ -411,7 +411,8 @@ Command_Type = Literal['set']
 from typing import Set, List
 class Attribute(AbstractAttribute):
     default_value:Any = ""
-    
+    minimum_value:Any = ""
+
     def __init__(
         self,
         factory:Attribute_Factory, 
@@ -456,8 +457,9 @@ class Attribute(AbstractAttribute):
     @abc.abstractmethod
     def print(self, *options)->str: pass # pragma: no cover
     
-    @abc.abstractmethod
-    def read(self,text:str,overwrite_dependent:bool=False)->None: pass # pragma: no cover
+    def read(self, text:str, overwrite_dependent:bool=False)->None:
+        value = self.__class__.value_from_text(text=text)
+        if self.is_valid(value): self.set(value, overwrite_dependent)
         
     def set(self,value:Any,overwrite_dependent:bool=False)->None: 
         if not overwrite_dependent and self._dependency is not DependencyImpl.NULL: return
@@ -474,6 +476,9 @@ class Attribute(AbstractAttribute):
             else: 
                 return False
         return self._is_value_valid(value) and self.__custom_condition(value)
+    
+    @abc.abstractstaticmethod
+    def value_from_text(text:str, *args)->Any: pass # pragma: no cover
 
     @abc.abstractmethod
     def _is_type_valid(self,value:Any)->bool: pass # pragma: no cover
@@ -518,8 +523,10 @@ class Attribute(AbstractAttribute):
     class NoDependencyIsSet(Exception): pass
 
 
+from math import inf
 class Number_Attribute(Attribute):
     default_value = 0
+    minimum_value:float = -inf
     class CannotExtractNumber(Exception): pass
     _reading_exception:Type[Exception] = CannotExtractNumber
 
@@ -540,14 +547,15 @@ class Number_Attribute(Attribute):
 
         pass
 
-    def read(self, text:str, overwrite_dependent:bool=False)->None:
+    @staticmethod
+    def value_from_text(text:str)->Any:
         text = text.strip().replace(",",".")
-        text = self.remove_thousands_separators(text)
+        text = Number_Attribute.remove_thousands_separators(text)
         try:
             value = Decimal(text)
-            if self.is_valid(value): self.set(value, overwrite_dependent)
+            return value
         except:
-            raise self._reading_exception
+            raise Number_Attribute._reading_exception
 
     @staticmethod
     def _is_a_number(value:Any)->bool:
@@ -600,6 +608,18 @@ class Integer_Attribute(Number_Attribute):
         value_str = f'{self._value:,}'
         value_str = self._set_thousands_separator(value_str, use_thousands_separator)
         return value_str
+    
+    @staticmethod
+    def value_from_text(text:str, *args)->Any:
+        text = text.strip().replace(",",".")
+        text = Integer_Attribute.remove_thousands_separators(text)
+        try:
+            value = Decimal(text)
+            int_value = int(value)
+            if value != int_value: raise
+            return int_value
+        except:
+            raise Integer_Attribute._reading_exception
 
     
 class Real_Attribute(Number_Attribute):
@@ -660,6 +680,16 @@ class Real_Attribute(Number_Attribute):
             self._run_set_command(value)
         else: # pragma: no cover
             raise Attribute.InvalidValue(value)
+        
+    @staticmethod
+    def value_from_text(text:str, *args)->Any:
+        text = text.strip().replace(",",".")
+        text = Real_Attribute.remove_thousands_separators(text)
+        try:
+            value = Decimal(text)
+            return value
+        except:
+            raise Real_Attribute._reading_exception
         
     class InvalidAdjustedValue(Exception): pass
 
@@ -743,13 +773,14 @@ class Monetary_Attribute(Number_Attribute):
         if (self.__enforce_sign or enforce_plus) and self._value>0: 
             value_str = '+'+value_str
         return value_str
-
-    def read(self,text:str, overwrite_dependent:bool=False)->None:
+    
+    @staticmethod
+    def value_from_text(text:str, *args)->Any:
         text = text.strip()
-        text = self.remove_thousands_separators(text)
-        if text=="":  raise self.ReadingBlankText
-        sign, symbol, value = self.__extract_sign_symbol_and_value(text)
-        self.set(Decimal(sign+value),overwrite_dependent)
+        text = Monetary_Attribute.remove_thousands_separators(text)
+        if text=="":  raise Monetary_Attribute.ReadingBlankText
+        sign, symbol, value = Monetary_Attribute.__extract_sign_symbol_and_value(text)
+        return Decimal(sign+value)
         
 
     SYMBOL_PATTERN = "(?P<symbol>[^\s\d\.\,]+)"
@@ -803,9 +834,10 @@ class Text_Attribute(Attribute):
     
     def print(self, *options)->str:
         return str(self._value)
-    
-    def read(self, text:str, overwrite_dependent:bool=False)->None:
-        self.set(text, overwrite_dependent)
+
+    @staticmethod
+    def value_from_text(text:str)->str:
+        return text
 
 
 class Name_Attribute(Attribute):
@@ -819,8 +851,9 @@ class Name_Attribute(Attribute):
     def print(self, *options)->str:
         return str(self._value)
     
-    def read(self, text:str, overwrite_dependent:bool=False)->None:
-        self.set(text, overwrite_dependent)
+    @staticmethod
+    def value_from_text(text:str)->str:
+        return text
 
 
 import datetime
@@ -828,6 +861,7 @@ import re
 
 class Date_Attribute(Attribute):
     default_value = datetime.date.today()
+    minimum_value = datetime.date(datetime.MINYEAR, 1, 1)
     # all locale codes must be entered in lower case 
     __date_formats:Dict[str,str] = {
         'cs_cz':'%d.%m.%Y',
@@ -853,22 +887,24 @@ class Date_Attribute(Attribute):
         date_format = self.__date_formats[self.factory.locale_code]
         return datetime.date.strftime(self._value,date_format)
     
-    def __extract_date_from_string(self,text:str)->None|Dict:
-        text = self.__remove_spaces(text)
-        date_match = re.fullmatch(self.YMD_PATT, text)
-        if date_match is None: date_match = re.fullmatch(self.DMY_PATT, text)
+    @staticmethod
+    def __extract_date_from_string(text:str)->None|Dict:
+        text = Date_Attribute.__remove_spaces(text)
+        date_match = re.fullmatch(Date_Attribute.YMD_PATT, text)
+        if date_match is None: date_match = re.fullmatch(Date_Attribute.DMY_PATT, text)
         if date_match is None: return None
         return date_match.groupdict()
     
-    def read(self,text:str, overwrite_dependent:bool=False)->None:
-        date = self.__extract_date_from_string(text)
+    def value_from_text(text:str)->datetime.date:
+        date = Date_Attribute.__extract_date_from_string(text)
         if date is None: 
             raise Date_Attribute.CannotExtractDate(text)
         else:
             year, month, day = map(int,(date['year'], date['month'], date['day']))
-            self.set(datetime.date(year, month, day), overwrite_dependent)
-
-    def __remove_spaces(self,text:str)->str: 
+            return datetime.date(year, month, day)
+    
+    @staticmethod
+    def __remove_spaces(text:str)->str: 
         for sp in (" ",NBSP,"\t"): text = text.replace(sp, "")
         return text
     
@@ -956,6 +992,10 @@ class Choice_Attribute(Attribute):
             f"Unknown option: '{text}'; available options are: {self.options}"
         )
 
+    @staticmethod
+    def value_from_text(text:str)->Any:
+        return text.strip()
+
     def remove_options(self,*options:Any)->None:
         if self._value in options: 
             raise Choice_Attribute.CannotRemoveChosenOption(self._value)
@@ -986,6 +1026,7 @@ class Choice_Attribute(Attribute):
 
 class Bool_Attribute(Attribute):
     default_value = False
+    minimum_value = False
 
     def _is_type_valid(self, value: Any) -> bool:
         return bool(value)==value
@@ -996,10 +1037,10 @@ class Bool_Attribute(Attribute):
     def print(self, *options) -> str:
         return str(bool(self._value))
     
-    def read(self, text: str, overwrite_dependent:bool=False) -> None:
-        if not overwrite_dependent and self.dependent: return
-        if text.strip() in ('true','True'): self._value = True
-        elif text.strip() in ('false','False'): self._value = False
+    @staticmethod
+    def value_from_text(text:str)->bool:
+        if text.strip() in ('true','True'): return True
+        elif text.strip() in ('false','False'): return False
         else: raise Bool_Attribute.CannotReadBooleanFromText(text)
 
     class CannotReadBooleanFromText(Exception): pass
@@ -1172,6 +1213,7 @@ class Quantity(Real_Attribute):
         except:
             raise self._reading_exception
 
+
     def read_only_value(self, text:str, overwrite_dependent:bool=False)->None:
         super().read(text, overwrite_dependent)
         self._value = self.__readjust_func(self.__unit.to_basic(self._value))
@@ -1289,27 +1331,34 @@ class Quantity(Real_Attribute):
 
 
 AttributeType = Literal['bool','choice','date','integer','money','name','quantity','real','text']
+
 class Attribute_Data_Constructor:
 
-    def __init__(self)->None:
-        self.types = {
-            'text':Text_Attribute,
-            'bool':Bool_Attribute,
-            'integer':Integer_Attribute,
-            'real':Real_Attribute_Dimensionless,
-            'choice':Choice_Attribute,
-            'date':Date_Attribute,
-            'money':Monetary_Attribute,
-            'name':Name_Attribute,
-            'quantity':Quantity,
-        }
+    __types = {
+        'text':Text_Attribute,
+        'bool':Bool_Attribute,
+        'integer':Integer_Attribute,
+        'real':Real_Attribute_Dimensionless,
+        'choice':Choice_Attribute,
+        'date':Date_Attribute,
+        'money':Monetary_Attribute,
+        'name':Name_Attribute,
+        'quantity':Quantity,
+    }
+
+    @staticmethod
+    def get_type_from_text(text:AttributeType)->Type[Attribute]:
+        return Attribute_Data_Constructor.__types[text] 
+    
+    @staticmethod
+    def types()->Dict[str,Type[Attribute]]: return Attribute_Data_Constructor.__types.copy()
 
     def _check(self,info:Dict[str,Any])->None:
         if 'atype' not in info: 
             raise Attribute_Data_Constructor.MissingAttributeType(info)
-        elif info['atype'] not in self.types:
+        elif info['atype'] not in self.__types:
             raise Attribute_Data_Constructor.UndefinedAttributeType(info['atype'])
-        attr = self.types[info['atype']](Attribute_Factory(Controller()),**info)
+        attr = self.__types[info['atype']](Attribute_Factory(Controller()),**info)
 
     def boolean(self, init_value:int=False)->Dict[str,Any]:
         return {'atype':"bool", 'init_value':init_value}
@@ -1406,7 +1455,7 @@ class Attribute_Factory:
         self.__verify_and_format_locale_code()
 
     @property
-    def types(self)->Dict: return self.data_constructor.types
+    def types(self)->Dict: return Attribute_Data_Constructor.types()
 
     def newlist(self,atype:AttributeType='text', init_items:List[Any]|None=None, name:str="")->Attribute_List:
         if atype not in self.types: raise Attribute.InvalidAttributeType(atype)

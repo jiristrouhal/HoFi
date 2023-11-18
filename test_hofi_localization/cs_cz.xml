@@ -22,6 +22,9 @@
         <Income Text="Příjem"/>
         <Expense Text="Výdaj"/>
         <Item Text="Předmět"/>
+        <Debts Text="Dluhy"/>
+        <Debt Text="Dluh"/>
+        <NonMonetary_Debt Text="Věcný dluh" />
     </Item_Menu>
 
     <Item_Window>
@@ -35,6 +38,9 @@
         <Income Text="Příjem"/>
         <Expense Text="Výdaj"/>
         <Item Text="Předmět"/>
+        <Debts Text="Dluhy"/>
+        <Debt Text="Dluh"/>
+        <NonMonetary_Debt Text="Věcný dluh" />
     </Item_Types>
 
     <Item_Attributes>
