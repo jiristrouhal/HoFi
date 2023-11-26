@@ -893,9 +893,12 @@ class ItemImpl(Item):
         self.command['rename'].add(owner, func, timing)
 
     def copy(self)->Item:
-        the_copy = self._duplicate_items()
-        self._copy_bindings(the_copy)
-        return the_copy
+        @self.controller.no_undo()
+        def copy_self():
+            the_copy = self._duplicate_items()
+            self._copy_bindings(the_copy)
+            return the_copy
+        return copy_self()
 
     def duplicate(self)->Item:
         the_copy = self.copy()

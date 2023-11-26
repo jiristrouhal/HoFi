@@ -32,6 +32,12 @@ class Empty_Command(Command):
     def redo(self)->None: pass
     
 
+import dataclasses
+@dataclasses.dataclass(frozen=True)
+class Cmd_Group:
+    cmds:List[Command]
+    remember:bool = True
+
 
 class Controller:
 
@@ -87,7 +93,6 @@ class Controller:
         self.__redo_stack.append(batch)
         self.__switch_last_symbol()
 
-
     def redo(self)->None:
         if not self.__redo_stack: return 
         batch = self.__redo_stack.pop()    
@@ -97,7 +102,6 @@ class Controller:
                 self.__history.append(f"{self.__last_symbol}Redo: {cmd.message}")
         self.__undo_stack.append(batch)
         self.__switch_last_symbol()
-
 
     def undo_and_forget(self)->None:
         if not self.__undo_stack: return 
@@ -122,6 +126,16 @@ class Controller:
                 self._wait()
                 value = foo(*args, **kwargs)
                 self._go()
+                return value
+            return inner_wrapper
+        return outer_wrapper
+    
+    def no_undo(self)->Callable[[Callable],Callable]:
+        def outer_wrapper(foo:Callable)->Callable:
+            def inner_wrapper(*args, **kwargs):
+                first_forgotten_cmd_index = len(self.__undo_stack)
+                value = foo(*args, **kwargs)
+                self.__undo_stack = self.__undo_stack[:first_forgotten_cmd_index]
                 return value
             return inner_wrapper
         return outer_wrapper
