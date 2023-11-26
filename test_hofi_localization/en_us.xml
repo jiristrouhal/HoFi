@@ -13,6 +13,7 @@
         <add Text="Add"/>
         <edit Text="Edit..."/>
         <copy Text="Copy"/>
+        <duplicate Text="Duplicate" />
         <paste Text="Paste" />
         <delete Text="Remove"/>
 

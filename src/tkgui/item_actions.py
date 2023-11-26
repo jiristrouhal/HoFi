@@ -108,6 +108,8 @@ class Item_Menu_Tk(Item_Menu):
         for label, func in actions.items.items():
             if callable(func): 
                 menu.add_command(label=self.lang.label("Item_Menu",label), command=partial(actions.run, label))
+            elif func is None:
+                menu.add_separator()
             else: 
                 assert(type(func)==type(actions))
                 submenu = self.__menu_cascade(menu, func)

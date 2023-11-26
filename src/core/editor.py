@@ -166,6 +166,9 @@ class Editor:
     def contains_case(self,case:Item)->bool:
         return self.__root.is_parent_of(case)
     
+    def duplicate(self, item:Item)->Item:
+        return item.duplicate()
+    
     from src.core.item import Parentage_Data
     def duplicate_as_case(self,item:Item)->Item:
         case = self.__creator.from_template(CASE_TYPE_LABEL, item.name)
@@ -293,7 +296,7 @@ from typing import Set
 class Item_Menu_Cmds:
     
     def __init__(self, init_cmds:Dict[str,Callable[[],None]]={})->None:
-        self.__items:Dict[str,Item_Menu_Cmds|Callable[[],None]] = dict()
+        self.__items:Dict[str,Item_Menu_Cmds|Callable[[],None]|None] = dict()
         self.__children:Dict[str,Item_Menu_Cmds] = dict()
         self.__custom_cmds_after_menu_cmd:Set[Callable[[],None]] = set()
 
@@ -322,6 +325,9 @@ class Item_Menu_Cmds:
             self.__items[cmd_path[0]] = self.__children[cmd_path[0]]
         else:
             self.__items.update(commands.copy())
+
+    def insert_sep(self)->None:
+        self.__items[f"__sep__{len(self.__items)}"] = None
 
     def labels(self, *cmd_path:str)->List[str]: 
         if cmd_path: 
@@ -413,10 +419,16 @@ class EditorUI(abc.ABC):
         for itype in self.__editor.item_types_to_create(case):
             actions.insert({itype: partial(self.__editor.new, case,itype)}, "add")
         actions.insert({'edit':lambda: self.open_item_window(case)})
-        actions.insert({'copy':lambda: self.__editor.copy(case)})
+        actions.insert_sep()
+        actions.insert({
+            'copy':lambda: self.__editor.copy(case),
+            'duplicate':lambda: self.__editor.duplicate(case)
+        })
         if self.__editor.can_paste_under_or_next_to(self.__editor.item_to_paste, case):
             actions.insert({'paste':lambda: self.__editor.paste_under(case)})
+        actions.insert_sep()
         actions.insert({'export_to_xml': lambda: self.export_case_to_xml(case)})
+        actions.insert_sep()
         actions.insert({'delete':lambda: self.__editor.remove_case(case)})
         return actions
 
@@ -425,9 +437,12 @@ class EditorUI(abc.ABC):
         for itype in self.__editor.item_types_to_create(item):
             actions.insert({itype: partial(self.__create_new_and_open_edit_window, item ,itype)}, "add")
         actions.insert({'edit':lambda: self.open_item_window(item)})
+        actions.insert_sep()
         actions.insert({'copy':lambda: self.__editor.copy(item)})
+        actions.insert({'duplicate':lambda: self.__editor.duplicate(item)})
         if self.__editor.can_paste_under_or_next_to(self.__editor.item_to_paste, item):
             actions.insert({'paste':lambda: self.__editor.paste_under(item)})
+        actions.insert_sep()
         actions.insert({'delete':lambda: self.__editor.remove(item, item.parent)})
         return actions
 

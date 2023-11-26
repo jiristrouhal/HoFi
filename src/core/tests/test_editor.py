@@ -538,6 +538,12 @@ class Test_Copying_Item(unittest.TestCase):
         self.assertFalse(self.new_case.is_parent_of(thing_copy))
         self.assertTrue(self.editor.item_to_paste is not None)
 
+    def test_duplicating_item(self):
+        thing = self.editor.new(self.other_item, "Thing")
+        self.assertSetEqual(self.other_item.children, {thing,})
+        thing_duplicate = self.editor.duplicate(thing)
+        self.assertSetEqual(self.other_item.children, {thing,thing_duplicate})
+
 
 if __name__=="__main__": 
     unittest.main()

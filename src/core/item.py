@@ -952,10 +952,11 @@ class ItemImpl(Item):
     def _duplicate_items(self)->ItemImpl:
         dupl = ItemImpl(
             self.name, 
-            self.__attributes_copy(), 
-            self._manager,
-            self.itype,
-            self.__child_itypes
+            attributes=self.__attributes_copy(), 
+            manager=self._manager,
+            itype=self.itype,
+            child_itypes=self.__child_itypes,
+            ignore_duplicit_names=self.__ignore_duplicit_names
         )
         for attr in dupl.__attributes.values():
             if attr.dependent: attr.break_dependency()

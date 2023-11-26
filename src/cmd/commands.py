@@ -32,13 +32,6 @@ class Empty_Command(Command):
     def redo(self)->None: pass
     
 
-import dataclasses
-@dataclasses.dataclass(frozen=True)
-class Cmd_Group:
-    cmds:List[Command]
-    remember:bool = True
-
-
 class Controller:
 
     def __init__(self)->None:
