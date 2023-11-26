@@ -959,6 +959,11 @@ class Choice_Attribute(Attribute):
     def clear_options(self)->None:
         self.__options.clear()
 
+    def copy(self)->Choice_Attribute:
+        return self.factory.new_from_dict(
+            **self.factory.data_constructor.choice(self.__options.values(), self.value)
+        )
+
     def _is_type_valid(self, value: Any) -> bool: 
         return True
 
@@ -1180,7 +1185,6 @@ class Quantity(Real_Attribute):
                     to_basic=self.__units[label].to_basic,
                     space_after_value=self.__space_after_value
                 )
-        # the_copy = self.factory.new(self.type, init_value=self._value, name=self.name)
         return the_copy
 
     def pick_scaled_unit(self,id:int)->None:

@@ -1916,15 +1916,20 @@ class Test_Undo_And_Redo_Setting_Quantity_Value(unittest.TestCase):
         self.assertEqual(self.distance.print(trailing_zeros=False), f"2000{NBSP}m")
 
 
-class Test_Copying_Quantity_Attribute(unittest.TestCase):
+class Test_Copying_Attributes(unittest.TestCase):
 
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
-        self.mass = self.fac.newqu(init_value=1, unit='kg', exponents={"k":3})
 
-    def test_copying_attribute(self):
-        mass_copy = self.mass.copy()
-        
+    def test_copying_quantity_attribute(self):
+        mass = self.fac.newqu(init_value=1, unit='kg', exponents={"k":3})
+        mass_copy = mass.copy()
+
+    def test_copying_choice_attribute(self):
+        choice = self.fac.new_from_dict(**self.fac.data_constructor.choice([123, "Apple"], "Apple"))
+        choice_copy = choice.copy()
+        choice_copy.set("123")
+        self.assertEqual(choice_copy.value, 123)
 
 
 class Test_Creating_Attribute_From_Dictionary(unittest.TestCase):
