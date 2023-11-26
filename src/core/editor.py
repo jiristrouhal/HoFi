@@ -420,6 +420,9 @@ class EditorUI(abc.ABC):
         for itype in self.__editor.item_types_to_create(item):
             actions.insert({itype: partial(self.__create_new_and_open_edit_window, item ,itype)}, "add")
         actions.insert({'edit':lambda: self.open_item_window(item)})
+        actions.insert({'copy':lambda: self.__editor.copy(item)})
+        if self.__editor.can_paste_under_or_next_to(self.__editor.item_to_paste, item):
+            actions.insert({'paste':lambda: self.__editor.paste_under(item)})
         actions.insert({'delete':lambda: self.__editor.remove(item, item.parent)})
         return actions
 

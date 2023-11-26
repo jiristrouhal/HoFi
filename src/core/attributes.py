@@ -434,6 +434,8 @@ class Attribute(AbstractAttribute):
 
     @property 
     def value(self)->Any: return self._value
+    @property
+    def custom_condition(self)->bool: return self.__custom_condition
 
     def add_action_on_set(self, owner_id:str, action:Callable[[], None])->None:
         self.__actions_on_set[owner_id] = action
@@ -1098,6 +1100,7 @@ class Quantity(Real_Attribute):
             exponents=exponents,
             space_after_value=space_after_value
         )
+        self.__space_after_value = space_after_value
         self.__unit:Unit = self.__units[base_unit]
         self.set_prefix(default_prefix)
         self.__default_unit = self.__unit
@@ -1159,6 +1162,26 @@ class Quantity(Real_Attribute):
             new_value = Decimal(self.__units[tgt_unit].from_basic(new_value))
         new_value *= Decimal(10)**Decimal(-self.__units[tgt_unit].exponents[tgt_prefix])
         return Decimal(str(new_value))
+
+    def copy(self)->Quantity:
+        fac = self.factory
+        the_copy:Quantity = fac.new_from_dict(**fac.data_constructor.quantity(
+            unit = self.default_scaled_unit,
+            exponents = self.default_unit.exponents,
+            init_value=self.value,
+            custom_condition=self.custom_condition,
+            space_after_value=self.__space_after_value
+        ))
+        for label in self.__units:
+            if self.__units[label] is not self.__default_unit:
+                the_copy.add_unit(
+                    symbol=self.__units[label].symbol,
+                    from_basic=self.__units[label].from_basic,
+                    to_basic=self.__units[label].to_basic,
+                    space_after_value=self.__space_after_value
+                )
+        # the_copy = self.factory.new(self.type, init_value=self._value, name=self.name)
+        return the_copy
 
     def pick_scaled_unit(self,id:int)->None:
         picked = self.__scaled_units[id]

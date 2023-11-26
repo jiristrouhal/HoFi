@@ -494,7 +494,7 @@ class Test_Copying_Item(unittest.TestCase):
 
     def setUp(self) -> None:
         ct = blank_case_template()
-        ct.add("Item", {}, ("Item","Thing"))
+        ct.add("Item", {"mass":ct.attr.quantity("kg", {"k":3})}, ("Item","Thing"))
         ct.add("Thing", {}, ())
         ct.set_case_template({},("Item",))
         self.editor = new_editor(ct)
@@ -532,7 +532,7 @@ class Test_Copying_Item(unittest.TestCase):
         thing = self.editor.new(self.other_item, "Thing")
         self.editor.copy(thing)
         thing_copy = self.editor.item_to_paste
-        
+
         self.assertFalse(self.editor.can_paste_under_or_next_to(thing_copy, self.new_case))
         self.editor.paste_under(self.new_case)
         self.assertFalse(self.new_case.is_parent_of(thing_copy))
