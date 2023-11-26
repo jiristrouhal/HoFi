@@ -122,6 +122,7 @@ class Editor:
         self.__locale_code = locale_code
         if lang is None: self.__lang = Lang_Object.get_lang_object()
         else: self.__lang = lang
+        self.__copied_item:Optional[Item] = None
 
     @property
     def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes
@@ -137,6 +138,17 @@ class Editor:
     def export_dir_path(self)->str: return self.__creator.file_path
     @property
     def creator(self)->ItemCreator: return self.__creator
+    @property
+    def item_to_paste(self)->Item: return self.__copied_item
+    
+    def can_paste_under_or_next_to(self, to_be_pasted:Item, other_item:Item)->bool: 
+        if self.__copied_item is None:
+            return False
+        can_paste_under = other_item._can_be_parent_of_item_type(to_be_pasted)
+        can_paste_next_to = \
+            other_item.parent._can_be_parent_of_item_type(to_be_pasted) and \
+            not other_item.parent.is_null()
+        return can_paste_under or can_paste_next_to
         
     def _cases(self)->Set[Item]: 
         return self.__root.children.copy()
@@ -147,6 +159,9 @@ class Editor:
     def can_insert_under(self,parent:Item)->bool:
         parent_template = self.__creator.get_template(parent.itype)
         return self.__insertable in parent_template.child_itypes
+
+    def copy(self, item:Item)->None:
+        self.__copied_item = item.copy()
 
     def contains_case(self,case:Item)->bool:
         return self.__root.is_parent_of(case)
@@ -211,6 +226,15 @@ class Editor:
             self.__root.adopt(case)
             return case
         return create_and_adopt()
+    
+    def paste_under(self, parent:Item)->None:
+        if self.__copied_item is None or not self.can_paste_under_or_next_to(self.__copied_item, parent): 
+            return
+        else:
+            if not parent._can_be_parent_of_item_type(self.__copied_item):
+                parent = parent.parent
+            parent.adopt(self.__copied_item)
+            self.__copied_item = None
 
     def remove(self,item:Item,parent:Item)->None:
         if parent==item.parent: parent.leave(item)

@@ -490,5 +490,54 @@ def remove_dir(dirpath:str)->None: # pragma: no cover
         os.rmdir(dirpath)
 
 
+class Test_Copying_Item(unittest.TestCase):
+
+    def setUp(self) -> None:
+        ct = blank_case_template()
+        ct.add("Item", {}, ("Item","Thing"))
+        ct.add("Thing", {}, ())
+        ct.set_case_template({},("Item",))
+        self.editor = new_editor(ct)
+        self.new_case = self.editor.new_case("New case")
+        self.item = self.editor.new(self.new_case, "Item")
+        self.other_item = self.editor.new(self.new_case, "Item")
+        self.other_item.rename("Other Item")
+
+    def test_copying_item(self)->None:
+        self.assertTrue(self.editor.item_to_paste is None)
+        self.editor.copy(self.item)
+        self.assertTrue(self.editor.item_to_paste is not None)
+        item_copy = self.editor.item_to_paste
+        self.editor.paste_under(self.other_item)
+        self.assertTrue(self.other_item.is_parent_of(item_copy))
+    
+    def test_item_to_paste_is_cleared_after_pasting(self):
+        self.editor.copy(self.item)
+        self.editor.paste_under(self.other_item)
+        self.assertTrue(self.editor.item_to_paste is None)
+
+    def test_pasting_has_no_effect_if_nothing_was_copied(self):
+        self.editor.paste_under(self.other_item)
+        self.assertFalse(self.other_item.has_children())
+    
+    def test_pasting_under_itemX_that_cannot_be_the_parent_causes_pasting_under_the_itemXs_parent(self):
+        thing_that_cannot_be_a_parrent = self.editor.new(self.other_item, "Thing")
+        self.editor.copy(self.item)
+        item_copy = self.editor.item_to_paste
+        self.editor.paste_under(thing_that_cannot_be_a_parrent)
+        self.assertFalse(thing_that_cannot_be_a_parrent.is_parent_of(item_copy))
+        self.assertTrue(thing_that_cannot_be_a_parrent.parent.is_parent_of(item_copy))
+
+    def test_pasting_under_case_which_cannot_be_the_parent_has_no_effect(self):
+        thing = self.editor.new(self.other_item, "Thing")
+        self.editor.copy(thing)
+        thing_copy = self.editor.item_to_paste
+        
+        self.assertFalse(self.editor.can_paste_under_or_next_to(thing_copy, self.new_case))
+        self.editor.paste_under(self.new_case)
+        self.assertFalse(self.new_case.is_parent_of(thing_copy))
+        self.assertTrue(self.editor.item_to_paste is not None)
+
+
 if __name__=="__main__": 
     unittest.main()

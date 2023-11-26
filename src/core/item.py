@@ -512,10 +512,13 @@ class Item(abc.ABC): # pragma: no cover
     def _apply_binding_info(self)->None: pass
 
     @abc.abstractmethod
+    def _can_be_parent_of_item_type(self, item:Item)->bool: pass
+
+    @abc.abstractmethod
     def _copy_bindings(self, dupl:Item)->None: pass 
 
     @abc.abstractmethod
-    def _can_be_parent_of(self,item:Item)->bool: pass
+    def _check_can_be_parent_of(self,item:Item)->bool: pass
 
     @abc.abstractmethod
     def _leave_child(self,child:Item)->None: pass
@@ -607,8 +610,9 @@ class ItemImpl(Item):
         def _adopt(self, child:Item)->None: return # pragma: no cover
         def _accept_parent(self,item:Item)->None: raise Item.AdoptingNULL
         def _apply_binding_info(self)->None: pass # pragma: no cover
+        def _can_be_parent_of_item_type(self,item:Item)->bool: return True   # pragma: no cover 
         def _copy_bindings(self, dupl:Item)->None: pass # pragma: no cover
-        def _can_be_parent_of(self,item:Item)->bool: return True   # pragma: no cover
+        def _check_can_be_parent_of(self,item:Item)->bool: return True   # pragma: no cover
         def _leave_child(self,child:Item)->None: return
         def _leave_parent(self,parent:Item)->None: return
         def _rename(self,name:str)->None: return
@@ -782,7 +786,7 @@ class ItemImpl(Item):
     def adopt(self,item:Item)->None:
         if self is item.parent: 
             return
-        if self._can_be_parent_of(item):
+        if self._check_can_be_parent_of(item):
             @self.controller.single_cmd()
             def perform_adoption():
                 self.controller.run(*self.command['adopt'](Parentage_Data(self,item)))
@@ -844,7 +848,7 @@ class ItemImpl(Item):
         self._child_attr_lists[child_attr_label] = alist
     
     def pass_to_new_parent(self, child:Item, new_parent:Item)->None:
-        if new_parent._can_be_parent_of(child) and isinstance(new_parent, ItemImpl):
+        if new_parent._check_can_be_parent_of(child) and isinstance(new_parent, ItemImpl):
             self.controller.run(
                 *self.command['leave'](Parentage_Data(self,child)),
                 *new_parent.command['adopt'](Parentage_Data(new_parent,child))
@@ -923,7 +927,12 @@ class ItemImpl(Item):
         if self is child.parent: self.__children.add(child)
         self.__run_actions_after_command('adopt', child)
 
-    def _can_be_parent_of(self,item:Item)->bool:
+    def _can_be_parent_of_item_type(self, item:Item)->bool:
+        return (
+            (self.__child_itypes is not None) and (item.itype in self.__child_itypes)
+        )
+
+    def _check_can_be_parent_of(self,item:Item)->bool:
         if self.__child_itypes is not None:
             if item.itype not in self.__child_itypes: raise Item.CannotAdoptItemOfType(item.itype)
 
