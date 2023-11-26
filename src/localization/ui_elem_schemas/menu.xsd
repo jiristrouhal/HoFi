@@ -8,6 +8,8 @@
     <xs:sequence>
         <xs:element name="add" type="item"/>
         <xs:element name="edit" type="item"/>
+        <xs:element name="copy" type="item"/>
+        <xs:element name="paste" type="item"/>
         <xs:element name="delete" type="item"/>
 
         <xs:element name="new_case" type="item"/>

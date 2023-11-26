@@ -189,8 +189,14 @@ class ItemCreator:
                 item.bind(dep.dependent, dep.func, *dep.free, binding_label=dep.label)
         return item
 
-    def new(self,name:str,attr_info:Dict[str,AttributeType|Dict[str,Any]]={})->Item:
-        return ItemImpl(name, self.__get_attrs(attr_info), self, ignore_duplicit_names=self.__ignore_duplicit_names)
+    def new(self,name:str,attr_info:Dict[str,AttributeType|Dict[str,Any]]={}, child_itypes:Optional[Tuple[str,...]]=None)->Item:
+        return ItemImpl(
+            name, 
+            self.__get_attrs(attr_info), 
+            self, 
+            ignore_duplicit_names=self.__ignore_duplicit_names,
+            child_itypes=child_itypes
+        )
 
     def undo(self):
         self._controller.undo()

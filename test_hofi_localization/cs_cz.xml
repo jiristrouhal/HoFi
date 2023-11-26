@@ -13,6 +13,8 @@
     <Item_Menu>
         <add Text="Přidat"/>
         <edit Text="Upravit..."/>
+        <copy Text="Kopírovat"/>
+        <paste Text="Vložit" />
         <delete Text="Odstranit"/>
 
         <new_case Text="Nový"/>

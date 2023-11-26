@@ -30,7 +30,7 @@ class Test_View_For_Item_Manipulations(unittest.TestCase):
         self.caseview = Case_View_Tk(root, self.root_item)
 
     def test_new_child_is_shown_in_treeview(self):
-        child = self.cr.new("Child")
+        child = self.cr.new("Child", )
         self.assertEqual(len(self.caseview.widget.get_children("")), 0)
         self.root_item.adopt(child)
         self.assertEqual(len(self.caseview.widget.get_children("")), 1)

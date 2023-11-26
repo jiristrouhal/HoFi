@@ -116,7 +116,7 @@ class Editor:
 
         self.__creator = ItemCreator(locale_code, case_template.currency_code,ignore_duplicit_names)
         self.__creator.add_templates(*case_template._list_templates())
-        self.__root = self.__creator.new("_")
+        self.__root = self.__creator.new("_", child_itypes=(CASE_TYPE_LABEL,))
         self.__attributes =  case_template.attributes
         self.__insertable = case_template.insertable
         self.__locale_code = locale_code
@@ -401,16 +401,21 @@ class EditorUI(abc.ABC):
     def _get_export_dir(self)->str: pass
 
     def __root_item_actions(self)->Item_Menu_Cmds:
-        item_actions = Item_Menu_Cmds()
-        item_actions.insert({'import_from_xml':self.import_case_from_xml})
-        item_actions.insert({'new_case':self.__new_case})
-        return item_actions
+        actions = Item_Menu_Cmds()
+        actions.insert({'import_from_xml':self.import_case_from_xml})
+        actions.insert({'new_case':self.__new_case})
+        if self.__editor.can_paste_under_or_next_to(self.__editor.item_to_paste, self.__editor.root):
+            actions.insert({'paste':lambda: self.__editor.paste_under(self.__editor.root)})
+        return actions
     
     def __case_actions(self, case:Item)->Item_Menu_Cmds:
         actions = Item_Menu_Cmds()
         for itype in self.__editor.item_types_to_create(case):
             actions.insert({itype: partial(self.__editor.new, case,itype)}, "add")
         actions.insert({'edit':lambda: self.open_item_window(case)})
+        actions.insert({'copy':lambda: self.__editor.copy(case)})
+        if self.__editor.can_paste_under_or_next_to(self.__editor.item_to_paste, case):
+            actions.insert({'paste':lambda: self.__editor.paste_under(case)})
         actions.insert({'export_to_xml': lambda: self.export_case_to_xml(case)})
         actions.insert({'delete':lambda: self.__editor.remove_case(case)})
         return actions
