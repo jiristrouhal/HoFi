@@ -123,6 +123,7 @@ class Editor:
         if lang is None: self.__lang = Lang_Object.get_lang_object()
         else: self.__lang = lang
         self.__copied_item:Optional[Item] = None
+        self.__selection:Set[Item] = set()
 
     @property
     def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes
@@ -140,6 +141,8 @@ class Editor:
     def creator(self)->ItemCreator: return self.__creator
     @property
     def item_to_paste(self)->Item: return self.__copied_item
+    @property
+    def selection(self)->Set[Item]: return self.__selection
     
     def can_paste_under_or_next_to(self, to_be_pasted:Item, other_item:Item)->bool: 
         if self.__copied_item is None:
@@ -201,14 +204,14 @@ class Editor:
     def item_types_to_create(self,parent:Item)->Tuple[str,...]:
         return self.__creator.get_template(parent.itype).child_itypes
 
-    def load_case(self,dirpath:str,name:str, ftype:FileType)->Item:
+    def load_case(self, dirpath:str,name:str, ftype:FileType)->Item:
         @self.__creator._controller.single_cmd()
         def load_case_and_add_to_editor()->Item:
             case = self.__creator.load(dirpath, name, ftype)
             self.__root.adopt(case)
             return case
         return load_case_and_add_to_editor()
-    
+
     def new(self,parent:Item,itype:str)->Item:
         if itype not in self.__creator.templates:
             raise Editor.UndefinedTemplate(itype)
@@ -262,6 +265,23 @@ class Editor:
             self.__creator.save(case,filetype)
         else:
             self.__creator.save(item,filetype)
+
+    def select(self, item:Item) -> None:
+        if item is self.__root: 
+            self.__selection.clear()
+        else: 
+            self.__selection = {item}
+            self.__selection_parent = item.parent
+            self.__selection_itype = item.itype
+
+    def select_add(self, item:Item) -> None:
+        if self.__selection:
+            if not item.parent==self.__selection_parent: return
+            elif not item.itype==self.__selection_itype: return 
+        self.__selection.add(item)
+
+    def select_none(self) -> None:
+        self.__selection.clear()
 
     def set_dir_path(self,dirpath:str)->None:
         self.__creator.set_dir_path(dirpath)

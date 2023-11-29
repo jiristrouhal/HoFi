@@ -545,5 +545,63 @@ class Test_Copying_Item(unittest.TestCase):
         self.assertSetEqual(self.other_item.children, {thing,thing_duplicate})
 
 
+class Test_Selection_Of_Items(unittest.TestCase):
+
+    def setUp(self) -> None:
+        case_template = blank_case_template()
+        case_template.add('Tree', {}, ('Apple', 'Cat'))
+        case_template.add('Apple', {}, ())
+        case_template.add('Cat', {}, ())
+        case_template.add_case_child_label('Tree')
+        self.editor = new_editor(case_template)
+        new_case = self.editor.new_case('Case 1')
+        tree_1 = self.editor.new(new_case, 'Tree')
+        tree_1.rename("Tree 1")
+        tree_2 = self.editor.new(new_case, 'Tree')
+        tree_2.rename("Tree 2")
+        self.apple_1a = self.editor.new(tree_1, 'Apple')
+        self.apple_1b = self.editor.new(tree_1, 'Apple')
+        self.apple_2a = self.editor.new(tree_2, 'Apple')
+        self.cat_1 = self.editor.new(tree_1, 'Cat')
+
+    def test_selection_is_initially_empty(self):
+        self.assertEqual(self.editor.selection, set())
+        
+    def test_adding_single_item_to_selection(self):
+        self.editor.select(self.apple_1a)
+        self.assertEqual(self.editor.selection, {self.apple_1a})
+
+    def test_selecting_other_item(self):
+        self.editor.select(self.apple_1a)
+        self.editor.select(self.apple_1b)
+        self.assertEqual(self.editor.selection, {self.apple_1b})
+
+    def test_adding_to_selection(self):
+        self.editor.select(self.apple_1a)
+        self.editor.select_add(self.apple_1b)
+        self.assertEqual(self.editor.selection, {self.apple_1a, self.apple_1b})
+
+    def test_clearing_selection(self):
+        self.editor.select(self.apple_1a)
+        self.editor.select(self.apple_1b)
+        self.editor.select_none()
+        self.assertEqual(self.editor.selection, set())
+
+    def test_selecting_root_clears_the_selection(self):
+        self.editor.select(self.apple_1a)
+        self.editor.select(self.editor.root)
+        self.assertEqual(self.editor.selection, set())
+    
+    def test_item_from_another_parent_cannot_be_added_to_the_selection(self):
+        self.editor.select(self.apple_1a)
+        self.editor.select_add(self.apple_2a)
+        self.assertEqual(self.editor.selection, {self.apple_1a})
+
+    def test_item_of_another_itype_cannot_be_added_to_the_selection(self):
+        self.editor.select(self.apple_1a)
+        self.editor.select_add(self.cat_1)
+        self.assertEqual(self.editor.selection, {self.apple_1a})
+
+
 if __name__=="__main__": 
     unittest.main()
