@@ -163,6 +163,10 @@ class Editor:
     def copy(self, item:Item)->None:
         self.__copied_item = item.copy()
 
+    def cut(self, item:Item)->None:
+        self.__copied_item = item.copy()
+        item.parent.leave(item)
+
     def contains_case(self,case:Item)->bool:
         return self.__root.is_parent_of(case)
     
@@ -422,7 +426,8 @@ class EditorUI(abc.ABC):
         actions.insert_sep()
         actions.insert({
             'copy':lambda: self.__editor.copy(case),
-            'duplicate':lambda: self.__editor.duplicate(case)
+            'duplicate':lambda: self.__editor.duplicate(case),
+            'cut': lambda: self.__editor.cut(case),
         })
         if self.__editor.can_paste_under_or_next_to(self.__editor.item_to_paste, case):
             actions.insert({'paste':lambda: self.__editor.paste_under(case)})
@@ -438,8 +443,11 @@ class EditorUI(abc.ABC):
             actions.insert({itype: partial(self.__create_new_and_open_edit_window, item ,itype)}, "add")
         actions.insert({'edit':lambda: self.open_item_window(item)})
         actions.insert_sep()
-        actions.insert({'copy':lambda: self.__editor.copy(item)})
-        actions.insert({'duplicate':lambda: self.__editor.duplicate(item)})
+        actions.insert({
+            'copy':lambda: self.__editor.copy(item),
+            'duplicate':lambda: self.__editor.duplicate(item),
+            'cut': lambda: self.__editor.cut(item)
+        })
         if self.__editor.can_paste_under_or_next_to(self.__editor.item_to_paste, item):
             actions.insert({'paste':lambda: self.__editor.paste_under(item)})
         actions.insert_sep()

@@ -14,6 +14,7 @@
         <add Text="Přidat"/>
         <edit Text="Upravit..."/>
         <copy Text="Kopírovat"/>
+        <cut Text="Vyjmout" />
         <duplicate Text="Kopírovat sem" />
         <paste Text="Vložit" />
         <delete Text="Odstranit"/>
