@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Tuple, Dict, List, Any, Optional, Callable, Literal
 from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor 
-from src.core.item import FileType, freeatt_child, freeatt, freeatt_parent
+from src.core.item import FileType
 from src.core.attributes import Locale_Code
 
 import re
