@@ -2,11 +2,17 @@ import tkinter.ttk as ttk
 import tkinter as tk
 from functools import partial
 
-from src.core.editor import Case_View, Item, Lang_Object
-from typing import List, Tuple, Callable, Dict, Any
+from typing import List, Tuple, Callable, Dict, Any, Set
 from typing import Optional
 from PIL import Image, ImageTk
 import os
+
+
+from src.core.editor import (
+    Case_View,
+    Lang_Object,
+    Item
+)
 
 class Case_View_Tk(Case_View):
     
@@ -41,15 +47,28 @@ class Case_View_Tk(Case_View):
         root_item.add_action(self.__id, 'rename', self.__rename_item)
         root_item.add_action_on_set(self.__id, self.__set_displayed_values_of_item_attributes)
 
+        self.__tree.bind("<<TreeviewSelect>>", self.__handle_selection_change)
+
         self.__item_dict:Dict[str,Item] = {"":root_item}
 
         self.__set_up_headings()
         self.__reversed_sort:bool = False
+        self.__on_selection_change:List[Callable[[],None]] = list()
 
     @property
     def id(self)->str: return self.__id
     @property
     def widget(self)->ttk.Treeview: return self.__tree
+    @property
+    def selected_items(self)->Set[Item]: 
+        return {self.__item_dict[item_id] for item_id in self.__tree.selection()}
+
+    def __handle_selection_change(self, event:tk.Event)->None:
+        for func in self.__on_selection_change:
+            func()
+
+    def on_selection_change(self, func:Callable[[], None])->None:
+        self.__on_selection_change.append(func)
 
     def bind(self, sequence:str, action:Callable[[tk.Event], None])->None:
         self.__tree.bind(sequence, action)
@@ -121,6 +140,11 @@ class Case_View_Tk(Case_View):
     def __set_displayed_values_of_item_attributes(self, item:Item)->None:
         values = self.__collect_and_set_values(item)
         self.__tree.item(item.id, values=values)
+
+    def __set_selection(self)->None:
+        self.__tree.selection_clear()
+        self.__tree.selection_set([item.id for item in self.__editor.selection])
+        print(self.__tree.selection())
 
     def __collect_and_set_values(self, item:Item)->List[str]:
         values:List[str] = list()

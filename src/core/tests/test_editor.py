@@ -7,6 +7,11 @@ import unittest
 from src.core.editor import new_editor, blank_case_template, Case_Template, Editor
 NBSP = u"\u00A0"
 
+
+from typing import List
+from decimal import Decimal
+
+
 class Test_Creating_Case(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -549,58 +554,138 @@ class Test_Selection_Of_Items(unittest.TestCase):
 
     def setUp(self) -> None:
         case_template = blank_case_template()
-        case_template.add('Tree', {}, ('Apple', 'Cat'))
-        case_template.add('Apple', {}, ())
-        case_template.add('Cat', {}, ())
-        case_template.add_case_child_label('Tree')
+        case_template.add('Item', {}, ('Item',))
+        case_template.add_case_child_label("Item")
         self.editor = new_editor(case_template)
-        new_case = self.editor.new_case('Case 1')
-        tree_1 = self.editor.new(new_case, 'Tree')
-        tree_1.rename("Tree 1")
-        tree_2 = self.editor.new(new_case, 'Tree')
-        tree_2.rename("Tree 2")
-        self.apple_1a = self.editor.new(tree_1, 'Apple')
-        self.apple_1b = self.editor.new(tree_1, 'Apple')
-        self.apple_2a = self.editor.new(tree_2, 'Apple')
-        self.cat_1 = self.editor.new(tree_1, 'Cat')
+        self.new_case = self.editor.new_case("New case")
+        self.item_A = self.editor.new(self.new_case, "Item", "Item A")
+        self.item_B = self.editor.new(self.new_case, "Item", "Item B")
+        self.child_of_A = self.editor.new(self.item_A, "Item", "Child of A")
 
     def test_selection_is_initially_empty(self):
         self.assertEqual(self.editor.selection, set())
-        
-    def test_adding_single_item_to_selection(self):
-        self.editor.select(self.apple_1a)
-        self.assertEqual(self.editor.selection, {self.apple_1a})
 
-    def test_selecting_other_item(self):
-        self.editor.select(self.apple_1a)
-        self.editor.select(self.apple_1b)
-        self.assertEqual(self.editor.selection, {self.apple_1b})
+    def test_selecting_a_single_item(self):
+        self.editor.selection_set({self.item_A})
+        self.assertEqual(self.editor.selection, {self.item_A})
 
-    def test_adding_to_selection(self):
-        self.editor.select(self.apple_1a)
-        self.editor.select_add(self.apple_1b)
-        self.assertEqual(self.editor.selection, {self.apple_1a, self.apple_1b})
+    def test_selecting_mutliple_items_from_multiple_parents(self):
+        self.editor.selection_set({self.item_A, self.item_B, self.child_of_A})
+        self.assertEqual(self.editor.selection, {self.item_A, self.item_B, self.child_of_A})
 
-    def test_clearing_selection(self):
-        self.editor.select(self.apple_1a)
-        self.editor.select(self.apple_1b)
-        self.editor.select_none()
+    def test_setting_selection_to_root_yields_empty_selection(self):
+        self.editor.selection_set({self.editor.root})
         self.assertEqual(self.editor.selection, set())
 
-    def test_selecting_root_clears_the_selection(self):
-        self.editor.select(self.apple_1a)
-        self.editor.select(self.editor.root)
-        self.assertEqual(self.editor.selection, set())
+
+class Test_Defining_Merging_Rule(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.case_template = blank_case_template()
+        self.case_template.add(
+            'Item', 
+            {
+                "weight":self.case_template.attr.real(), 
+                "height":self.case_template.attr.real(),
+            },
+            ()
+        )
+
+    def test_adding_merge_rule_for_nonexistent_item_type_raises_exception(self):
+        self.assertRaises(
+            Case_Template.Adding_Merge_Rule_To_Undefined_Item_Type,
+            self.case_template.add_merging_rule,
+            "nonexistent_item_type", {}
+        )
+
+    def test_adding_merge_rule_with_missing_rule_for_some_attribute_raises_exception(self):
+        self.assertRaises(
+            Case_Template.Attribute_With_Undefined_Merge_Rule,
+            self.case_template.add_merging_rule,
+            "Item", {"weight":"sum"}
+        )
+
+    def test_adding_merge_rule_twice_raises_exception(self):
+        self.case_template.add_merging_rule("Item", {"weight":"sum", "height":"max"})
+        self.assertRaises(
+            Case_Template.Merge_Rule_Already_Defined,
+            self.case_template.add_merging_rule, "Item", {"weight":"sum", "height":"max"}
+        )
     
-    def test_item_from_another_parent_cannot_be_added_to_the_selection(self):
-        self.editor.select(self.apple_1a)
-        self.editor.select_add(self.apple_2a)
-        self.assertEqual(self.editor.selection, {self.apple_1a})
+    def test_choosing_undefined_merge_funcion_raises_exception(self):
+        self.assertRaises(
+            Case_Template.Undefined_Merge_Function,
+            self.case_template.add_merging_rule,
+            "Item", {"weight":"sum", "height":"undefined_merge_function"}
+        )
 
-    def test_item_of_another_itype_cannot_be_added_to_the_selection(self):
-        self.editor.select(self.apple_1a)
-        self.editor.select_add(self.cat_1)
-        self.assertEqual(self.editor.selection, {self.apple_1a})
+class Test_Merging_Of_Items(unittest.TestCase):
+
+    def setUp(self) -> None:
+        case_template = blank_case_template()
+        case_template.add('Tree', {}, ('Apple', 'Cat'))
+        case_template.add(
+            'Apple', 
+            {
+                "weight": case_template.attr.real(1.5), 
+                "description": case_template.attr.text(), 
+            }, 
+            ()
+        )
+        case_template.add('Cat', {}, ())
+        case_template.add_merging_rule(
+            "Apple", 
+            {
+                "weight":"sum",
+                "description":"join_texts"
+            }
+        )
+
+        case_template.add_case_child_label('Tree')
+
+        self.editor = new_editor(case_template)
+        new_case = self.editor.new_case('Case 1')
+        self.tree_1 = self.editor.new(new_case, 'Tree')
+        self.tree_1.rename("Tree 1")
+        tree_2 = self.editor.new(new_case, 'Tree')
+        tree_2.rename("Tree 2")
+        self.apple_1a = self.editor.new(self.tree_1, 'Apple')
+        self.apple_1b = self.editor.new(self.tree_1, 'Apple')
+        self.apple_2a = self.editor.new(tree_2, 'Apple')
+        self.cat_1a = self.editor.new(self.tree_1, 'Cat')
+        self.cat_1b = self.editor.new(self.tree_1, 'Cat')
+
+    def test_empty_item_set_is_not_mergeable(self):
+        self.assertFalse(self.editor.is_mergeable({}))
+    
+    def test_single_item_is_not_mergeable(self):
+        self.assertFalse(self.editor.is_mergeable({self.apple_1a}))
+
+    def test_items_with_common_parent_and_itype_are_mergeable(self):
+        self.assertTrue(self.editor.is_mergeable({self.apple_1a, self.apple_1b}))
+
+    def test_items_with_different_parent_are_not_mergeable(self):
+        self.assertFalse(self.editor.is_mergeable({self.apple_1a, self.apple_2a}))
+
+    def test_items_with_common_parent_but_different_itype_are_not_mergeable(self):
+        self.assertFalse(self.editor.is_mergeable({self.apple_1a, self.cat_1a}))
+
+    def test_items_without_merging_rules_are_not_mergeable(self):
+        self.assertFalse(self.editor.is_mergeable({self.cat_1a, self.cat_1b}))
+
+    def test_merging_two_items(self):
+        self.apple_1a.set("weight", 5)
+        self.apple_1b.set("weight", 7)
+        self.apple_1a.set("description", "This is an Apple 1A")
+        self.apple_1b.set("description", "This is an Apple 1B")
+        merged_apple = self.editor.merge({self.apple_1a, self.apple_1b})
+        self.assertEqual(merged_apple("weight"), 12)
+        self.assertTrue(self.apple_1a("description") in merged_apple("description"))
+        self.assertTrue(self.apple_1b("description") in merged_apple("description"))
+        # the two items are replaced with the merge result
+        self.assertFalse(self.tree_1.is_parent_of(self.apple_1a))
+        self.assertFalse(self.tree_1.is_parent_of(self.apple_1b))
+        self.assertTrue(self.tree_1.is_parent_of(merged_apple))
 
 
 if __name__=="__main__": 

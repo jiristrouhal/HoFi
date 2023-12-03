@@ -16,6 +16,7 @@
         <cut Text="Cut" />
         <duplicate Text="Duplicate" />
         <paste Text="Paste" />
+        <merge Text="Merge" />
         <delete Text="Remove"/>
 
         <new_case Text="New case"/>
@@ -60,5 +61,9 @@
         <date Text="Date"/>
         <comment Text="Comment"/>
     </Item_Attributes>
+
+    <Miscellaneous>
+        <merged Text="Merged" />
+    </Miscellaneous>
 
 </Language>

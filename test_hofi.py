@@ -112,6 +112,11 @@ case_template.add(
     },
     dependencies=[relative_income_amount]
 )
+case_template.add_merging_rule(
+    "Income",
+    {"income_amount":"sum", "relative_income_amount":"sum", "date":"max", "comment":"join_texts"}
+)
+
 case_template.add(
     "Expense", 
     {
@@ -121,6 +126,10 @@ case_template.add(
         "comment":comment
     },
     dependencies=[relative_expense_amount]
+)
+case_template.add_merging_rule(
+    "Expense",
+    {"expense_amount":"sum", "relative_expense_amount":"sum", "date":"max", "comment":"join_texts"}
 )
 case_template.add(
     "Item", 

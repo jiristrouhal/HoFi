@@ -17,6 +17,7 @@
         <cut Text="Vyjmout" />
         <duplicate Text="Kopírovat sem" />
         <paste Text="Vložit" />
+        <merge Text="Sloučit" />
         <delete Text="Odstranit"/>
 
         <new_case Text="Nový"/>
@@ -61,5 +62,9 @@
         <date Text="Datum"/>
         <comment Text="Poznámky"/>
     </Item_Attributes>
+
+    <Miscellaneous>
+        <merged Text="Sloučeno" />
+    </Miscellaneous>
 
 </Language>

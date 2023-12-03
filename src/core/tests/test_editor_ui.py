@@ -1,6 +1,8 @@
 from __future__ import annotations
 import sys
-from typing import Tuple 
+from typing import Callable, Set, Tuple
+
+from src.core.item import Item 
 sys.path.insert(1,"src")
 
 
@@ -28,7 +30,15 @@ class Item_Window_Test(Item_Window):
 
 
 class Case_View_Test(Case_View):
+
+    @property
+    def selected_items(self) -> Set(Item):
+        return set()
+
     def configure(self, **kwargs) -> None:
+        pass
+
+    def on_selection_change(self, func: Callable[[], None]) -> None:
         pass
 
 

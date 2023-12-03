@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-from typing import Tuple, Dict, List, Any, Optional
+from typing import Tuple, Dict, List, Any, Optional, Callable, Literal
 from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor 
 from src.core.item import FileType, freeatt_child, freeatt, freeatt_parent
 from src.core.attributes import Locale_Code
@@ -10,6 +10,11 @@ import re
 
 
 CASE_TYPE_LABEL = "__Case__"
+
+
+from decimal import Decimal
+MergeRule = Literal["sum", "join_texts", "max"]
+_MergeFunc = Callable[[List[Any]], Any]
 
 
 from src.core.attributes import Currency_Code
@@ -22,6 +27,7 @@ class Case_Template:
         self.__insertable:str = ""
         self.__currency:Currency_Code = "USD"
         self.__case_template:Optional[Template] = None
+        self.__merge_rules:Dict[str, Dict[str, _MergeFunc]] = dict()
 
     @property
     def attr(self)->Attribute_Data_Constructor: return self.__constructor
@@ -35,6 +41,8 @@ class Case_Template:
     def insertable(self)->str: return self.__insertable
     @property
     def currency_code(self)->Currency_Code: return self.__currency
+    @property
+    def merging_rules(self)->Dict[str, Dict[str, _MergeFunc]]: return self.__merge_rules.copy()
 
     def add(
         self,
@@ -77,6 +85,25 @@ class Case_Template:
             if label not in self.__templates: raise Case_Template.UndefinedTemplate(label)
             self.__case_child_labels.append(label)
 
+    def add_merging_rule(self, itype:str, attribute_rules:Dict[str, MergeRule])->None:
+        if not itype in self.__templates: 
+            raise Case_Template.Adding_Merge_Rule_To_Undefined_Item_Type(itype)
+        elif itype in self.__merge_rules: 
+            raise Case_Template.Merge_Rule_Already_Defined(itype)
+        # create empty dict for merging rules of item type 'itype'
+        self.__merge_rules[itype] = dict()
+        # collect attribute labels for item type 'itype'
+        attr_labels = self.__templates[itype].attribute_info.keys()
+        # pick available merge rule from a dictionary of this class and assign it
+        # to the attribute label 'alabel'
+        for alabel in attr_labels:
+            if alabel not in attribute_rules: 
+                raise Case_Template.Attribute_With_Undefined_Merge_Rule(alabel)
+            rule_label = attribute_rules[alabel]
+            if rule_label not in self.__merge_func:
+                raise Case_Template.Undefined_Merge_Function(rule_label)
+            self.__merge_rules[itype][alabel] = self.__merge_func[rule_label]
+ 
     def configure(self, **kwargs)->None:
         for label, value in kwargs.items():
             match label:
@@ -95,13 +122,23 @@ class Case_Template:
         if not CASE_TYPE_LABEL in self.__templates:
             returned_templates.insert(0,Template(CASE_TYPE_LABEL, {}, tuple(self.__case_child_labels)))
         return returned_templates
+    
+    __merge_func:Dict[MergeRule, _MergeFunc] = {
+        "sum": lambda x: sum(Decimal(str(xi)) for xi in x),
+        "max": lambda x: max(x),
+        "min": lambda x: min(x),
+        "join_texts": lambda d: "\n\n".join(d)
+    }
 
-
-    class Dependency(Template.Dependency): pass
+    class Adding_Merge_Rule_To_Undefined_Item_Type(Exception): pass
+    class Attribute_With_Undefined_Merge_Rule(Exception): pass
     class BlankTemplateLabel(Exception): pass
-    class ReaddingAttributeWithDifferentType(Exception): pass
-    class UndefinedTemplate(Exception): pass
+    class Dependency(Template.Dependency): pass
     class InvalidCharactersInLabel(Exception): pass
+    class Merge_Rule_Already_Defined(Exception): pass
+    class ReaddingAttributeWithDifferentType(Exception): pass
+    class Undefined_Merge_Function(Exception): pass
+    class UndefinedTemplate(Exception): pass
 
 
 from src.core.item import Attribute_Data_Constructor
@@ -122,8 +159,13 @@ class Editor:
         self.__locale_code = locale_code
         if lang is None: self.__lang = Lang_Object.get_lang_object()
         else: self.__lang = lang
+
         self.__copied_item:Optional[Item] = None
+
         self.__selection:Set[Item] = set()
+        self.__actions_on_selection:Dict[str, List[Callable[[], None]]] = dict()
+
+        self.__merging_rules:Dict[str, Dict[str, _MergeFunc]] = case_template.merging_rules
 
     @property
     def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes
@@ -143,6 +185,13 @@ class Editor:
     def item_to_paste(self)->Item: return self.__copied_item
     @property
     def selection(self)->Set[Item]: return self.__selection
+    @property
+    def selection_is_mergeable(self)->bool:return self.is_mergeable(self.__selection)
+
+    def add_action_on_selection(self, owner_id:str, action:Callable[[], None])->None:
+        if owner_id not in self.__actions_on_selection:
+            self.__actions_on_selection[owner_id] = list()
+        self.__actions_on_selection[owner_id].append(action)
     
     def can_paste_under_or_next_to(self, to_be_pasted:Item, other_item:Item)->bool: 
         if self.__copied_item is None:
@@ -200,6 +249,17 @@ class Editor:
     @staticmethod
     def is_case(item:Item)->bool:
         return item.itype==CASE_TYPE_LABEL
+    
+    def is_mergeable(self, items:Set[Item])->bool:
+        if len(items)<2: return False
+        items:List[Item] = list(items)
+        first_item = items.pop(0)
+        parent, itype = first_item.parent, first_item.itype
+        if itype not in self.__merging_rules:
+            return False
+        for item in items:
+            if item.parent!=parent or item.itype!=itype: return False
+        return True
 
     def item_types_to_create(self,parent:Item)->Tuple[str,...]:
         return self.__creator.get_template(parent.itype).child_itypes
@@ -211,8 +271,28 @@ class Editor:
             self.__root.adopt(case)
             return case
         return load_case_and_add_to_editor()
+    
+    def merge_selection(self)->Item:
+        return self.merge(self.__selection)
+    
+    def merge(self, items:Set[Item])->Item:
+        if not self.is_mergeable(items): 
+            raise Exception(f"Items are not mergeable: {items}")
+        items_list = list(items)
+        parent, itype = items_list[0].parent, items_list[0].itype
+        @self.__creator._controller.single_cmd()
+        def new_merged_item()->Item:
+            merge_result = self.new(parent, itype)
+            merge_result.rename(self.__lang.label("Miscellaneous",'merged')+': '+merge_result.name)
+            for attr_label, merge_func in self.__merging_rules[itype].items():
+                merged_attr_value = merge_func([item(attr_label) for item in items])
+                merge_result.attribute(attr_label).set(merged_attr_value)
+            # parent must leave the original (merged) items 
+            for item in items: parent.leave(item)
+            return merge_result
+        return new_merged_item()
 
-    def new(self,parent:Item,itype:str)->Item:
+    def new(self,parent:Item,itype:str,name:str="")->Item:
         if itype not in self.__creator.templates:
             raise Editor.UndefinedTemplate(itype)
         
@@ -223,11 +303,12 @@ class Editor:
             )
         
         @self.__creator._controller.single_cmd()
-        def create_and_adopt()->Item:
-            item = self.__creator.from_template(itype, name=self.__lang.label("Item_Types",itype))
+        def create_and_adopt(name:str)->Item:
+            if name=="": name = self.__lang.label("Item_Types",itype)
+            item = self.__creator.from_template(itype, name=name)
             parent.adopt(item)
             return item
-        return create_and_adopt()
+        return create_and_adopt(name)
     
     def new_case(self,name:str)->Item:
         @self.__creator._controller.single_cmd()
@@ -273,6 +354,7 @@ class Editor:
             self.__selection = {item}
             self.__selection_parent = item.parent
             self.__selection_itype = item.itype
+        self.__run_actions_on_selection()
 
     def select_add(self, item:Item) -> None:
         if self.__selection:
@@ -280,8 +362,12 @@ class Editor:
             elif not item.itype==self.__selection_itype: return 
         self.__selection.add(item)
 
+    def selection_set(self, items:Set[Item])->None:
+        self.__selection = items.difference({self.__root})
+
     def select_none(self) -> None:
         self.__selection.clear()
+        self.__run_actions_on_selection()
 
     def set_dir_path(self,dirpath:str)->None:
         self.__creator.set_dir_path(dirpath)
@@ -291,6 +377,10 @@ class Editor:
 
     def redo(self)->None:
         self.__creator.redo()
+
+    def __run_actions_on_selection(self)->None:
+        for group in self.__actions_on_selection.values():
+            for action in group: action()
 
     def print(self,item:Item,attribute_name:str,**options)->str:
         return item.attribute(attribute_name).print(**options)
@@ -386,11 +476,17 @@ class EditorUI(abc.ABC):
         self._compose()
         if lang is None: lang = Lang_Object.get_lang_object()
         self.__lang = lang
+        self.__caseview.on_selection_change(
+            self.__pass_caseview_selection_to_editor
+        )
 
     @property
     def caseview(self)->Case_View: return self.__caseview
     @property
     def editor(self)->Editor: return self.__editor
+
+    def __pass_caseview_selection_to_editor(self)->None:
+        self.editor.selection_set(self.caseview.selected_items)
 
     @abc.abstractmethod
     def _compose(self)->None: pass
@@ -471,6 +567,9 @@ class EditorUI(abc.ABC):
         if self.__editor.can_paste_under_or_next_to(self.__editor.item_to_paste, item):
             actions.insert({'paste':lambda: self.__editor.paste_under(item)})
         actions.insert_sep()
+        if item in self.__editor.selection and self.__editor.selection_is_mergeable:
+            actions.insert({'merge':self.__editor.merge_selection})
+            actions.insert_sep()
         actions.insert({'delete':lambda: self.__editor.remove(item, item.parent)})
         return actions
 
@@ -576,9 +675,16 @@ class Item_Menu(abc.ABC):
     
 
 class Case_View(abc.ABC):
+
+    @abc.abstractproperty
+    def selected_items(self)->Set(Item): pass
     
     @abc.abstractmethod
     def configure(self, **kwargs)->None:
+        pass
+
+    @abc.abstractmethod
+    def on_selection_change(self, func:Callable[[], None])->None:
         pass
 
 
