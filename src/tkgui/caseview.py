@@ -14,6 +14,7 @@ from src.core.editor import (
     Item
 )
 
+
 class Case_View_Tk(Case_View):
     
     def __init__(
@@ -188,13 +189,35 @@ class Case_View_Tk(Case_View):
         self.__sort_by(column_label, parent_iid=parent_iid)
         self.__reversed_sort = not self.__reversed_sort
 
+    def __pick_attr_label_from_attrs_assigned_to_caseview_column(self, item:Item, column_label:str)->str:
+        if column_label not in self.__attrs_for_display: 
+            raise Case_View_Tk.Undefined_Column_Label(column_label)
+        else:
+            for attr in self.__attrs_for_display[column_label]: 
+                if item.has_attribute(attr): return attr
+        # item has no attribute corresponding to the caseview column 'column_label'
+        return ""
+
     def __sort_by(self, column_label:str, parent_iid:str)->None:
         if column_label=="#0":
             child_data = [(c, self.__tree.item(c)['text']) for c in self.__tree.get_children(parent_iid)]
             child_data.sort(key=lambda x: x[1], reverse=self.__reversed_sort)
         else:
-            child_data = [(c, self.__tree.set(c, column_label)) for c in self.__tree.get_children(parent_iid)]
-            child_data.sort(key=lambda x: (len(x[1]), x[1]), reverse=self.__reversed_sort)
+            child_data:List[str, Any] = list()
+            empty_child_data:List[str, Any] = list()
+            for item_id in self.__tree.get_children(parent_iid):
+                item = self.__item_dict[item_id]
+                attr_label = self.__pick_attr_label_from_attrs_assigned_to_caseview_column(item, column_label)
+                if attr_label=="": 
+                    empty_child_data.append((item_id, None))
+                else:
+                    child_data.append((item_id, item(attr_label)))
+
+            child_data.sort(key=lambda x: x[1], reverse=self.__reversed_sort)
+            child_data.extend(empty_child_data)
+
         for index, (c, _) in enumerate(child_data):
             self.__tree.move(c, parent_iid, index)
+
+    class Undefined_Column_Label(Exception): pass
 
