@@ -26,6 +26,9 @@ class Case_View_Tk(Case_View):
         icons:Dict[str,str] = {}
         )->None:
         
+        style = ttk.Style(window)
+        style.configure('Treeview', indent=10)
+
         self.__tree:ttk.Treeview = ttk.Treeview(window)
         self.__icons = {label:self.__get_icon(path) for label,path in icons.items()}
         for label, icon in self.__icons.items(): 
@@ -56,6 +59,7 @@ class Case_View_Tk(Case_View):
         self.__reversed_sort:bool = False
         self.__on_selection_change:List[Callable[[],None]] = list()
 
+
     @property
     def id(self)->str: return self.__id
     @property
@@ -63,13 +67,6 @@ class Case_View_Tk(Case_View):
     @property
     def selected_items(self)->Set[Item]: 
         return {self.__item_dict[item_id] for item_id in self.__tree.selection()}
-
-    def __handle_selection_change(self, event:tk.Event)->None:
-        for func in self.__on_selection_change:
-            func()
-
-    def on_selection_change(self, func:Callable[[], None])->None:
-        self.__on_selection_change.append(func)
 
     def bind(self, sequence:str, action:Callable[[tk.Event], None])->None:
         self.__tree.bind(sequence, action)
@@ -88,6 +85,36 @@ class Case_View_Tk(Case_View):
             item = self.__item_dict[tree_item_iid]
             return action(item, event)
         return item_action
+    
+    def on_selection_change(self, func:Callable[[], None])->None:
+        self.__on_selection_change.append(func)
+    
+    def __collect_and_set_values(self, item:Item)->List[str]:
+        values:List[str] = list()
+        for label_group in self.__attrs_for_display:
+            values.append("")
+            for label in self.__attrs_for_display[label_group]:
+                if item.has_attribute(label): 
+                    attr = item.attribute(label)
+                    print_args:Dict[str, Any] = dict()
+                    if attr.type=="real" or attr.type=="quantity":
+                        print_args["precision"] = self.__precision
+                        print_args["trailing_zeros"] = self.__trailing_zeros
+                    elif attr.type=="money":
+                        print_args["use_thousands_separator"] = self.__use_thousands_separator
+                    values[-1] = str(item.attribute(label).print(**print_args))
+                    break
+        return values
+    
+    def __get_icon(self, path:str)->Optional[ImageTk.PhotoImage]:
+        if os.path.isfile(path):
+            return ImageTk.PhotoImage(Image.open(path))
+        else: 
+            return None
+        
+    def __handle_selection_change(self, event:tk.Event)->None:
+        for func in self.__on_selection_change:
+            func()
 
     def __new_item(self, item:Item)->None:
         values = self.__collect_and_set_values(item)
@@ -117,14 +144,16 @@ class Case_View_Tk(Case_View):
         item.add_action(self.__id, 'rename', self.__rename_item)
         item.add_action_on_set(self.__id, self.__set_displayed_values_of_item_attributes)
         self.__item_dict[item.id] = item
-
         for child in item.children: self.__new_item(child)
 
-    def __get_icon(self, path:str)->Optional[ImageTk.PhotoImage]:
-        if os.path.isfile(path):
-            return ImageTk.PhotoImage(Image.open(path))
-        else: 
-            return None
+    def __pick_attr_label_from_attrs_assigned_to_caseview_column(self, item:Item, column_label:str)->str:
+        if column_label not in self.__attrs_for_display: 
+            raise Case_View_Tk.Undefined_Column_Label(column_label)
+        else:
+            for attr in self.__attrs_for_display[column_label]: 
+                if item.has_attribute(attr): return attr
+        # item has no attribute corresponding to the caseview column 'column_label'
+        return ""
 
     def __remove_item(self, item:Item)->None:
         for child in item.children: self.__remove_item(child)
@@ -146,23 +175,6 @@ class Case_View_Tk(Case_View):
         self.__tree.selection_clear()
         self.__tree.selection_set([item.id for item in self.__editor.selection])
         print(self.__tree.selection())
-
-    def __collect_and_set_values(self, item:Item)->List[str]:
-        values:List[str] = list()
-        for label_group in self.__attrs_for_display:
-            values.append("")
-            for label in self.__attrs_for_display[label_group]:
-                if item.has_attribute(label): 
-                    attr = item.attribute(label)
-                    print_args:Dict[str, Any] = dict()
-                    if attr.type=="real" or attr.type=="quantity":
-                        print_args["precision"] = self.__precision
-                        print_args["trailing_zeros"] = self.__trailing_zeros
-                    elif attr.type=="money":
-                        print_args["use_thousands_separator"] = self.__use_thousands_separator
-                    values[-1] = str(item.attribute(label).print(**print_args))
-                    break
-        return values
     
     def __set_up_headings(self)->None:
         heading_labels = list(self.__tree['columns'])
@@ -188,15 +200,6 @@ class Case_View_Tk(Case_View):
         else: parent_iid=self.__tree.parent(selection[-1])
         self.__sort_by(column_label, parent_iid=parent_iid)
         self.__reversed_sort = not self.__reversed_sort
-
-    def __pick_attr_label_from_attrs_assigned_to_caseview_column(self, item:Item, column_label:str)->str:
-        if column_label not in self.__attrs_for_display: 
-            raise Case_View_Tk.Undefined_Column_Label(column_label)
-        else:
-            for attr in self.__attrs_for_display[column_label]: 
-                if item.has_attribute(attr): return attr
-        # item has no attribute corresponding to the caseview column 'column_label'
-        return ""
 
     def __sort_by(self, column_label:str, parent_iid:str)->None:
         if column_label=="#0":

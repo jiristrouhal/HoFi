@@ -218,9 +218,15 @@ class Editor:
     def copy(self, item:Item)->None:
         self.__copied_item = item.copy()
 
+    def copy_selection(self)->None:
+        if len(self.__selection)==1: self.copy(list(self.__selection)[0])
+
     def cut(self, item:Item)->None:
         self.__copied_item = item.copy()
         item.parent.leave(item)
+
+    def cut_selection(self)->None:
+        if len(self.__selection)==1: self.cut(list(self.__selection)[0])
 
     def contains_case(self,case:Item)->bool:
         return self.__root.is_parent_of(case)
@@ -369,6 +375,12 @@ class Editor:
                 parent = parent.parent
             parent.adopt(self.__copied_item)
             self.__copied_item = None
+
+    def paste_under_selection(self)->None:
+        if len(self.__selection)==1: 
+            parent = list(self.__selection)[0]
+            print(parent)
+            self.paste_under(parent)
 
     def remove(self,item:Item,parent:Item)->None:
         if parent==item.parent: parent.leave(item)

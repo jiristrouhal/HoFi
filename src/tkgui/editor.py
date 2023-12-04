@@ -19,6 +19,7 @@ class Editor_Tk(EditorUI):
         icons:Dict[str,str] = {}
         )->None:
 
+        self.__editor = editor
         self.__win = master_window
         self.__item_window = Item_Window_Tk(self.__win, lang=lang)
         self.__item_menu = Item_Menu_Tk(self.__win, lang=lang)
@@ -48,6 +49,18 @@ class Editor_Tk(EditorUI):
         self.__caseview.widget.bind(
             "<Delete>",
             self.__caseview.do_on_tree_item(self.delete_item)
+        )
+        self.__caseview.widget.bind(
+            "<Control-c>",
+            lambda e: self.__editor.copy_selection()
+        )
+        self.__caseview.widget.bind(
+            "<Control-v>",
+            lambda e: self.__editor.paste_under_selection()
+        )
+        self.__caseview.widget.bind(
+            "<Control-x>",
+            lambda e: self.__editor.cut_selection()
         )
 
     def __double_left_click_action(self, event:tk.Event)->str:
