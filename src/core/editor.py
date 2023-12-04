@@ -266,6 +266,10 @@ class Editor:
     def group_selection(self)->Item:
         self.group(self.__selection)
 
+    def ungroup_selection(self)->None:
+        if len(self.__selection)==1: 
+            self.ungroup(list(self.__selection)[0])
+
     def group(self, items:Set[Item])->Item:
         if not self.is_groupable(items): 
             return ItemImpl.NULL
