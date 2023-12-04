@@ -67,6 +67,7 @@
 
     <Miscellaneous>
         <merged Text="Sloučeno" />
+        <new_group Text="Seskupeno" />
     </Miscellaneous>
 
 </Language>

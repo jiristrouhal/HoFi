@@ -66,6 +66,7 @@
 
     <Miscellaneous>
         <merged Text="Merged" />
+        <new_group Text="Grouped" />
     </Miscellaneous>
 
 </Language>
