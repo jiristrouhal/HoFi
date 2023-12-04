@@ -18,6 +18,8 @@
         <duplicate Text="Kopírovat sem" />
         <paste Text="Vložit" />
         <merge Text="Sloučit" />
+        <group Text="Seskupit" />
+        <ungroup Text="Rozložit" />
         <delete Text="Odstranit"/>
 
         <new_case Text="Nový"/>

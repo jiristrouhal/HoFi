@@ -157,6 +157,7 @@ case_template.set_case_template(
 )
 
 
+case_template.set_insertable("Item")
 editor = new_editor(case_template, "cs_cz", lang=lang, ignore_duplicit_names=True)
 
 win = tk.Tk()

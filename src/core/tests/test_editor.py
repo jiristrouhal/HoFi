@@ -688,5 +688,58 @@ class Test_Merging_Of_Items(unittest.TestCase):
         self.assertTrue(self.tree_1.is_parent_of(merged_apple))
 
 
+class Test_Grouping_And_Ungrouping_Items(unittest.TestCase):
+
+    def setUp(self) -> None:
+        case_template = blank_case_template()
+        case_template.add("Item", {}, ("Item",))
+        case_template.add("Item_Type_X", {}, ("Item", ))
+        case_template.add_case_child_label("Item", "Item_Type_X")
+        case_template.set_insertable("Item")
+        self.editor = new_editor(case_template)
+        self.case_x = self.editor.new_case("Case X")
+
+        self.parent = self.editor.new(self.case_x, "Item")
+        self.item_A = self.editor.new(self.parent, "Item")
+        self.item_B = self.editor.new(self.parent, "Item")
+        self.item_C = self.editor.new(self.parent, "Item")
+
+        self.child_A_of_A = self.editor.new(self.item_A, "Item")
+        self.child_B_of_A = self.editor.new(self.item_A, "Item")
+
+        self.item_X = self.editor.new(self.case_x, "Item_Type_X")
+        self.child_of_X = self.editor.new(self.item_X, "Item")
+
+    def test_grouping_zero_items_has_no_effect(self):
+        group = self.editor.group({})
+        self.assertTrue(group.is_null())
+
+    def test_grouping_single_item_has_no_effect(self):
+        group = self.editor.group({self.item_A})
+        self.assertTrue(group.is_null())
+        self.assertTrue(self.parent.is_parent_of(self.item_A))
+
+    def test_items_under_common_parent_are_groupable(self):
+        group = self.editor.group({self.item_A, self.item_B})
+        self.assertTrue(group.is_parent_of(self.item_A))
+        self.assertTrue(group.is_parent_of(self.item_B))
+        self.assertTrue(self.parent.is_parent_of(group))
+
+    def test_ungrouping_items(self):
+        self.editor.ungroup(self.item_A)
+        self.assertTrue(self.parent.is_parent_of(self.child_A_of_A))
+        self.assertTrue(self.parent.is_parent_of(self.child_B_of_A))
+        self.assertFalse(self.parent.is_parent_of(self.item_A))
+
+    def test_ungrouping_item_of_type_not_set_as_insertable_has_no_effect(self):
+        self.editor.ungroup(self.item_X)
+        self.assertFalse(self.parent.is_parent_of(self.child_of_X))
+        self.assertTrue(self.item_X.is_parent_of(self.child_of_X))
+
+    def test_ungrouping_item_without_children_has_no_effect(self):
+        self.editor.ungroup(self.item_B)
+        self.assertTrue(self.parent.is_parent_of(self.item_B))
+
+
 if __name__=="__main__": 
     unittest.main()

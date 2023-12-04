@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from typing import Tuple, Dict, List, Any, Optional, Callable, Literal
 from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor 
-from src.core.item import FileType
+from src.core.item import FileType, freeatt_child, freeatt, freeatt_parent
 from src.core.attributes import Locale_Code
+from src.core.item import ItemImpl
 
 import re
 
@@ -187,6 +188,8 @@ class Editor:
     def selection(self)->Set[Item]: return self.__selection
     @property
     def selection_is_mergeable(self)->bool:return self.is_mergeable(self.__selection)
+    @property
+    def selection_is_groupable(self)->bool: return self.is_groupable(self.__selection)
 
     def add_action_on_selection(self, owner_id:str, action:Callable[[], None])->None:
         if owner_id not in self.__actions_on_selection:
@@ -234,6 +237,46 @@ class Editor:
             *case.command['adopt'](self.Parentage_Data(case, item_dupl)),
         )
         return case
+
+    def is_groupable(self, items:Set[Item])->bool:
+        if self.__insertable == "": 
+            return False
+        elif len(items)<2: 
+            return False
+        else: 
+            items_list = list(items)
+            orig_parent = items_list.pop(0).parent
+            for item in items_list: 
+                if item.parent != orig_parent: return False
+        return True
+    
+    def is_ungroupable(self, item:Item)->bool:
+        return item.itype==self.insertable and item.has_children()
+    
+    def group_selection(self)->Item:
+        self.group(self.__selection)
+
+    def group(self, items:Set[Item])->Item:
+        if not self.is_groupable(items): 
+            return ItemImpl.NULL
+        else:
+            orig_parent = list(items)[0].parent
+            @self.__creator._controller.single_cmd()
+            def move_under_group_parent()->Item:
+                new_parent = self.new(orig_parent, self.insertable, name=self.__lang.label("Miscellaneous", 'new_group'))
+                for item in items:
+                    orig_parent.pass_to_new_parent(item, new_parent)
+                return new_parent
+            return move_under_group_parent()
+        
+    def ungroup(self, item:Item)->None:
+        if not self.is_ungroupable(item): return 
+        @self.__creator._controller.single_cmd()
+        def do_ungrouping()->None:
+            for child in item.children: 
+                item.pass_to_new_parent(child, item.parent)
+            item.parent.leave(item)
+        do_ungrouping()
 
     def insert_from_file(self, parent:Item, dirpath:str, name:str, filetype:FileType)->Item:
         if not self.can_insert_under(parent):
@@ -570,6 +613,10 @@ class EditorUI(abc.ABC):
         if item in self.__editor.selection and self.__editor.selection_is_mergeable:
             actions.insert({'merge':self.__editor.merge_selection})
             actions.insert_sep()
+        if item in self.__editor.selection and self.__editor.selection_is_groupable:
+            actions.insert({'group':self.__editor.group_selection})
+        if self.__editor.is_ungroupable(item):
+            actions.insert({'ungroup': lambda: self.__editor.ungroup(item)})
         actions.insert({'delete':lambda: self.__editor.remove(item, item.parent)})
         return actions
 

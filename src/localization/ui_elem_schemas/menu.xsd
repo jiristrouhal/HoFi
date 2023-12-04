@@ -13,6 +13,8 @@
         <xs:element name="duplicate" type="item"/>
         <xs:element name="paste" type="item"/>
         <xs:element name="merge" type="item"/>
+        <xs:element name="group" type="item" />
+        <xs:element name="ungroup" type="item" />
         <xs:element name="delete" type="item"/>
 
         <xs:element name="new_case" type="item"/>

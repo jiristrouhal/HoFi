@@ -17,6 +17,8 @@
         <duplicate Text="Duplicate" />
         <paste Text="Paste" />
         <merge Text="Merge" />
+        <group Text="Group" />
+        <ungroup Text="Ungroup" />
         <delete Text="Remove"/>
 
         <new_case Text="New case"/>
