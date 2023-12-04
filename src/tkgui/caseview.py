@@ -53,7 +53,6 @@ class Case_View_Tk(Case_View):
 
         self.__tree.bind("<<TreeviewSelect>>", self.__handle_selection_change)
         self.__tree.bind("<Escape>", lambda e: self.__selection_clear())
-        self.__tree.bind("<Button-1>", self.__single_click_on_item)
         self.__tree.bind("<Down> <Up>", lambda e: self.__reselect_last())
 
         self.__item_dict:Dict[str,Item] = {"":root_item}

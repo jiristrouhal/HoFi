@@ -234,6 +234,10 @@ class Editor:
     def duplicate(self, item:Item)->Item:
         return item.duplicate()
     
+    def duplicate_selection(self)->Item:
+        if len(self.__selection)==1: 
+            new_item = self.duplicate(list(self.__selection)[0])
+    
     from src.core.item import Parentage_Data
     def duplicate_as_case(self,item:Item)->Item:
         case = self.__creator.from_template(CASE_TYPE_LABEL, item.name)

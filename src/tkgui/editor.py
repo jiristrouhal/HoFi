@@ -55,6 +55,10 @@ class Editor_Tk(EditorUI):
             lambda e: self.__editor.copy_selection()
         )
         self.__caseview.widget.bind(
+            "<Control-d>",
+            lambda e: self.__editor.duplicate_selection()
+        )
+        self.__caseview.widget.bind(
             "<Control-v>",
             lambda e: self.__editor.paste_under_selection()
         )
