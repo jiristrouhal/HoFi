@@ -52,12 +52,16 @@ class Case_View_Tk(Case_View):
         root_item.add_action_on_set(self.__id, self.__set_displayed_values_of_item_attributes)
 
         self.__tree.bind("<<TreeviewSelect>>", self.__handle_selection_change)
+        self.__tree.bind("<Escape>", lambda e: self.__selection_clear())
+        self.__tree.bind("<Button-1>", self.__single_click_on_item)
+        self.__tree.bind("<Down> <Up>", lambda e: self.__reselect_last())
 
         self.__item_dict:Dict[str,Item] = {"":root_item}
-
         self.__set_up_headings()
         self.__reversed_sort:bool = False
         self.__on_selection_change:List[Callable[[],None]] = list()
+
+        self.__last_selection:str = ""
 
 
     @property
@@ -88,6 +92,11 @@ class Case_View_Tk(Case_View):
     
     def on_selection_change(self, func:Callable[[], None])->None:
         self.__on_selection_change.append(func)
+        selection = self.__tree.selection()
+        if selection:
+            self.__last_selection = selection[-1]
+        else:
+            self.__last_selection = ""
     
     def __collect_and_set_values(self, item:Item)->List[str]:
         values:List[str] = list()
@@ -171,11 +180,21 @@ class Case_View_Tk(Case_View):
         values = self.__collect_and_set_values(item)
         self.__tree.item(item.id, values=values)
 
-    def __set_selection(self)->None:
-        self.__tree.selection_clear()
-        self.__tree.selection_set([item.id for item in self.__editor.selection])
-        print(self.__tree.selection())
-    
+    def __single_click_on_item(self, event:tk.Event)->None:
+        if self.__tree.identify_row(event.y)=="":
+            self.__selection_clear()
+
+    def __selection_clear(self)->None:
+        self.__tree.selection_set([])
+
+    def __reselect_last(self):
+        if self.__tree.selection() and self.__tree.selection() != [""]: 
+            return 
+        elif self.__last_selection=="" and self.__tree.get_children(""): 
+            self.__tree.selection_set(self.__tree.get_children("")[0])
+        elif self.__last_selection in self.__item_dict:
+            self.__tree.selection_set(self.__last_selection)
+
     def __set_up_headings(self)->None:
         heading_labels = list(self.__tree['columns'])
         for heading_label in heading_labels:

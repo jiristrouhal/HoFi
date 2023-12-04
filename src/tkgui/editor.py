@@ -28,7 +28,7 @@ class Editor_Tk(EditorUI):
         )
         super().__init__(editor, self.__item_menu, self.__item_window, self.__caseview, lang=lang)
 
-    def _compose(self) -> None:
+    def _compose(self) -> None:  # pragma: no cover
         self.__caseview.widget.pack(expand=1, fill=tk.BOTH)
         self.__caseview.widget.bind(
             "<Button-3>",
@@ -61,7 +61,7 @@ class Editor_Tk(EditorUI):
         self.__caseview.widget.bind(
             "<Control-x>",
             lambda e: self.__editor.cut_selection()
-        )
+        ) 
 
     def __double_left_click_action(self, event:tk.Event)->str:
         self.__caseview.do_on_tree_item(self.open_item_window)(event)

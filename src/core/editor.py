@@ -297,6 +297,7 @@ class Editor:
 
     @staticmethod
     def is_case(item:Item)->bool:
+        if item is None or item.is_null(): return False
         return item.itype==CASE_TYPE_LABEL
     
     def is_mergeable(self, items:Set[Item])->bool:
@@ -379,8 +380,9 @@ class Editor:
     def paste_under_selection(self)->None:
         if len(self.__selection)==1: 
             parent = list(self.__selection)[0]
-            print(parent)
             self.paste_under(parent)
+        elif not self.__selection and self.is_case(self.__copied_item):
+            self.paste_under(self.__root)
 
     def remove(self,item:Item,parent:Item)->None:
         if parent==item.parent: parent.leave(item)
