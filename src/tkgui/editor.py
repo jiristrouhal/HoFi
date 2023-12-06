@@ -40,11 +40,11 @@ class Editor_Tk(EditorUI):
         )
         self.__caseview.widget.bind(
             "<Control-z>",
-            lambda e: self.editor.undo()
+            lambda e: self.__editor.undo()
         )
         self.__caseview.widget.bind(
             "<Control-y>",
-            lambda e: self.editor.redo()
+            lambda e: self.__editor.redo()
         )
         self.__caseview.widget.bind(
             "<Delete>",

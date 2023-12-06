@@ -741,6 +741,7 @@ class ItemImpl(Item):
         binding_label:str=""
         )->None:
         
+        if not self.has_attribute(output_name): return
         output = self.attribute(output_name)
         input_info = list(input_info)
         self.__create_attr_info_from_attr_type(input_info)

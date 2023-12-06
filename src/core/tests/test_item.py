@@ -1283,6 +1283,31 @@ class Test_Binding_Attribute_To_Items_Parent(unittest.TestCase):
         self.parent.set('x',4)
         self.assertEqual(self.child('x'), 8)
 
+
+from src.core.item import freeatt_child
+class Test_Copying_Item_With_Multiple_Types_Of_Children(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.cr = ItemCreator()
+        self.parent = self.cr.new("Parent", {'x':'integer'})
+        int_attr = self.cr.attr.integer(3)
+        self.parent.bind('x', lambda x: sum(x), freeatt_child('x', int_attr))
+        self.parent.set('x',1)
+        self.item = self.cr.new("Item", {'x':'integer'})
+        self.item.bind('x', lambda x: sum(x), freeatt_child('x', int_attr))
+        self.child_A = self.cr.new("Child", {'x':int_attr})
+        self.child_B = self.cr.new("Child", {'y':int_attr})
+        self.parent.adopt(self.item)
+        self.item.adopt(self.child_A)
+        self.item.adopt(self.child_B)
+        self.assertEqual(self.parent("x"), 3)
+
+    def test_copying_the_parent(self):
+        item_copy = self.item.copy()
+        self.assertEqual(item_copy("x"), 3)
+        self.parent.adopt(item_copy)
+        self.assertEqual(self.parent("x"), 6)
+
     
 if __name__=="__main__":  unittest.main()
 
