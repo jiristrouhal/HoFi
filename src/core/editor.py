@@ -341,7 +341,8 @@ class Editor:
         @self.__creator._controller.single_cmd()
         def new_merged_item()->Item:
             merge_result = self.new(parent, itype)
-            merge_result.rename(self.__lang.label("Miscellaneous",'merged')+': '+merge_result.name)
+            new_name = "; ".join([item.name for item in items_list])
+            merge_result.rename(self.__lang.label("Miscellaneous",'merged')+': '+new_name)
             for attr_label, merge_func in self.__merging_rules[itype].items():
                 merged_attr_value = merge_func([item(attr_label) for item in items])
                 merge_result.attribute(attr_label).set(merged_attr_value)

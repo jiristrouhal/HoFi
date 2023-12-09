@@ -135,7 +135,6 @@ class Case_View_Tk(Case_View):
         )
         if item.itype in self.__icons: self.__tree.item(item_iid, image=self.__icons[item.itype])
         
-        self.__tree.see(item.id)
         item.add_action(self.__id, 'adopt', self.__new_item)
         item.add_action(self.__id, 'leave', self.__remove_item)
         item.add_action(self.__id, 'rename', self.__rename_item)

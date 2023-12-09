@@ -70,6 +70,17 @@ def remove_dir(dirpath:str)->None: # pragma: no cover
             pass
         os.rmdir(dirpath)
 
+
+class Test_Saving_Item_As_Binary(unittest.TestCase):
+
+    DIRPATH = "./__test_dir_21"
+
+    def setUp(self) -> None:
+        build_dir(self.DIRPATH)
+        self.cr = ItemCreator()
+        self.cr.set_dir_path(self.DIRPATH)
+        
+
 class Test_Loading_Item_From_XML(unittest.TestCase):
 
     DIRPATH = "./__test_dir_3"
