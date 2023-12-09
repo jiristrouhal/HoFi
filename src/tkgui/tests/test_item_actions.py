@@ -7,7 +7,6 @@ import unittest
 import tkinter as tk
 
 from src.tkgui.item_actions import Item_Window_Tk
-from src.core.editor import EditorUI
 from src.core.item import ItemCreator
 
 
