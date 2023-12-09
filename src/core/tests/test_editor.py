@@ -8,10 +8,6 @@ from src.core.editor import new_editor, blank_case_template, Case_Template, Edit
 NBSP = u"\u00A0"
 
 
-from typing import List
-from decimal import Decimal
-
-
 class Test_Creating_Case(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -687,6 +683,13 @@ class Test_Merging_Of_Items(unittest.TestCase):
         self.assertFalse(self.tree_1.is_parent_of(self.apple_1b))
         self.assertTrue(self.tree_1.is_parent_of(merged_apple))
 
+        self.editor.undo()
+        self.assertEqual(self.apple_1a("weight"), 5)
+        self.assertEqual(self.apple_1b("weight"), 7)
+        self.assertTrue(self.tree_1.is_parent_of(self.apple_1a))
+        self.assertTrue(self.tree_1.is_parent_of(self.apple_1b))
+        self.assertFalse(self.tree_1.is_parent_of(merged_apple))
+
 
 class Test_Grouping_And_Ungrouping_Items(unittest.TestCase):
 
@@ -739,6 +742,8 @@ class Test_Grouping_And_Ungrouping_Items(unittest.TestCase):
     def test_ungrouping_item_without_children_has_no_effect(self):
         self.editor.ungroup(self.item_B)
         self.assertTrue(self.parent.is_parent_of(self.item_B))
+
+    
 
 
 if __name__=="__main__": 
