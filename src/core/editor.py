@@ -265,6 +265,12 @@ class Editor:
     
     def is_ungroupable(self, item:Item)->bool:
         return item.itype==self.insertable and item.has_children()
+
+    def its_case(self, item:Item)->Item:
+        if item == self.__root: return ItemImpl.NULL
+        elif self.is_case(item): return item
+        else:
+            return self.its_case(item.parent)
     
     def group_selection(self)->Item:
         self.group(self.__selection)
@@ -413,7 +419,11 @@ class Editor:
 
     def save(self,item:Item,filetype:FileType)->None:
         if Editor.is_case(item) or self.can_save_as_item(item):
-            self.__creator.save(item,filetype)
+            self.__creator.save(
+                item,
+                filetype,
+                backup_folder_name=self.__lang.label("Miscellaneous","backup_folder_name")
+            )
         else:
             raise Editor.CannotSaveAsItem(item.name, item.itype)
 
@@ -592,15 +602,21 @@ class EditorUI(abc.ABC):
         if case_name.strip()=="": return
         self.__editor.load_case(case_dir_path, case_name, "xml")
      
-    def export_case_to_xml(self, case:Item)->None:
+    def save_selected_cases_to_xml(self)->None:
+        if not self.caseview.selected_items: return 
+        selected_cases:Set[Item] = {self.__editor.its_case(item) for item in self.caseview.selected_items}
+        for selected_case in selected_cases:
+            self.save_case_to_existing_xml(selected_case)
+
+    def save_case_to_xml(self, case:Item)->None:
         dir_path = self._get_export_dir()
         if not os.path.isdir(dir_path): return 
         self.__editor.set_dir_path(dir_path)
         self.__editor.save(case, "xml")
 
-    def export_case_to_existing_xml(self, case:Item)->None:
+    def save_case_to_existing_xml(self, case:Item)->None:
         if not self.__editor.does_file_exist(case,"xml"): 
-            self.export_case_to_xml(case)
+            self.save_case_to_xml(case)
         else:
             self.__editor.save(case, "xml")
 
@@ -634,8 +650,8 @@ class EditorUI(abc.ABC):
             actions.insert({'paste':lambda: self.__editor.paste_under(case)})
         actions.insert_sep()
         if self.__editor.does_file_exist(case,"xml"):
-            actions.insert({'save_to_existing_xml': lambda: self.export_case_to_existing_xml(case)})
-        actions.insert({'export_to_xml': lambda: self.export_case_to_xml(case)})
+            actions.insert({'save_to_existing_xml': lambda: self.save_case_to_existing_xml(case)})
+        actions.insert({'export_to_xml': lambda: self.save_case_to_xml(case)})
         actions.insert_sep()
         actions.insert({'delete':lambda: self.__editor.remove_case(case)})
         return actions

@@ -1308,6 +1308,16 @@ class Test_Copying_Item_With_Multiple_Types_Of_Children(unittest.TestCase):
         self.parent.adopt(item_copy)
         self.assertEqual(self.parent("x"), 6)
 
+
+
+import time
+class Test_Getting_Time_String(unittest.TestCase):
+
+    def test_getting_time_string(self)->None:
+        curr_time = time.mktime(time.struct_time([2023, 8, 21, 15, 54, 0, 0, 0, 0]))
+        strtime = ItemCreator.get_strtime(curr_time)
+        self.assertEqual(strtime, "2023-08-21_16-54-00")
+
     
 if __name__=="__main__":  unittest.main()
 

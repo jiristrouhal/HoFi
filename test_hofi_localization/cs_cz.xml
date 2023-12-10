@@ -69,6 +69,7 @@
     <Miscellaneous>
         <merged Text="Sloučeno" />
         <new_group Text="Seskupeno" />
+        <backup_folder_name Text="staré verze" />
     </Miscellaneous>
 
 </Language>

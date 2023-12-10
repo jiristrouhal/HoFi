@@ -68,6 +68,7 @@
     <Miscellaneous>
         <merged Text="Merged" />
         <new_group Text="Grouped" />
+        <backup_folder_name Text="old versions" />
     </Miscellaneous>
 
 </Language>

@@ -1,6 +1,10 @@
 from __future__ import annotations
 from typing import Dict, Any, Set, Callable, Optional, Literal, List
 import dataclasses
+
+import shutil
+import time
+
 from src.cmd.commands import Command, Controller, Composed_Command, Timing, Empty_Command
 from src.utils.naming import adjust_taken_name, strip_and_join_spaces
 from src.core.attributes import attribute_factory, Attribute, Attribute_List, Set_Attr_Data, Attribute_Data_Constructor
@@ -143,11 +147,28 @@ class ItemCreator:
             if attr_name in xml_elem.attrib:
                 loaded_item.attributes[attr_name].read(xml_elem.attrib[attr_name], overwrite_dependent=True)
     
-    def save(self, item:Item, filetype:FileType)->None:
+    def save(self, item:Item, filetype:FileType,backup_folder_name:str="")->None:
         xml_tree = self.et.ElementTree(self.__create_xml_items_hierarchy(item))
         self.et.indent(xml_tree,space="\t")
-        filepath = self.file_path+"/"+item.name+"."+filetype
+        filename = item.name+"."+filetype
+        filepath = self.os.path.join(self.file_path, filename)
+        if backup_folder_name.strip()=="": backup_folder_name = "backup"
+        if self.does_file_exist(item, filetype):
+            backup_folder_path = self.os.path.join(self.file_path, backup_folder_name, item.name)
+            if not self.os.path.isdir(backup_folder_path):
+                self.os.makedirs(backup_folder_path)
+            shutil.copyfile(filepath, self.os.path.join(backup_folder_path, self.__backup_file_name(item,filetype)))
         xml_tree.write(filepath,encoding='UTF-8')
+
+    @staticmethod
+    def get_strtime(curr_seconds:Optional[float]=None)->str:
+        if curr_seconds is None: t = time.localtime()
+        else: t = time.localtime(curr_seconds)
+        strtime = f"{t.tm_year:04d}-{t.tm_mon:02d}-{t.tm_mday:2d}_{t.tm_hour:02d}-{t.tm_min:02d}-{t.tm_sec:02d}"
+        return strtime
+    
+    def __backup_file_name(self, item:Item, filetype:FileType)->str:
+        return item.name+" "+self.get_strtime()+"."+filetype
 
     def does_file_exist(self, item:Item, filetype:FileType)->bool:
         filepath = self.file_path+"/"+item.name+"."+filetype

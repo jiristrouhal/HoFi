@@ -74,6 +74,11 @@ class Editor_Tk(EditorUI):
             "<Control-G>",
             lambda e: self.__editor.ungroup_selection()
         )
+        self.__caseview.widget.bind(
+            "<Control-s>",
+            lambda e: self.save_selected_cases_to_xml()
+        )
+
 
     def __double_left_click_action(self, event:tk.Event)->str:
         self.__caseview.do_on_tree_item(self.open_item_window)(event)
