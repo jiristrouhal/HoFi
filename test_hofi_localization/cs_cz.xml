@@ -23,8 +23,9 @@
         <delete Text="Odstranit"/>
 
         <new_case Text="Nový"/>
-        <import_from_xml Text="Importovat..."/>
-        <export_to_xml Text="Exportovat..."/>
+        <import_from_xml Text="Načíst..."/>
+        <save_to_existing_xml Text="Uložit"/>
+        <export_to_xml Text="Uložit jako..."/>
 
         <Income Text="Příjem"/>
         <Expense Text="Výdaj"/>

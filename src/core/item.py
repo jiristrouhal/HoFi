@@ -52,7 +52,7 @@ class ItemCreator:
         self._controller = Controller()
         self._attrfac = attribute_factory(self._controller, locale_code, currency_code)
         self.__templates:Dict[str,Template] = {}
-        self.__file_path:str = ".",
+        self.__file_path:str = "."
         self.__ignore_duplicit_names = ignore_duplicit_names
 
     @property
@@ -148,6 +148,10 @@ class ItemCreator:
         self.et.indent(xml_tree,space="\t")
         filepath = self.file_path+"/"+item.name+"."+filetype
         xml_tree.write(filepath,encoding='UTF-8')
+
+    def does_file_exist(self, item:Item, filetype:FileType)->bool:
+        filepath = self.file_path+"/"+item.name+"."+filetype
+        return self.os.path.isfile(filepath)
 
     def set_dir_path(self,path:str)->None:
         if not self.os.path.isdir(path): raise ItemCreator.NonexistentDirectory(path)

@@ -231,12 +231,15 @@ class Editor:
     def contains_case(self,case:Item)->bool:
         return self.__root.is_parent_of(case)
     
+    def does_file_exist(self, item:Item, filetype:FileType)->bool:
+        return self.__creator.does_file_exist(item, filetype)
+    
     def duplicate(self, item:Item)->Item:
         return item.duplicate()
     
     def duplicate_selection(self)->Item:
         if len(self.__selection)==1: 
-            new_item = self.duplicate(list(self.__selection)[0])
+            self.duplicate(list(self.__selection)[0])
     
     from src.core.item import Parentage_Data
     def duplicate_as_case(self,item:Item)->Item:
@@ -593,7 +596,13 @@ class EditorUI(abc.ABC):
         dir_path = self._get_export_dir()
         if not os.path.isdir(dir_path): return 
         self.__editor.set_dir_path(dir_path)
-        self.__editor.save_as(case, "xml")
+        self.__editor.save(case, "xml")
+
+    def export_case_to_existing_xml(self, case:Item)->None:
+        if not self.__editor.does_file_exist(case,"xml"): 
+            self.export_case_to_xml(case)
+        else:
+            self.__editor.save(case, "xml")
 
     @abc.abstractmethod
     def _get_xml_path(self)->Tuple[str,str]:
@@ -624,6 +633,8 @@ class EditorUI(abc.ABC):
         if self.__editor.can_paste_under_or_next_to(self.__editor.item_to_paste, case):
             actions.insert({'paste':lambda: self.__editor.paste_under(case)})
         actions.insert_sep()
+        if self.__editor.does_file_exist(case,"xml"):
+            actions.insert({'save_to_existing_xml': lambda: self.export_case_to_existing_xml(case)})
         actions.insert({'export_to_xml': lambda: self.export_case_to_xml(case)})
         actions.insert_sep()
         actions.insert({'delete':lambda: self.__editor.remove_case(case)})

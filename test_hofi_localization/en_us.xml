@@ -22,8 +22,9 @@
         <delete Text="Remove"/>
 
         <new_case Text="New case"/>
-        <import_from_xml Text="Import..."/>
-        <export_to_xml Text="Export to xml..."/>
+        <import_from_xml Text="Load..."/>
+        <save_to_existing_xml Text="Save" />
+        <export_to_xml Text="Save as..."/>
 
         <Income Text="Income"/>
         <Expense Text="Expense"/>
