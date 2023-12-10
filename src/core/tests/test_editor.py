@@ -775,10 +775,6 @@ class Test_Grouping_And_Ungrouping_Items(unittest.TestCase):
         self.editor.ungroup(self.item_B)
         self.assertTrue(self.parent.is_parent_of(self.item_B))
 
-    
-
 
 if __name__=="__main__": 
-    runner = unittest.TextTestRunner()
-    runner.run(Test_Merging_Children_Of_Parent_With_An_Attribute_Depending_On_Child_Attributes("test_undoing_merge"))
-    # unittest.main()
+    unittest.main()

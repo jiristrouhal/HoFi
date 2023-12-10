@@ -593,7 +593,7 @@ class EditorUI(abc.ABC):
         dir_path = self._get_export_dir()
         if not os.path.isdir(dir_path): return 
         self.__editor.set_dir_path(dir_path)
-        self.__editor.save(case, "xml")
+        self.__editor.save_as(case, "xml")
 
     @abc.abstractmethod
     def _get_xml_path(self)->Tuple[str,str]:
