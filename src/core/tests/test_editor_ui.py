@@ -1,6 +1,6 @@
 from __future__ import annotations
 import sys
-from typing import Callable, Set, Tuple
+from typing import Any, Callable, Dict, Set, Tuple
 
 from src.core.item import Item 
 sys.path.insert(1,"src")
@@ -37,6 +37,12 @@ class Case_View_Test(Case_View):
 
     def configure(self, **kwargs) -> None:
         pass
+
+    def is_in_view(self, item_id: str) -> bool:
+        return True
+
+    def tree_row_values(self, item_id: str) -> Dict[str, Any]:
+        return {}
 
     def on_selection_change(self, func: Callable[[], None]) -> None:
         pass

@@ -21,11 +21,13 @@ class Case_View_Tk(Case_View):
         self, 
         window:tk.Tk|tk.Frame, 
         root_item:Item, 
-        attrs_for_display:Dict[str,Tuple[str,...]] = {},
+        attrs_for_display:Dict[str,Tuple[str,...]]|None = None,
         lang:Lang_Object = Lang_Object.get_lang_object(),
-        icons:Dict[str,str] = {}
+        icons:Dict[str,str]|None = None
         )->None:
         
+        if attrs_for_display is None: attrs_for_display = {}
+        if icons is None: icons = {}
         style = ttk.Style(window)
         style.configure('Treeview', indent=10)
 
@@ -62,7 +64,6 @@ class Case_View_Tk(Case_View):
 
         self.__last_selection:str = ""
 
-
     @property
     def id(self)->str: return self.__id
     @property
@@ -89,6 +90,9 @@ class Case_View_Tk(Case_View):
             return action(item, event)
         return item_action
     
+    def is_in_view(self, item_id:str)->bool:
+        return item_id in self.__item_dict
+    
     def on_selection_change(self, func:Callable[[], None])->None:
         self.__on_selection_change.append(func)
         selection = self.__tree.selection()
@@ -97,6 +101,12 @@ class Case_View_Tk(Case_View):
         else:
             self.__last_selection = ""
     
+    def tree_row_values(self, item_id:str)->Dict[str, Any]:
+        vals:[str, Any] = dict()
+        for label, value in zip(self.__tree['columns'], self.__tree.item(item_id)["values"]):
+            vals[label] = value
+        return vals
+
     def __collect_and_set_values(self, item:Item)->List[str]:
         values:List[str] = list()
         for label_group in self.__attrs_for_display:

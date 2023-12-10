@@ -63,11 +63,12 @@ class ItemCreator:
     def template(
         self, 
         label:str, 
-        attributes:Dict[str,Dict[str,Any]]={}, 
+        attributes:Dict[str,Dict[str,Any]]|None=None, 
         child_itypes:Tuple[str,...] = (),
         dependencies:Optional[List[Template.Dependency]]=None
         )->Template:
 
+        if attributes is None: attributes = {}
         return Template(label,attributes,child_itypes,dependencies)
 
     def dependency(
@@ -98,11 +99,12 @@ class ItemCreator:
     def add_template(
         self,      
         label:str,
-        attributes:Dict[str,Dict[str,Any]]={}, 
+        attributes:Dict[str,Dict[str,Any]]|None=None, 
         child_itypes:Tuple[str,...]=(),
         dependencies:Optional[List[Template.Dependency]] = None
         )->None:
 
+        if attributes is None: attributes = {}
         self.add_templates(Template(label, attributes, child_itypes, dependencies))
 
     import xml.etree.ElementTree as et

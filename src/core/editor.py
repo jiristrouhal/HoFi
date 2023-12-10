@@ -166,7 +166,7 @@ class Editor:
         self.__selection:Set[Item] = set()
         self.__actions_on_selection:Dict[str, List[Callable[[], None]]] = dict()
 
-        self.__merging_rules:Dict[str, Dict[str, _MergeFunc]] = case_template.merging_rules
+        self.__merging_rules:Dict[str, Dict[str, _MergeFunc]] = case_template.merging_rules.copy()
 
     @property
     def attributes(self)->Dict[str,Dict[str,Any]]: return self.__attributes
@@ -338,6 +338,7 @@ class Editor:
             raise Exception(f"Items are not mergeable: {items}")
         items_list = list(items)
         parent, itype = items_list[0].parent, items_list[0].itype
+
         @self.__creator._controller.single_cmd()
         def new_merged_item()->Item:
             merge_result = self.new(parent, itype)
@@ -349,6 +350,7 @@ class Editor:
             # parent must leave the original (merged) items 
             for item in items: parent.leave(item)
             return merge_result
+        
         return new_merged_item()
 
     def new(self,parent:Item,itype:str,name:str="")->Item:
@@ -754,7 +756,15 @@ class Case_View(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def is_in_view(self, item_id:str)->bool:
+        pass
+
+    @abc.abstractmethod
     def on_selection_change(self, func:Callable[[], None])->None:
+        pass
+
+    @abc.abstractmethod
+    def tree_row_values(self, item_id:str)->Dict[str,Any]:
         pass
 
 

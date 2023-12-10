@@ -53,8 +53,10 @@ class Timeline:
         attribute_factory:Attribute_Factory,
         timelike_var_label:str,
         timelike_var_type:AttributeType,
-        tvars:Dict[str,Dict[str,Any]]={}
+        tvars:Dict[str,Dict[str,Any]]|None=None
         )->None:
+
+        if tvars is None: tvars = {}
 
         self.__timename = timelike_var_label
         self.__time_type = timelike_var_type

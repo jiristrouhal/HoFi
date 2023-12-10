@@ -924,9 +924,10 @@ class Choice_Attribute(Attribute):
         name:str="",
         custom_condition:Callable[[Any],bool] = lambda x: True,
         init_value:Any=None,
-        options:List[Any] = list()
+        options:List[Any]|None = None
         )->None:
         
+        if options is None: options = []
         super().__init__(factory, atype='choice', name=name, custom_condition=custom_condition)
         self.__options:Dict[str,Any] = dict()
         if options:
