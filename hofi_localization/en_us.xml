@@ -35,6 +35,7 @@
     </Item_Menu>
 
     <Item_Window>
+        <Title Text="Edit" />
         <Revert Text="Revert"/>
         <OK Text="OK"/>
         <Cancel Text="Cancel"/>

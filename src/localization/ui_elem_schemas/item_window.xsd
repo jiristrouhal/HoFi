@@ -6,6 +6,7 @@
 
 <xs:complexType name="Item_Window">
     <xs:sequence>
+        <xs:element name="Title" type="item"/>
         <xs:element name="Revert" type="item"/>
         <xs:element name="OK" type="item"/>
         <xs:element name="Cancel" type="item"/>

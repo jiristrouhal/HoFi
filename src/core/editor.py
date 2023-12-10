@@ -707,11 +707,12 @@ class Item_Window(abc.ABC):
         self.__lang = lang
         self.__open:bool = False
 
-
     @property
     def is_open(self)->bool: return self.__open
     @property
     def lang(self)->Lang_Object: return self.__lang
+    @property
+    def title(self)->str: return self.__lang.label("Item_Window", "Title")
 
     def open(self, item:Item)->None: 
         name_attr = item._manager._attrfac.new("name",item.name)

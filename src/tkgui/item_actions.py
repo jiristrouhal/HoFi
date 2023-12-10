@@ -22,6 +22,7 @@ class Item_Window_Tk(Item_Window):
 
     def _build_window(self, attributes: Dict[str, Attribute]):
         self.__win = tk.Toplevel(self.__root)
+        self.__win.title(self.title)
         self.__create_entries(attributes)
         self.__create_button_frame()
         try: self.__win.grab_set()

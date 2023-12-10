@@ -36,6 +36,7 @@
     </Item_Menu>
 
     <Item_Window>
+        <Title Text="Upravit" />
         <Revert Text="Výchozí"/>
         <OK Text="OK"/>
         <Cancel Text="Zrušit"/>
