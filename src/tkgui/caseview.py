@@ -188,10 +188,6 @@ class Case_View_Tk(Case_View):
         values = self.__collect_and_set_values(item)
         self.__tree.item(item.id, values=values)
 
-    def __single_click_on_item(self, event:tk.Event)->None:
-        if self.__tree.identify_row(event.y)=="":
-            self.__selection_clear()
-
     def __selection_clear(self)->None:
         self.__tree.selection_set([])
 
