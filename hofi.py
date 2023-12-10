@@ -182,4 +182,6 @@ editor_ui = Editor_Tk(
 
 editor_ui.configure(precision=2, trailing_zeros=True, use_thousands_separator=True)
 
+
+win.title("HoFi")
 win.mainloop()
