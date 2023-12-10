@@ -150,14 +150,21 @@ class Set_Attr(Command):
         return msg
 
     def run(self)->None:
-        self.old_value = self.data.attr.value
-        values = self.data.value()
-        self.data.attr._value_update(values)
-        self.new_value = self.data.attr.value
+        if isinstance(self.data.attr, Attribute_List):
+            self.old_value = {attr:attr.value for attr in self.data.attr.attributes}
+            values = {attr:value for attr,value in zip(self.data.attr.attributes, self.data.value())}
+            self.data.attr._value_update(values, f"Set_Attr - {self.data.attr.name}")
+            self.new_value = values.copy()
+        else:
+            self.old_value = self.data.attr.value
+            values = self.data.value()
+            self.data.attr._value_update(values, f"Set_Attr - {self.data.attr.name}")
+            self.new_value = self.data.attr.value
+
     def undo(self)->None:
-        self.data.attr._value_update(self.old_value)
+        self.data.attr._value_update(self.old_value, f"UNDO Set_Attr - {self.data.attr.name}")
     def redo(self)->None:
-        self.data.attr._value_update(self.new_value)
+        self.data.attr._value_update(self.new_value, f"REDO Set_Attr - {self.data.attr.name}")
 
 
 class Set_Attr_Composed(Composed_Command):
@@ -204,6 +211,7 @@ class Append_To_Attribute_List(Command):
 
     def undo(self)->None:
         self.data.alist._remove(self.data.attribute)
+        # do not trigger value update of this list when the value of the attribute just removed is set
         self.composed_post_set = self.data.attribute.command['set'].composed_post.pop(self.data.alist.id)
 
     def redo(self)->None:
@@ -295,7 +303,7 @@ class AbstractAttribute(abc.ABC):
         pass
     
     @abc.abstractmethod
-    def _value_update(self, new_value:Any)->None: pass   # pragma: no cover
+    def _value_update(self, new_value:Any, msg:str="")->None: pass   # pragma: no cover
 
     class Invalid_Name(Exception): pass
 
@@ -363,7 +371,7 @@ class Attribute_List(AbstractAttribute):
         if attribute not in self.__attributes: raise Attribute_List.NotInList(attribute)
         value_getter = lambda: self.value
         self.factory.run(
-            Remove_From_Attribute_List(Edit_AttrList_Data(self,attribute)),
+            Remove_From_Attribute_List(Edit_AttrList_Data(self, attribute)),
             *self.command['set'](Set_Attr_Data(self, value_getter))
         )
 
@@ -388,11 +396,14 @@ class Attribute_List(AbstractAttribute):
     def _remove(self,attributes:AbstractAttribute)->None: 
         self.__attributes.remove(attributes)
 
-    def _value_update(self,values:List[Any])->None:
-        for attr, value in zip(self.__attributes, values):
-            attr._value_update(value)
+    def _value_update(self, values:Dict[AbstractAttribute, Any], msg:str="")->None:
+        for attr in self.__attributes:
+            if isinstance(attr,Attribute_List):
+                vals = {attr:value for attr,value in zip(attr.attributes, values[attr])}
+                attr._value_update(vals)
+            else:
+                attr._value_update(values[attr])
 
-   
     def __iter__(self)->Iterator[AbstractAttribute]: return self.__attributes.__iter__()
     def __getitem__(self,index:int)->AbstractAttribute: return self.__attributes[index]
     def __check_new_attribute_type(self,attr:AbstractAttribute)->None:
@@ -495,7 +506,7 @@ class Attribute(AbstractAttribute):
     def _run_set_command(self,value:Any)->None:
         self.factory.controller.run(*self._get_set_commands(value))
     
-    def _value_update(self,value:Any)->None:
+    def _value_update(self, value:Any, msg:str="")->None:
         self._value = value
         self.__run_actions_after_setting_the_value()
         

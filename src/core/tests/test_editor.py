@@ -559,19 +559,19 @@ class Test_Selection_Of_Items(unittest.TestCase):
         self.child_of_A = self.editor.new(self.item_A, "Item", "Child of A")
 
     def test_selection_is_initially_empty(self):
-        self.assertEqual(self.editor.selection, set())
+        self.assertEqual(self.editor.selection, list())
 
     def test_selecting_a_single_item(self):
-        self.editor.selection_set({self.item_A})
-        self.assertEqual(self.editor.selection, {self.item_A})
+        self.editor.selection_set([self.item_A])
+        self.assertEqual(self.editor.selection, [self.item_A])
 
     def test_selecting_mutliple_items_from_multiple_parents(self):
-        self.editor.selection_set({self.item_A, self.item_B, self.child_of_A})
-        self.assertEqual(self.editor.selection, {self.item_A, self.item_B, self.child_of_A})
+        self.editor.selection_set([self.item_A, self.item_B, self.child_of_A])
+        self.assertEqual(self.editor.selection, [self.item_A, self.item_B, self.child_of_A])
 
     def test_setting_selection_to_root_yields_empty_selection(self):
-        self.editor.selection_set({self.editor.root})
-        self.assertEqual(self.editor.selection, set())
+        self.editor.selection_set([self.editor.root])
+        self.assertEqual(self.editor.selection, list())
 
 
 class Test_Defining_Merging_Rule(unittest.TestCase):
@@ -615,7 +615,7 @@ class Test_Defining_Merging_Rule(unittest.TestCase):
             "Item", {"weight":"sum", "height":"undefined_merge_function"}
         )
 
-class Test_Merging_Of_Items(unittest.TestCase):
+class Test_Merging_Items(unittest.TestCase):
 
     def setUp(self) -> None:
         case_template = blank_case_template()
@@ -652,29 +652,29 @@ class Test_Merging_Of_Items(unittest.TestCase):
         self.cat_1b = self.editor.new(self.tree_1, 'Cat')
 
     def test_empty_item_set_is_not_mergeable(self):
-        self.assertFalse(self.editor.is_mergeable({}))
+        self.assertFalse(self.editor.is_mergeable())
     
     def test_single_item_is_not_mergeable(self):
-        self.assertFalse(self.editor.is_mergeable({self.apple_1a}))
+        self.assertFalse(self.editor.is_mergeable(self.apple_1a))
 
     def test_items_with_common_parent_and_itype_are_mergeable(self):
-        self.assertTrue(self.editor.is_mergeable({self.apple_1a, self.apple_1b}))
+        self.assertTrue(self.editor.is_mergeable(self.apple_1a, self.apple_1b))
 
     def test_items_with_different_parent_are_not_mergeable(self):
-        self.assertFalse(self.editor.is_mergeable({self.apple_1a, self.apple_2a}))
+        self.assertFalse(self.editor.is_mergeable(self.apple_1a, self.apple_2a))
 
     def test_items_with_common_parent_but_different_itype_are_not_mergeable(self):
-        self.assertFalse(self.editor.is_mergeable({self.apple_1a, self.cat_1a}))
+        self.assertFalse(self.editor.is_mergeable(self.apple_1a, self.cat_1a))
 
     def test_items_without_merging_rules_are_not_mergeable(self):
-        self.assertFalse(self.editor.is_mergeable({self.cat_1a, self.cat_1b}))
+        self.assertFalse(self.editor.is_mergeable(self.cat_1a, self.cat_1b))
 
     def test_merging_two_items(self):
         self.apple_1a.set("weight", 5)
         self.apple_1b.set("weight", 7)
         self.apple_1a.set("description", "This is an Apple 1A")
         self.apple_1b.set("description", "This is an Apple 1B")
-        merged_apple = self.editor.merge({self.apple_1a, self.apple_1b})
+        merged_apple = self.editor.merge(self.apple_1a, self.apple_1b)
         self.assertEqual(merged_apple("weight"), 12)
         self.assertTrue(self.apple_1a("description") in merged_apple("description"))
         self.assertTrue(self.apple_1b("description") in merged_apple("description"))
@@ -689,6 +689,38 @@ class Test_Merging_Of_Items(unittest.TestCase):
         self.assertTrue(self.tree_1.is_parent_of(self.apple_1a))
         self.assertTrue(self.tree_1.is_parent_of(self.apple_1b))
         self.assertFalse(self.tree_1.is_parent_of(merged_apple))
+
+
+from src.core.item import freeatt_child
+class Test_Merging_Children_Of_Parent_With_An_Attribute_Depending_On_Child_Attributes(unittest.TestCase):
+
+    def setUp(self) -> None:
+        case_template = blank_case_template()
+        mass = case_template.attr.real(1.0)
+        height = case_template.attr.real(0.1)
+        total_mass = case_template.dependency('total_mass', lambda x: sum(x), freeatt_child('mass', mass))
+        case_template.add("Parent", {'total_mass':mass}, ("Child",), dependencies=[total_mass])
+        case_template.add("Child", {'mass':mass, 'height':height}, ())
+        case_template.add_case_child_label('Parent')
+        case_template.add_merging_rule('Child', {'mass':'sum', 'height':'max'})
+        self.editor = new_editor(case_template)
+        self.case = self.editor.new_case("Case")
+        self.parent = self.editor.new(self.case, "Parent", "Parent")
+        self.child_A = self.editor.new(self.parent, "Child", "Child A")
+        self.child_B = self.editor.new(self.parent, "Child", "Child B")
+        self.child_A.set("mass", 2.5)
+        self.child_B.set("mass", 1.5)
+
+    def test_undoing_merge(self):
+        merged_item = self.editor.merge(self.child_A, self.child_B)
+        self.assertEqual(merged_item("mass"), 4)  
+        self.assertEqual(self.parent("total_mass"), 4)     
+        self.editor.undo()
+        self.assertFalse(self.parent.is_parent_of(merged_item))
+        self.assertTrue(self.parent.is_parent_of(self.child_A))
+        self.assertEqual(self.child_A("mass"), 2.5)
+        self.assertEqual(self.child_B("mass"), 1.5)
+        self.assertEqual(self.parent("total_mass"), 4)  
 
 
 class Test_Grouping_And_Ungrouping_Items(unittest.TestCase):
@@ -747,4 +779,6 @@ class Test_Grouping_And_Ungrouping_Items(unittest.TestCase):
 
 
 if __name__=="__main__": 
-    unittest.main()
+    runner = unittest.TextTestRunner()
+    runner.run(Test_Merging_Children_Of_Parent_With_An_Attribute_Depending_On_Child_Attributes("test_undoing_merge"))
+    # unittest.main()

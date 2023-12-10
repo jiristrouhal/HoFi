@@ -163,7 +163,7 @@ class Editor:
 
         self.__copied_item:Optional[Item] = None
 
-        self.__selection:Set[Item] = set()
+        self.__selection:List[Item] = list()
         self.__actions_on_selection:Dict[str, List[Callable[[], None]]] = dict()
 
         self.__merging_rules:Dict[str, Dict[str, _MergeFunc]] = case_template.merging_rules.copy()
@@ -185,9 +185,9 @@ class Editor:
     @property
     def item_to_paste(self)->Item: return self.__copied_item
     @property
-    def selection(self)->Set[Item]: return self.__selection
+    def selection(self)->List[Item]: return self.__selection
     @property
-    def selection_is_mergeable(self)->bool:return self.is_mergeable(self.__selection)
+    def selection_is_mergeable(self)->bool:return self.is_mergeable(*self.__selection)
     @property
     def selection_is_groupable(self)->bool: return self.is_groupable(self.__selection)
 
@@ -308,15 +308,15 @@ class Editor:
         if item is None or item.is_null(): return False
         return item.itype==CASE_TYPE_LABEL
     
-    def is_mergeable(self, items:Set[Item])->bool:
-        if len(items)<2: return False
-        items:List[Item] = list(items)
-        first_item = items.pop(0)
+    def is_mergeable(self, *items:Item)->bool:
+        n = len(items)
+        if n<2: return False
+        first_item = items[0]
         parent, itype = first_item.parent, first_item.itype
         if itype not in self.__merging_rules:
             return False
-        for item in items:
-            if item.parent!=parent or item.itype!=itype: return False
+        for k in range(1,n):
+            if items[k].parent!=parent or items[k].itype!=itype: return False
         return True
 
     def item_types_to_create(self,parent:Item)->Tuple[str,...]:
@@ -331,27 +331,34 @@ class Editor:
         return load_case_and_add_to_editor()
     
     def merge_selection(self)->Item:
-        return self.merge(self.__selection)
+        return self.merge(*self.__selection)
     
-    def merge(self, items:Set[Item])->Item:
-        if not self.is_mergeable(items): 
-            raise Exception(f"Items are not mergeable: {items}")
-        items_list = list(items)
-        parent, itype = items_list[0].parent, items_list[0].itype
+    def merge(self, *items:Item)->Item:
+        self.__check_items_are_mergeable(*items)
+
+        @self.__creator._controller.single_cmd()
+        def __set_merged_item_attributes(items:List[Item], merged_item:Item)->None:
+            new_name = "; ".join([item.name for item in items])
+            merged_item.rename(self.__lang.label("Miscellaneous",'merged')+': '+new_name)
+            new_vals:Dict[Attribute,Any] = dict()
+            for attr, func in self.__merging_rules[merged_item.itype].items():
+                new_vals[merged_item.attribute(attr)] = func([item(attr) for item in items])
+            merged_item.attribute(attr).set_multiple(new_vals)
 
         @self.__creator._controller.single_cmd()
         def new_merged_item()->Item:
+            parent, itype = items[0].parent, items[0].itype
             merge_result = self.new(parent, itype)
-            new_name = "; ".join([item.name for item in items_list])
-            merge_result.rename(self.__lang.label("Miscellaneous",'merged')+': '+new_name)
-            for attr_label, merge_func in self.__merging_rules[itype].items():
-                merged_attr_value = merge_func([item(attr_label) for item in items])
-                merge_result.attribute(attr_label).set(merged_attr_value)
-            # parent must leave the original (merged) items 
-            for item in items: parent.leave(item)
+            # parent must leave the original items 
+            __set_merged_item_attributes(items, merge_result)
+            parent.leave(*items)
             return merge_result
-        
+
         return new_merged_item()
+
+    def __check_items_are_mergeable(self, *items:Item)->None:
+        if not self.is_mergeable(*items): 
+            raise Exception(f"Items are not mergeable: {items}")
 
     def new(self,parent:Item,itype:str,name:str="")->Item:
         if itype not in self.__creator.templates:
@@ -430,8 +437,9 @@ class Editor:
             elif not item.itype==self.__selection_itype: return 
         self.__selection.add(item)
 
-    def selection_set(self, items:Set[Item])->None:
-        self.__selection = items.difference({self.__root})
+    def selection_set(self, items:List[Item])->None:
+        if self.__root in items: items.remove(self.__root)
+        self.__selection = items.copy()
 
     def select_none(self) -> None:
         self.__selection.clear()

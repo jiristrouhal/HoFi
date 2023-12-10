@@ -260,7 +260,10 @@ class Rename(Command):
     
     def redo(self) -> None:
         self.data.item._rename(self.data.new_name)
-
+    
+    @property
+    def message(self) -> str:
+        return f"Rename | '{self.original_name}' renamed to '{self.data.new_name}'."
 
 class Rename_Composed(Composed_Command):
     @staticmethod
@@ -802,11 +805,13 @@ class ItemImpl(Item):
                 item._set_parent_attributes(parent=self)
             perform_adoption()              
 
-    def leave(self, child:Item)->None:
+    def leave(self, *children:Item)->None:
+        if not children: return
         @self.controller.single_cmd()
         def perform_leaving():
-            self.controller.run(*self.command['leave'](Parentage_Data(self,child)))
-            child._set_parent_attributes(parent=self.NULL)
+            for child in children:
+                self.controller.run(*self.command['leave'](Parentage_Data(self,child)))
+            children[0]._set_parent_attributes(parent=self.NULL)
         perform_leaving()
 
     def _set_parent_attributes(self, parent:Item)->None:

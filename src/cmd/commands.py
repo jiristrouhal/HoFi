@@ -73,7 +73,9 @@ class Controller:
         self.__undo_stack.append(cmd_list)
         self.__redo_stack.clear()
 
-        self.__history.extend([f"{self.__last_symbol} {cmd.message}" for cmd in cmd_list if cmd.message.strip() != ""])
+        for cmd in cmd_list:
+            if cmd.message.strip() != "": 
+                self.__write_to_history(f"{self.__last_symbol} {cmd.message}")
         self.__switch_last_symbol()
 
     def undo(self)->None:
@@ -82,7 +84,7 @@ class Controller:
         for cmd in reversed(batch): 
             cmd.undo()
             if cmd.message.strip() != "":
-                self.__history.append(f"{self.__last_symbol}Undo: {cmd.message}")
+                self.__write_to_history(f"{self.__last_symbol}Undo: {cmd.message}")
         self.__redo_stack.append(batch)
         self.__switch_last_symbol()
 
@@ -92,9 +94,14 @@ class Controller:
         for cmd in batch: 
             cmd.redo()
             if cmd.message.strip() != "":
-                self.__history.append(f"{self.__last_symbol}Redo: {cmd.message}")
+                self.__write_to_history(f"{self.__last_symbol}Redo: {cmd.message}")
         self.__undo_stack.append(batch)
         self.__switch_last_symbol()
+
+    def __write_to_history(self, record:str)->None:
+        if record.strip()=="": return 
+        # print(record)
+        self.__history.append(record)
 
     def undo_and_forget(self)->None:
         if not self.__undo_stack: return 

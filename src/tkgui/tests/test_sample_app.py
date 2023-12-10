@@ -35,7 +35,7 @@ class Test_Editing_Items_Via_Caseview(unittest.TestCase):
         self.assertEqual(self.editor_ui.caseview.tree_row_values(self.item_I.id)["amount"], 5)
         self.assertEqual(self.editor_ui.caseview.tree_row_values(self.item_II.id)["amount"], 7)
 
-        merged_item = self.editor.merge({self.item_I, self.item_II})
+        merged_item = self.editor.merge(self.item_I, self.item_II)
         self.assertFalse(self.editor_ui.caseview.is_in_view(self.item_I.id))
         self.assertFalse(self.editor_ui.caseview.is_in_view(self.item_II.id))
         self.assertEqual(self.editor_ui.caseview.tree_row_values(merged_item.id)["amount"], 12)

@@ -14,14 +14,14 @@ class Test_Setting_File_Path_For_Item_Saving_And_Loading(unittest.TestCase):
         income_A.set("income_amount", 5)
         income_B.set("income_amount", 8)
 
-        merged = editor.merge({income_A, income_B})
+        merged = editor.merge(income_A, income_B)
         self.assertEqual(income_A("income_amount"), 5)
         self.assertEqual(income_B("income_amount"), 8)
         self.assertEqual(merged("income_amount"), 13)
 
         editor.undo()
 
-        self.assertEqual(merged("income_amount"), 13)
+        self.assertEqual(merged("income_amount"), 0)
         self.assertEqual(income_A("income_amount"), 5)
         self.assertEqual(income_B("income_amount"), 8)
 

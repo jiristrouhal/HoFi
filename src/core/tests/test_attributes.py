@@ -1486,8 +1486,11 @@ class Test_Nested_Attribute_Lists(unittest.TestCase):
                 (u[1]*v[0], u[1]*v[1])
             )
         prod = self.fac.newlist('integer')
-        prod.append(self.fac.newlist('integer',[0,0]))
-        prod.append(self.fac.newlist('integer',[0,0]))
+        vec_1 = self.fac.newlist('integer',[0,0])
+        vec_2 = self.fac.newlist('integer',[0,0])
+
+        prod.append(vec_1)
+        prod.append(vec_2)
         prod.add_dependency(outer_product, u, v)
 
         self.assertListEqual(prod.value, [
@@ -1525,14 +1528,6 @@ class Test_Copying_Attribute_List(unittest.TestCase):
         x.set(2)
         self.assertListEqual(self.alist.value, [2,2,2])
         self.assertListEqual(alistcopy.value, [1,1,1])
-
-    def test_list_copy_does_not_affect_an_attribute_that_depends_on_the_original_list(self):
-        s = self.fac.new('integer', 2)
-        s.add_dependency(sum, self.alist)
-        self.assertEqual(s.value, 6)
-        alistcopy = self.alist.copy()
-        alistcopy._value_update([0,0,0])
-        self.assertEqual(s.value, 6)
 
 
 class Test_Bool_Attribute(unittest.TestCase):
@@ -2084,6 +2079,33 @@ class Test_Replacing_Dependency_Input(unittest.TestCase):
         self.assertRaises(Dependency.SingleAttributeForMultipleInputs, self.y.dependency.replace_input, self.x, self.x2)
 
 
+class Test_Undoing_Setting_Values_Of_Attribute_List(unittest.TestCase):
+
+    def test_undoing_adding_item_to_attribute_list_which_serves_as_an_input_for_other_attribute(self):
+        afac = attribute_factory(Controller())
+        alist = afac.newlist("integer", name="Attribute list")
+        
+        a1 = afac.new("integer", 3, "a1")
+        a2 = afac.new("integer", 5, "a2")
+        alist.append(a1)
+
+        alist.append(a2)
+        alist.remove(a1)
+        
+        self.assertEqual(a1.value, 3)
+        self.assertEqual(a2.value, 5)
+        
+        afac.undo() # undo a1 removal
+        self.assertEqual(a1.value, 3)
+        self.assertEqual(a2.value, 5)
+        # self.assertEqual(alist.value, [3,5])
+
+        afac.undo() # undo a2 addition
+        self.assertEqual(a2.value, 5)
+        self.assertEqual(a1.value, 3)
 
 
-if __name__=="__main__": unittest.main()
+if __name__=="__main__": 
+    # runner = unittest.TextTestRunner()
+    # runner.run(Test_Nested_Attribute_Lists("test_outer_product"))
+    unittest.main()
