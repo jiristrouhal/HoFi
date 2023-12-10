@@ -254,7 +254,7 @@ class Editor:
     def is_groupable(self, items:Set[Item])->bool:
         if self.__insertable == "": 
             return False
-        elif len(items)<2: 
+        elif len(items)<1: 
             return False
         else: 
             items_list = list(items)

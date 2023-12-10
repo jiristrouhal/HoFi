@@ -749,10 +749,11 @@ class Test_Grouping_And_Ungrouping_Items(unittest.TestCase):
         group = self.editor.group({})
         self.assertTrue(group.is_null())
 
-    def test_grouping_single_item_has_no_effect(self):
+    def test_grouping_single_item_is_possible(self):
         group = self.editor.group({self.item_A})
-        self.assertTrue(group.is_null())
-        self.assertTrue(self.parent.is_parent_of(self.item_A))
+        self.assertFalse(group.is_null())
+        self.assertTrue(self.parent.is_parent_of(group))
+        self.assertSetEqual(group.children, {self.item_A})
 
     def test_items_under_common_parent_are_groupable(self):
         group = self.editor.group({self.item_A, self.item_B})
