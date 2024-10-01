@@ -1,5 +1,5 @@
 # HoFi2
-An abbreviation for home finance. It provides a way to write down expenses, incomes and debts, to plan them and to plan the repayment and the future transactions. 
+An abbreviation for home finance. It provides a way to write down expenses, incomes and debts, to plan them and to plan the repayment and the future transactions.
 
 The following activities are of interest:
 - storing information on various transactions and debts;
@@ -16,7 +16,7 @@ The transactions are stored in a hierachical structure in an xml file. The xml s
 - expense;
 - object, that can be parent to other objects and to incomes and expenses.
 
-The xml file should be edited via an user interface written in Python. 
+The xml file should be edited via an user interface written in Python.
 
 ### Template
 In the **cases** folder, there is a **template** file, providing a simple example including debt, income, expense and item.
@@ -31,9 +31,9 @@ Each debt is described by
 - due date (optional).
 
 ### Temporal arrangement
-The user can enter either future (**planned**) transactions or current or past transactions (**realized**). Those are automatically distinguished by the current date. 
+The user can enter either future (**planned**) transactions or current or past transactions (**realized**). Those are automatically distinguished by the current date.
 
-Tommorows and later transactions are treated as the planned transactions. When the current date reaches the date of the planned transaction, the user is prompted on the nearest opening of the program to confirm (with option **Yes**), that the transaction actually happened. If he/she chooses **No**, the transaction is simply deleted from the planned transactions. In the other case, it is marked as realized. 
+Tommorows and later transactions are treated as the planned transactions. When the current date reaches the date of the planned transaction, the user is prompted on the nearest opening of the program to confirm (with option **Yes**), that the transaction actually happened. If he/she chooses **No**, the transaction is simply deleted from the planned transactions. In the other case, it is marked as realized.
 This should be done via a special list of all the transactions to be confirmed. The user gets single notification on the program start. Then, he/she may or may not proceed to confirmation of the transactions.
 
 
@@ -42,10 +42,10 @@ This should be done via a special list of all the transactions to be confirmed. 
 ## Treeview and XML connection
 
 The xml structure is completely dictated by the application.
-No schema is required. The initially created schema is used only as an auxiliary tool for defining the rules inside the app. 
+No schema is required. The initially created schema is used only as an auxiliary tool for defining the rules inside the app.
 
 ## Displaying the XML content
-The user opens the app and reads the file. The tree is displayed immediatelly. 
+The user opens the app and reads the file. The tree is displayed immediatelly.
 
 ![Domain model](./out/uml/uml/domain_model.svg)
 
@@ -64,13 +64,13 @@ The rule of not deleting branch with child branches should be maintained by the 
 
 The branch should basically call some methods for printing out the error message. The branch does not store the printed message neither take care of the particular content (the content is set by the displaying object).
 
-The called methods are provided by the displayer/displayers. 
+The called methods are provided by the displayer/displayers.
 
 
 # The app
-The app comprises the xml file handling and managing the tree object indirectly via UI. 
+The app comprises the xml file handling and managing the tree object indirectly via UI.
 
-A GUI for the tree management (aside from the treeview) is created. 
+A GUI for the tree management (aside from the treeview) is created.
 
 The app defines the tree elements' templates (the tags and attributes) and passes them to the tree objects via the UI part responsible for the tree editing (Treeview).
 
@@ -117,7 +117,7 @@ The Properties get cleared, when
 
 
 ## Defining the item types
-The App must be able to tell the Manager and Editor, what types of TreeItems to create - under which tags and with what attributes. 
+The App must be able to tell the Manager and Editor, what types of TreeItems to create - under which tags and with what attributes.
 
 Attributes are subject to validation when being changed (possible types are non-negative integers, dates and strings). The tag determines also the TreeItem type, i.e. if it is a branch (assumed to contain child items) or a leaf (a data point, without children).
 
@@ -129,7 +129,7 @@ Template has to contain the following information:
 The template ought to be used as following:
 - **Name** determines the template that should be used for creating new item. It is also used as a **tag** in exported xml file. First, such a taginforms the user when viewing the xml file and second and more importantly, it determines the template when loading the xml back to the app and constructing the Tree object and its children.
 - **Attributes** are translated into a dictionary and passed to the function creating new item.
-- **Children tags** is a list of tags, that is stored in each of the created in items. When the method creating the children of this items is called, one of the method's arguments is the tag of the template used for the child's creation. These tags also determine the available options for adding new item in the Editor UI. 
+- **Children tags** is a list of tags, that is stored in each of the created in items. When the method creating the children of this items is called, one of the method's arguments is the tag of the template used for the child's creation. These tags also determine the available options for adding new item in the Editor UI.
 
 The templates are stored in an object inside the tree module.
 
@@ -157,12 +157,12 @@ This makes the program to evaluate the expression as a function of previously de
 
 
 ## Localization
-The application is supplied in multiple languages. 
+The application is supplied in multiple languages.
 
 ## Currency
 The currency is independent of the application language and it is specific for each tree. When displaying results, total income or expense per item etc., the values are displayed using this currency.
 
-The value can be entered as a positive float number, but after confirming the changes, the value is displayed (not rounded!!!) according to the currency (e.g., to 2 decimal places for euro or US dollar or to whole number in the case of yen). 
+The value can be entered as a positive float number, but after confirming the changes, the value is displayed (not rounded!!!) according to the currency (e.g., to 2 decimal places for euro or US dollar or to whole number in the case of yen).
 
 
 ## Displaying item info in the Tree Editor
@@ -172,13 +172,13 @@ For items, which contain both incomes and expenses, two values are to be reporte
 
 
 ## Connecting tree to the Events
-The past_and_future module contains the Event and Event_Manager class enabling to organize events in time and to distinguish between planned and realized events. 
+The past_and_future module contains the Event and Event_Manager class enabling to organize events in time and to distinguish between planned and realized events.
 
 The best way to introduce the Events into the application seems to be connecting the Events and Tree via another object.
 
 
-# Rebuild 
-At certain point, it was not anymore clear, how and when exactly are dependent attributes being updated, how to correctly implement undo and redo commands for editor actions and how to easily add checking various deadlines and how to handle changing the event (e.g., expense) dates. Another issue comes with the idea of using a whole scenario as an item in another, which appears to be a usefull option for first analysing a simple situation and then adding it to a more general scenario. 
+# Rebuild
+At certain point, it was not anymore clear, how and when exactly are dependent attributes being updated, how to correctly implement undo and redo commands for editor actions and how to easily add checking various deadlines and how to handle changing the event (e.g., expense) dates. Another issue comes with the idea of using a whole scenario as an item in another, which appears to be a usefull option for first analysing a simple situation and then adding it to a more general scenario.
 Other goals are:
 - simplify defining the various objects occuring in the editor (scenario, income, ...)
 - exporting only a single item into a file

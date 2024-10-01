@@ -20,7 +20,7 @@ def rel_amount(amount, total_amount)->Decimal:
     else: return Decimal(100*abs(amount))/Decimal(abs(total_amount))
 
 total_amount = case_template.dependency(
-    "total_amount", 
+    "total_amount",
     lambda x,y: x-y,
     "total_income",
     "total_expense"
@@ -40,25 +40,25 @@ total_expense = case_template.dependency(
 
 
 relative_income_amount = case_template.dependency(
-    "relative_income_amount", 
+    "relative_income_amount",
     rel_amount,
     "income_amount",
     freeatt_parent("total_income", amount)
 )
 relative_expense_amount = case_template.dependency(
-    "relative_expense_amount", 
+    "relative_expense_amount",
     rel_amount,
     "expense_amount",
     freeatt_parent("total_expense", amount)
 )
 relative_item_income_amount = case_template.dependency(
-    "relative_income_amount", 
+    "relative_income_amount",
     rel_amount,
     "total_income",
     freeatt_parent("total_income", amount)
 )
 relative_item_expense_amount = case_template.dependency(
-    "relative_expense_amount", 
+    "relative_expense_amount",
     rel_amount,
     "total_expense",
     freeatt_parent("total_expense", amount)
@@ -72,9 +72,9 @@ debt_sum = case_template.dependency(
 )
 
 case_template.add(
-    "Debts", 
+    "Debts",
     {
-        "total_debt_amount":amount, 
+        "total_debt_amount":amount,
         "comment":comment
     },
     child_template_labels=("Debt","NonMonetary_Debt"),
@@ -83,9 +83,9 @@ case_template.add(
 
 
 case_template.add(
-    "Debt", 
+    "Debt",
     {
-        "debt_amount":amount, 
+        "debt_amount":amount,
         "date":transaction_date,
         "comment":comment
     },
@@ -93,7 +93,7 @@ case_template.add(
 )
 
 case_template.add(
-    "NonMonetary_Debt", 
+    "NonMonetary_Debt",
     {
         "date":transaction_date,
         "comment":comment
@@ -103,10 +103,10 @@ case_template.add(
 
 
 case_template.add(
-    "Income", 
+    "Income",
     {
-        "income_amount":amount, 
-        "relative_income_amount":rel_amount_attr, 
+        "income_amount":amount,
+        "relative_income_amount":rel_amount_attr,
         "date":transaction_date,
         "comment":comment
     },
@@ -118,10 +118,10 @@ case_template.add_merging_rule(
 )
 
 case_template.add(
-    "Expense", 
+    "Expense",
     {
-        "expense_amount":amount, 
-        "relative_expense_amount":rel_amount_attr, 
+        "expense_amount":amount,
+        "relative_expense_amount":rel_amount_attr,
         "date":transaction_date,
         "comment":comment
     },
@@ -132,27 +132,27 @@ case_template.add_merging_rule(
     {"expense_amount":"sum", "relative_expense_amount":"sum", "date":"max", "comment":"join_texts"}
 )
 case_template.add(
-    "Item", 
+    "Item",
     {
-        "total_amount":amount, 
+        "total_amount":amount,
         "total_income":amount,
         "total_expense":amount,
         "relative_income_amount":rel_amount_attr,
         "relative_expense_amount":rel_amount_attr,
         "comment":comment
-    }, 
-    ("Income","Expense","Item"), 
+    },
+    ("Income","Expense","Item"),
     dependencies=[total_income, total_expense, total_amount, relative_item_income_amount, relative_item_expense_amount]
 )
 
 
 case_template.set_case_template(
     {
-        "total_amount":amount, 
+        "total_amount":amount,
         "total_income":amount,
         "total_expense":amount
-    }, 
-    child_template_labels=("Debts","Income","Expense","Item"), 
+    },
+    child_template_labels=("Debts","Income","Expense","Item"),
     dependencies=[total_income, total_expense, total_amount]
 )
 
@@ -162,8 +162,8 @@ editor = new_editor(case_template, "cs_cz", lang=lang, ignore_duplicit_names=Tru
 
 win = tk.Tk()
 editor_ui = Editor_Tk(
-    editor, 
-    win, 
+    editor,
+    win,
     ({
         "income_amount":("income_amount","total_income"),
         "expense_amount":("expense_amount", "total_expense", "debt_amount","total_debt_amount"),
@@ -173,7 +173,7 @@ editor_ui = Editor_Tk(
     }),
     lang = lang,
     icons = {
-        "Income":"src/tkgui/icons/income.png", 
+        "Income":"src/tkgui/icons/income.png",
         "Expense":"src/tkgui/icons/expense.png",
         "Debts":"src/tkgui/icons/debt.png",
         "NonMonetary_Debt":"src/tkgui/icons/nonmonetary_debt.png",
