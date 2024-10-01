@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<?xml-model 
+    href="./lang.xsd" 
+    type="application/xml" 
+    schematypens="http://www.w3.org/2001/XMLSchema"
+?>
+
+
+<Language Id="cs_cz" Name="Čeština">
+
+    <Item_Menu>
+        <add Text="Přidat"/>
+        <edit Text="Upravit..."/>
+        <copy Text="Kopírovat"/>
+        <cut Text="Vyjmout" />
+        <duplicate Text="Kopírovat sem" />
+        <paste Text="Vložit" />
+        <merge Text="Sloučit" />
+        <group Text="Seskupit" />
+        <ungroup Text="Rozložit" />
+        <delete Text="Odstranit"/>
+
+        <new_case Text="Nový"/>
+        <import_from_xml Text="Načíst..."/>
+        <save_to_existing_xml Text="Uložit"/>
+        <export_to_xml Text="Uložit jako..."/>
+
+        <Income Text="Příjem"/>
+        <Expense Text="Výdaj"/>
+        <Item Text="Předmět"/>
+        <Debts Text="Dluhy"/>
+        <Debt Text="Dluh"/>
+        <NonMonetary_Debt Text="Věcný dluh" />
+    </Item_Menu>
+
+    <Item_Window>
+        <Title Text="Upravit" />
+        <Revert Text="Výchozí"/>
+        <OK Text="OK"/>
+        <Cancel Text="Zrušit"/>
+    </Item_Window>
+
+    <Item_Types>
+        <Case Text="Případ"/>
+        <Income Text="Příjem"/>
+        <Expense Text="Výdaj"/>
+        <Item Text="Předmět"/>
+        <Debts Text="Dluhy"/>
+        <Debt Text="Dluh"/>
+        <NonMonetary_Debt Text="Věcný dluh" />
+    </Item_Types>
+
+    <Item_Attributes>
+        <name Text="Název"/>
+        <total_amount Text="Celkem"/>
+        <total_income Text="Příjem celkem"/>
+        <total_expense Text="Výdaj celkem"/>
+        <income_amount Text="Příjem"/>
+        <expense_amount Text="Výdaj"/>
+        <amount Text="Výše"/>
+        <relative_amount Text="Podíl"/>
+        <relative_income_amount Text="Poměrný příjem"/>
+        <relative_expense_amount Text="Poměrný výdaj"/>
+        <date Text="Datum"/>
+        <comment Text="Poznámky"/>
+    </Item_Attributes>
+
+    <Miscellaneous>
+        <merged Text="Sloučeno" />
+        <new_group Text="Seskupeno" />
+        <backup_folder_name Text="staré verze" />
+    </Miscellaneous>
+
+</Language>

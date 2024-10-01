@@ -7,11 +7,8 @@ dist
 data
 
 *.pyc
-!data_template.xml
 
 .coverage
 coverage_reports
-*.xml
-!hofi_localization/**.xml
 
 TODO.md
