@@ -1,4 +1,4 @@
-# HoFi2
+# HoFi
 An abbreviation for home finance. It provides a way to write down expenses, incomes and debts, to plan them and to plan the repayment and the future transactions.
 
 The following activities are of interest:
