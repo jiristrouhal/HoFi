@@ -238,15 +238,11 @@ class Test_Dependent_Attributes(unittest.TestCase):
             return x * x  # pragma: no cover
 
         y.add_dependency(x_squared, x)
-        self.assertRaises(
-            Attribute.DependencyAlreadyAssigned, y.add_dependency, x_squared, x
-        )
+        self.assertRaises(Attribute.DependencyAlreadyAssigned, y.add_dependency, x_squared, x)
         # after breaking dependency, it is possible to reassign new dependency
         y.break_dependency()
         y.add_dependency(x_squared, x)
-        self.assertRaises(
-            Attribute.DependencyAlreadyAssigned, y.add_dependency, x_squared, x
-        )
+        self.assertRaises(Attribute.DependencyAlreadyAssigned, y.add_dependency, x_squared, x)
 
     def test_calling_set_method_on_dependent_attribute_has_no_effect(self) -> None:
         a = self.fac.new("integer", name="a")
@@ -319,9 +315,7 @@ class Test_Dependent_Attributes(unittest.TestCase):
 
     def test_breaking_dependency_of_independent_attribute_raises_exception(self):
         independent_attribute = self.fac.new("integer", name="x")
-        self.assertRaises(
-            Attribute.NoDependencyIsSet, independent_attribute.break_dependency
-        )
+        self.assertRaises(Attribute.NoDependencyIsSet, independent_attribute.break_dependency)
 
 
 class Test_Correspondence_Between_Dependency_And_Attributes(unittest.TestCase):
@@ -639,15 +633,9 @@ class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase)
         attr.read("+01E-02")
         self.assertEqual(attr.value, Decimal(str(0.01)))
 
-        self.assertRaises(
-            Real_Attribute_Dimensionless.CannotExtractReal, attr.read, "5/7"
-        )
-        self.assertRaises(
-            Real_Attribute_Dimensionless.CannotExtractReal, attr.read, " "
-        )
-        self.assertRaises(
-            Real_Attribute_Dimensionless.CannotExtractReal, attr.read, "asdfd "
-        )
+        self.assertRaises(Real_Attribute_Dimensionless.CannotExtractReal, attr.read, "5/7")
+        self.assertRaises(Real_Attribute_Dimensionless.CannotExtractReal, attr.read, " ")
+        self.assertRaises(Real_Attribute_Dimensionless.CannotExtractReal, attr.read, "asdfd ")
 
     def __common_tests_for_int_and_real(self, attr: Attribute) -> None:
         attr.read("789")
@@ -676,9 +664,7 @@ class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase)
 
     def test_initializing_real_attribute_to_invalid_value_type_raises_exception(self):
         fac = attribute_factory(Controller())
-        self.assertRaises(
-            Attribute.InvalidValueType, fac.new, "real", "invalid_init_value"
-        )
+        self.assertRaises(Attribute.InvalidValueType, fac.new, "real", "invalid_init_value")
 
 
 from src.core.attributes import Real_Attribute
@@ -719,9 +705,7 @@ class Test_Printing_Real_Attribute_Value(unittest.TestCase):
     def test_value_can_be_printed_with_adjusted_value(self):
         fac = attribute_factory(Controller())
         attr: Real_Attribute_Dimensionless = fac.new("real", 1.5)
-        self.assertEqual(
-            attr.print(trailing_zeros=False, adjust=lambda x: Decimal(2) * x), "3"
-        )
+        self.assertEqual(attr.print(trailing_zeros=False, adjust=lambda x: Decimal(2) * x), "3")
 
     def test_adjusted_value_has_to_be_of_type_decimal_or_float_and_has_to_be_defined(
         self,
@@ -773,9 +757,7 @@ class Test_Thousands_Separator(unittest.TestCase):
         attr.set(1000)
         self.assertEqual(attr.print(use_thousands_separator=True), f"1{NBSP}000")
         attr.set(10000000)
-        self.assertEqual(
-            attr.print(use_thousands_separator=True), f"10{NBSP}000{NBSP}000"
-        )
+        self.assertEqual(attr.print(use_thousands_separator=True), f"10{NBSP}000{NBSP}000")
 
     def test_thousands_separator_for_reals(self):
         attr = self.fac.new("real")
@@ -785,17 +767,13 @@ class Test_Thousands_Separator(unittest.TestCase):
         attr.set(1000)
         self.assertEqual(attr.print(use_thousands_separator=True), f"1{NBSP}000")
         attr.set(10000000)
-        self.assertEqual(
-            attr.print(use_thousands_separator=True), f"10{NBSP}000{NBSP}000"
-        )
+        self.assertEqual(attr.print(use_thousands_separator=True), f"10{NBSP}000{NBSP}000")
 
         attr.set(12000.00505)
         self.assertEqual(attr.print(use_thousands_separator=True), f"12{NBSP}000.00505")
 
         attr.set(12000.000)
-        self.assertEqual(
-            attr.print(precision=5, use_thousands_separator=True), f"12{NBSP}000"
-        )
+        self.assertEqual(attr.print(precision=5, use_thousands_separator=True), f"12{NBSP}000")
 
 
 class Test_Reading_Value_With_Space_As_Thousands_Separator(unittest.TestCase):
@@ -850,9 +828,7 @@ class Test_Choice_Attribute(unittest.TestCase):
     def test_currently_chosen_option_cannot_be_removed(self) -> None:
         self.c.add_options("A", "B")
         self.c.set("B")
-        self.assertRaises(
-            Choice_Attribute.CannotRemoveChosenOption, self.c.remove_options, "B"
-        )
+        self.assertRaises(Choice_Attribute.CannotRemoveChosenOption, self.c.remove_options, "B")
 
     def test_print_options_as_a_tuple(self) -> None:
         self.c.add_options(123, 456, 203)
@@ -860,9 +836,7 @@ class Test_Choice_Attribute(unittest.TestCase):
         self.c.clear_options()
         self.c.add_options("America", "Europe", "Antarctica")
         self.assertEqual(self.c.print_options(), ("America", "Europe", "Antarctica"))
-        self.assertEqual(
-            self.c.print_options(lower_case=True), ("america", "europe", "antarctica")
-        )
+        self.assertEqual(self.c.print_options(lower_case=True), ("america", "europe", "antarctica"))
 
     def test_check_value_is_in_options(self):
         self.c.add_options("A", "B")
@@ -944,9 +918,7 @@ class Test_Adding_Default_Options_To_Choice_Attribute(unittest.TestCase):
 
     def test_creating_choice_with_default_options(self):
         fac = attribute_factory(Controller())
-        choice = fac.new(
-            "choice", name="choice", init_value="B", options=["A", "B", "C"]
-        )
+        choice = fac.new("choice", name="choice", init_value="B", options=["A", "B", "C"])
 
         choice_2_data = fac.data_constructor.choice(options=["C", "D"], init_option="D")
         choice_2 = fac.new_from_dict(**choice_2_data, name="choice 2")
@@ -960,9 +932,7 @@ class Test_Adding_Default_Options_To_Choice_Attribute(unittest.TestCase):
 
     def test_setting_init_option_without_setting_list_of_options_raises_exception(self):
         fac = attribute_factory(Controller())
-        self.assertRaises(
-            Choice_Attribute.UndefinedOption, fac.new, "choice", init_value="B"
-        )
+        self.assertRaises(Choice_Attribute.UndefinedOption, fac.new, "choice", init_value="B")
 
     def test_init_option_not_included_in_list_of_options_raises_exception(self):
         fac = attribute_factory(Controller())
@@ -1260,9 +1230,7 @@ class Test_Monetary_Attribute(unittest.TestCase):
         )
 
         mon.set(0)
-        self.assertEqual(
-            mon.print(use_thousands_separator=True, trailing_zeros=False), f"$0"
-        )
+        self.assertEqual(mon.print(use_thousands_separator=True, trailing_zeros=False), f"$0")
 
         mon.set(-4100300)
         self.assertEqual(
@@ -1635,9 +1603,7 @@ class Test_Using_Attribute_List_As_Output(unittest.TestCase):
     ):
         theinput = self.fac.new("integer")
         output = self.fac.newlist("text", init_items=["abc", "xyz", "mno"])
-        self.assertRaises(
-            Attribute.InvalidValueType, output.add_dependency, self.foo, theinput
-        )
+        self.assertRaises(Attribute.InvalidValueType, output.add_dependency, self.foo, theinput)
 
     def test_adding_dependency_to_an_attribute_in_an_already_dependent_attribute_list_raises_exception(
         self,
@@ -1689,9 +1655,7 @@ class Test_Using_Attribute_List_As_Output(unittest.TestCase):
         v = self.fac.newlist("real", [0, 1, 0])
         w = self.fac.newlist("real", [0, 0, 0])
 
-        def cross(
-            u: Tuple[int, int, int], v: Tuple[int, int, int]
-        ) -> Tuple[int, int, int]:
+        def cross(u: Tuple[int, int, int], v: Tuple[int, int, int]) -> Tuple[int, int, int]:
             return (
                 u[1] * v[2] - u[2] * v[1],
                 u[2] * v[0] - u[0] * v[2],
@@ -1718,14 +1682,10 @@ class Test_Using_Attribute_List_As_Output(unittest.TestCase):
 
         fractions.add_dependency(get_mass_fractions, masses)
 
-        self.assertListEqual(
-            fractions.value, [Decimal("0.3"), Decimal("0.5"), Decimal("0.2")]
-        )
+        self.assertListEqual(fractions.value, [Decimal("0.3"), Decimal("0.5"), Decimal("0.2")])
         for attr in masses:
             attr.set(0)
-        self.assertListEqual(
-            fractions.value, [Decimal("0.0"), Decimal("0.0"), Decimal("0.0")]
-        )
+        self.assertListEqual(fractions.value, [Decimal("0.0"), Decimal("0.0"), Decimal("0.0")])
 
 
 class Test_Nested_Attribute_Lists(unittest.TestCase):
@@ -1747,9 +1707,7 @@ class Test_Nested_Attribute_Lists(unittest.TestCase):
     def test_appending_parent_list_to_its_child_list_raises_exception(self):
         child_list = self.fac.newlist("integer")
         self.parent_list.append(child_list)
-        self.assertRaises(
-            Attribute_List.ListContainsItself, child_list.append, self.parent_list
-        )
+        self.assertRaises(Attribute_List.ListContainsItself, child_list.append, self.parent_list)
 
     def test_outer_product(self):
         u = self.fac.newlist("integer", [1, -1])
@@ -1881,9 +1839,7 @@ class Test_Quantity(unittest.TestCase):
     def test_setting_quantity_value(self):
         self.length.set(3)
         self.assertEqual(self.length.value, 3)
-        self.assertEqual(
-            self.length.print(trailing_zeros=True, precision=3), f"3.000{NBSP}m"
-        )
+        self.assertEqual(self.length.print(trailing_zeros=True, precision=3), f"3.000{NBSP}m")
 
     def test_setting_quantity_unit_multiple(self):
         self.length.set_prefix("m")
@@ -1891,9 +1847,7 @@ class Test_Quantity(unittest.TestCase):
         self.length.set_prefix("k")
         self.assertEqual(self.length.print(trailing_zeros=False), f"0.002{NBSP}km")
         self.length.set_prefix("G")
-        self.assertEqual(
-            self.length.print(trailing_zeros=False), f"0.000000002{NBSP}Gm"
-        )
+        self.assertEqual(self.length.print(trailing_zeros=False), f"0.000000002{NBSP}Gm")
 
     def test_setting_custom_quantity(self) -> None:
         self.length.set(5)
@@ -1913,14 +1867,10 @@ class Test_Quantity(unittest.TestCase):
         )
 
     def test_setting_noninteger_exponent_for_prefix_raises(self):
-        self.assertRaises(
-            Quantity.NonIntegerExponent, self.length.add_prefix, "m", "k", 3.5
-        )
+        self.assertRaises(Quantity.NonIntegerExponent, self.length.add_prefix, "m", "k", 3.5)
 
     def test_setting_quantity_unit_to_undefined_one_raises_exception(self):
-        self.assertRaises(
-            Quantity.UndefinedUnit, self.length.set_unit, "undefined_unit"
-        )
+        self.assertRaises(Quantity.UndefinedUnit, self.length.set_unit, "undefined_unit")
 
 
 class Test_Alternative_Units_For_Quantity(unittest.TestCase):
@@ -1950,9 +1900,7 @@ class Test_Alternative_Units_For_Quantity(unittest.TestCase):
         )
 
     def test_creating_already_defined_unit_raises_exception(self):
-        self.assertRaises(
-            Quantity.UnitAlreadyDefined, self.temperature.add_unit, symbol="K"
-        )
+        self.assertRaises(Quantity.UnitAlreadyDefined, self.temperature.add_unit, symbol="K")
 
     def test_case_of_volume(self) -> None:
         volume = self.fac.newqu(unit="m³", exponents={"k": 9, "d": -3, "m": -9})
@@ -1965,9 +1913,7 @@ class Test_Alternative_Units_For_Quantity(unittest.TestCase):
         volume.set(1)
         self.assertEqual(volume.print(), f"1{NBSP}m³")
         volume.set_unit("l")
-        self.assertEqual(
-            volume.print(trailing_zeros=True, precision=2), f"1000.00{NBSP}l"
-        )
+        self.assertEqual(volume.print(trailing_zeros=True, precision=2), f"1000.00{NBSP}l")
         volume.set_prefix("h")
         self.assertEqual(volume.print(trailing_zeros=False), f"10{NBSP}hl")
         volume.set_unit("m³")
@@ -1983,9 +1929,7 @@ class Test_Reading_Quantity_Value(unittest.TestCase):
 
     def setUp(self) -> None:
         self.fac = attribute_factory(Controller())
-        self.volume = self.fac.newqu(
-            unit="m³", init_value=1, exponents={"m": -9, "c": -6, "d": -3}
-        )
+        self.volume = self.fac.newqu(unit="m³", init_value=1, exponents={"m": -9, "c": -6, "d": -3})
 
     def test_reading_blank_text_as_value_raises_exception(self) -> None:
         self.assertRaises(Quantity.BlankText, self.volume.read, "")
@@ -2037,9 +1981,7 @@ class Test_Reading_Quantity_Value(unittest.TestCase):
         self.assertEqual(self.volume.print(trailing_zeros=False), f"850{NBSP}dm³")
 
     def test_separating_prefix_and_unit(self):
-        def test_separation(
-            scaled_unit: str, expected_prefix: str, expected_unit: str
-        ) -> None:
+        def test_separation(scaled_unit: str, expected_prefix: str, expected_unit: str) -> None:
             self.assertEqual(
                 Quantity._separate_prefix_from_unit(scaled_unit),
                 (expected_prefix, expected_unit),
@@ -2066,12 +2008,8 @@ class Test_Reading_Quantity_Value(unittest.TestCase):
         test_separation("mmol", "m", "mol")
 
         # exceptions from rules used to separate previous cases
-        test_separation(
-            "mol", "", "mol"
-        )  # would be separated as 'm' and 'ol' otherwise
-        test_separation(
-            "ppm", "", "ppm"
-        )  # would be separated as 'p' and 'pm' otherwise
+        test_separation("mol", "", "mol")  # would be separated as 'm' and 'ol' otherwise
+        test_separation("ppm", "", "ppm")  # would be separated as 'p' and 'pm' otherwise
         test_separation("Gy", "", "Gy")  # gray
         test_separation("Torr", "", "Torr")
         test_separation("hp", "", "hp")  # horsepower
@@ -2140,17 +2078,13 @@ class Test_Listing_Available_Scaled_Units_For_Quantity(unittest.TestCase):
     def test_listing_available_scaled_units_for_quantity(self):
         fac = attribute_factory(Controller())
         volume = fac.newqu(unit="m³", init_value=1, exponents={"m": -9, "d": -3})
-        self.assertListEqual(
-            volume.scaled_units, [("m", "m³"), ("d", "m³"), ("", "m³")]
-        )
+        self.assertListEqual(volume.scaled_units, [("m", "m³"), ("d", "m³"), ("", "m³")])
         volume.add_unit("L", exponents={"m": -3})
         self.assertListEqual(
             volume.scaled_units,
             [("m", "m³"), ("d", "m³"), ("", "m³"), ("m", "L"), ("", "L")],
         )
-        self.assertListEqual(
-            volume.scaled_units_single_str, ["mm³", "dm³", "m³", "mL", "L"]
-        )
+        self.assertListEqual(volume.scaled_units_single_str, ["mm³", "dm³", "m³", "mL", "L"])
         volume.pick_scaled_unit(1)
         self.assertEqual(volume.unit, "m³")
         self.assertEqual(volume.prefix, "d")
@@ -2223,9 +2157,7 @@ class Test_Copying_Attributes(unittest.TestCase):
         mass_copy = mass.copy()
 
     def test_copying_choice_attribute(self):
-        choice = self.fac.new_from_dict(
-            **self.fac.data_constructor.choice([123, "Apple"], "Apple")
-        )
+        choice = self.fac.new_from_dict(**self.fac.data_constructor.choice([123, "Apple"], "Apple"))
         choice_copy = choice.copy()
         choice_copy.set("123")
         self.assertEqual(choice_copy.value, 123)
@@ -2236,9 +2168,7 @@ class Test_Creating_Attribute_From_Dictionary(unittest.TestCase):
     def test_invalid_attribute_type_in_dict_raises_exception(self):
         invalid_dict = {"atype": "invalid type"}
         fac = attribute_factory(Controller())
-        self.assertRaises(
-            Attribute.InvalidAttributeType, fac.new_from_dict, **invalid_dict
-        )
+        self.assertRaises(Attribute.InvalidAttributeType, fac.new_from_dict, **invalid_dict)
 
 
 class Test_Creating_Attribute_Via_Special_Method(unittest.TestCase):

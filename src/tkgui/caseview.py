@@ -50,9 +50,7 @@ class Case_View_Tk(Case_View):
         root_item.add_action(self.__id, "adopt", self.__new_item_under_root)
         root_item.add_action(self.__id, "leave", self.__remove_item)
         root_item.add_action(self.__id, "rename", self.__rename_item)
-        root_item.add_action_on_set(
-            self.__id, self.__set_displayed_values_of_item_attributes
-        )
+        root_item.add_action_on_set(self.__id, self.__set_displayed_values_of_item_attributes)
 
         self.__tree.bind("<<TreeviewSelect>>", self.__handle_selection_change)
         self.__tree.bind("<Escape>", lambda e: self.__selection_clear())
@@ -115,9 +113,7 @@ class Case_View_Tk(Case_View):
 
     def tree_row_values(self, item_id: str) -> Dict[str, Any]:
         vals: [str, Any] = dict()
-        for label, value in zip(
-            self.__tree["columns"], self.__tree.item(item_id)["values"]
-        ):
+        for label, value in zip(self.__tree["columns"], self.__tree.item(item_id)["values"]):
             vals[label] = value
         return vals
 
@@ -133,9 +129,7 @@ class Case_View_Tk(Case_View):
                         print_args["precision"] = self.__precision
                         print_args["trailing_zeros"] = self.__trailing_zeros
                     elif attr.type == "money":
-                        print_args["use_thousands_separator"] = (
-                            self.__use_thousands_separator
-                        )
+                        print_args["use_thousands_separator"] = self.__use_thousands_separator
                     values[-1] = str(item.attribute(label).print(**print_args))
                     break
         return values
@@ -165,9 +159,7 @@ class Case_View_Tk(Case_View):
         item.add_action(self.__id, "adopt", self.__new_item)
         item.add_action(self.__id, "leave", self.__remove_item)
         item.add_action(self.__id, "rename", self.__rename_item)
-        item.add_action_on_set(
-            self.__id, self.__set_displayed_values_of_item_attributes
-        )
+        item.add_action_on_set(self.__id, self.__set_displayed_values_of_item_attributes)
         self.__item_dict[item.id] = item
 
         for child in item.children:
@@ -179,9 +171,7 @@ class Case_View_Tk(Case_View):
         item.add_action(self.__id, "adopt", self.__new_item)
         item.add_action(self.__id, "leave", self.__remove_item)
         item.add_action(self.__id, "rename", self.__rename_item)
-        item.add_action_on_set(
-            self.__id, self.__set_displayed_values_of_item_attributes
-        )
+        item.add_action_on_set(self.__id, self.__set_displayed_values_of_item_attributes)
         self.__item_dict[item.id] = item
         for child in item.children:
             self.__new_item(child)
@@ -256,8 +246,7 @@ class Case_View_Tk(Case_View):
     def __sort_by(self, column_label: str, parent_iid: str) -> None:
         if column_label == "#0":
             child_data = [
-                (c, self.__tree.item(c)["text"])
-                for c in self.__tree.get_children(parent_iid)
+                (c, self.__tree.item(c)["text"]) for c in self.__tree.get_children(parent_iid)
             ]
             child_data.sort(key=lambda x: x[1], reverse=self.__reversed_sort)
         else:
@@ -265,10 +254,8 @@ class Case_View_Tk(Case_View):
             empty_child_data: List[str, Any] = list()
             for item_id in self.__tree.get_children(parent_iid):
                 item = self.__item_dict[item_id]
-                attr_label = (
-                    self.__pick_attr_label_from_attrs_assigned_to_caseview_column(
-                        item, column_label
-                    )
+                attr_label = self.__pick_attr_label_from_attrs_assigned_to_caseview_column(
+                    item, column_label
                 )
                 if attr_label == "":
                     empty_child_data.append((item_id, None))

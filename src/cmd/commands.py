@@ -185,14 +185,10 @@ class Composed_Command(abc.ABC):
         return Command  # pragma: no cover
 
     def __init__(self) -> None:
-        self.composed_pre: Dict[str, Tuple[Callable[[Any], Any], Composed_Command]] = (
-            dict()
-        )
+        self.composed_pre: Dict[str, Tuple[Callable[[Any], Any], Composed_Command]] = dict()
         self.pre: Dict[str, Callable[[Any], Command]] = dict()
         self.post: Dict[str, Callable[[Any], Command]] = dict()
-        self.composed_post: Dict[str, Tuple[Callable[[Any], Any], Composed_Command]] = (
-            dict()
-        )
+        self.composed_post: Dict[str, Tuple[Callable[[Any], Any], Composed_Command]] = dict()
 
     @abc.abstractmethod
     def __call__(self, data: Any) -> Tuple[Command, ...]:
@@ -217,9 +213,7 @@ class Composed_Command(abc.ABC):
         return *pre, main, *post
 
     @abc.abstractmethod
-    def add(
-        self, owner_id: str, creator: Callable[[Any], Command], timing: Timing
-    ) -> None:
+    def add(self, owner_id: str, creator: Callable[[Any], Command], timing: Timing) -> None:
 
         if timing == "pre":
             self.pre[owner_id] = creator

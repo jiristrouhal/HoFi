@@ -1,4 +1,3 @@
-
 import os
 import sys
 import subprocess
@@ -14,7 +13,7 @@ OMITTED_FILES = [
     "tests/__main__.py",
     "server/fleetv2_http_api/models/*.py",
     "server/fleetv2_http_api/typing_utils.py",
-    "server/fleetv2_http_api/util.py"
+    "server/fleetv2_http_api/util.py",
 ]
 HTML_REPORT_FLAG = "-h"
 

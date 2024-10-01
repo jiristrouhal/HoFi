@@ -49,9 +49,7 @@ class Test_View_For_Item_Manipulations(unittest.TestCase):
     def test_new_grandchild_is_shown_in_caseview_under_its_parent(self):
         child = self.cr.new("Child")
         self.root_item.adopt(child)
-        self.assertEqual(
-            self.root_item.last_action, (self.root_item.name, "adopt", child.name)
-        )
+        self.assertEqual(self.root_item.last_action, (self.root_item.name, "adopt", child.name))
         grandchild = self.cr.new("Grandchild")
         child.adopt(grandchild)
         self.assertEqual(child.last_action, (child.name, "adopt", grandchild.name))
@@ -100,9 +98,7 @@ class Test_View_For_Item_Attribute_Manipulations(unittest.TestCase):
         child.set("y", 5)
         child.set("description", "some text")
         self.root_item.adopt(child)
-        self.assertEqual(
-            self.caseview.widget.item(child.id)["values"], [5, "some text"]
-        )
+        self.assertEqual(self.caseview.widget.item(child.id)["values"], [5, "some text"])
 
     def test_changing_value_of_the_item_is_reflected_in_treeview(self):
         child = self.cr.new("Child", {"y": "integer"})

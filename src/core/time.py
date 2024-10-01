@@ -120,9 +120,7 @@ class Timeline:
             self.__set_dependency(dependent, point, prev_point)
             prev_point = point
 
-    def response(
-        self, variable: Attribute, input_change: Any, output_label: str, time: Any
-    ) -> Any:
+    def response(self, variable: Attribute, input_change: Any, output_label: str, time: Any) -> Any:
         current_value = self(output_label, time)
         variable.set(variable.value + input_change)
         updated_value = self(output_label, time)
@@ -240,9 +238,7 @@ class Timeline:
                 continue
             self.__set_dependency(label, point, prev_point)
 
-    def __set_dependency(
-        self, var_label: str, point: Timepoint, prev_point: Timepoint
-    ) -> None:
+    def __set_dependency(self, var_label: str, point: Timepoint, prev_point: Timepoint) -> None:
         b = self.__bindings[var_label]
         if self.timename in b.inputs and point == self.__init_point:
             return
@@ -342,9 +338,7 @@ class Timepoint(abc.ABC):
 
     def _get_item_var_list(self, label: str, var_type: AttributeType) -> Attribute_List:
         if label not in self._item_var_lists:
-            self._add_var_list(
-                label, self.__timeline.attrfac.newlist(var_type, name=var_type)
-            )
+            self._add_var_list(label, self.__timeline.attrfac.newlist(var_type, name=var_type))
             for item in self._items:
                 self._item_var_lists[label].append(item.attribute(label))
         return self._item_var_lists[label]
@@ -436,9 +430,7 @@ class TimepointInit(Timepoint):
 
     def __init__(self, vars: Dict[str, Attribute], timeline: Timeline) -> None:
         super().__init__(vars, timeline)
-        self.__init_vars: Dict[str, Attribute] = {
-            label: var.copy() for label, var in vars.items()
-        }
+        self.__init_vars: Dict[str, Attribute] = {label: var.copy() for label, var in vars.items()}
 
     @property
     def time(self) -> Any:
@@ -496,9 +488,7 @@ class Planner:
             if event.on_confirmation is not None:
                 event.on_confirmation()
         else:
-            raise Planner.CannotConfirmFutureEvent(
-                f"Event '{event}' at time '{event.time}'"
-            )
+            raise Planner.CannotConfirmFutureEvent(f"Event '{event}' at time '{event.time}'")
 
     def dismiss(self, event: Event) -> None:
         if event not in self.__planned:
@@ -556,9 +546,7 @@ def _index_of_nearest_smaller(x: Any, thelist: List[Any], start: int = 0) -> int
             return _index_of_nearest_smaller(x, thelist[:m], start)
 
 
-def _index_of_nearest_smaller_or_equal(
-    x: Any, thelist: List[Any], start: int = 0
-) -> int:
+def _index_of_nearest_smaller_or_equal(x: Any, thelist: List[Any], start: int = 0) -> int:
     if not thelist:
         return -1
     elif x == thelist[0]:

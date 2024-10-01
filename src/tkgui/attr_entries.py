@@ -117,9 +117,7 @@ class Date_Entry(Attribute_Entry):
         return self.__date_entry
 
     def _create_entry(self) -> None:
-        self.__date_entry = tkc.DateEntry(
-            self.master, locale=self.attr.factory.locale_code
-        )
+        self.__date_entry = tkc.DateEntry(self.master, locale=self.attr.factory.locale_code)
         self.__date_entry.set_date(self.attr.value)
         if self.attr.dependent:
             self.__date_entry.configure(state="readonly")
@@ -320,9 +318,7 @@ class Quantity_Entry(Number_Entry):
         if value in ("", "+", "-"):
             return self.attr.value
         else:
-            return self.attr.convert(
-                Decimal(value), scaled_unit, self.attr.default_scaled_unit
-            )
+            return self.attr.convert(Decimal(value), scaled_unit, self.attr.default_scaled_unit)
 
     def set(self, value: Any) -> None:
         if self._text_is_valid_quantity_value(str(value)):

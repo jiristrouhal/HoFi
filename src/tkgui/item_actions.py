@@ -58,9 +58,7 @@ class Item_Window_Tk(Item_Window):
         for entry in self.__entries:
             confirmed_vals[entry.attr] = entry._confirmed_value()
 
-        Attribute.set_multiple(
-            {entry.attr: confirmed_vals[entry.attr] for entry in self.__entries}
-        )
+        Attribute.set_multiple({entry.attr: confirmed_vals[entry.attr] for entry in self.__entries})
         self.close()
 
     def __revert(self) -> None:
@@ -80,9 +78,7 @@ class Item_Window_Tk(Item_Window):
             row += 1
         frame.pack(side=tk.TOP, expand=2, fill=tk.BOTH)
 
-    def __add_attr(
-        self, label: str, attr: Attribute, row: int, frame: tk.Frame
-    ) -> None:
+    def __add_attr(self, label: str, attr: Attribute, row: int, frame: tk.Frame) -> None:
         attr_name = tk.Label(frame, text=self.lang.label("Item_Attributes", label))
         entry = self.__ecr.new(attr, frame)
         attr_name.grid(column=0, row=row, sticky=tk.E)
@@ -150,9 +146,7 @@ class Item_Menu_Tk(Item_Menu):
             else:
                 assert type(func) == type(actions)
                 submenu = self.__menu_cascade(menu, func)
-                menu.add_cascade(
-                    label=self.lang.label("Item_Menu", label), menu=submenu
-                )
+                menu.add_cascade(label=self.lang.label("Item_Menu", label), menu=submenu)
         return menu
 
     def _destroy_menu(self) -> None:

@@ -99,9 +99,7 @@ class Test_Loading_Item_From_XML(unittest.TestCase):
                 "weight": self.cr.attr.quantity("kg"),
                 "double_weight": self.cr.attr.quantity("kg"),
             },
-            dependencies=[
-                self.cr.dependency("double_weight", lambda x: 2 * x, "weight")
-            ],
+            dependencies=[self.cr.dependency("double_weight", lambda x: 2 * x, "weight")],
         )
         self.templ_item = self.cr.from_template("Item", "Item A")
         self.templ_item.set("count", 7)
@@ -119,9 +117,7 @@ class Test_Loading_Item_From_XML(unittest.TestCase):
         )
 
     def test_loading_item_without_existing_template_raises_exception(self):
-        other_cr = (
-            ItemCreator()
-        )  # this creator is missing the template 'Item' required for loading
+        other_cr = ItemCreator()  # this creator is missing the template 'Item' required for loading
         self.assertRaises(
             ItemCreator.UnknownTemplate,
             other_cr.load,

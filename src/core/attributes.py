@@ -51,16 +51,12 @@ class Dependency(abc.ABC):
             result = self(*values)
             self._output.is_valid(result)
         except Dependency.InvalidArgumentType:
-            raise Dependency.WrongAttributeTypeForDependencyInput(
-                [type(v) for v in values]
-            )
+            raise Dependency.WrongAttributeTypeForDependencyInput([type(v) for v in values])
 
     def collect_input_values(self) -> List[Any]:
         return [item.value for item in self._inputs]
 
-    def replace_input(
-        self, input: AbstractAttribute, new_input: AbstractAttribute
-    ) -> None:
+    def replace_input(self, input: AbstractAttribute, new_input: AbstractAttribute) -> None:
         if input not in self._inputs:
             raise Dependency.AttributeIsNotInput(input.name)
         if new_input in self._inputs and new_input is not input:
@@ -80,9 +76,7 @@ class Dependency(abc.ABC):
         for input in self._inputs:
             if not input.dependent:
                 continue
-            input.dependency._check_for_dependency_cycle(
-                output, path + " -> " + input.name
-            )
+            input.dependency._check_for_dependency_cycle(output, path + " -> " + input.name)
 
     def _add_set_up_command_to_input(self, *inputs: AbstractAttribute) -> None:
         for input in inputs:
@@ -190,8 +184,7 @@ class Set_Attr(Command):
         if isinstance(self.data.attr, Attribute_List):
             self.old_value = {attr: attr.value for attr in self.data.attr.attributes}
             values = {
-                attr: value
-                for attr, value in zip(self.data.attr.attributes, self.data.value())
+                attr: value for attr, value in zip(self.data.attr.attributes, self.data.value())
             }
             self.data.attr._value_update(values, f"Set_Attr - {self.data.attr.name}")
             self.new_value = values.copy()
@@ -202,14 +195,10 @@ class Set_Attr(Command):
             self.new_value = self.data.attr.value
 
     def undo(self) -> None:
-        self.data.attr._value_update(
-            self.old_value, f"UNDO Set_Attr - {self.data.attr.name}"
-        )
+        self.data.attr._value_update(self.old_value, f"UNDO Set_Attr - {self.data.attr.name}")
 
     def redo(self) -> None:
-        self.data.attr._value_update(
-            self.new_value, f"REDO Set_Attr - {self.data.attr.name}"
-        )
+        self.data.attr._value_update(self.new_value, f"REDO Set_Attr - {self.data.attr.name}")
 
 
 class Set_Attr_Composed(Composed_Command):
@@ -220,9 +209,7 @@ class Set_Attr_Composed(Composed_Command):
     def __call__(self, data: Set_Attr_Data):
         return super().__call__(data)
 
-    def add(
-        self, owner: str, func: Callable[[Set_Attr_Data], Command], timing: Timing
-    ) -> None:
+    def add(self, owner: str, func: Callable[[Set_Attr_Data], Command], timing: Timing) -> None:
         super().add(owner, func, timing)
 
     def add_composed(
@@ -309,16 +296,12 @@ class Remove_From_Attribute_List(Command):
 class AbstractAttribute(abc.ABC):
     NullDependency = DependencyImpl.NULL
 
-    def __init__(
-        self, factory: Attribute_Factory, atype: AttributeType, name: str = ""
-    ) -> None:
+    def __init__(self, factory: Attribute_Factory, atype: AttributeType, name: str = "") -> None:
         if not isinstance(name, str):
             raise AbstractAttribute.Invalid_Name
         self.__name = name
         self.__type = atype
-        self.command: Dict[Command_Type, Composed_Command] = {
-            "set": Set_Attr_Composed()
-        }
+        self.command: Dict[Command_Type, Composed_Command] = {"set": Set_Attr_Composed()}
         self.__id = str(id(self))
         self.__factory = factory
         self._dependency: Dependency = DependencyImpl.NULL
@@ -465,9 +448,7 @@ class Attribute_List(AbstractAttribute):
         return the_copy
 
     def is_valid(self, values: List[Any]) -> bool:
-        return all(
-            [attr.is_valid(value) for attr, value in zip(self.__attributes, values)]
-        )
+        return all([attr.is_valid(value) for attr, value in zip(self.__attributes, values)])
 
     def remove(self, attribute: AbstractAttribute) -> None:
         if attribute not in self.__attributes:
@@ -478,9 +459,7 @@ class Attribute_List(AbstractAttribute):
             *self.command["set"](Set_Attr_Data(self, value_getter)),
         )
 
-    def on_set(
-        self, owner: str, func: Callable[[Set_Attr_Data], Command], timing: Timing
-    ) -> None:
+    def on_set(self, owner: str, func: Callable[[Set_Attr_Data], Command], timing: Timing) -> None:
         self.command["set"].add(owner, func, timing)
         self._set_commands[owner] = func
 
@@ -492,9 +471,7 @@ class Attribute_List(AbstractAttribute):
         self.__attributes.append(attributes)
 
     @staticmethod
-    def _check_hierarchy_collision(
-        alist: Attribute_List, root_list: Attribute_List
-    ) -> None:
+    def _check_hierarchy_collision(alist: Attribute_List, root_list: Attribute_List) -> None:
         if alist is root_list:
             raise Attribute_List.ListContainsItself
         for attr in alist:
@@ -504,14 +481,10 @@ class Attribute_List(AbstractAttribute):
     def _remove(self, attributes: AbstractAttribute) -> None:
         self.__attributes.remove(attributes)
 
-    def _value_update(
-        self, values: Dict[AbstractAttribute, Any], msg: str = ""
-    ) -> None:
+    def _value_update(self, values: Dict[AbstractAttribute, Any], msg: str = "") -> None:
         for attr in self.__attributes:
             if isinstance(attr, Attribute_List):
-                vals = {
-                    attr: value for attr, value in zip(attr.attributes, values[attr])
-                }
+                vals = {attr: value for attr, value in zip(attr.attributes, values[attr])}
                 attr._value_update(vals)
             else:
                 attr._value_update(values[attr])
@@ -597,9 +570,7 @@ class Attribute(AbstractAttribute):
         the_copy = self.factory.new(self.type, init_value=self._value, name=self.name)
         return the_copy
 
-    def on_set(
-        self, owner: str, func: Callable[[Set_Attr_Data], Command], timing: Timing
-    ) -> None:
+    def on_set(self, owner: str, func: Callable[[Set_Attr_Data], Command], timing: Timing) -> None:
         self.command["set"].add(owner, func, timing)
 
     @abc.abstractmethod
@@ -730,11 +701,7 @@ class Number_Attribute(Attribute):
 
     @staticmethod
     def _is_a_number(value: Any) -> bool:
-        return (
-            isinstance(value, int)
-            or isinstance(value, Decimal)
-            or isinstance(value, float)
-        )
+        return isinstance(value, int) or isinstance(value, Decimal) or isinstance(value, float)
 
     @staticmethod
     def _is_text_a_number(value: str) -> bool:
@@ -849,9 +816,7 @@ class Real_Attribute(Number_Attribute):
                 if not self.is_valid(value):
                     raise Real_Attribute.InvalidAdjustedValue(value)
             except Exception:
-                raise Real_Attribute.InvalidAdjustedValue(
-                    f"Original value: {self._value}."
-                )
+                raise Real_Attribute.InvalidAdjustedValue(f"Original value: {self._value}.")
 
         str_value = format(value, f",.{precision}f")
         str_value = self._set_thousands_separator(str_value, use_thousands_separator)
@@ -860,9 +825,7 @@ class Real_Attribute(Number_Attribute):
         str_value = self._adjust_decimal_separator(str_value)
         return str_value
 
-    def set(
-        self, value: Decimal | float | int, overwrite_dependent: bool = False
-    ) -> None:
+    def set(self, value: Decimal | float | int, overwrite_dependent: bool = False) -> None:
         if not overwrite_dependent and self.dependent:
             return
         if self.is_valid(value):
@@ -1135,9 +1098,7 @@ class Choice_Attribute(Attribute):
 
         if options is None:
             options = []
-        super().__init__(
-            factory, atype="choice", name=name, custom_condition=custom_condition
-        )
+        super().__init__(factory, atype="choice", name=name, custom_condition=custom_condition)
         self.__options: Dict[str, Any] = dict()
         if options:
             self.add_options(*options)
@@ -1326,9 +1287,7 @@ class Quantity(Real_Attribute):
         default_prefix, base_unit = self._separate_prefix_from_unit(unit)
         assert base_unit.strip() != ""
 
-        self.add_unit(
-            base_unit, exponents=exponents, space_after_value=space_after_value
-        )
+        self.add_unit(base_unit, exponents=exponents, space_after_value=space_after_value)
         self.__space_after_value = space_after_value
         self.__unit: Unit = self.__units[base_unit]
         self.set_prefix(default_prefix)
@@ -1391,25 +1350,17 @@ class Quantity(Real_Attribute):
             from_basic=from_basic,
             to_basic=to_basic,
         )
-        self.__scaled_units.extend(
-            [(prefix, symbol) for prefix in self.__units[symbol].exponents]
-        )
+        self.__scaled_units.extend([(prefix, symbol) for prefix in self.__units[symbol].exponents])
 
-    def convert(
-        self, value: Decimal | float, source_unit: str, target_unit: str
-    ) -> Decimal:
+    def convert(self, value: Decimal | float, source_unit: str, target_unit: str) -> Decimal:
         new_value = Decimal(str(value))
         src_prefix, src_unit = self._separate_prefix_from_unit(source_unit)
         tgt_prefix, tgt_unit = self._separate_prefix_from_unit(target_unit)
-        new_value *= Decimal(10) ** Decimal(
-            self.__units[src_unit].exponents[src_prefix]
-        )
+        new_value *= Decimal(10) ** Decimal(self.__units[src_unit].exponents[src_prefix])
         if src_unit != tgt_unit:
             new_value = Decimal(self.__units[src_unit].to_basic(new_value))
             new_value = Decimal(self.__units[tgt_unit].from_basic(new_value))
-        new_value *= Decimal(10) ** Decimal(
-            -self.__units[tgt_unit].exponents[tgt_prefix]
-        )
+        new_value *= Decimal(10) ** Decimal(-self.__units[tgt_unit].exponents[tgt_prefix])
         return Decimal(str(new_value))
 
     def copy(self) -> Quantity:
@@ -1487,9 +1438,7 @@ class Quantity(Real_Attribute):
                 self.set_prefix(prefix)
                 value *= Decimal(10) ** Decimal(self.__units[unit].exponents[prefix])
                 value = self.__units[unit].to_basic(value)
-                value *= Decimal(10) ** Decimal(
-                    -self.__unit.exponents[self.__unit.default_prefix]
-                )
+                value *= Decimal(10) ** Decimal(-self.__unit.exponents[self.__unit.default_prefix])
                 self.set(value, overwrite_dependent)
         except:
             raise self._reading_exception
@@ -1516,8 +1465,7 @@ class Quantity(Real_Attribute):
     def __adjust_func(self, value: Decimal | float) -> Decimal:
         value = self.__unit.from_basic(value)
         decimal_shift = Decimal(
-            self.__unit.exponents[self.__unit.default_prefix]
-            - self.__unit.exponents[self.__prefix]
+            self.__unit.exponents[self.__unit.default_prefix] - self.__unit.exponents[self.__prefix]
         )
         return Decimal(value) * Decimal("10") ** decimal_shift
 
@@ -1606,9 +1554,7 @@ class Quantity(Real_Attribute):
     class CannotExtractQuantity(Exception):
         pass
 
-    class Conversion_To_Alternative_Units_And_Back_Does_Not_Give_The_Original_Value(
-        Exception
-    ):
+    class Conversion_To_Alternative_Units_And_Back_Does_Not_Give_The_Original_Value(Exception):
         pass
 
     class DuplicityInCustomPrefixes(Exception):

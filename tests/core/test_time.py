@@ -105,9 +105,7 @@ class Test_Init_Timepoint(unittest.TestCase):
     def test_removing_items_from_init_point_raises_exception(self) -> None:
         init_point = self.tline._pick_last_point(datetime.date(2023, 12, 26))
         item = self.cr.new("Item")
-        self.assertRaises(
-            TimepointInit.No_Items_At_Init_Timepoint, init_point._remove_item, item
-        )
+        self.assertRaises(TimepointInit.No_Items_At_Init_Timepoint, init_point._remove_item, item)
 
     def test_time_of_init_point_is_none(self) -> None:
         init_point = self.tline._pick_last_point(datetime.date(2023, 12, 26))
@@ -120,9 +118,7 @@ from src.core.time import _index_of_nearest_smaller, _index_of_nearest_smaller_o
 
 class Test_Finding_Index_Of_Nearest_Smaller_Item_Of_Ordered_List(unittest.TestCase):
 
-    def index_test(
-        self, value: Any, thelist: List[Any], expected_index: int | None
-    ) -> None:
+    def index_test(self, value: Any, thelist: List[Any], expected_index: int | None) -> None:
         self.assertEqual(_index_of_nearest_smaller(value, thelist), expected_index)
 
     def test_lists(self) -> None:
@@ -139,16 +135,10 @@ class Test_Finding_Index_Of_Nearest_Smaller_Item_Of_Ordered_List(unittest.TestCa
         self.index_test(6, [0, 1, 4, 5, 6], 3)
 
 
-class Test_Finding_Index_Of_Nearest_Lesser_Or_Equal_Item_Of_Ordered_List(
-    unittest.TestCase
-):
+class Test_Finding_Index_Of_Nearest_Lesser_Or_Equal_Item_Of_Ordered_List(unittest.TestCase):
 
-    def index_test(
-        self, value: Any, thelist: List[Any], expected_index: int | None
-    ) -> None:
-        self.assertEqual(
-            _index_of_nearest_smaller_or_equal(value, thelist), expected_index
-        )
+    def index_test(self, value: Any, thelist: List[Any], expected_index: int | None) -> None:
+        self.assertEqual(_index_of_nearest_smaller_or_equal(value, thelist), expected_index)
 
     def test_lists(self) -> None:
         self.index_test(4, [], -1)
@@ -439,9 +429,7 @@ class Test_Moving_Items_In_Time(unittest.TestCase):
     ):
         cr = ItemCreator()
         root = cr.new("Root")
-        timeline = Timeline(
-            root, cr._attrfac, "seconds", "integer", {"y": cr.attr.integer(-5)}
-        )
+        timeline = Timeline(root, cr._attrfac, "seconds", "integer", {"y": cr.attr.integer(-5)})
         timeline.bind("y", lambda y0, xlist: y0 + sum(xlist), "y", "[x:integer]")
         item = cr.new("Item", {"seconds": "integer", "x": "integer"})
         item.set("seconds", 15)
@@ -532,9 +520,7 @@ class Test_Adding_Dependency_After_Adding_An_Item(unittest.TestCase):
     def test_adding_new_dependency_after_adding_an_item(self):
         cr = ItemCreator()
         root = cr.new("Root")
-        timeline = Timeline(
-            root, cr._attrfac, "time", "integer", {"y": cr.attr.integer(0)}
-        )
+        timeline = Timeline(root, cr._attrfac, "time", "integer", {"y": cr.attr.integer(0)})
         itemA = cr.new("Item A", {"time": "integer", "x": "integer"})
         itemA.multiset({"time": 8, "x": 1})
 
@@ -555,9 +541,7 @@ class Test_Switching_Order_Of_Two_Items_In_Time(unittest.TestCase):
     def test_switching_positions_of_two_items_in_time(self):
         cr = ItemCreator()
         root = cr.new("Root")
-        timeline = Timeline(
-            root, cr._attrfac, "time", "integer", {"y": cr.attr.integer(0)}
-        )
+        timeline = Timeline(root, cr._attrfac, "time", "integer", {"y": cr.attr.integer(0)})
         timeline.bind("y", lambda y0, x: y0 + sum(x), "y", "[x:integer]")
 
         itemA = cr.new("Item A", {"time": "integer", "x": "integer"})
@@ -610,9 +594,7 @@ class Test_Adding_Items_Without_Input_Attribute(unittest.TestCase):
     def test_adding_items_without_input_attribute(self):
         cr = ItemCreator()
         root = cr.new("Root")
-        timeline = Timeline(
-            root, cr._attrfac, "time", "integer", {"y": cr.attr.integer(0)}
-        )
+        timeline = Timeline(root, cr._attrfac, "time", "integer", {"y": cr.attr.integer(0)})
         timeline.bind("y", lambda y0, x: y0 + sum(x), "y", "[x:integer]")
         itemA = cr.new("Item A", {"time": "integer", "x": "integer"})
         itemB = cr.new("Item A", {"time": "integer"})
@@ -635,9 +617,7 @@ class Test_Using_Time_As_Input_In_Timeline_Dependency(unittest.TestCase):
     ):
         cr = ItemCreator()
         root = cr.new("Root")
-        timeline = Timeline(
-            root, cr._attrfac, "time", "integer", {"y": cr.attr.integer(0)}
-        )
+        timeline = Timeline(root, cr._attrfac, "time", "integer", {"y": cr.attr.integer(0)})
         timeline.bind("y", lambda t: 2 * t, "time")  # pragma: no cover
 
         self.assertEqual(timeline("y", -1000), 0)
@@ -671,9 +651,7 @@ class Test_Input_Impact_On_Output(unittest.TestCase):
     ) -> None:
         cr = ItemCreator()
         root = cr.new("Root")
-        timeline = Timeline(
-            root, cr._attrfac, "time", "real", {"y": cr.attr.integer(0)}
-        )
+        timeline = Timeline(root, cr._attrfac, "time", "real", {"y": cr.attr.integer(0)})
         timeline.bind("y", lambda y0, x: y0 + sum(x), "y", "[x:integer]")
         item = cr.new("Item", {"time": "real", "x": "integer"})
         item.multiset({"time": 5, "x": 2})

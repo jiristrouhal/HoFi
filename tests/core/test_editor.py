@@ -95,9 +95,7 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         # the new type is included if the editor is created after adding the type to the case template
         editor_2 = new_editor(self.case_template)
         acase_2 = editor_2.new_case("Case")
-        self.assertEqual(
-            editor_2.item_types_to_create(acase_2), ("Item", "Other_Item_Type")
-        )
+        self.assertEqual(editor_2.item_types_to_create(acase_2), ("Item", "Other_Item_Type"))
 
     def test_creating_item_without_existing_template_raises_exception(self):
         self.case_template.add(
@@ -110,9 +108,7 @@ class Test_Creating_Item_Under_Case(unittest.TestCase):
         editor = new_editor(self.case_template)
         acase = editor.new_case("Case")
 
-        self.assertRaises(
-            Editor.UndefinedTemplate, editor.new, acase, "Nonexistent template label"
-        )
+        self.assertRaises(Editor.UndefinedTemplate, editor.new, acase, "Nonexistent template label")
 
     def test_removing_item(self) -> None:
         self.case_template.add("Item", {}, ())
@@ -199,9 +195,7 @@ class Test_Accessing_Item_Attributes_Via_Editor(unittest.TestCase):
 
     def test_case_template_collects_attributes_added_via_templates(self):
         self.case_template.add("typeA", {"x": self.attrc.real()}, ())
-        self.case_template.add(
-            "typeA", {"x": self.attrc.real(), "y": self.attrc.integer()}, ()
-        )
+        self.case_template.add("typeA", {"x": self.attrc.real(), "y": self.attrc.integer()}, ())
         self.assertDictEqual(
             self.case_template.attributes,
             {"x": self.attrc.real(), "y": self.attrc.integer()},
@@ -220,9 +214,7 @@ class Test_Accessing_Item_Attributes_Via_Editor(unittest.TestCase):
         )
 
     def test_listing_item_attributes(self) -> None:
-        self.case_template.add(
-            "typeA", {"xA": self.attrc.real(), "yA": self.attrc.real()}, ()
-        )
+        self.case_template.add("typeA", {"xA": self.attrc.real(), "yA": self.attrc.real()}, ())
         self.case_template.add("typeB", {"xB": self.attrc.integer()}, ())
         self.case_template.add_case_child_label("typeA", "typeB")
         editor = new_editor(self.case_template)
@@ -239,9 +231,7 @@ class Test_Accessing_Item_Attributes_Via_Editor(unittest.TestCase):
         self.case_template.add(
             "Item_with_mass", {"mass": self.attrc.quantity(init_value=0, unit="kg")}, ()
         )
-        self.case_template.add(
-            "Counter", {"count": self.attrc.integer(init_value=0)}, ()
-        )
+        self.case_template.add("Counter", {"count": self.attrc.integer(init_value=0)}, ())
         self.case_template.add_case_child_label("Item_with_mass", "Counter")
 
         editor = new_editor(self.case_template)
@@ -251,15 +241,11 @@ class Test_Accessing_Item_Attributes_Via_Editor(unittest.TestCase):
         item.set("mass", 5.5)
         counter.set("count", 3)
 
-        self.assertEqual(
-            editor.print(item, "mass", trailing_zeros=False), f"5.5{NBSP}kg"
-        )
+        self.assertEqual(editor.print(item, "mass", trailing_zeros=False), f"5.5{NBSP}kg")
         self.assertEqual(editor.print(counter, "count"), "3")
 
 
-class Test_Check_Template_Labels_Do_Not_Contains_Only_Alphanumeric_Characters(
-    unittest.TestCase
-):
+class Test_Check_Template_Labels_Do_Not_Contains_Only_Alphanumeric_Characters(unittest.TestCase):
 
     def setUp(self) -> None:
         self.case_template = blank_case_template()
@@ -283,9 +269,7 @@ class Test_Check_Template_Labels_Do_Not_Contains_Only_Alphanumeric_Characters(
         )
 
     def test_greek_letters_are_allowed(self):
-        self.case_template.add(
-            "ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω", {}, ()
-        )
+        self.case_template.add("ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμΝνΞξΟοΠπΡρΣσςΤτΥυΦφΧχΨψΩω", {}, ())
 
     def test_czech_letters_with_diacritics_is_allowed(self):
         self.case_template.add("ůúěščřžýáíéťď", {}, ())
@@ -318,9 +302,7 @@ class Test_Setting_Item_Attribute_Dependency_In_Editor(unittest.TestCase):
 from src.core.editor import ItemCreator
 
 
-class Test_Adding_Templates_Of_Items_That_Can_Be_Both_Parents_Of_Each_Other(
-    unittest.TestCase
-):
+class Test_Adding_Templates_Of_Items_That_Can_Be_Both_Parents_Of_Each_Other(unittest.TestCase):
 
     def test_adding_templates_of_items_that_can_be_parents_of_each_other(self):
         case_template = blank_case_template()
@@ -619,9 +601,7 @@ class Test_Copying_Item(unittest.TestCase):
         self.editor.copy(thing)
         thing_copy = self.editor.item_to_paste
 
-        self.assertFalse(
-            self.editor.can_paste_under_or_next_to(thing_copy, self.new_case)
-        )
+        self.assertFalse(self.editor.can_paste_under_or_next_to(thing_copy, self.new_case))
         self.editor.paste_under(self.new_case)
         self.assertFalse(self.new_case.is_parent_of(thing_copy))
         self.assertTrue(self.editor.item_to_paste is not None)
@@ -659,9 +639,7 @@ class Test_Selection_Of_Items(unittest.TestCase):
 
     def test_selecting_mutliple_items_from_multiple_parents(self):
         self.editor.selection_set([self.item_A, self.item_B, self.child_of_A])
-        self.assertEqual(
-            self.editor.selection, [self.item_A, self.item_B, self.child_of_A]
-        )
+        self.assertEqual(self.editor.selection, [self.item_A, self.item_B, self.child_of_A])
 
     def test_setting_selection_to_root_yields_empty_selection(self):
         self.editor.selection_set([self.editor.root])
@@ -731,9 +709,7 @@ class Test_Merging_Items(unittest.TestCase):
             (),
         )
         case_template.add("Cat", {}, ())
-        case_template.add_merging_rule(
-            "Apple", {"weight": "sum", "description": "join_texts"}
-        )
+        case_template.add_merging_rule("Apple", {"weight": "sum", "description": "join_texts"})
 
         case_template.add_case_child_label("Tree")
 
@@ -803,9 +779,7 @@ class Test_Merging_Children_Of_Parent_With_An_Attribute_Depending_On_Child_Attri
         total_mass = case_template.dependency(
             "total_mass", lambda x: sum(x), freeatt_child("mass", mass)
         )
-        case_template.add(
-            "Parent", {"total_mass": mass}, ("Child",), dependencies=[total_mass]
-        )
+        case_template.add("Parent", {"total_mass": mass}, ("Child",), dependencies=[total_mass])
         case_template.add("Child", {"mass": mass, "height": height}, ())
         case_template.add_case_child_label("Parent")
         case_template.add_merging_rule("Child", {"mass": "sum", "height": "max"})

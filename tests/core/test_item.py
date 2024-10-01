@@ -153,9 +153,7 @@ class Test_Accessing_Item_Attributes(unittest.TestCase):
 
     def setUp(self) -> None:
         self.iman = ItemCreator()
-        self.item = self.iman.new(
-            "Item X", attr_info={"label_1": "integer", "label_2": "integer"}
-        )
+        self.item = self.iman.new("Item X", attr_info={"label_1": "integer", "label_2": "integer"})
 
     def test_defining_no_attributes(self) -> None:
         item = self.iman.new(name="Item X")
@@ -730,13 +728,9 @@ class Test_Accessing_Nonexistent_Attribute(unittest.TestCase):
     def test_accessing_nonexistent_attribute(self):
         mg = ItemCreator()
         item = mg.new("Water", {"Volume": "integer"})
-        self.assertRaises(
-            Item.NonexistentAttribute, item.set, "Nonexistent attribute", 5
-        )
+        self.assertRaises(Item.NonexistentAttribute, item.set, "Nonexistent attribute", 5)
         self.assertRaises(Item.NonexistentAttribute, item, "Nonexistent attribute")
-        self.assertRaises(
-            Item.NonexistentAttribute, item.attribute, "Nonexistent attribute"
-        )
+        self.assertRaises(Item.NonexistentAttribute, item.attribute, "Nonexistent attribute")
 
     def test_accessing_existing_attribute(self):
         mg = ItemCreator()
@@ -839,9 +833,7 @@ class Test_Binding_Attributes_Owned_By_The_Same_Item(unittest.TestCase):
     def setUp(self) -> None:
         self.mg = ItemCreator()
         self.integer = self.mg.attr.integer()
-        self.item = self.mg.new(
-            "Item", {"x": "integer", "y": "integer", "z": "integer"}
-        )
+        self.item = self.mg.new("Item", {"x": "integer", "y": "integer", "z": "integer"})
         self.item.set("y", -1)
         self.item.bind("y", self.square, freeatt("x"))
 
@@ -1174,9 +1166,7 @@ class Test_Running_Additional_Command_When_Leaving_Child(unittest.TestCase):
 
             def run(self) -> None:
                 self.old_text = self.data.message.text
-                self.data.message.text = (
-                    f"{self.data.message_start} {self.data.child.name}"
-                )
+                self.data.message.text = f"{self.data.message_start} {self.data.child.name}"
                 self.new_text = self.data.message.text
 
             def undo(self) -> None:
@@ -1199,14 +1189,10 @@ class Test_Running_Additional_Command_When_Leaving_Child(unittest.TestCase):
         self.message_after = Message()
 
         def write_message_before(data: Parentage_Data) -> Command:
-            return Write_Message(
-                Write_Message_Data("Leaving", self.message_before, self.child)
-            )
+            return Write_Message(Write_Message_Data("Leaving", self.message_before, self.child))
 
         def write_message_after(data: Parentage_Data) -> Command:
-            return Write_Message(
-                Write_Message_Data("Left", self.message_after, self.child)
-            )
+            return Write_Message(Write_Message_Data("Left", self.message_after, self.child))
 
         self.parent.on_leaving("test", write_message_before, "pre")
         self.parent.on_leaving("test", write_message_after, "post")
@@ -1297,25 +1283,19 @@ class Test_Formal_Adoption(unittest.TestCase):
 
     def test_actual_child_cannot_be_adopted_formally(self):
         self.parent.adopt(self.child)
-        self.assertRaises(
-            ItemImpl.AlreadyAChild, self.parent.adopt_formally, self.child
-        )
+        self.assertRaises(ItemImpl.AlreadyAChild, self.parent.adopt_formally, self.child)
 
     def test_leaving_formal_child(self):
         self.parent.adopt_formally(self.child)
         self.parent.leave_formal_child(self.child)
-        self.assertRaises(
-            Item.FormalChildNotFound, self.parent.leave_formal_child, self.child
-        )
+        self.assertRaises(Item.FormalChildNotFound, self.parent.leave_formal_child, self.child)
 
 
 class Test_Creating_Item_From_Template(unittest.TestCase):
 
     def test_creating_item_from_nonexistent_template_raises_exception(self):
         cr = ItemCreator()
-        self.assertRaises(
-            ItemCreator.UndefinedTemplate, cr.from_template, "Nonexistent template"
-        )
+        self.assertRaises(ItemCreator.UndefinedTemplate, cr.from_template, "Nonexistent template")
 
 
 class Test_Setting_Mutliple_Attributes_At_Once(unittest.TestCase):
@@ -1326,9 +1306,7 @@ class Test_Setting_Mutliple_Attributes_At_Once(unittest.TestCase):
         item.multiset({"x": 5, "y": 15})
         self.assertEqual(item("x"), 5)
         self.assertEqual(item("y"), 15)
-        self.assertRaises(
-            Item.NonexistentAttribute, item.multiset, {"nonexistent_attributes": 6}
-        )
+        self.assertRaises(Item.NonexistentAttribute, item.multiset, {"nonexistent_attributes": 6})
 
 
 class Test_Simple_Actions_After_Item_Commands(unittest.TestCase):

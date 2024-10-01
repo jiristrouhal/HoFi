@@ -107,9 +107,7 @@ class CaseTemplate:
                 raise CaseTemplate.UndefinedTemplate(label)
             self._case_child_labels.append(label)
 
-    def add_merging_rule(
-        self, itype: str, attribute_rules: Dict[str, MergeRule]
-    ) -> None:
+    def add_merging_rule(self, itype: str, attribute_rules: Dict[str, MergeRule]) -> None:
         if not itype in self._templates:
             raise CaseTemplate.AddingMergeRuleToUndefinedItemType(itype)
         elif itype in self._merge_rules:
@@ -201,9 +199,7 @@ class Editor:
         ignore_duplicit_names: bool = False,
     ) -> None:
 
-        self._creator = ItemCreator(
-            locale_code, case_template.currency_code, ignore_duplicit_names
-        )
+        self._creator = ItemCreator(locale_code, case_template.currency_code, ignore_duplicit_names)
         self._creator.add_templates(*case_template._list_templates())
         self._root = self._creator.new("_", child_itypes=(CASE_TYPE_LABEL,))
         self._attributes = case_template.attributes
@@ -219,9 +215,7 @@ class Editor:
         self._selection: set[Item] = set()
         self._actions_on_selection: Dict[str, List[Callable[[], None]]] = dict()
 
-        self._merging_rules: Dict[str, Dict[str, _MergeFunc]] = (
-            case_template.merging_rules.copy()
-        )
+        self._merging_rules: Dict[str, Dict[str, _MergeFunc]] = case_template.merging_rules.copy()
 
     @property
     def attributes(self) -> Dict[str, Dict[str, Any]]:
@@ -267,9 +261,7 @@ class Editor:
     def selection_is_groupable(self) -> bool:
         return self.is_groupable(self._selection)
 
-    def add_action_on_selection(
-        self, owner_id: str, action: Callable[[], None]
-    ) -> None:
+    def add_action_on_selection(self, owner_id: str, action: Callable[[], None]) -> None:
         if owner_id not in self._actions_on_selection:
             self._actions_on_selection[owner_id] = list()
         self._actions_on_selection[owner_id].append(action)
@@ -395,9 +387,7 @@ class Editor:
 
         do_ungrouping()
 
-    def insert_from_file(
-        self, parent: Item, dirpath: str, name: str, filetype: FileType
-    ) -> Item:
+    def insert_from_file(self, parent: Item, dirpath: str, name: str, filetype: FileType) -> Item:
         if not self.can_insert_under(parent):
             raise Editor.CannotInsertItemUnderSelectedParent(parent.name, parent.itype)
 
@@ -449,14 +439,10 @@ class Editor:
         @self._creator._controller.single_cmd()
         def __set_merged_item_attributes(items: List[Item], merged_item: Item) -> None:
             new_name = "; ".join([item.name for item in items])
-            merged_item.rename(
-                self._lang.label("Miscellaneous", "merged") + ": " + new_name
-            )
+            merged_item.rename(self._lang.label("Miscellaneous", "merged") + ": " + new_name)
             new_vals: Dict[Attribute, Any] = dict()
             for attr, func in self._merging_rules[merged_item.itype].items():
-                new_vals[merged_item.attribute(attr)] = func(
-                    [item(attr) for item in items]
-                )
+                new_vals[merged_item.attribute(attr)] = func([item(attr) for item in items])
             merged_item.attribute(attr).set_multiple(new_vals)
 
         @self._creator._controller.single_cmd()
@@ -533,9 +519,7 @@ class Editor:
             self._creator.save(
                 item,
                 filetype,
-                backup_folder_name=self._lang.label(
-                    "Miscellaneous", "backup_folder_name"
-                ),
+                backup_folder_name=self._lang.label("Miscellaneous", "backup_folder_name"),
             )
         else:
             raise Editor.CannotSaveAsItem(item.name, item.itype)
@@ -627,9 +611,7 @@ from typing import Set
 class Item_Menu_Cmds:
 
     def __init__(self, init_cmds: Dict[str, Callable[[], Item | None]] = {}) -> None:
-        self._items: Dict[str, Item_Menu_Cmds | Callable[[], Item | None] | None] = (
-            dict()
-        )
+        self._items: Dict[str, Item_Menu_Cmds | Callable[[], Item | None] | None] = dict()
         self._children: Dict[str, Item_Menu_Cmds] = dict()
         self._custom_cmds_after_menu_cmd: Set[Callable[[], None]] = set()
 
@@ -650,9 +632,7 @@ class Item_Menu_Cmds:
             assert callable(cmd)
             return cmd
 
-    def insert(
-        self, commands: Dict[str, Callable[[], None | Item]], *cmd_path: str
-    ) -> None:
+    def insert(self, commands: Dict[str, Callable[[], None | Item]], *cmd_path: str) -> None:
         if not commands:
             return
         if cmd_path:
@@ -779,12 +759,8 @@ class EditorUI(abc.ABC):
         actions = Item_Menu_Cmds()
         actions.insert({"import_from_xml": self.import_case_from_xml})
         actions.insert({"new_case": self._new_case})
-        if self._editor.can_paste_under_or_next_to(
-            self._editor.item_to_paste, self._editor.root
-        ):
-            actions.insert(
-                {"paste": lambda: self._editor.paste_under(self._editor.root)}
-            )
+        if self._editor.can_paste_under_or_next_to(self._editor.item_to_paste, self._editor.root):
+            actions.insert({"paste": lambda: self._editor.paste_under(self._editor.root)})
         return actions
 
     def _case_actions(self, case: Item) -> Item_Menu_Cmds:
@@ -804,9 +780,7 @@ class EditorUI(abc.ABC):
             actions.insert({"paste": lambda: self._editor.paste_under(case)})
         actions.insert_sep()
         if self._editor.does_file_exist(case, "xml"):
-            actions.insert(
-                {"save_to_existing_xml": lambda: self.save_case_to_existing_xml(case)}
-            )
+            actions.insert({"save_to_existing_xml": lambda: self.save_case_to_existing_xml(case)})
         actions.insert({"export_to_xml": lambda: self.save_case_to_xml(case)})
         actions.insert_sep()
         actions.insert({"delete": lambda: self._editor.remove_case(case)})

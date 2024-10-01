@@ -121,12 +121,8 @@ class Test_Item_Menu(unittest.TestCase):
         def command_on_2nd_level():
             self.x = 89
 
-        self.menu.open(
-            Item_Menu_Cmds({"Some Command": lambda: None})
-        )  # pragma: no cover
-        self.menu.actions.insert(
-            {"Command on 2nd level": command_on_2nd_level}, "group"
-        )
+        self.menu.open(Item_Menu_Cmds({"Some Command": lambda: None}))  # pragma: no cover
+        self.menu.actions.insert({"Command on 2nd level": command_on_2nd_level}, "group")
         self.menu.run("Command on 2nd level", "group")
         self.assertEqual(self.x, 89)
 
@@ -158,9 +154,7 @@ class Test_Defining_Cascade_Menu(unittest.TestCase):
         self.cmd_tree.insert(cmds, "cmd group 1")
 
         self.assertListEqual(self.cmd_tree.labels(), ["cmd group 1"])
-        self.assertListEqual(
-            self.cmd_tree.labels("cmd group 1"), ["command 1", "command 2"]
-        )
+        self.assertListEqual(self.cmd_tree.labels("cmd group 1"), ["command 1", "command 2"])
 
     def test_cascade_menu_with_commands_on_second_level_of_menu_hierarchy_and_two_on_first(
         self,
@@ -177,17 +171,11 @@ class Test_Defining_Cascade_Menu(unittest.TestCase):
         self.cmd_tree.insert(cmds_2nd_level, "cmd group")
         self.cmd_tree.insert(cmds_1st_level)
 
-        self.assertListEqual(
-            self.cmd_tree.labels(), ["cmd group", "command 1", "command 2"]
-        )
-        self.assertListEqual(
-            self.cmd_tree.labels("cmd group"), ["command 2.1", "command 2.2"]
-        )
+        self.assertListEqual(self.cmd_tree.labels(), ["cmd group", "command 1", "command 2"])
+        self.assertListEqual(self.cmd_tree.labels("cmd group"), ["command 2.1", "command 2.2"])
 
     def test_groups_without_commands_are_skipped(self):
-        self.cmd_tree.insert(
-            {"cmd 1": lambda: None}, "nonempty cmd group"
-        )  # pragma: no cover
+        self.cmd_tree.insert({"cmd 1": lambda: None}, "nonempty cmd group")  # pragma: no cover
         self.cmd_tree.insert({}, "empty cmd group")
         self.assertListEqual(self.cmd_tree.labels(), ["nonempty cmd group"])
 
@@ -209,9 +197,7 @@ class Test_Defining_Cascade_Menu(unittest.TestCase):
         self.cmd_tree.insert(cmds_2nd_level, "cmd group")
         self.cmd_tree.insert(cmds_1st_level)
 
-        self.assertListEqual(
-            self.cmd_tree.labels(), ["cmd group", "command 1", "command 2"]
-        )
+        self.assertListEqual(self.cmd_tree.labels(), ["cmd group", "command 1", "command 2"])
         self.assertListEqual(
             self.cmd_tree.labels("cmd group"),
             ["cmd subgroup", "command 2.1", "command 2.2"],
