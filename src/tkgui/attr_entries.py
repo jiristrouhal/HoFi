@@ -1,10 +1,12 @@
 from __future__ import annotations
-
+import datetime
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkcalendar as tkc
 import abc
 from typing import Any
+
+from src.core.attributes import Choice_Attribute
 
 
 class Attribute_Entry(abc.ABC):
@@ -76,9 +78,6 @@ class Bool_Entry(Attribute_Entry):
         self.__var.set(value)
 
 
-from src.core.attributes import Choice_Attribute
-
-
 class Choice_Entry(Attribute_Entry):
 
     @property
@@ -105,9 +104,6 @@ class Choice_Entry(Attribute_Entry):
 
     def set(self, value: str) -> None:
         self.__choice.set(value)
-
-
-import datetime
 
 
 class Date_Entry(Attribute_Entry):

@@ -883,5 +883,5 @@ class Test_Grouping_And_Ungrouping_Items(unittest.TestCase):
         self.assertTrue(self.parent.is_parent_of(self.item_B))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

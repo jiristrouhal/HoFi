@@ -468,5 +468,5 @@ class Test_Bool_Entry(unittest.TestCase):
         self.assertEqual(entry.value, True)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

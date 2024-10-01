@@ -1,12 +1,11 @@
 from __future__ import annotations
 import sys
-
-sys.path.insert(1, "src")
-
-
 import unittest
 from typing import List
 import datetime
+
+sys.path.insert(1, "src")
+
 from src.core.time import Timeline, TimepointInit, Timepoint
 from src.core.item import ItemCreator
 
@@ -805,5 +804,5 @@ class Test_Running_Methods_On_Event_Confirmation_And_Dismissal(unittest.TestCase
         self.assertEqual(self.dismissal_counter, 2)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

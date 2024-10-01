@@ -128,5 +128,5 @@ class Test_View_For_Item_Attribute_Manipulations(unittest.TestCase):
         self.assertEqual(self.caseview.widget.item(child.id)["values"], [6, ""])
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

@@ -1,9 +1,9 @@
+import unittest
 import sys
 
 sys.path.insert(1, "src")
 
-import utils.naming as naming
-import unittest
+import src.utils.naming as naming
 
 
 class Test_Adjusting_Already_Taken_Name(unittest.TestCase):
@@ -70,5 +70,5 @@ class Test_Stripping_And_Joining_Spaces(unittest.TestCase):
         self.assertEqual(naming.strip_and_join_spaces(text), "x y")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

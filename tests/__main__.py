@@ -56,7 +56,7 @@ def _run_tests(show_test_names: bool = True) -> None:
     unittest.TextTestRunner(verbosity=verbosity, buffer=True).run(suite)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     html = False
     if "-h" in sys.argv:
         html = True

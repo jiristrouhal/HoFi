@@ -1417,5 +1417,5 @@ class Test_Getting_Time_String(unittest.TestCase):
         self.assertEqual(strtime, "2023-08-21_16-54-00")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

@@ -4,7 +4,7 @@ from functools import partial
 
 from typing import List, Tuple, Callable, Dict, Any, Set
 from typing import Optional
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk  # type: ignore
 import os
 
 

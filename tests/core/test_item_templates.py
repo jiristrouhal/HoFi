@@ -1,12 +1,9 @@
 from __future__ import annotations
-
-
+import unittest
 import sys
 
 sys.path.insert(1, "src")
 
-
-import unittest
 from src.core.item import ItemCreator, Item, ItemImpl
 
 
@@ -108,5 +105,5 @@ class Test_Specify_Dependency_In_Template(unittest.TestCase):
         self.assertEqual(item("y"), 10)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

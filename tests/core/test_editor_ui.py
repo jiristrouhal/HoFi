@@ -1,20 +1,17 @@
 from __future__ import annotations
 import sys
+import unittest
 from typing import Any, Callable, Dict, Set, Tuple
-
-from src.core.item import Item
 
 sys.path.insert(1, "src")
 
-
-import unittest
-
-
+from src.core.item import Item
 from src.core.editor import new_editor, blank_case_template
 from src.core.editor import EditorUI, Item_Menu, Item_Window, Case_View
 
 
 class Item_Menu_Test(Item_Menu):
+
     def _build_menu(self, *args) -> None:
         pass
 
@@ -268,5 +265,5 @@ class Test_Item_Window(unittest.TestCase):
         self.assertListEqual(self.menu.action_labels(), [])
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

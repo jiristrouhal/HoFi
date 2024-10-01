@@ -400,5 +400,5 @@ class Test_Denoting_Multiple_Commands_As_A_Single_One(unittest.TestCase):
         self.assertEqual(obj.i, 0)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

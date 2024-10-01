@@ -130,5 +130,5 @@ class Test_Item_Menu(unittest.TestCase):
         self.assertEqual(self.menu.widget.winfo_children()[0].index("end"), 1)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

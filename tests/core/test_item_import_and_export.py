@@ -1,11 +1,9 @@
 from __future__ import annotations
+import unittest
+import os
 import sys
 
 sys.path.insert(1, "src")
-import os
-
-
-import unittest
 from src.core.item import ItemCreator
 
 
@@ -364,5 +362,5 @@ class Test_Saving_And_Loading_Item_With_Bound_Attribute(unittest.TestCase):
         remove_dir(self.DIRPATH)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

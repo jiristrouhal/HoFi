@@ -2429,7 +2429,7 @@ class Test_Undoing_Setting_Values_Of_Attribute_List(unittest.TestCase):
         self.assertEqual(a1.value, 3)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # runner = unittest.TextTestRunner()
     # runner.run(Test_Nested_Attribute_Lists("test_outer_product"))
     unittest.main()
