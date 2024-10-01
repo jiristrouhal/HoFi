@@ -5,7 +5,7 @@ from decimal import Decimal
 
 case_template = blank_case_template()
 case_template.configure(currency_code="CZK")
-lang = Lang_Object.get_lang_object("./hofi_localization/cs_cz.xml")
+lang = Lang_Object.get_lang_object("./localization/cs_cz.xml")
 
 amount = case_template.attr.money(0, custom_condition=lambda x: x>=0)
 rel_amount_attr = case_template.attr.quantity(unit="%", exponents={})
@@ -184,4 +184,7 @@ editor_ui.configure(precision=2, trailing_zeros=True, use_thousands_separator=Tr
 
 
 win.title("HoFi")
-win.mainloop()
+
+
+def main():
+    win.mainloop()
