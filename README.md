@@ -6,14 +6,14 @@ The following activities are of interest:
 - planning the transaction and debt repayment;
 - displaying the significance of individual transactions, debts and their groups.
 
-The project is licensed under the [MIT License](https://opensource.org/license/mit/), see the [license file](LICENSE).
+The project is licensed under the [MIT License](https://opensource.org/license/mit/).
 
 
 ## How it works
 The transactions are stored in a hierachical structure in an xml file. The xml schema defines several objects:
-- debts;
-- income;
-- expense;
+- debts,
+- income,
+- expense,
 - object, that can be parent to other objects and to incomes and expenses.
 
 The xml file should be edited via an user interface written in Python.
