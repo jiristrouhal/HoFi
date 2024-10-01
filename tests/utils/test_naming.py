@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(1, "src")
 
-import src.utils.naming as naming
+import te_tree.utils.naming as naming
 
 
 class Test_Adjusting_Already_Taken_Name(unittest.TestCase):

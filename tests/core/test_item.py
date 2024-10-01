@@ -7,7 +7,7 @@ sys.path.insert(1, "src")
 
 
 import unittest
-from src.core.item import ItemCreator, Item, ItemImpl
+from te_tree.core.item import ItemCreator, Item, ItemImpl
 import math, decimal
 
 
@@ -490,8 +490,8 @@ class Test_Undo_And_Redo_Multiple_Operations(unittest.TestCase):
         self.assertEqual(child.name, "The First Child")
 
 
-from src.cmd.commands import Command
-from src.core.item import Parentage_Data
+from te_tree.cmd.commands import Command
+from te_tree.core.item import Parentage_Data
 import dataclasses
 
 
@@ -568,7 +568,7 @@ class Test_Connecting_External_Commands_To_The_Adopt_Command(unittest.TestCase):
         self.assertEqual(self.display.count, 0)
 
 
-from src.core.item import Renaming_Data
+from te_tree.core.item import Renaming_Data
 
 
 class Test_Adding_External_Command_To_Renaming(unittest.TestCase):
@@ -1034,7 +1034,7 @@ class Test_Binding_Item_Attribute_To_Its_Children(unittest.TestCase):
         self.assertEqual(child("y"), 5)
 
 
-from src.core.item import freeatt, freeatt_parent, freeatt_child
+from te_tree.core.item import freeatt, freeatt_parent, freeatt_child
 
 
 class Test_Examples_Of_Calculations_On_Child_Attributes(unittest.TestCase):
@@ -1219,7 +1219,7 @@ class Test_Running_Additional_Command_When_Leaving_Child(unittest.TestCase):
         self.assertEqual(self.message_after.text, "Left Child")
 
 
-from src.core.attributes import Attribute_Data_Constructor
+from te_tree.core.attributes import Attribute_Data_Constructor
 
 
 class Test_Defining_Item_Attributes_Via_Special_Methods(unittest.TestCase):
@@ -1357,7 +1357,7 @@ class Test_Binding_Attribute_To_Items_Parent(unittest.TestCase):
         self.assertEqual(self.child("x"), 8)
 
 
-from src.core.item import freeatt_child
+from te_tree.core.item import freeatt_child
 
 
 class Test_Copying_Item_With_Multiple_Types_Of_Children(unittest.TestCase):

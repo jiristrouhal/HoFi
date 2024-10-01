@@ -3,9 +3,9 @@ from __future__ import annotations
 import dataclasses
 from typing import Dict, Any, Callable
 
-from src.core.item import Item, Parentage_Data
-from src.cmd.commands import Command
-from src.core.attributes import (
+from te_tree.core.item import Item, Parentage_Data
+from te_tree.cmd.commands import Command
+from te_tree.core.attributes import (
     Attribute,
     Attribute_Factory,
     Attribute_List,
@@ -57,7 +57,7 @@ class Binding:
     inputs: Tuple[str, ...]
 
 
-from src.core.attributes import AttributeType
+from te_tree.core.attributes import AttributeType
 
 
 class Timeline:

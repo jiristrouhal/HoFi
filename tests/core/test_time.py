@@ -6,8 +6,8 @@ import datetime
 
 sys.path.insert(1, "src")
 
-from src.core.time import Timeline, TimepointInit, Timepoint
-from src.core.item import ItemCreator
+from te_tree.core.time import Timeline, TimepointInit, Timepoint
+from te_tree.core.item import ItemCreator
 
 
 class Test_Creating_Timeline_And_Timepoints(unittest.TestCase):
@@ -113,7 +113,7 @@ class Test_Init_Timepoint(unittest.TestCase):
 
 
 from typing import Any
-from src.core.time import _index_of_nearest_smaller, _index_of_nearest_smaller_or_equal
+from te_tree.core.time import _index_of_nearest_smaller, _index_of_nearest_smaller_or_equal
 
 
 class Test_Finding_Index_Of_Nearest_Smaller_Item_Of_Ordered_List(unittest.TestCase):
@@ -161,7 +161,7 @@ class Test_Finding_Index_Of_Nearest_Lesser_Or_Equal_Item_Of_Ordered_List(unittes
         )
 
 
-from src.core.time import insert_to_sorted_list
+from te_tree.core.time import insert_to_sorted_list
 
 
 class Test_Insert_Into_Ordered_List(unittest.TestCase):
@@ -663,7 +663,7 @@ class Test_Input_Impact_On_Output(unittest.TestCase):
         self.assertEqual(timeline.response(item.attribute("x"), +1, "y", 4), 0)
 
 
-from src.core.time import Planner, Event
+from te_tree.core.time import Planner, Event
 
 
 class Test_Creating_Planned_Events(unittest.TestCase):

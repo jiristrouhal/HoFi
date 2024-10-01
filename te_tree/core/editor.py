@@ -2,15 +2,15 @@ from __future__ import annotations
 
 
 from typing import Tuple, Dict, List, Any, Optional, Callable, Literal
-from src.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor
-from src.core.item import (
+from te_tree.core.item import ItemCreator, Item, Template, Attribute_Data_Constructor
+from te_tree.core.item import (
     FileType,
     freeatt,
     freeatt_child,
     freeatt_parent,
 )  # keep these imports to be further imported elsewhere
-from src.core.attributes import Locale_Code
-from src.core.item import ItemImpl
+from te_tree.core.attributes import Locale_Code
+from te_tree.core.item import ItemImpl
 
 import re
 
@@ -24,7 +24,7 @@ MergeRule = Literal["sum", "join_texts", "max", "min"]
 _MergeFunc = Callable[[List[Any]], Any]
 
 
-from src.core.attributes import Currency_Code
+from te_tree.core.attributes import Currency_Code
 
 
 class CaseTemplate:
@@ -192,7 +192,7 @@ class CaseTemplate:
         pass
 
 
-from src.core.item import Attribute_Data_Constructor
+from te_tree.core.item import Attribute_Data_Constructor
 
 
 class Editor:
@@ -319,7 +319,7 @@ class Editor:
         if len(self._selection) == 1:
             self.duplicate(list(self._selection)[0])
 
-    from src.core.item import Parentage_Data
+    from te_tree.core.item import Parentage_Data
 
     def duplicate_as_case(self, item: Item) -> Item:
         case = self._creator.from_template(CASE_TYPE_LABEL, item.name)
@@ -836,7 +836,7 @@ class EditorUI(abc.ABC):
 
 
 from typing import Callable
-from src.core.attributes import Attribute
+from te_tree.core.attributes import Attribute
 import abc
 
 

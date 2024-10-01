@@ -1,6 +1,6 @@
 import tkinter as tk
-from src.tkgui.editor import Editor_Tk, Lang_Object
-from src.core.editor import blank_case_template, new_editor, freeatt_child, freeatt_parent
+from te_tree.tkgui.editor import Editor_Tk, Lang_Object
+from te_tree.core.editor import blank_case_template, new_editor, freeatt_child, freeatt_parent
 from decimal import Decimal
 
 case_template = blank_case_template()

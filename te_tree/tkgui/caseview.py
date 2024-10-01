@@ -8,7 +8,7 @@ from PIL import Image, ImageTk  # type: ignore
 import os
 
 
-from src.core.editor import Case_View, Lang_Object, Item
+from te_tree.core.editor import Case_View, Lang_Object, Item
 
 
 class Case_View_Tk(Case_View):

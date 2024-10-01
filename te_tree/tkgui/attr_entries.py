@@ -6,7 +6,7 @@ import tkcalendar as tkc
 import abc
 from typing import Any
 
-from src.core.attributes import Choice_Attribute
+from te_tree.core.attributes import Choice_Attribute
 
 
 class Attribute_Entry(abc.ABC):
@@ -132,7 +132,7 @@ class Date_Entry(Attribute_Entry):
         self.__date_entry.set_date(value)
 
 
-from src.core.attributes import Number_Attribute
+from te_tree.core.attributes import Number_Attribute
 
 
 class Number_Entry(Attribute_Entry):
@@ -181,7 +181,7 @@ class Number_Entry(Attribute_Entry):
             return False
 
 
-from src.core.attributes import Monetary_Attribute
+from te_tree.core.attributes import Monetary_Attribute
 
 
 class Money_Entry(Number_Entry):
@@ -214,7 +214,7 @@ class Money_Entry(Number_Entry):
         self._value.insert(0, entry_init_value)
 
 
-from src.core.attributes import Quantity
+from te_tree.core.attributes import Quantity
 from decimal import Decimal
 
 
@@ -394,7 +394,7 @@ class Text_Entry(Attribute_Entry):
         self.__text.insert(1.0, value)
 
 
-from src.core.attributes import Attribute
+from te_tree.core.attributes import Attribute
 
 
 class Entry_Creator:

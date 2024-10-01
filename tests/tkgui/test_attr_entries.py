@@ -8,9 +8,9 @@ import unittest
 import tkinter as tk
 from decimal import Decimal
 
-from src.tkgui.attr_entries import Entry_Creator
-from src.core.attributes import attribute_factory
-from src.cmd.commands import Controller
+from te_tree.tkgui.attr_entries import Entry_Creator
+from te_tree.core.attributes import attribute_factory
+from te_tree.cmd.commands import Controller
 
 
 class Test_Choice_Entry(unittest.TestCase):
@@ -355,7 +355,7 @@ class Test_Quantity_Entry(unittest.TestCase):
         self.assertEqual(entry.value, "0.05")
 
 
-from src.tkgui.attr_entries import Quantity_Entry
+from te_tree.tkgui.attr_entries import Quantity_Entry
 
 
 class Test_Quantity_Entry_For_Temperature(unittest.TestCase):

@@ -1,8 +1,8 @@
 import tkinter as tk
 
-from src.core.editor import EditorUI, Editor, Lang_Object
-from src.tkgui.item_actions import Item_Menu_Tk, Item_Window_Tk
-from src.tkgui.caseview import Case_View_Tk
+from te_tree.core.editor import EditorUI, Editor, Lang_Object
+from te_tree.tkgui.item_actions import Item_Menu_Tk, Item_Window_Tk
+from te_tree.tkgui.caseview import Case_View_Tk
 
 from typing import Tuple, Dict
 from tkinter.filedialog import askopenfilename, askdirectory

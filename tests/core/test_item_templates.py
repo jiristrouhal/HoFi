@@ -4,7 +4,7 @@ import sys
 
 sys.path.insert(1, "src")
 
-from src.core.item import ItemCreator, Item, ItemImpl
+from te_tree.core.item import ItemCreator, Item, ItemImpl
 
 
 class Test_Adding_Item_Template(unittest.TestCase):
@@ -84,7 +84,7 @@ class Test_Checking_Template_Existence(unittest.TestCase):
         self.assertRaises(ItemCreator.TemplateAlreadyExists, cr.add_template, "Item")
 
 
-from src.core.item import Template
+from te_tree.core.item import Template
 
 
 class Test_Specify_Dependency_In_Template(unittest.TestCase):

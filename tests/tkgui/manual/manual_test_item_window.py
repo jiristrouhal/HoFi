@@ -1,7 +1,7 @@
 import tkinter as tk
-from src.tkgui.item_actions import Item_Window_Tk
-from src.core.attributes import attribute_factory
-from src.cmd.commands import Controller
+from te_tree.tkgui.item_actions import Item_Window_Tk
+from te_tree.core.attributes import attribute_factory
+from te_tree.cmd.commands import Controller
 from decimal import Decimal
 
 
@@ -47,7 +47,7 @@ attrs = {
     "date": date,
     "cost": cost,
 }
-from src.core.item import ItemImpl, ItemCreator
+from te_tree.core.item import ItemImpl, ItemCreator
 
 item = ItemImpl("The Item", attrs, ItemCreator())
 

@@ -7,8 +7,8 @@ sys.path.insert(1, "src")
 import unittest
 import tkinter as tk
 
-from src.tkgui.item_actions import Item_Window_Tk
-from src.core.item import ItemCreator
+from te_tree.tkgui.item_actions import Item_Window_Tk
+from te_tree.core.item import ItemCreator
 
 
 class Test_Item_Window(unittest.TestCase):
@@ -78,8 +78,8 @@ class Test_Item_Window(unittest.TestCase):
         self.assertEqual(len(self.win.entries), 3)
 
 
-from src.tkgui.item_actions import Item_Menu_Tk
-from src.core.editor import Item_Menu_Cmds
+from te_tree.tkgui.item_actions import Item_Menu_Tk
+from te_tree.core.editor import Item_Menu_Cmds
 
 
 class Test_Item_Menu(unittest.TestCase):

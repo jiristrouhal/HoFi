@@ -4,7 +4,7 @@ from typing import Literal, Any, Callable, get_args, Tuple, Dict
 import abc
 import dataclasses
 
-from src.cmd.commands import Command, Composed_Command, Timing, Controller
+from te_tree.cmd.commands import Command, Composed_Command, Timing, Controller
 
 
 NBSP = "\u00A0"
@@ -1080,7 +1080,7 @@ class Date_Attribute(Attribute):
         pass
 
 
-from src.utils.naming import strip_and_join_spaces
+from te_tree.utils.naming import strip_and_join_spaces
 
 
 class Choice_Attribute(Attribute):

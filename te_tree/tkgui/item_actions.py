@@ -1,11 +1,11 @@
 import tkinter as tk
 from typing import Optional, Dict, Any
-from src.tkgui.attr_entries import Entry_Creator, Attribute_Entry
-from src.core.attributes import Attribute
+from te_tree.tkgui.attr_entries import Entry_Creator, Attribute_Entry
+from te_tree.core.attributes import Attribute
 
 
 from typing import List
-from src.core.editor import Item_Menu, Item_Window, Lang_Object
+from te_tree.core.editor import Item_Menu, Item_Window, Lang_Object
 
 
 class Item_Window_Tk(Item_Window):
@@ -108,7 +108,7 @@ class Item_Window_Tk(Item_Window):
         bf.pack(side=tk.BOTTOM)
 
 
-from src.core.editor import Item_Menu_Cmds, Lang_Object
+from te_tree.core.editor import Item_Menu_Cmds, Lang_Object
 from functools import partial
 
 

@@ -5,7 +5,7 @@ sys.path.insert(1, "src")
 
 
 import unittest
-from src.core.editor import new_editor, blank_case_template, CaseTemplate, Editor
+from te_tree.core.editor import new_editor, blank_case_template, CaseTemplate, Editor
 
 NBSP = "\u00A0"
 
@@ -159,7 +159,7 @@ class Test_Managing_Cases(unittest.TestCase):
         self.assertEqual(caseA_dupl.name, "Case (1)")
 
 
-from src.core.item import ItemImpl
+from te_tree.core.item import ItemImpl
 
 
 class Test_Converting_Cases_To_Items_And_Back(unittest.TestCase):
@@ -299,7 +299,7 @@ class Test_Setting_Item_Attribute_Dependency_In_Editor(unittest.TestCase):
         self.assertEqual(item("y"), 9)
 
 
-from src.core.editor import ItemCreator
+from te_tree.core.editor import ItemCreator
 
 
 class Test_Adding_Templates_Of_Items_That_Can_Be_Both_Parents_Of_Each_Other(unittest.TestCase):
@@ -765,7 +765,7 @@ class Test_Merging_Items(unittest.TestCase):
         self.assertFalse(self.tree_1.is_parent_of(merged_apple))
 
 
-from src.core.item import freeatt_child
+from te_tree.core.item import freeatt_child
 
 
 class Test_Merging_Children_Of_Parent_With_An_Attribute_Depending_On_Child_Attributes(

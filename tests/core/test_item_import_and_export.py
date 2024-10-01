@@ -4,7 +4,7 @@ import os
 import sys
 
 sys.path.insert(1, "src")
-from src.core.item import ItemCreator
+from te_tree.core.item import ItemCreator
 
 
 class Test_Setting_File_Path_For_Item_Saving_And_Loading(unittest.TestCase):
@@ -179,8 +179,8 @@ from typing import List
 from decimal import Decimal
 import math
 
-from src.core.item import freeatt_child
-from src.core.attributes import NBSP
+from te_tree.core.item import freeatt_child
+from te_tree.core.attributes import NBSP
 
 
 class Test_Loading_Item_With_Attribute_Depending_On_Items_Children(unittest.TestCase):
@@ -281,7 +281,7 @@ class Test_Loading_Item_With_Attribute_Depending_On_Items_Children(unittest.Test
 
 
 from decimal import Decimal
-from src.core.item import freeatt_child, freeatt_parent
+from te_tree.core.item import freeatt_child, freeatt_parent
 
 
 class Test_Saving_And_Loading_Item_With_Bound_Attribute(unittest.TestCase):

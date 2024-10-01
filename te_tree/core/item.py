@@ -5,23 +5,23 @@ import dataclasses
 import shutil
 import time
 
-from src.cmd.commands import (
+from te_tree.cmd.commands import (
     Command,
     Controller,
     Composed_Command,
     Timing,
     Empty_Command,
 )
-from src.utils.naming import adjust_taken_name, strip_and_join_spaces
-from src.core.attributes import (
+from te_tree.utils.naming import adjust_taken_name, strip_and_join_spaces
+from te_tree.core.attributes import (
     attribute_factory,
     Attribute,
     Attribute_List,
     Set_Attr_Data,
     Attribute_Data_Constructor,
 )
-from src.core.attributes import Edit_AttrList_Data
-from src.core.attributes import NBSP
+from te_tree.core.attributes import Edit_AttrList_Data
+from te_tree.core.attributes import NBSP
 import abc
 
 
@@ -70,7 +70,7 @@ class Template:
 
 
 FileType = Literal["xml"]
-from src.core.attributes import Locale_Code, AttributeType, Currency_Code
+from te_tree.core.attributes import Locale_Code, AttributeType, Currency_Code
 
 
 class ItemCreator:
@@ -474,7 +474,7 @@ class Leave_Composed(Composed_Command):
         return super().add_composed(owner_id, data_converter, cmd, timing)
 
 
-from src.core.attributes import Dependency
+from te_tree.core.attributes import Dependency
 
 
 class Parent_Attribute:
@@ -776,7 +776,7 @@ class Item(abc.ABC):  # pragma: no cover
         pass
 
 
-from src.core.attributes import (
+from te_tree.core.attributes import (
     Append_To_Attribute_List,
     Remove_From_Attribute_List,
     AbstractAttribute,

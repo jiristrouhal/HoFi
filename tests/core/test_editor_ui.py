@@ -5,9 +5,9 @@ from typing import Any, Callable, Dict, Set, Tuple
 
 sys.path.insert(1, "src")
 
-from src.core.item import Item
-from src.core.editor import new_editor, blank_case_template
-from src.core.editor import EditorUI, Item_Menu, Item_Window, Case_View
+from te_tree.core.item import Item
+from te_tree.core.editor import new_editor, blank_case_template
+from te_tree.core.editor import EditorUI, Item_Menu, Item_Window, Case_View
 
 
 class Item_Menu_Test(Item_Menu):
@@ -127,7 +127,7 @@ class Test_Item_Menu(unittest.TestCase):
         self.assertEqual(self.x, 89)
 
 
-from src.core.editor import Item_Menu_Cmds
+from te_tree.core.editor import Item_Menu_Cmds
 
 
 class Test_Defining_Cascade_Menu(unittest.TestCase):

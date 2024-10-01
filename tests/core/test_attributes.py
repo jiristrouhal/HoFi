@@ -9,14 +9,14 @@ import unittest
 import dataclasses
 from typing import Any
 
-from src.core.attributes import (
+from te_tree.core.attributes import (
     attribute_factory,
     Attribute,
     Set_Attr_Data,
     NBSP,
     Attribute_Factory,
 )
-from src.cmd.commands import Controller, Command
+from te_tree.cmd.commands import Controller, Command
 
 
 class Test_Creating_Attributes(unittest.TestCase):
@@ -107,7 +107,7 @@ class Test_Creating_Attributes(unittest.TestCase):
         self.assertRaises(Attribute.InvalidValueType, x.is_valid, complex(1, 0))
 
 
-from src.core.attributes import Attribute_Factory, Number_Attribute
+from te_tree.core.attributes import Attribute_Factory, Number_Attribute
 
 
 class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
@@ -160,7 +160,7 @@ class Test_Undo_And_Redo_Setting_Attribute_Values(unittest.TestCase):
         self.assertEqual(volume.value, 10)
 
 
-from src.core.attributes import Dependency
+from te_tree.core.attributes import Dependency
 
 
 class Test_Dependent_Attributes(unittest.TestCase):
@@ -601,7 +601,7 @@ class Test_Reading_Text_Attribute_Value_From_Text(unittest.TestCase):
         self.assertEqual(attr.value, "")
 
 
-from src.core.attributes import Real_Attribute_Dimensionless, Integer_Attribute
+from te_tree.core.attributes import Real_Attribute_Dimensionless, Integer_Attribute
 
 
 class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase):
@@ -667,7 +667,7 @@ class Test_Reading_Integer_And_Real_Attribute_Value_From_Text(unittest.TestCase)
         self.assertRaises(Attribute.InvalidValueType, fac.new, "real", "invalid_init_value")
 
 
-from src.core.attributes import Real_Attribute
+from te_tree.core.attributes import Real_Attribute
 
 
 class Test_Printing_Real_Attribute_Value(unittest.TestCase):
@@ -791,7 +791,7 @@ class Test_Reading_Value_With_Space_As_Thousands_Separator(unittest.TestCase):
         self.assertEqual(attr.value, Decimal("4230.560"))
 
 
-from src.core.attributes import Choice_Attribute
+from te_tree.core.attributes import Choice_Attribute
 
 
 class Test_Choice_Attribute(unittest.TestCase):
@@ -946,7 +946,7 @@ class Test_Adding_Default_Options_To_Choice_Attribute(unittest.TestCase):
 
 
 import datetime
-from src.core.attributes import Date_Attribute
+from te_tree.core.attributes import Date_Attribute
 import re
 
 
@@ -1075,7 +1075,7 @@ class Test_Date_Attribute(unittest.TestCase):
             self.assertRaises(Date_Attribute.CannotExtractDate, date.read, d)
 
 
-from src.core.attributes import Monetary_Attribute, Decimal
+from te_tree.core.attributes import Monetary_Attribute, Decimal
 
 
 class Test_Monetary_Attribute(unittest.TestCase):
@@ -1252,7 +1252,7 @@ class Test_Reading_Monetary_Value_With_Space_As_Thousands_Separator(unittest.Tes
         self.assertEqual(attr.value, -15000)
 
 
-from src.core.attributes import Attribute_List
+from te_tree.core.attributes import Attribute_List
 
 
 class Test_Attribute_List(unittest.TestCase):
@@ -1302,7 +1302,7 @@ class Test_Attribute_List(unittest.TestCase):
         self.assertListEqual(values, [0, 2, 3])
 
 
-from src.core.attributes import AbstractAttribute
+from te_tree.core.attributes import AbstractAttribute
 
 
 class Test_Undo_And_Redo_Editing_The_Attribute_List(unittest.TestCase):
@@ -1827,7 +1827,7 @@ class Test_Bool_Attribute(unittest.TestCase):
         self.assertEqual(switch.print(), "True")
 
 
-from src.core.attributes import Quantity
+from te_tree.core.attributes import Quantity
 
 
 class Test_Quantity(unittest.TestCase):

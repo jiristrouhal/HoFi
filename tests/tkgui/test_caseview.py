@@ -6,8 +6,8 @@ sys.path.insert(1, "src")
 
 import unittest
 import tkinter as tk
-from src.tkgui.caseview import Case_View_Tk
-from src.core.item import ItemCreator
+from te_tree.tkgui.caseview import Case_View_Tk
+from te_tree.core.item import ItemCreator
 
 
 class Test_View_For_Empty_Editor(unittest.TestCase):
