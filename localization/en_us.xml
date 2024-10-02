@@ -7,7 +7,7 @@
     schematypens="http://www.w3.org/2001/XMLSchema"
 ?>
 
-<Language Id="cs_cz" Name="Čeština">
+<Language Id="en_us" Name="English">
     <Item_Menu>
         <add Text="Add"/>
         <edit Text="Edit..."/>
