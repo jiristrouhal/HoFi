@@ -1,10 +1,10 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
 
-<xs:include schemaLocation="../src/localization/lang.xsd"></xs:include>
+<xs:include schemaLocation="https://raw.githubusercontent.com/jiristrouhal/te-tree/master/te_tree/localization/lang.xsd"></xs:include>
 
 
-<xs:redefine schemaLocation="../src/localization/ui_elem_schemas/menu.xsd">
+<xs:redefine schemaLocation="https://raw.githubusercontent.com/jiristrouhal/te-tree/master/te_tree/localization/ui_elem_schemas/menu.xsd">
     <xs:complexType name="Item_Menu">
     <xs:complexContent>
         <xs:extension base="Item_Menu">
@@ -15,7 +15,7 @@
 </xs:redefine>
 
 
-<xs:redefine schemaLocation="../src/localization/ui_elem_schemas/item_types.xsd">
+<xs:redefine schemaLocation="https://raw.githubusercontent.com/jiristrouhal/te-tree/master/te_tree/localization/ui_elem_schemas/item_types.xsd">
     <xs:complexType name="Item_Types">
     <xs:complexContent>
         <xs:extension base="Item_Types">

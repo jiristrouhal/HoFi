@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 
-<?xml-model 
+<?xml-model
     href="./lang.xsd"
-    type="application/xml" 
+    type="application/xml"
     schematypens="http://www.w3.org/2001/XMLSchema"
 ?>
-
 
 <Language Id="cs_cz" Name="Čeština">
     <Item_Menu>

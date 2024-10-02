@@ -1,1 +1,2 @@
 tkcalendar>=1.6.1
+te_tree @ git+https://github.com/jiristrouhal/te-tree.git@master
