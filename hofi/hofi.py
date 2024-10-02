@@ -1,11 +1,14 @@
 import tkinter as tk
+from decimal import Decimal
+
 from te_tree.tkgui.editor import Editor_Tk, Lang_Object  # type: ignore
 from te_tree.core.editor import blank_case_template, new_editor, freeatt_child, freeatt_parent  # type: ignore
-from decimal import Decimal
+
+from .config import load_config  # type: ignore
+
 
 case_template = blank_case_template()
 case_template.configure(currency_code="CZK")
-lang = Lang_Object.get_lang_object("./localization/cs_cz.xml")
 
 amount = case_template.attr.money(0, custom_condition=lambda x: x >= 0)
 rel_amount_attr = case_template.attr.quantity(unit="%", exponents={})
@@ -146,7 +149,21 @@ case_template.set_case_template(
 
 
 case_template.set_insertable("Item")
-editor = new_editor(case_template, "cs_cz", lang=lang, ignore_duplicit_names=True)
+
+
+config = load_config("./config.json")
+if not config:
+    print("Error when loading configuration.")
+    exit(1)
+
+
+lang = Lang_Object.get_lang_object(f"./localization/{config.localization}.xml")
+editor = new_editor(
+    case_template,
+    config.localization,
+    lang=lang,
+    ignore_duplicit_names=config.allow_item_name_duplicates,
+)
 
 win = tk.Tk()
 editor_ui = Editor_Tk(
@@ -174,8 +191,11 @@ editor_ui = Editor_Tk(
         "NonMonetary_Debt": "src/tkgui/icons/nonmonetary_debt.png",
     },
 )
-
-editor_ui.configure(precision=2, trailing_zeros=True, use_thousands_separator=True)
+editor_ui.configure(
+    precision=config.editor_precision,
+    trailing_zeros=config.show_trailing_zeros,
+    use_thousands_separator=config.use_thousands_separator,
+)
 
 
 win.title("HoFi")
